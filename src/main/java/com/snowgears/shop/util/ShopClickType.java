@@ -1,0 +1,13 @@
+package com.snowgears.shop.util;
+
+public enum ShopClickType {
+    NONE,
+    LEFT_CLICK_SIGN,
+    SHIFT_LEFT_CLICK_SIGN,
+    RIGHT_CLICK_SIGN,
+    SHIFT_RIGHT_CLICK_SIGN,
+    LEFT_CLICK_CHEST,
+    SHIFT_LEFT_CLICK_CHEST,
+    RIGHT_CLICK_CHEST,
+    SHIFT_RIGHT_CLICK_CHEST
+}

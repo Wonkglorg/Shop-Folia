@@ -15,6 +15,14 @@ def usePaperweight = providers.gradleProperty("usePaperweight")
         .map { it.toBoolean() }
         .getOrElse(false)
 
+def enableUtils = providers.gradleProperty("enable_utils")
+        .map { it.toBoolean() }
+        .getOrElse(false)
+
+def enableDate = providers.gradleProperty("enable_date")
+        .map { it.toBoolean() }
+        .getOrElse(false)
+
 def enableConfig = providers.gradleProperty("enable_config")
         .map { it.toBoolean() }
         .getOrElse(false)
@@ -62,6 +70,22 @@ repositories {
         name = "jitpack.io"
         url = "https://jitpack.io"
     }
+    maven {
+        name = "ender-zone-repo"
+        url = "https://ci.ender.zone/plugin/repository/everything/"
+    }
+    maven {
+        name = "dynmap-repo"
+        url = "https://repo.mikeprimm.com"
+    }
+    maven {
+        name = "bluecolored"
+        url = "https://repo.bluecolored.de/releases"
+    }
+    maven {
+        name = "sk89q-repo"
+        url = "https://maven.enginehub.org/repo/"
+    }
 }
 
 dependencies {
@@ -70,20 +94,27 @@ dependencies {
         paperweight.paperDevBundle("${minecraft_version}.build.+")
     }
 
+    if (enableUtils) {
+        implementation "com.github.WonkyLibs:Util:${utils_version}"
+    }
+
+    if (enableDate) {
+        implementation "com.github.WonkyLibs:Date:${date_version}"
+    }
     if (enableConfig) {
-        implementation "com.github.WonkyPlugins:UtilityLib-Config:${utilitylib_config_version}"
+        implementation "com.github.WonkyLibs:Config:${config_version}"
     }
 
     if (enableScheduler) {
-        implementation "com.github.WonkyPlugins:UtilityLib-Scheduler:${utilitylib_scheduler_version}"
+        implementation "com.github.WonkyLibs:Scheduler:${scheduler_version}"
     }
 
     if (enableCommand) {
-        implementation "com.github.WonkyPlugins:UtilityLib-Command:${utilitylib_command_version}"
+        implementation "com.github.WonkyLibs:Command:${command_version}"
     }
 
     if (enableGui) {
-        implementation "com.github.WonkyPlugins:UtilityLib-GUI:${utilitylib_gui_version}"
+        implementation "com.github.WonkyLibs:GUI:${gui_version}"
     }
 
     if (enableDatabase) {
@@ -100,6 +131,18 @@ dependencies {
 
     testImplementation "org.mockito:mockito-core:${mockito_version}"
     testImplementation "io.papermc.paper:paper-api:${minecraft_version}.build.+"
+
+
+    //Core dependencies
+    compileOnly 'it.unimi.dsi:fastutil:8.5.6'
+    compileOnly 'net.milkbowl.vault:VaultAPI:1.7'
+    compileOnly 'com.griefcraft.lwc:LWCX:2.2.7'
+    implementation 'com.zaxxer:HikariCP:5.0.1'
+    implementation 'org.mariadb.jdbc:mariadb-java-client:2.7.5'
+    implementation 'com.h2database:h2:2.1.214'
+
+    //FoliaLib
+    implementation 'com.github.technicallycoded:FoliaLib:0.4.4'
 }
 
 tasks {

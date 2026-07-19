@@ -1,11 +1,11 @@
-main: com.wonkglorg.pluginnames.Main
+main: com.snowgears.shop.Shop
 name: ${name}
 description: ${description}
 author: ${author}
 version: ${version}
 api-version: ${api_version}
 folia-supported: true
-softdepend: [NBTAPI, Vault, WorldGuard, Towny, LWC, DynMap, BlueMap, BentoBox, AdvancedRegionMarket, Multiverse-Core]
+softdepend: [NBTAPI, Vault]
 permissions:
   shop.use:
     description: Allows player to use all shops.

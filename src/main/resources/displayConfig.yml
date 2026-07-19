@@ -1,0 +1,87 @@
+# THIS FILE IS USED TO CONFIGURE SHOP DISPLAY NAME TAGS #
+# ================================================================== #
+# You can use any hex code (#FF00FF), or minecraft color code in this config!
+# &b : AQUA
+# &0 : BLACK
+# &9 : BLUE
+# &l : BOLD
+# &3 : DARK_AQUA
+# &1 : DARK_BLUE
+# &8 : DARK_GRAY
+# &2 : DARK_GREEN
+# &5 : DARK_PURPLE
+# &4 : DARK_RED
+# &6 : GOLD
+# &7 : GRAY
+# &a : GREEN
+# &o : ITALIC
+# &d : LIGHT_PURPLE
+# &k : MAGIC
+# &c : RED
+# &r : RESET
+# &m : STRIKETHROUGH
+# &n : UNDERLINE
+# &f : WHITE
+# &e : YELLOW
+
+# [item] : The name of the item in the transaction #
+# [item amount] : The amount of the item #
+# [item type] : The material type of the item in the transaction #
+# [item lore] : The lore (description) of the item in the transaction #
+# [item enchants] : The enchantments of the item in the transaction #
+# [barter item] : The name of the barter item in the transaction #
+# [barter item amount] : The amount of the barter item #
+# [barter item type] : The material type of the barter item in the transaction #
+# [barter item lore] : The lore (description) of the barter item in the transaction #
+# [barter item enchants] : The enchantments of the barter item in the transaction #
+# [price] : The price of the items (adjusted to match virtual or physical currency) #
+# [price sell] : The sell price of combo shops (adjusted to match virtual or physical currency) #
+# [price combo] : The full combo price string (adjusted to match virtual or physical currency) #
+# [price per item] : The price of 1 individual item (calculated from total price and adjusted to match virtual or physical currency) #
+# [price sell per item] : The price of selling 1 individual item (combo shops) (calculated from total price and adjusted to match virtual or physical currency) #
+# [stock] : The number of purchases that a shop/shop owner is able to provide to other players (calculated) #
+# [stock color] : Changes text to GREEN if shop has stock and DARK_RED when out of stock #
+# [user] : The name of the player who used the shop #
+# [owner] : The name of the shop owner #
+# [server name] : The name of the server #
+# [shop type] : The type of the shop (sell, buy, barter) #
+# [location] : The x,y,z coordinates of the shop sign #
+# [world] : The name of the world the shop is in #
+
+# Hologram Exclusive Placeholders
+# [lshift] : shift location of a single hologram line one block left #
+# [rshift] : shift location of a single hologram line one block right #
+# [split] : split the line into multiple lines if it's too long #
+
+# Target Maximum Length for [split], we will attempt to split lines that are longer than this.
+targetMaxLength: 40
+
+display_tag_text:
+   SELL:
+      normal:
+         - "[item]&7(x[item amount])"
+         - "&b[item enchants][split]"
+         - "&7<right click sign to have shop sell the item to you>"
+   BUY:
+      normal:
+         - "[item]&7(x[item amount])"
+         - "&b[item enchants][split]"
+         - "&7<right click sign to have shop buy the item from you>"
+   BARTER:
+      normal:
+         - '&aYou get:            &6You trade:'
+         - '[item]&7(x[item amount])        &f[barter item]&7(x[barter item amount])'
+         - '&b[item enchants]          &b[barter item enchants]'
+         - '&7<right click sign to barter items with shop>'
+   GAMBLE:
+      normal:
+         - "[gamble item]"
+         - "&7<right click sign to gamble for a random item>"
+   COMBO:
+      normal:
+         - "[item]&7(x[item amount])"
+         - "&b[item enchants][split]"
+         - "&7<click &aLEFT &7side of sign for shop to &aBUY &7item from you>"
+         - "[item]&7(x[item amount]) for &a[price]"
+         - "&7<click &6RIGHT &7side of sign for shop to &6SELL &7item to you>"
+         - "[item]&7(x[item amount]) for &6[price sell]"

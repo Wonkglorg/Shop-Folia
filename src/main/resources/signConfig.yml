@@ -1,0 +1,172 @@
+# THIS FILE IS USED TO CONFIGURE SHOP SIGNS #
+# ================================================================== #
+# You can use any hex code (#FF00FF), or minecraft color code in this config!
+# &b : AQUA
+# &0 : BLACK
+# &9 : BLUE
+# &l : BOLD
+# &3 : DARK_AQUA
+# &1 : DARK_BLUE
+# &8 : DARK_GRAY
+# &2 : DARK_GREEN
+# &5 : DARK_PURPLE
+# &4 : DARK_RED
+# &6 : GOLD
+# &7 : GRAY
+# &a : GREEN
+# &o : ITALIC
+# &d : LIGHT_PURPLE
+# &k : MAGIC
+# &c : RED
+# &r : RESET
+# &m : STRIKETHROUGH
+# &n : UNDERLINE
+# &f : WHITE
+# &e : YELLOW
+
+# [item] : The name of the item in the transaction #
+# [item amount] : The amount of the item #
+# [item type] : The material type of the item in the transaction #
+# [barter item] : The name of the barter item in the transaction #
+# [barter item amount] : The amount of the barter item #
+# [barter item type] : The material type of the barter item in the transaction #
+# [price] : The price of the items (adjusted to match virtual or physical currency) #
+# [price sell] : The sell price of combo shops (adjusted to match virtual or physical currency) #
+# [price combo] : The full combo price string (adjusted to match virtual or physical currency) #
+# [price per item] : The price of 1 individual item (calculated from total price and adjusted to match virtual or physical currency) #
+# [price sell per item] : The price of selling 1 individual item (combo shops) (calculated from total price and adjusted to match virtual or physical currency) #
+# [stock] : The number of stacks of items that a shop/shop owner is able to provide to other players (calculated) #
+# [stock color] : Changes text to GREEN if shop has stock and DARK_RED when out of stock #
+# [user] : The name of the player who used the shop #
+# [owner] : The name of the shop owner #
+# [server name] : The name of the server #
+# [shop type] : The type of the shop (sell, buy, barter) #
+# [shop types] : A list of available shop types a player can create #
+# [location] : The x,y,z coordinates of the shop sign #
+# [world] : The name of the world the shop is in #
+
+
+sign_creation:
+   SHOP: "shop"
+   SELL: "sell"
+   BUY: "buy"
+   BARTER: "barter"
+   GAMBLE: "gamble"
+   ADMIN: "admin"
+   COMBO: "combo"
+
+# Configure the color/message that is displayed when using [stock color] #
+# It supports minecraft color codes, and hex codes. You can include text in this field if you want custom messages for in stock vs out of stock #
+stock_color:
+   in_stock: "&a"
+   out_of_stock: "&4"
+
+sign_text:
+   SELL:
+      normal:
+         1: "[stock color]&l[shop]"
+         2: "Selling; &l[amount]"
+         3: "&a[price]"
+         4: "[owner]"
+      normal_no_display:
+         1: "[stock color]&l[sell shop]"
+         2: "[item]: [amount]"
+         3: "&a[price]"
+         4: "[owner]"
+      admin:
+         1: "&l[shop]"
+         2: "Selling; &l[amount]"
+         3: "&a[price]"
+         4: "&d[server name]"
+      admin_no_display:
+         1: "&l[sell shop]"
+         2: "[item]: [amount]"
+         3: "&a[price]"
+         4: "&d[server name]"
+   BUY:
+      normal:
+         1: "[stock color]&l[shop]"
+         2: "Buying; &l[amount]"
+         3: "&a[price]"
+         4: "[owner]"
+      normal_no_display:
+         1: "[stock color]&l[buy shop]"
+         2: "[item]: [amount]"
+         3: "&a[price]"
+         4: "[owner]"
+      admin:
+         1: "&l[shop]"
+         2: "Buying; &l[amount]"
+         3: "&a[price]"
+         4: "&d[server name]"
+      admin_no_display:
+         1: "&l[buy shop]"
+         2: "[item]: [amount]"
+         3: "&a[price]"
+         4: "&d[server name]"
+   BARTER:
+      normal:
+         1: "[stock color]&l[shop]"
+         2: "Bartering;"
+         3: "&a[amount]   for   [price]"
+         4: "[owner]"
+      normal_no_display:
+         1: "[stock color]&l[barter shop]"
+         2: "[item]: &a[amount]"
+         3: "[barter item]: &a[price]"
+         4: "[owner]"
+      admin:
+         1: "&l[shop]"
+         2: "Bartering;"
+         3: "&a[amount]   for   [price]"
+         4: "&d[server name]"
+      admin_no_display:
+         1: "&l[barter shop]"
+         2: "&a[item]: [amount]"
+         3: "[barter item]: &a[price]"
+         4: "&d[server name]"
+   GAMBLE:
+      admin:
+         1: "&l[shop]"
+         2: "&dGambling"
+         3: "&a[price]"
+         4: "&d[server name]"
+      admin_no_display:
+         1: "&l[gamble shop]"
+         2: "Random Item"
+         3: "&a[price]"
+         4: "&d[server name]"
+   COMBO:
+      normal:
+         1: "[stock color]&l[shop]"
+         2: "Buys or Sells; &l[amount]"
+         3: "&a[price combo]"
+         4: "[owner]"
+      normal_no_display:
+         1: "[stock color]&l[buy / sell]"
+         2: "[item]: [amount]"
+         3: "&a[price combo]"
+         4: "[owner]"
+      admin:
+         1: "&l[shop]"
+         2: "Buys or Sells; &l[amount]"
+         3: "&a[price combo]"
+         4: "&d[server name]"
+      admin_no_display:
+         1: "&l[buy / sell]"
+         2: "[item]: [amount]"
+         3: "&a[price combo]"
+         4: "&d[server name]"
+   timeout:
+      1: "&cSHOP CLOSED"
+      2: "&7CREATION TIMEOUT"
+      3: ""
+      4: ""
+   deleted:
+      1: "&cSHOP CLOSED"
+      2: ""
+      3: ""
+      4: ""
+   zeroPrice: "FREE"
+   adminStock: "unlimited"
+   serverDisplayName: "Server"
