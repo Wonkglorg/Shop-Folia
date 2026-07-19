@@ -51,19 +51,32 @@ public abstract class AbstractShop{
 	protected Location signLocation;
 	@Getter
 	protected Location chestLocation;
+	@Getter
 	protected BlockFace facing;
+	@Setter
 	protected UUID owner;
 	protected ItemStack item;
 	protected ItemStack secondaryItem;
+	@Getter
 	protected AbstractDisplay display;
+	@Setter
+	@Getter
 	protected double price;
+	@Setter
+	@Getter
 	protected int amount;
+	@Getter
 	protected boolean isAdmin;
+	@Getter
 	protected ShopType type;
+	@Getter
 	protected String[] signLines;
 	protected boolean signLinesRequireRefresh;
+	@Getter
 	protected boolean isPerformingTransaction;
 	protected ItemStack guiIcon;
+	@Setter
+	@Getter
 	protected boolean fakeSign;
 	
 	protected int stock;
@@ -272,7 +285,7 @@ public abstract class AbstractShop{
 		}
 		try{
 			return chestLocation.getBlock().getType();
-		} catch(Exception e){
+		} catch(Exception _){
 			return null;
 		}
 	}
@@ -316,14 +329,6 @@ public abstract class AbstractShop{
 		return null;
 	}
 	
-	public AbstractDisplay getDisplay() {
-		return display;
-	}
-	
-	public double getPrice() {
-		return price;
-	}
-	
 	public double getPricePerItem() {
 		// Calculate pricePerItem for partial sales, round up!
 		double pricePer = this.getPrice() / this.getAmount();
@@ -350,28 +355,12 @@ public abstract class AbstractShop{
 		return Shop.getPlugin().getPriceString(pricePer, true);
 	}
 	
-	public boolean isAdmin() {
-		return isAdmin;
-	}
-	
 	//only use this method if the shop has not been added to the main handler maps yet
 	public void setAdmin(boolean isAdmin) {
 		this.isAdmin = isAdmin;
 		if(isAdmin){
 			this.owner = Shop.getPlugin().getShopHandler().getAdminUUID();
 		}
-	}
-	
-	public ShopType getType() {
-		return type;
-	}
-	
-	public int getAmount() {
-		return amount;
-	}
-	
-	public BlockFace getFacing() {
-		return facing;
 	}
 	
 	public ItemStack getGuiIcon() {
@@ -407,7 +396,7 @@ public abstract class AbstractShop{
 			// In the past we used to explicitly set the durability of an item to be 0, this caused blocks/items to be saved
 			// with extra NBT data that we don't actually want. For example, dirt shouldn't have a damage of 0.
 			// Detect if we set it to 0, and if so, remove it from the ItemMeta!
-			if(item.getItemMeta() instanceof Damageable && ((Damageable) item.getItemMeta()).getDamage() == 0){
+			if(item.getItemMeta() instanceof Damageable damageable && damageable.getDamage() == 0){
 				String components = item.getItemMeta().getAsComponentString(); // example: "[minecraft:damage=53]"
 				
 				// Remove it from the array
@@ -432,18 +421,6 @@ public abstract class AbstractShop{
 			Shop.getPlugin().logger().helpful("checkItemDurability feature may be unsupported on your version of Paper/Spigot!");
 			return item;
 		}
-	}
-	
-	public void setOwner(UUID newOwner) {
-		this.owner = newOwner;
-	}
-	
-	public void setPrice(double price) {
-		this.price = price;
-	}
-	
-	public void setAmount(int amount) {
-		this.amount = amount;
 	}
 	
 	public void refreshGuiIcon() {
@@ -495,12 +472,6 @@ public abstract class AbstractShop{
 		ItemStack item = this.getSecondaryItemStack().clone();
 		return UtilMethods.getDurabilityPercent(item);
 	}
-	
-	public boolean isPerformingTransaction() {
-		return isPerformingTransaction;
-	}
-	
-	public String[] getSignLines() {return signLines;}
 	
 	public void updateSign() {this.updateSign(false);}
 	
@@ -651,14 +622,6 @@ public abstract class AbstractShop{
 		}
 	}
 	
-	public boolean isFakeSign() {
-		return fakeSign;
-	}
-	
-	public void setFakeSign(boolean fakeSign) {
-		this.fakeSign = fakeSign;
-	}
-	
 	public boolean executeClickAction(PlayerInteractEvent event, ShopClickType clickType) {
 		ShopAction action = Shop.getPlugin().getShopAction(clickType);
 		if(action == null){
@@ -715,8 +678,7 @@ public abstract class AbstractShop{
 					player.getWorld().playEffect(this.getChestLocation(), Effect.STEP_SOUND, Material.REDSTONE_BLOCK);
 				}
 			}
-		} catch(Error e){
-		} catch(Exception e){
+		} catch(Error | Exception _){
 		}
 	}
 	

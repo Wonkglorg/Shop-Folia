@@ -47,7 +47,7 @@ public class TransactionHandler {
             fullStackOrder = false;
 
         //player did not click their own shop
-        if (!shop.getOwnerName().equals(player.getName()) || Shop.getPlugin().getDebug_allowUseOwnShop()) {
+        if (!shop.getOwnerName().equals(player.getName()) || Shop.getPlugin().getDebugAllowUseOwnShop()) {
 
             if (plugin.usePerms() && !(player.hasPermission("shop.use."+shop.getType().toString().toLowerCase()) || player.hasPermission("shop.use"))) {
                 if (!player.hasPermission("shop.operator")) {

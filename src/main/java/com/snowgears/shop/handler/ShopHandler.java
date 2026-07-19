@@ -1209,7 +1209,7 @@ public class ShopHandler {
                                 //delete old file
                                 file.delete();
                             }
-                            if (plugin.getDebug_forceResaveAll()) {
+                            if (plugin.getDebugForceResaveAll()) {
                                 saveShops(playerUUID, true);
                             }
                         }

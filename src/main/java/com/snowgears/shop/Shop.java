@@ -55,6 +55,8 @@ public class Shop extends JavaPlugin{
 	
 	private static Shop plugin;
 	private ShopLogger logger = new ShopLogger(this, true);
+	// Getter for FoliaLib
+	@Getter
 	private FoliaLib foliaLib;
 	
 	@Getter
@@ -73,9 +75,12 @@ public class Shop extends JavaPlugin{
 	private ShopHandler shopHandler;
 	@Getter
 	private ShopGuiHandler guiHandler;
+	@Getter
 	private ItemNameUtil itemNameUtil;
+	@Getter
 	private ShopCreationUtil shopCreationUtil;
 	
+	@Getter
 	private NMSBullshitHandler nmsBullshitHandler;
 	
 	private boolean usePerms;
@@ -83,6 +88,7 @@ public class Shop extends JavaPlugin{
 	private boolean enableGUI;
 	
 	private boolean hookTowny;
+	@Getter
 	private String commandAlias;
 	@Getter
 	private DisplayType displayType;
@@ -115,33 +121,66 @@ public class Shop extends JavaPlugin{
 	private ItemStack itemCurrency = null;
 	@Getter
 	private CurrencyType currencyType;
+	@Getter
 	private String currencyName = "";
 	private String currencyFormat = "";
 	private boolean allowFractionalCurrency = false;
 	private Economy econ = null;
+	@Getter
 	private List<Material> enabledContainers;
 	private boolean inverseComboShops;
+	@Getter
 	private double creationCost;
+	@Getter
 	private double destructionCost;
+	@Getter
 	private double teleportCost;
+	@Getter
 	private double teleportCooldown;
 	private boolean returnCreationCost;
 	private boolean allowPartialSales;
+	@Getter
 	private double taxPercent;
 	private boolean offlinePurchaseNotificationsEnabled;
+	@Getter
 	private ItemListType itemListType;
 	private List<String> worldBlackList;
 	private HashMap<ShopClickType, ShopAction> clickTypeActionMap;
+	@Getter
 	private NamespacedKey signLocationNameSpacedKey;
+	@Getter
 	private NamespacedKey playerUUIDNameSpacedKey;
+	@Getter
 	private LogHandler logHandler;
 	
 	// Shop display optimization settings
+	@Getter
 	private double displayProcessInterval;
+	@Getter
 	private double displayMovementThreshold;
+	/**
+	 * Gets the maximum distance at which shop displays will be shown to players.
+	 * Higher values will show shops from further away but may cause client lag.
+	 */
+	@Getter
 	private double maxShopDisplayDistance;
+	/**
+	 * Gets the radius (in chunks) around a player to search for shops.
+	 * Each increment searches exponentially more chunks (1=3x3 area, 2=5x5 area, 3=7x7 area).
+	 */
+	@Getter
 	private int shopSearchRadius;
+	/**
+	 * Gets the number of shop displays to process in a single batch when sending to a player.
+	 * This controls how many displays are sent at once to create a smoother appearance.
+	 */
+	@Getter
 	private int displayBatchSize;
+	/**
+	 * Gets the delay between batches of shop displays in server ticks (20 ticks = 1 second).
+	 * Higher values create a smoother appearance but take longer to show all displays.
+	 */
+	@Getter
 	private int displayBatchDelay;
 	
 	private YamlConfiguration config;
@@ -369,8 +408,8 @@ public class Shop extends JavaPlugin{
 		if(offlinePurchaseNotificationsEnabled && config.getString("logging.type").toUpperCase().equals("OFF")){
 			this.logger().warning(
 					"Offline purchase notifications are enabled in `config.yml` but DB logging is set to `OFF`. Offline purchase notifications will be disabled.");
-			this.logger().warning(
-					"Please set `logging.type` to `FILE` or setup a database in `config.yml` to enable offline purchase notifications.");
+			this.logger()
+			    .warning("Please set `logging.type` to `FILE` or setup a database in `config.yml` to enable offline purchase notifications.");
 			offlinePurchaseNotificationsEnabled = false;
 		}
 		
@@ -803,13 +842,13 @@ public class Shop extends JavaPlugin{
 		return this.isMockBukkit;
 	}
 	
-	public boolean getDebug_allowUseOwnShop() {return debug_allowUseOwnShop;}
+	public boolean getDebugAllowUseOwnShop() {return debug_allowUseOwnShop;}
 	
-	public boolean getDebug_transactionDebugLogs() {return debug_transactionDebugLogs;}
+	public boolean getDebugTransactionDebugLogs() {return debug_transactionDebugLogs;}
 	
-	public int getDebug_shopCreateCooldown() {return debug_shopCreateCooldown;}
+	public int getDebugShopCreateCooldown() {return debug_shopCreateCooldown;}
 	
-	public boolean getDebug_forceResaveAll() {return debug_forceResaveAll;}
+	public boolean getDebugForceResaveAll() {return debug_forceResaveAll;}
 	
 	public void setItemCurrency(ItemStack itemCurrency) {
 		this.itemCurrency = itemCurrency;
@@ -844,14 +883,6 @@ public class Shop extends JavaPlugin{
 		} catch(Exception e){
 			e.printStackTrace();
 		}
-	}
-	
-	public String getCurrencyName() {
-		return currencyName;
-	}
-	
-	public String getCommandAlias() {
-		return commandAlias;
 	}
 	
 	public String getPriceString(double price, boolean pricePer) {
@@ -906,10 +937,6 @@ public class Shop extends JavaPlugin{
 		return format;
 	}
 	
-	public double getTaxPercent() {
-		return taxPercent;
-	}
-	
 	public Economy getEconomy() {
 		
 		if(econ == null){
@@ -923,32 +950,12 @@ public class Shop extends JavaPlugin{
 		return allowFractionalCurrency;
 	}
 	
-	public List<Material> getEnabledContainers() {
-		return enabledContainers;
-	}
-	
 	public boolean inverseComboShops() {
 		return inverseComboShops;
 	}
 	
-	public double getCreationCost() {
-		return creationCost;
-	}
-	
-	public double getDestructionCost() {
-		return destructionCost;
-	}
-	
 	public boolean getDestroyShopRequiresSneak() {
 		return destroyShopRequiresSneak;
-	}
-	
-	public double getTeleportCost() {
-		return teleportCost;
-	}
-	
-	public double getTeleportCooldown() {
-		return teleportCooldown;
 	}
 	
 	public boolean returnCreationCost() {
@@ -960,18 +967,6 @@ public class Shop extends JavaPlugin{
 		
 	}
 	
-	public ItemNameUtil getItemNameUtil() {
-		return itemNameUtil;
-	}
-	
-	public ShopCreationUtil getShopCreationUtil() {
-		return shopCreationUtil;
-	}
-	
-	public ItemListType getItemListType() {
-		return itemListType;
-	}
-	
 	public List<String> getWorldBlacklist() {
 		return worldBlackList;
 	}
@@ -980,72 +975,4 @@ public class Shop extends JavaPlugin{
 		return clickTypeActionMap.get(shopClickType);
 	}
 	
-	public NMSBullshitHandler getNmsBullshitHandler() {
-		return nmsBullshitHandler;
-	}
-	
-	public NamespacedKey getSignLocationNameSpacedKey() {
-		return signLocationNameSpacedKey;
-	}
-	
-	public NamespacedKey getPlayerUUIDNameSpacedKey() {
-		return playerUUIDNameSpacedKey;
-	}
-	
-	public LogHandler getLogHandler() {
-		return logHandler;
-	}
-	
-	// Getter for FoliaLib
-	public FoliaLib getFoliaLib() {
-		return foliaLib;
-	}
-	
-	public double getDisplayProcessInterval() {
-		return displayProcessInterval;
-	}
-	
-	public double getDisplayMovementThreshold() {
-		return displayMovementThreshold;
-	}
-	
-	/**
-	 * Gets the maximum distance at which shop displays will be shown to players.
-	 * Higher values will show shops from further away but may cause client lag.
-	 *
-	 * @return The maximum display distance in blocks
-	 */
-	public double getMaxShopDisplayDistance() {
-		return maxShopDisplayDistance;
-	}
-	
-	/**
-	 * Gets the radius (in chunks) around a player to search for shops.
-	 * Each increment searches exponentially more chunks (1=3x3 area, 2=5x5 area, 3=7x7 area).
-	 *
-	 * @return The shop search radius in chunks
-	 */
-	public int getShopSearchRadius() {
-		return shopSearchRadius;
-	}
-	
-	/**
-	 * Gets the number of shop displays to process in a single batch when sending to a player.
-	 * This controls how many displays are sent at once to create a smoother appearance.
-	 *
-	 * @return The batch size for shop display processing
-	 */
-	public int getDisplayBatchSize() {
-		return displayBatchSize;
-	}
-	
-	/**
-	 * Gets the delay between batches of shop displays in server ticks (20 ticks = 1 second).
-	 * Higher values create a smoother appearance but take longer to show all displays.
-	 *
-	 * @return The delay in ticks between display batches
-	 */
-	public int getDisplayBatchDelay() {
-		return displayBatchDelay;
-	}
 }

@@ -41,7 +41,7 @@ public class Transaction {
 
     public Transaction(Player player, AbstractShop shop, ShopType transactionType) {
         this.error = null;
-        if (!TX_DEBUG_LOGGING) { TX_DEBUG_LOGGING = Shop.getPlugin().getDebug_transactionDebugLogs(); }
+        if (!TX_DEBUG_LOGGING) { TX_DEBUG_LOGGING = Shop.getPlugin().getDebugTransactionDebugLogs(); }
 
         this.player = player;
         this.shop = shop;
