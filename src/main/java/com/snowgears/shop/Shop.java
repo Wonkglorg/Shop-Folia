@@ -591,8 +591,8 @@ public class Shop extends JavaPlugin{
 			return valueMap;
 		}));
 		
-		metrics.addCustomChart(new SimplePie("worldguard_enabled", () -> {return String.valueOf(worldGuardExists);}));
-		metrics.addCustomChart(new SimplePie("towny_enabled", () -> {return String.valueOf(hookTowny);}));
+		metrics.addCustomChart(new SimplePie("worldguard_enabled", () -> String.valueOf(worldGuardExists)));
+		metrics.addCustomChart(new SimplePie("towny_enabled", () -> String.valueOf(hookTowny)));
 		metrics.addCustomChart(new SimplePie("database_type", () -> String.valueOf(config.getString("logging.type"))));
 		
 		// Track display type preferences

@@ -3,25 +3,30 @@ package com.snowgears.shop.util;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.handler.ShopGuiHandler;
+import static com.snowgears.shop.handler.ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_USER_ON;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
 import com.snowgears.shop.shop.ShopType;
+import static com.snowgears.shop.util.ItemNameUtil.getName;
+import static com.snowgears.shop.util.ItemNameUtil.getNameTranslatable;
+import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_SALE_OWNER;
+import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_SALE_USER;
+import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_STOCK;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.util.Components;
+import static com.wonkglorg.minecraft.util.Components.toComponent;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.HoverEvent;
+import static net.kyori.adventure.text.event.HoverEvent.Action;
+import static net.kyori.adventure.text.event.HoverEvent.showText;
 import net.kyori.adventure.text.event.HoverEventSource;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.checkerframework.checker.units.qual.A;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -84,6 +89,23 @@ public class ShopMessage{
 		LangRequest request = LangRequest.literal(message);
 		fillRequest(request, context);
 		return request.toSingleComponent();
+	}
+	
+	/**
+	 * Formats a message by replacing all placeholders with their respective values.
+	 *
+	 * @param message The message containing placeholders
+	 * @param context The PlaceholderContext instance containing Shop and Player
+	 * @return The formatted message with all placeholders replaced
+	 */
+	public static String formatPlainText(String message, PlaceholderContext context) {
+		if(message == null){
+			return "";
+		}
+		
+		LangRequest request = LangRequest.literal(message);
+		fillRequest(request, context);
+		return Components.toPlainText(request.toSingleComponent());
 	}
 	
 	/**
@@ -205,6 +227,7 @@ public class ShopMessage{
 			   }
 			   return null;
 		   })
+		   .replace("[shop types]", ShopMessage.getShopTypesPlaceholder(context))
 		   .replace("[total shops]",String.valueOf(plugin.getShopHandler().getNumberOfShops()))
 		   .lazyReplace("[owner]",()-> {
 			   if(context.getProcess() != null){
@@ -252,7 +275,7 @@ public class ShopMessage{
 			   return text.hoverEvent(getShopInfoHoverEvent(context));
 		   })
 		   .replace("[currency name]",plugin.getCurrencyName())
-		   .replace("[currency item]",()->embedItem(ItemNameUtil.getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
+		   .replace("[currency item]",()->embedItem(getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
 		   .replace("[item]", ()-> ShopMessage.getItemPlaceholder(context))
 		   .lazyReplace("[item amount]", ()-> {
 			   if(context.getItem() != null){
@@ -288,207 +311,168 @@ public class ShopMessage{
 				}
 				return null;
 			})
-			.replace();
-	
-	//@formatter:on
-		A.registerPlaceholder("[shop types]", ShopMessage::getShopTypesPlaceholder);
-		ShopMessage.registerPlaceholder("[item durability]", context -> {
-			if(context.getShop() != null){
-				return new TextComponent(String.valueOf(context.getShop().getItemDurabilityPercent()));
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[item type]", context -> {
-			if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
-				return new TextComponent("???");
-			} else {
-				return new TextComponent(plugin.getItemNameUtil().getNameTranslatable(context.getShop().getItemStack().getType()).toLegacyText());
-			}
-		});
-		ShopMessage.registerPlaceholder("[gamble item amount]", context -> {
-			if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
-				return new TextComponent(String.valueOf(context.getShop().getAmount()));
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[gamble item]", context -> {
-			if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
-				return embedItem(plugin.getItemNameUtil().getName(plugin.getGambleDisplayItem()), plugin.getGambleDisplayItem());
-			}
-			return null;
-		});
-		
-		// Shop Barter Item Placeholders
-		ShopMessage.registerPlaceholder("[barter item amount]", context -> {
-			if(context.getBarterItem() != null){
-				return new TextComponent(String.valueOf(context.getBarterItem().getAmount()));
-			}
-			if(context.getShop() != null && context.getShop().getSecondaryItemStack() != null){
-				return new TextComponent(String.valueOf(context.getShop().getSecondaryItemStack().getAmount()));
-			}
-			if(context.getProcess() != null){
-				return new TextComponent(String.valueOf(context.getProcess().getBarterItemAmount()));
-			}
-			if(context.getItem() != null){
-				return new TextComponent(String.valueOf(context.getItem().getAmount()));
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[barter item]", ShopMessage::getBarterItemPlaceholder);
-		ShopMessage.registerPlaceholder("[barter item durability]", context -> {
-			if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
-				return new TextComponent(String.valueOf(context.getShop().getSecondaryItemDurabilityPercent()));
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[barter item type]", context -> {
-			if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
-				return new TextComponent(plugin.getItemNameUtil().getNameTranslatable(context.getShop().getSecondaryItemStack().getType()));
-			}
-			return null;
-		});
-		registerPlaceholder("[barter item enchants]", context -> {
-			if(context.getBarterItem() != null){
-				return embedItem(UtilMethods.getEnchantmentsComponent(context.getBarterItem()), context.getBarterItem());
-			}
-			if(context.getShop() != null && context.getShop().getSecondaryItemStack() != null){
-				return embedItem(UtilMethods.getEnchantmentsComponent(context.getShop().getSecondaryItemStack()),
-						context.getShop().getSecondaryItemStack());
-			}
-			if(context.getProcess() != null){
-				return embedItem(UtilMethods.getEnchantmentsComponent(context.getProcess().getBarterItemStack()),
-						context.getProcess().getBarterItemStack());
-			}
-			if(context.getItem() != null){
-				return embedItem(UtilMethods.getEnchantmentsComponent(context.getItem()), context.getItem());
-			}
-			return null;
-		});
-		registerPlaceholder("[barter item lore]", context -> {
-			if(context.getBarterItem() != null){
-				return embedItem(UtilMethods.getLoreString(context.getBarterItem()), context.getBarterItem());
-			}
-			if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
-				return embedItem(UtilMethods.getLoreString(context.getShop().getSecondaryItemStack()), context.getShop().getSecondaryItemStack());
-			}
-			if(context.getProcess() != null){
-				return embedItem(UtilMethods.getLoreString(context.getProcess().getBarterItemStack()), context.getProcess().getBarterItemStack());
-			}
-			if(context.getItem() != null){
-				return embedItem(UtilMethods.getLoreString(context.getItem()), context.getItem());
-			}
-			return null;
-		});
-		
-		// Shop Pricing Placeholders
-		ShopMessage.registerPlaceholder("[amount]", context -> {
-			if(context.getShop() != null){
-				return new TextComponent(String.valueOf(context.getShop().getAmount()));
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[price sell]", context -> {
-			if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
-				return new TextComponent(((ComboShop) context.getShop()).getPriceSellString());
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[price sell per item]", context -> {
-			if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
-				return new TextComponent(((ComboShop) context.getShop()).getPriceSellPerItemString());
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[price combo]", context -> {
-			if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
-				return new TextComponent(((ComboShop) context.getShop()).getPriceComboString());
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[price per item]", context -> {
-			if(context.getShop() != null){
-				return new TextComponent(context.getShop().getPricePerItemString());
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[price]", context -> {
-			if(context.getShop() != null){
-				return new TextComponent(context.getShop().getPriceString());
-			}
-			return null;
-		});
-		ShopMessage.registerPlaceholder("[stock]", context -> {
-			if(context.getShop() == null){
+			.replace("[item durability]", context.getShop() != null ? String.valueOf(context.getShop().getItemDurabilityPercent()): null)
+			.lazyReplace("[item type]", ()-> {
+				if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
+					return "???";
+				} else {
+					return Components.toPlainText(getNameTranslatable(context.getShop().getItemStack().getType()));
+				}
+			})
+		   .lazyReplace("[gamble item amount]",()-> {
+			   if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
+				   return String.valueOf(context.getShop().getAmount());
+			   }
+			   return null;
+		   })
+			.replace("[gamble item]", ()->{
+				if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
+					return embedItem(getName(plugin.getGambleDisplayItem()), plugin.getGambleDisplayItem());
+				}
 				return null;
-			} else if(context.getShop().isAdmin()){
-				return new TextComponent(String.valueOf(ShopMessage.getAdminStockWord()));
-			} else {
-				return new TextComponent(String.valueOf(context.getShop().getStock()));
-			}
-		});
-		ShopMessage.registerPlaceholder("[stock color]", context -> {
-			if(context.getShop() == null){
-				return null;
-			}
-			if(context.getShop().getStock() < 1){
-				return format(getUnformattedMessage("signtext", "outofstockcolor"), context);
-			}
-			return format(getUnformattedMessage("signtext", "instockcolor"), context);
-		});
-		
-		// Notify Placeholders
-		ShopMessage.registerPlaceholder("[notify user]", context -> {
-			// @TODO: is this correct?
-			String text_on = getUnformattedMessage("command", "notify_on");
-			String text_off = getUnformattedMessage("command", "notify_off");
-			
-			ShopGuiHandler.GuiIcon guiIcon = plugin.getGuiHandler().getIconFromOption(context.getPlayer(),
-					PlayerSettings.Option.NOTIFICATION_SALE_USER);
-			return new TextComponent((guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_USER_ON) ? text_on : text_off);
-		});
-		
-		registerPlaceholder("[notify owner]", context -> {
-			String text_on = getUnformattedMessage("command", "notify_on");
-			String text_off = getUnformattedMessage("command", "notify_off");
-			
-			ShopGuiHandler.GuiIcon guiIcon = plugin.getGuiHandler().getIconFromOption(context.getPlayer(),
-					PlayerSettings.Option.NOTIFICATION_SALE_OWNER);
-			return new TextComponent((guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_OWNER_ON) ? text_on : text_off);
-		});
-		
-		ShopMessage.registerPlaceholder("[notify stock]", context -> {
-			String text_on = getUnformattedMessage("command", "notify_on");
-			String text_off = getUnformattedMessage("command", "notify_off");
-			
-			ShopGuiHandler.GuiIcon guiIcon = plugin.getGuiHandler().getIconFromOption(context.getPlayer(), PlayerSettings.Option.NOTIFICATION_STOCK);
-			return new TextComponent((guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_STOCK_ON) ? text_on : text_off);
-		});
-		
-		// Offline Transaction Updates
-		ShopMessage.registerPlaceholder("[offline transactions]", context -> {
-			TextComponent numOfTransactions = new TextComponent(String.valueOf(context.getOfflineTransactions().getNumTransactions()));
-			numOfTransactions.setHoverEvent(getTransactionsHoverEvent(context));
-			return numOfTransactions;
-		});
-		ShopMessage.registerPlaceholder("[offline profit]", context -> {
-			String boughtString = plugin.getPriceString(context.getOfflineTransactions().getTotalProfit(), false);
-			if(boughtString.equals(freePriceWord)){
-				boughtString = "0";
-			}
-			return new TextComponent(boughtString);
-		});
-		ShopMessage.registerPlaceholder("[offline spent]", context -> {
-			String spentString = plugin.getPriceString(context.getOfflineTransactions().getTotalSpent(), false);
-			if(spentString.equals(freePriceWord)){
-				spentString = "0";
-			}
-			return new TextComponent(spentString);
-		});
-		ShopMessage.registerPlaceholder("[offline items sold]",
-				context -> ShopMessage.getOfflineItemsPlaceholder(context, context.getOfflineTransactions().getItemsSold()));
-		ShopMessage.registerPlaceholder("[offline items bought]",
-				context -> ShopMessage.getOfflineItemsPlaceholder(context, context.getOfflineTransactions().getItemsBought()));
-		ShopMessage.registerPlaceholder("[shops out of stock]", ShopMessage::getShopsOutOfStockPlaceholder);
+			})
+		   .lazyReplace("[barter item amount]", ()->{
+			   if(context.getBarterItem() != null){
+				   return String.valueOf(context.getBarterItem().getAmount());
+			   }
+			   if(context.getShop() != null && context.getShop().getSecondaryItemStack() != null){
+				   return String.valueOf(context.getShop().getSecondaryItemStack().getAmount());
+			   }
+			   if(context.getProcess() != null){
+				   return String.valueOf(context.getProcess().getBarterItemAmount());
+			   }
+			   if(context.getItem() != null){
+				   return String.valueOf(context.getItem().getAmount());
+			   }
+			   return null;
+		   })
+		   .replace("[barter item]",()-> ShopMessage.getBarterItemPlaceholder(context))
+		   .lazyReplace("[barter item durability]",()-> {
+			   if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
+				   return String.valueOf(context.getShop().getSecondaryItemDurabilityPercent());
+			   }
+			   return null;
+		   })
+		   .replace("[barter item type]",()->{
+			   if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
+				   return getNameTranslatable(context.getShop().getSecondaryItemStack().getType());
+			   }
+			   return null;
+		   })
+		   .replace("[barter item enchants]",()->{
+			   if(context.getBarterItem() != null){
+				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getBarterItem()), context.getBarterItem());
+			   }
+			   if(context.getShop() != null && context.getShop().getSecondaryItemStack() != null){
+				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getShop().getSecondaryItemStack()),
+						   context.getShop().getSecondaryItemStack());
+			   }
+			   if(context.getProcess() != null){
+				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getProcess().getBarterItemStack()),
+						   context.getProcess().getBarterItemStack());
+			   }
+			   if(context.getItem() != null){
+				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getItem()), context.getItem());
+			   }
+			   return null;
+		   })
+		   .replace("[barter item lore]",()->{
+			   if(context.getBarterItem() != null){
+				   return embedItem(UtilMethods.getLoreString(context.getBarterItem()), context.getBarterItem());
+			   }
+			   if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
+				   return embedItem(UtilMethods.getLoreString(context.getShop().getSecondaryItemStack()), context.getShop().getSecondaryItemStack());
+			   }
+			   if(context.getProcess() != null){
+				   return embedItem(UtilMethods.getLoreString(context.getProcess().getBarterItemStack()), context.getProcess().getBarterItemStack());
+			   }
+			   if(context.getItem() != null){
+				   return embedItem(UtilMethods.getLoreString(context.getItem()), context.getItem());
+			   }
+			   return null;
+		   })
+		   .replace("[amount]", context.getShop() != null ? String.valueOf(context.getShop().getAmount()): null)
+		   .lazyReplace("[price sell]",()->{
+			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
+				   return((ComboShop) context.getShop()).getPriceSellString();
+			   }
+			   return null;
+		   })
+		   .lazyReplace("[price sell per item]",()->{
+			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
+				   return ((ComboShop) context.getShop()).getPriceSellPerItemString();
+			   }
+			   return null;
+		   })
+		   .lazyReplace("[price combo]",()->{
+			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
+				   return ((ComboShop) context.getShop()).getPriceComboString();
+			   }
+			   return null;
+		   })
+		   .replace("[price per item]", context.getShop() != null ? context.getShop().getPricePerItemString() : null)
+		   .replace("[price]", context.getShop() != null ? context.getShop().getPriceString() : null)
+		   .lazyReplace("[stock]" ,()->{
+			   if(context.getShop() == null){
+				   return null;
+			   } else if(context.getShop().isAdmin()){
+				   return String.valueOf(ShopMessage.getAdminStockWord());
+			   } else {
+				   return String.valueOf(context.getShop().getStock());
+			   }
+		   })
+		   .replace("[stock color]",()->{
+			   if(context.getShop() == null){
+				   return null;
+			   }
+			   if(context.getShop().getStock() < 1){
+				   return format(getUnformattedMessage("signtext", "outofstockcolor"), context);
+			   }
+			   return format(getUnformattedMessage("signtext", "instockcolor"), context);
+			})
+		   .lazyReplace("[notify user]",()->{
+			   String text_on = getUnformattedMessage("command", "notify_on");
+			   String text_off = getUnformattedMessage("command", "notify_off");
+			   
+			   var guiIcon = plugin.getGuiHandler().getIconFromOption(context.getPlayer(), NOTIFICATION_SALE_USER);
+			   return guiIcon == SETTINGS_NOTIFY_USER_ON ? text_on : text_off;
+		   })
+		   .lazyReplace("[notify owner]",()->{
+			   String text_on = getUnformattedMessage("command", "notify_on");
+			   String text_off = getUnformattedMessage("command", "notify_off");
+			   
+			   var guiIcon = plugin.getGuiHandler().getIconFromOption(context.getPlayer(), NOTIFICATION_SALE_OWNER);
+			   return guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_OWNER_ON ? text_on : text_off;
+		   })
+		   .lazyReplace("[notify stock]",()->{
+			   String text_on = getUnformattedMessage("command", "notify_on");
+			   String text_off = getUnformattedMessage("command", "notify_off");
+			   
+			   var guiIcon = plugin.getGuiHandler().getIconFromOption(context.getPlayer(), NOTIFICATION_STOCK);
+			   return guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_STOCK_ON ? text_on : text_off;
+		   })
+		   .replace("[offline transactions]",()->{
+			   Component numOfTransactions = Component.text(String.valueOf(context.getOfflineTransactions().getNumTransactions()));
+			   return numOfTransactions.hoverEvent(showText(getTransactionsHoverEvent(context)));
+		   })
+		   .lazyReplace("[offline profit]",()->{
+			   String boughtString = plugin.getPriceString(context.getOfflineTransactions().getTotalProfit(), false);
+			   if(boughtString.equals(freePriceWord)){
+				   boughtString = "0";
+			   }
+			   return boughtString;
+		   })
+		   .lazyReplace("[offline spent]",()->{
+			   String spentString = plugin.getPriceString(context.getOfflineTransactions().getTotalSpent(), false);
+			   if(spentString.equals(freePriceWord)){
+				   spentString = "0";
+			   }
+			   return spentString;
+		   })
+		   .replace("[offline items sold]",()->ShopMessage.getOfflineItemsPlaceholder(context, context.getOfflineTransactions().getItemsSold()))
+		   .replace("[offline items bought]",()->ShopMessage.getOfflineItemsPlaceholder(context, context.getOfflineTransactions().getItemsBought()))
+		   .replace("[shops out of stock]",()-> ShopMessage.getShopsOutOfStockPlaceholder(context));
+		//@formatter:on
 	}
 	
 	private static net.kyori.adventure.text.event.HoverEvent<?> getItemHoverEvent(ItemStack item) {
@@ -497,24 +481,11 @@ public class ShopMessage{
 		}
 		
 		if(Shop.getPlugin().isMockBukkit()){
-			return new HoverEvent(HoverEvent.Action.SHOW_ITEM,
-					new net.md_5.bungee.api.chat.hover.content.Item(item.getType().getKey().toString(), item.getAmount(), null));
+			return Component.empty().hoverEvent();
+			(Action.SHOW_ITEM, new net.md_5.bungee.api.chat.hover.content.Item(item.getType().getKey().toString(), item.getAmount(), null));
 		}
 		
-		// If we are 1.20.5+, we have to use the new Item Components Data system
-		if(MCVersion.atLeast("1.20.5")){
-			// If we are paper, we can use the getUnsafe method to get the hover event, which is better than the NMS method
-			if(Shop.getPlugin().getFoliaLib().isPaper()){
-				return ItemHoverEventHelper.createFrom(item);
-			} else {
-				// Since we are on Spigot or something else, we can't use the getUnsafe method, so we have to use the NMS method
-				return ItemHoverUtilNMS.getHoverEventNMS(item);
-			}
-		}
-		// If we are below 1.20.5, we have to use the old NBT tag system
-		else {
-			return ItemHoverEventHelper.createFromLegacy(item);
-		}
+		return ItemHoverEventHelper.createFrom(item);
 	}
 	
 	private static Component embedItem(String message, ItemStack item) {
@@ -544,13 +515,8 @@ public class ShopMessage{
 		}
 	}
 	
-	private static HoverEvent getTransactionsHoverEvent(PlaceholderContext context) {
-		try{
-			BaseComponent hoverText = componentFromLegacy(context.getOfflineTransactions().getTransactionsLore());
-			return new HoverEvent(HoverEvent.Action.SHOW_TEXT, new BaseComponent[]{hoverText});
-		} catch(Exception e){
-		}
-		return null;
+	private static Component getTransactionsHoverEvent(PlaceholderContext context) {
+		return toComponent(context.getOfflineTransactions().getTransactionsLore());
 	}
 	
 	private static HoverEventSource<Component> getShopInfoHoverEvent(PlaceholderContext context) {
@@ -563,7 +529,7 @@ public class ShopMessage{
 				// Add new lines between text
 				hoverText = hoverText.append((format(line + (i == hoverLines.size() ? "" : "\n"), context)));
 			}
-			return net.kyori.adventure.text.event.HoverEvent.showText(hoverText);
+			return showText(hoverText);
 		} catch(Exception _){
 		}
 		return null;
@@ -575,7 +541,7 @@ public class ShopMessage{
 	 * @param context The PlaceholderContext instance.
 	 * @return A comma-separated list of shop types the player can create.
 	 */
-	private static TextComponent getShopTypesPlaceholder(PlaceholderContext context) {
+	private static String getShopTypesPlaceholder(PlaceholderContext context) {
 		List<ShopType> typeList = new ArrayList<>(Arrays.asList(ShopType.values()));
 		Player player = context.getPlayer();
 		
@@ -601,7 +567,7 @@ public class ShopMessage{
 				types.append(", ");
 			}
 		}
-		return new TextComponent(types.toString());
+		return types.toString();
 	}
 	
 	/**
@@ -623,7 +589,7 @@ public class ShopMessage{
 			return null;
 		}
 		
-		Component itemName = ItemNameUtil.getName(item);
+		Component itemName = getName(item);
 		if(context.isForSign()){
 			return Component.text(UtilMethods.trimForSign(Components.toPlainText(itemName)));
 		}
@@ -636,7 +602,7 @@ public class ShopMessage{
 	 * @param context The PlaceholderContext instance.
 	 * @return The barter item name, potentially truncated to fit sign constraints.
 	 */
-	private static TextComponent getBarterItemPlaceholder(PlaceholderContext context) {
+	private static Component getBarterItemPlaceholder(PlaceholderContext context) {
 		ItemStack item = null;
 		if(context.getBarterItem() != null){
 			item = context.getBarterItem();
@@ -654,9 +620,9 @@ public class ShopMessage{
 			return null;
 		}
 		
-		TextComponent itemName = plugin.getItemNameUtil().getName(item);
+		Component itemName = getName(item);
 		if(context.isForSign()){
-			return new TextComponent(UtilMethods.trimForSign(itemName.toLegacyText()));
+			return UtilMethods.trimForSign(itemName);
 		}
 		return embedItem(itemName, item);
 	}
@@ -688,8 +654,8 @@ public class ShopMessage{
 		return itemRowsText;
 	}
 	
-	private static TextComponent getShopsOutOfStockPlaceholder(PlaceholderContext context) {
-		TextComponent shopsOutOfStock = new TextComponent("");
+	private static Component getShopsOutOfStockPlaceholder(PlaceholderContext context) {
+		Component shopsOutOfStock = Component.text("");
 		List<AbstractShop> playerShops = Shop.getPlugin().getShopHandler().getShops(context.getPlayer().getUniqueId());
 		if(playerShops != null && !playerShops.isEmpty()){
 			// Collect all the out of stock shops
@@ -706,7 +672,7 @@ public class ShopMessage{
 			
 			// Add the lines for each
 			int i = 0;
-			List<String> remainingShopsMsgs = new ArrayList<>();
+			List<Component> remainingShopsMsgs = new ArrayList<>();
 			for(AbstractShop shop : outOfStock){
 				i++;
 				
@@ -716,10 +682,10 @@ public class ShopMessage{
 				
 				// For each item, generate a line based on the template line
 				String addNewLine = (i < (outOfStock.size()) && i <= 3) ? "\n" : "";
-				TextComponent currentRow = format(getUnformattedMessage("offline", "outOfStockShop") + addNewLine, shopContext);
+				Component currentRow = format(getUnformattedMessage("offline", "outOfStockShop") + addNewLine, shopContext);
 				// Limit out of stock shops to 3
 				if(i > 3){
-					remainingShopsMsgs.add(currentRow.toLegacyText());
+					remainingShopsMsgs.add(currentRow);
 				} else {
 					shopsOutOfStock.addExtra(currentRow);
 				}
@@ -728,8 +694,7 @@ public class ShopMessage{
 			if(!remainingShopsMsgs.isEmpty()){
 				String remainingMsg = getUnformattedMessage("offline", "moreOutOfStock");
 				TextComponent remaining = format(remainingMsg.replace("[out of stock remaining]", "" + remainingShopsMsgs.size()), context);
-				remaining.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-						new ComponentBuilder(String.join("\n", remainingShopsMsgs)).create()));
+				remaining.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new ComponentBuilder(String.join("\n", remainingShopsMsgs)).create()));
 				shopsOutOfStock.addExtra(remaining);
 			}
 			

@@ -5,6 +5,7 @@ import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.network.ServerPlayerConnection;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 

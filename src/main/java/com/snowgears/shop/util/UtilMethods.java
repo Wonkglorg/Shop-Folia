@@ -1,8 +1,10 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
+import static com.wonkglorg.minecraft.util.Components.toComponent;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.TranslatableComponent;
 import org.bukkit.Bukkit;
@@ -53,41 +55,42 @@ import java.util.regex.Pattern;
 
 public class UtilMethods{
 	
-	private static ArrayList<Material> nonIntrusiveMaterials = new ArrayList<Material>();
+	private static ArrayList<Material> nonIntrusiveMaterials = new ArrayList<>();
 	
-	public static String trimForSign(String text) {
-		final int MAX_SIGN_WIDTH = 80; // Maximum width allowed on a sign line
-		int currentWidth = 0;
-		StringBuilder result = new StringBuilder();
-		
-		// Process each character
-		for(int i = 0; i < text.length(); i++){
-			char c = text.charAt(i);
+	public static Component trimForSign(String text) {
+		return trim(toComponent(text), 80);
+	}
+	
+	private static Component trim(Component component, int maxWidth) {
+		int width = 0;
+		if(component instanceof TextComponent text){
+			StringBuilder out = new StringBuilder();
 			
-			// Handle color codes (they don't take up width)
-			if((c == '§' || c == '&') && i + 1 < text.length()){
-				char nextChar = text.charAt(i + 1);
-				if("0123456789abcdefklmnorxABCDEFKLMNORX".indexOf(nextChar) != -1){
-					result.append(c).append(nextChar);
-					i++; // Skip the next character (color code)
-					continue;
+			for(char c : text.content().toCharArray()){
+				int w = getMinecraftCharWidth(c);
+				
+				if(width + w > maxWidth){
+					break;
 				}
+				
+				width += w;
+				out.append(c);
 			}
 			
-			// Get the width of the current character
-			int charWidth = getMinecraftCharWidth(c);
-			
-			// Check if adding this character would exceed the width
-			if(currentWidth + charWidth >= MAX_SIGN_WIDTH){
-				break; // We've reached the maximum width for the sign
-			}
-			
-			// Add the character and update the width
-			result.append(c);
-			currentWidth += charWidth;
+			return Component.text(out.toString(), text.style());
 		}
 		
-		return result.toString();
+		Component result = component.children(List.of());
+		
+		for(Component child : component.children()){
+			result = result.append(trim(child, width));
+			
+			if(width >= maxWidth){
+				break;
+			}
+		}
+		
+		return result;
 	}
 	
 	/**

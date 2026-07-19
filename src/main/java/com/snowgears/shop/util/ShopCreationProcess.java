@@ -247,7 +247,7 @@ public class ShopCreationProcess{
 		// Build the lines
 		for(String unformatted : ShopMessage.getUnformattedMessageList(key, subkey)){
 			if(unformatted != null && !unformatted.isEmpty()){
-				String formatted = ShopMessage.format(unformatted, this.placeholderContext).toLegacyText();
+				String formatted = ShopMessage.formatPlainText(unformatted, this.placeholderContext);
 				lines.addAll(UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength()));
 			}
 		}
