@@ -1,0 +1,7 @@
+lang:
+  default-lang: en
+
+  files:
+    - path: "%plugin-dir%/lang/en.yml"
+      locales:
+        - en
