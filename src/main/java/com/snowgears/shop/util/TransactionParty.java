@@ -1,5 +1,6 @@
 package com.snowgears.shop.util;
 
+import lombok.Getter;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -18,6 +19,7 @@ public class TransactionParty {
     private ItemStack currencyItem;
 
     // Are we the player who created the transaction (used for error handling)
+    @Getter
     private boolean isPlayer;
 
     // Are we an admin shop
@@ -38,10 +40,8 @@ public class TransactionParty {
         this.inventory = inventory;
         this.currencyItem = currencyItem;
     }
-
-    public boolean isPlayer() { return this.isPlayer; }
-
-    public int getInventoryQuantity(ItemStack item) {
+	
+	public int getInventoryQuantity(ItemStack item) {
         // If we are an admin, don't check the shop for inventory
         if (this.isAdmin) { return Integer.MAX_VALUE; }
 

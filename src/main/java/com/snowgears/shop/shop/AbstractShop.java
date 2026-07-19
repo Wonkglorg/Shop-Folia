@@ -4,6 +4,7 @@ import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.handler.ShopGuiHandler;
 import com.snowgears.shop.util.InventoryUtils;
+import com.snowgears.shop.util.ItemNameUtil;
 import com.snowgears.shop.util.PlaceholderContext;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopAction;
@@ -11,8 +12,10 @@ import com.snowgears.shop.util.ShopClickType;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
 import static com.snowgears.shop.util.UtilMethods.isMCVersion17Plus;
+import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
@@ -331,21 +334,17 @@ public abstract class AbstractShop{
 	
 	public double getPricePerItem() {
 		// Calculate pricePerItem for partial sales, round up!
-		double pricePer = this.getPrice() / this.getAmount();
-		
-		return pricePer;
+		return this.getPrice() / this.getAmount();
 	}
 	
 	public double getItemsPerPriceUnit() {
 		// Calculate items you can get for each price unit, round down!
-		double pricePer = this.getAmount() / this.getPrice();
-		
-		return pricePer;
+		return this.getAmount() / this.getPrice();
 	}
 	
 	public String getPriceString() {
 		if(this.type == ShopType.BARTER && this.isInitialized()){
-			return (int) this.getPrice() + " " + Shop.getPlugin().getItemNameUtil().getName(this.getSecondaryItemStack()).toPlainText();
+			return (int) this.getPrice() + " " + toPlainText(ItemNameUtil.getName(this.getSecondaryItemStack()));
 		}
 		return Shop.getPlugin().getPriceString(this.price, false);
 	}
@@ -412,11 +411,7 @@ public abstract class AbstractShop{
 			
 			// Default return original item
 			return item;
-		} catch(Exception e){
-			Shop.getPlugin().logger().debug("Error removing zero damage meta from item: " + item);
-			Shop.getPlugin().logger().helpful("checkItemDurability feature may be unsupported on your version of Paper/Spigot!");
-			return item;
-		} catch(Error e){
+		} catch(Exception | Error e){
 			Shop.getPlugin().logger().debug("Error removing zero damage meta from item: " + item);
 			Shop.getPlugin().logger().helpful("checkItemDurability feature may be unsupported on your version of Paper/Spigot!");
 			return item;
@@ -438,8 +433,8 @@ public abstract class AbstractShop{
 		//get the placeholder icon with all of the unformatted fields
 		ItemStack placeHolderIcon = Shop.getPlugin().getGuiHandler().getIcon(ShopGuiHandler.GuiIcon.ALL_SHOP_ICON, null, null);
 		
-		String name = ShopMessage.formatMessage(placeHolderIcon.getItemMeta().getDisplayName(), this, null, false);
-		List<String> lore = new ArrayList<>();
+		Component name = ShopMessage.formatMessage(placeHolderIcon.getItemMeta().getDisplayName(), this, null, false);
+		List<Component> lore = new ArrayList<>();
 		for(String loreLine : placeHolderIcon.getItemMeta().getLore()){
 			// Don't add barter line to non barter shops
 			if(loreLine.contains("[barter item]") && this.getType() != ShopType.BARTER){
@@ -448,12 +443,12 @@ public abstract class AbstractShop{
 			// Add all lore lines
 			PlaceholderContext context = new PlaceholderContext();
 			context.setShop(this);
-			lore.add(ShopMessage.format(loreLine, context).toLegacyText());
+			lore.add(ShopMessage.format(loreLine, context));
 		}
 		
 		ItemMeta iconMeta = guiIcon.getItemMeta();
-		iconMeta.setDisplayName(name);
-		iconMeta.setLore(lore);
+		iconMeta.displayName(name);
+		iconMeta.lore(lore);
 		
 		PersistentDataContainer container = iconMeta.getPersistentDataContainer();
 		container.set(Shop.getPlugin().getSignLocationNameSpacedKey(),

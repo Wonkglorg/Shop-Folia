@@ -253,7 +253,7 @@ logging:
       - "useSSL=false"
 
 # Logging must be enabled for purchase notifications to appear!
-# Check chatConfig.yml to customize the offline purchase notification message #
+# Check en-us.yml to customize the offline purchase notification message #
 offlinePurchaseNotifications:
    # Should offline purchases be shown to the user
    enabled: true

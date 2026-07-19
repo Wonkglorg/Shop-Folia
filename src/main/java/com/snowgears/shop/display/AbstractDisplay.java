@@ -7,6 +7,7 @@ import com.snowgears.shop.util.ArmorStandData;
 import com.snowgears.shop.util.DisplayUtil;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
+import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -31,6 +32,7 @@ import java.util.UUID;
 public abstract class AbstractDisplay{
 	
 	protected Location shopSignLocation;
+	@Getter
 	protected DisplayType type;
 	protected HashMap<UUID, ArrayList<Integer>> entityIDs; //player UUID. display entities
 	protected HashMap<UUID, ArrayList<Integer>> displayTagEntityIDs; //player UUID. display tags
@@ -305,10 +307,6 @@ public abstract class AbstractDisplay{
 	
 	public void addRemoveDisplayTask(Player player) {
 		removeDisplayTagsDelayedTask(player);
-	}
-	
-	public DisplayType getType() {
-		return type;
 	}
 	
 	public AbstractShop getShop() {

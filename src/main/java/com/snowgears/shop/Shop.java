@@ -28,9 +28,10 @@ import com.snowgears.shop.util.ShopClickType;
 import com.snowgears.shop.util.ShopCreationUtil;
 import com.snowgears.shop.util.ShopLogger;
 import com.snowgears.shop.util.ShopMessage;
-import com.snowgears.shop.util.UpdateChecker;
 import com.snowgears.shop.util.UtilMethods;
 import com.tcoded.folialib.FoliaLib;
+import com.wonkglorg.minecraft.config.LangManager;
+import io.papermc.paper.configuration.GlobalConfiguration.UpdateChecker;
 import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
@@ -44,7 +45,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,7 @@ import java.util.TreeMap;
 
 public class Shop extends JavaPlugin{
 	
+	@Getter
 	private static Shop plugin;
 	private ShopLogger logger = new ShopLogger(this, true);
 	// Getter for FoliaLib
@@ -184,6 +186,8 @@ public class Shop extends JavaPlugin{
 	private int displayBatchDelay;
 	
 	private YamlConfiguration config;
+	@Getter
+	private LangManager langManager;
 	
 	private boolean debug_allowUseOwnShop;
 	private boolean debug_transactionDebugLogs;
@@ -191,10 +195,6 @@ public class Shop extends JavaPlugin{
 	private boolean debug_forceResaveAll;
 	
 	private Metrics metrics;
-	
-	public static Shop getPlugin() {
-		return plugin;
-	}
 	
 	public static boolean loggedDisplayDisabledWarning = false;
 	
@@ -213,6 +213,7 @@ public class Shop extends JavaPlugin{
 		// Load logger
 		logger = new ShopLogger(this, config.getBoolean("enableLogColor"));
 		this.logger().setLogLevel(config.getString("logLevel"));
+		langManager = LangManager.getInstance(this);
 	}
 	
 	@Override
@@ -226,12 +227,6 @@ public class Shop extends JavaPlugin{
 		if(!configFile.exists()){
 			configFile.getParentFile().mkdirs();
 			UtilMethods.copy(getResource("config.yml"), configFile);
-		}
-		
-		File chatConfigFile = new File(getDataFolder(), "chatConfig.yml");
-		if(!chatConfigFile.exists()){
-			chatConfigFile.getParentFile().mkdirs();
-			UtilMethods.copy(getResource("chatConfig.yml"), chatConfigFile);
 		}
 		
 		File signConfigFile = new File(getDataFolder(), "signConfig.yml");
@@ -273,12 +268,6 @@ public class Shop extends JavaPlugin{
 			// Next time we add a migration lets move it to a util class to keep things clean.
 			
 			ConfigUpdater.update(plugin, "config.yml", configFile, new ArrayList<>());
-		} catch(IOException e){
-			e.printStackTrace();
-		}
-		
-		try{
-			ConfigUpdater.update(plugin, "chatConfig.yml", chatConfigFile, new ArrayList<>());
 		} catch(IOException e){
 			e.printStackTrace();
 		}
@@ -518,11 +507,16 @@ public class Shop extends JavaPlugin{
 				getServer().getPluginManager().disablePlugin(plugin);
 				return;
 			}
-			this.logger().info("Shops will use " + itemNameUtil.getName(itemCurrency).toPlainText() + "(s) as the currency on the server.");
+			this.logger().info("Shops will use " + ItemNameUtil.getNameAsPlainText(itemCurrency) + "(s) as the currency on the server.");
 		}
 		
 		// Load CommandHandler by initializing it once
-		new CommandHandler(this, null, commandAlias, "Base command for the Shop plugin", "/shop", new ArrayList(Arrays.asList(commandAlias)));
+		new CommandHandler(this,
+				null,
+				commandAlias,
+				"Base command for the Shop plugin",
+				"/shop",
+				new ArrayList<>(Collections.singletonList(commandAlias)));
 		
 		guiHandler = new ShopGuiHandler(plugin);
 		shopHandler = new ShopHandler(plugin);
@@ -567,8 +561,8 @@ public class Shop extends JavaPlugin{
 			return valueMap;
 		}));
 		metrics.addCustomChart(new AdvancedPie("shop_containers", () -> shopHandler.getShopContainerCounts()));
-		metrics.addCustomChart(new SimplePie("economy_type", () -> {return currencyType.toString();}));
-		metrics.addCustomChart(new SimplePie("fractional_currency", () -> {return String.valueOf(allowFractionalCurrency);}));
+		metrics.addCustomChart(new SimplePie("economy_type", () -> currencyType.toString()));
+		metrics.addCustomChart(new SimplePie("fractional_currency", () -> String.valueOf(allowFractionalCurrency)));
 		// Add metrics for more configuration options
 		metrics.addCustomChart(new SimplePie("use_permissions", () -> String.valueOf(usePerms)));
 		metrics.addCustomChart(new SimplePie("allow_partial_sales", () -> String.valueOf(allowPartialSales)));
@@ -584,7 +578,7 @@ public class Shop extends JavaPlugin{
 		}));
 		
 		metrics.addCustomChart(new SimplePie("offline_purchase_notifications", () -> String.valueOf(offlinePurchaseNotificationsEnabled)));
-		metrics.addCustomChart(new SimplePie("shop_gui_enabled", () -> {return String.valueOf(enableGUI);}));
+		metrics.addCustomChart(new SimplePie("shop_gui_enabled", () -> String.valueOf(enableGUI)));
 		metrics.addCustomChart(new SimplePie("allow_searching_items", () -> String.valueOf(allowCreativeSelection)));
 		metrics.addCustomChart(new SimplePie("check_item_durability", () -> String.valueOf(checkItemDurability)));
 		metrics.addCustomChart(new SimplePie("ignore_item_repair_cost", () -> String.valueOf(ignoreItemRepairCost)));
@@ -711,11 +705,7 @@ public class Shop extends JavaPlugin{
 		
 		displayListener.startRepeatingDisplayViewTask();
 		
-		this.logger().info("Enabled Shop " + this.getDescription().getVersion());
-		
-		if(checkUpdates){
-			new UpdateChecker(this).checkForUpdate();
-		}
+		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
 	}
 	
 	@Override
@@ -741,11 +731,11 @@ public class Shop extends JavaPlugin{
 			metrics.shutdown();
 		}
 		
-		this.logger().info("Disabled Shop " + this.getDescription().getVersion());
+		this.logger().info("Disabled Shop " + this.getPluginMeta().getVersion());
 	}
 	
 	public void reload() {
-		this.logger().info("Reloading Shop " + this.getDescription().getVersion());
+		this.logger().info("Reloading Shop " + this.getPluginMeta().getVersion());
 		
 		HandlerList.unregisterAll(displayListener);
 		HandlerList.unregisterAll(shopListener);
