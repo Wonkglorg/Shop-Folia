@@ -43,7 +43,6 @@ public class ShopMessage{
 	
 	private static final boolean disableItemHover = false;
 	
-	private static HashMap<String, String> messageMap = new HashMap<String, String>();
 	private static HashMap<String, String[]> shopSignTextMap = new HashMap<String, String[]>();
 	private static HashMap<String, List<String>> displayTextMap = new HashMap<String, List<String>>();
 	@Getter
