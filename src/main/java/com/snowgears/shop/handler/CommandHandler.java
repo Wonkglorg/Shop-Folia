@@ -6,7 +6,9 @@ import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.ItemNameUtil;
 import com.snowgears.shop.util.PlayerSettings;
+import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_SALE_USER;
 import com.snowgears.shop.util.ShopMessage;
+import com.wonkglorg.minecraft.config.LangManager;
 import static com.wonkglorg.minecraft.util.Components.fromComponent;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
 import org.bukkit.Bukkit;
@@ -26,10 +28,12 @@ import java.util.List;
 public class CommandHandler extends BukkitCommand{
 	
 	private Shop plugin;
+	private LangManager lang;
 	
 	public CommandHandler(Shop instance, String permission, String name, String description, String usageMessage, List<String> aliases) {
 		super(name, description, usageMessage, aliases);
 		this.setPermission(permission);
+		lang = Shop.getPlugin().getLangManager();
 		plugin = instance;
 		try{
 			register();
@@ -195,7 +199,7 @@ public class CommandHandler extends BukkitCommand{
 				if(sender instanceof Player){
 					Player player = (Player) sender;
 					if(args[1].equalsIgnoreCase("user")){
-						toggleOptionAndNotifyPlayer(player, PlayerSettings.Option.NOTIFICATION_SALE_USER);
+						toggleOptionAndNotifyPlayer(player, NOTIFICATION_SALE_USER);
 					} else if(args[1].equalsIgnoreCase("owner")){
 						toggleOptionAndNotifyPlayer(player, PlayerSettings.Option.NOTIFICATION_SALE_OWNER);
 					} else if(args[1].equalsIgnoreCase("stock")){
@@ -279,7 +283,8 @@ public class CommandHandler extends BukkitCommand{
 		
 		switch(option) {
 			case NOTIFICATION_SALE_USER:
-				sendCommandMessage("notify_user", player);
+				plugin.getGuiHandler().getIconFromOption(context.getPlayer(), NOTIFICATION_SALE_USER) ? "<green>On" : "<red>Off";
+				lang.request("command.notify_user").replace("%notify-state%",);
 				break;
 			case NOTIFICATION_SALE_OWNER:
 				sendCommandMessage("notify_owner", player);

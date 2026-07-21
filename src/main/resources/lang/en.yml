@@ -285,9 +285,9 @@ command:
   error_novault: "&cThe server is not using an item based currency so no item could be set."
   error_nohand: "&cYou must be holding a valid item to use that command."
   not_authorized: "&cYou are not authorized to use that command."
-  notify_user: "&7Your notifications for your own transactions with shops are now %notify user%"
-  notify_owner: "&7Your notifications for players transacting with your shops are now %notify owner%"
-  notify_stock: "&7Your notifications for your shops running out of stock are now %notify stock%"
+  notify_user: "&7Your notifications for your own transactions with shops are now %notify-state%"
+  notify_owner: "&7Your notifications for players transacting with your shops are now %notify-state%"
+  notify_stock: "&7Your notifications for your shops running out of stock are now %notify-state%"
   notify_on: "&aON"
   notify_off: "&cOFF"
 
