@@ -51,6 +51,16 @@ currency:
    name: "Emerald(s)"
    format: "[price] [name]"
 
+# what words to use for sign shop creation
+sign_creation:
+   SHOP: "shop"
+   SELL: "sell"
+   BUY: "buy"
+   BARTER: "barter"
+   GAMBLE: "gamble"
+   ADMIN: "admin"
+   COMBO: "combo"
+
 # Does your currency support fractional units?
 # false (default) - Only allow whole currency units
 # true - Allow fractional units down to 0.01 (Vault Required!)
@@ -253,7 +263,7 @@ logging:
       - "useSSL=false"
 
 # Logging must be enabled for purchase notifications to appear!
-# Check en-us.yml to customize the offline purchase notification message #
+# Check en.yml to customize the offline purchase notification message #
 offlinePurchaseNotifications:
    # Should offline purchases be shown to the user
    enabled: true

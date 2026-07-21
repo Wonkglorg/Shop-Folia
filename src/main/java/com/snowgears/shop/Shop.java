@@ -86,7 +86,6 @@ public class Shop extends JavaPlugin{
 	private NMSBullshitHandler nmsBullshitHandler;
 	
 	private boolean usePerms;
-	private boolean checkUpdates;
 	private boolean enableGUI;
 	
 	private boolean hookTowny;
@@ -353,7 +352,6 @@ public class Shop extends JavaPlugin{
 		} else {
 			this.logger().info("Permissions disabled, everyone will be able to create/use shops by default");
 		}
-		checkUpdates = config.getBoolean("checkUpdates");
 		enableGUI = config.getBoolean("enableGUI");
 		
 		commandAlias = config.getString("commandAlias");

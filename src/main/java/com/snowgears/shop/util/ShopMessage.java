@@ -12,6 +12,7 @@ import static com.snowgears.shop.util.ItemNameUtil.getNameTranslatable;
 import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_SALE_OWNER;
 import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_SALE_USER;
 import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_STOCK;
+import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.util.Components;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
@@ -24,53 +25,37 @@ import static net.kyori.adventure.text.event.HoverEvent.showText;
 import net.kyori.adventure.text.event.HoverEventSource;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class ShopMessage{
 	
 	private static final Shop plugin = Shop.getPlugin();
 	
+	private static final LangManager langManager = plugin.getLangManager();
+	
 	private static final boolean disableItemHover = false;
 	
-	private static HashMap<String, String[]> shopSignTextMap = new HashMap<String, String[]>();
-	private static HashMap<String, List<String>> displayTextMap = new HashMap<String, List<String>>();
+	private static HashMap<String, List<String>> displayTextMap = new HashMap<>();
 	@Getter
 	private static String freePriceWord;
 	@Getter
 	private static String adminStockWord;
 	@Getter
 	private static String serverDisplayName;
-	private static HashMap<String, String> creationWords = new HashMap<String, String>();
-	private static YamlConfiguration signConfig;
-	private static YamlConfiguration displayConfig;
+	private static HashMap<String, String> creationWords = new HashMap<>();
+	@Getter
 	private static int targetMaxLength;
 	
 	public ShopMessage(Shop plugin) {
-		File signConfigFile = new File(plugin.getDataFolder(), "signConfig.yml");
-		signConfig = YamlConfiguration.loadConfiguration(signConfigFile);
-		File displayConfigFile = new File(plugin.getDataFolder(), "displayConfig.yml");
-		displayConfig = YamlConfiguration.loadConfiguration(displayConfigFile);
-		
-		loadMessagesFromConfig();
-		loadSignTextFromConfig();
-		loadDisplayTextFromConfig();
-		loadCreationWords();
-		
-		freePriceWord = signConfig.getString("sign_text.zeroPrice");
-		adminStockWord = signConfig.getString("sign_text.adminStock");
-		serverDisplayName = signConfig.getString("sign_text.serverDisplayName");
-		targetMaxLength = displayConfig.getInt("targetMaxLength", 40);
+		targetMaxLength = langManager.getDefaultLang().getInt("targetMaxLength", 40);
 	}
 	
 	/**
@@ -80,14 +65,31 @@ public class ShopMessage{
 	 * @param context The PlaceholderContext instance containing Shop and Player
 	 * @return The formatted message with all placeholders replaced
 	 */
-	public static Component format(String message, PlaceholderContext context) {
+	public static Component formatSingleMessage(String message, PlaceholderContext context) {
 		if(message == null){
 			return Component.text("");
 		}
 		
-		LangRequest request = LangRequest.literal(message);
+		LangRequest request = Shop.getPlugin().getLangManager().request(message);
 		fillRequest(request, context);
 		return request.toSingleComponent();
+	}
+	
+	/**
+	 * Formats a message by replacing all placeholders with their respective values.
+	 *
+	 * @param message The message containing placeholders
+	 * @param context The PlaceholderContext instance containing Shop and Player
+	 * @return The formatted message with all placeholders replaced
+	 */
+	public static List<Component> format(String message, PlaceholderContext context) {
+		if(message == null){
+			return List.of(Component.text(""));
+		}
+		
+		LangRequest request = Shop.getPlugin().getLangManager().request(message);
+		fillRequest(request, context);
+		return request.toComponent();
 	}
 	
 	/**
@@ -102,7 +104,7 @@ public class ShopMessage{
 			return "";
 		}
 		
-		LangRequest request = LangRequest.literal(message);
+		LangRequest request = Shop.getPlugin().getLangManager().request(message);
 		fillRequest(request, context);
 		return Components.toPlainText(request.toSingleComponent());
 	}
@@ -205,8 +207,7 @@ public class ShopMessage{
 	public static void fillRequest(LangRequest request, PlaceholderContext context) {
 		//@formatter:off
 	Shop plugin = Shop.getPlugin();
-	request.replace("[plugin]", plugin.getCommandAlias())
-		   .replace("[server name]", ShopMessage.getServerDisplayName())
+	request.replace("[server name]", ShopMessage.getServerDisplayName())
 		   .replace("[player]", context.getPlayer() != null ? context.getPlayer().getName() : "")
 		   .lazyReplace("[user]", ()-> {
 					if(context.getPlayer() != null){
@@ -425,9 +426,9 @@ public class ShopMessage{
 				   return null;
 			   }
 			   if(context.getShop().getStock() < 1){
-				   return format(getUnformattedMessage("signtext", "outofstockcolor"), context);
+				   return formatSingleMessage(getUnformattedMessage("signtext", "outofstockcolor"), context);
 			   }
-			   return format(getUnformattedMessage("signtext", "instockcolor"), context);
+			   return formatSingleMessage(getUnformattedMessage("signtext", "instockcolor"), context);
 			})
 		   .lazyReplace("[notify user]",()->{
 			   String text_on = getUnformattedMessage("command", "notify_on");
@@ -707,16 +708,6 @@ public class ShopMessage{
 		return creationWords.get(type);
 	}
 	
-	public static String getUnformattedMessage(String key, String subKey) {
-		String message;
-		if(subKey != null){
-			message = messageMap.get(key + "_" + subKey);
-		} else {
-			message = messageMap.get(key);
-		}
-		return message;
-	}
-	
 	public static String formatMessage(String unformattedMessage, AbstractShop shop) {
 		PlaceholderContext context = new PlaceholderContext();
 		context.setShop(shop);
@@ -811,25 +802,6 @@ public class ShopMessage{
 			}
 		}
 		return formattedLines;
-	}
-	
-	public static List<String> getUnformattedMessageList(String key, String subKey) {
-		List<String> messages = new ArrayList<>();
-		
-		int count = 1;
-		String message = "-1";
-		while(message != null && !message.isEmpty()){
-			message = getUnformattedMessage(key, subKey + count);
-			if(message != null && !message.isEmpty()){
-				messages.add(message);
-			}
-			count++;
-		}
-		return messages;
-	}
-	
-	private static String[] getUnformattedShopSignLines(ShopType type, String subtype) {
-		return shopSignTextMap.get(type.toString() + "_" + subtype).clone();
 	}
 	
 	private static void loadMessagesFromConfig() {
@@ -990,121 +962,5 @@ public class ShopMessage{
 		messageMap.put("command_notify_stock", chatConfig.getString("command.notify_stock"));
 		messageMap.put("command_notify_on", chatConfig.getString("command.notify_on"));
 		messageMap.put("command_notify_off", chatConfig.getString("command.notify_off"));
-	}
-	
-	private String[] getSignConfigLines(String key) {return getConfigLines(signConfig, key);}
-	
-	private String[] getConfigLines(YamlConfiguration config, String key) {
-		List<String> lines = new ArrayList<>();
-		int count = 1;
-		try{
-			String message = config.getString(key + "." + count);
-			while(message != null){
-				lines.add(message);
-				count++;
-				message = config.getString(key + "." + count);
-			}
-		} catch(NullPointerException e){
-		}
-		return lines.toArray(new String[0]);
-	}
-	
-	private void loadSignTextFromConfig() {
-		messageMap.put("signtext_instockcolor", signConfig.getString("stock_color.in_stock"));
-		messageMap.put("signtext_outofstockcolor", signConfig.getString("stock_color.out_of_stock"));
-		Set<String> allTypes = signConfig.getConfigurationSection("sign_text").getKeys(false);
-		for(String typeString : allTypes){
-			ShopType type = null;
-			try{
-				type = ShopType.valueOf(typeString);
-			} catch(IllegalArgumentException e){
-			}
-			
-			if(type != null){
-				this.shopSignTextMap.put(type.toString() + "_normal", getSignConfigLines("sign_text." + typeString + ".normal"));
-				this.shopSignTextMap.put(type.toString() + "_admin", getSignConfigLines("sign_text." + typeString + ".admin"));
-				this.shopSignTextMap.put(type.toString() + "_normal_no_display",
-						getSignConfigLines("sign_text." + typeString + ".normal_no_display"));
-				this.shopSignTextMap.put(type.toString() + "_admin_no_display", getSignConfigLines("sign_text." + typeString + ".admin_no_display"));
-			}
-		}
-		this.shopSignTextMap.put("timeout", getSignConfigLines("sign_text.timeout"));
-		this.shopSignTextMap.put("deleted", getSignConfigLines("sign_text.deleted"));
-	}
-	
-	private void loadDisplayTextFromConfig() {
-		displayTextMap = new HashMap<>();
-		Set<String> allTypes = displayConfig.getConfigurationSection("display_tag_text").getKeys(false);
-		for(String typeString : allTypes){
-			
-			ShopType type = null;
-			try{
-				type = ShopType.valueOf(typeString);
-			} catch(IllegalArgumentException e){
-			}
-			
-			if(type != null){
-				try{
-					List<String> normalLines = displayConfig.getStringList("display_tag_text." + typeString.toUpperCase() + ".normal");
-					this.displayTextMap.put(type.toString().toUpperCase() + "_normal", normalLines);
-				} catch(NullPointerException e){
-				}
-			}
-		}
-	}
-	
-	private void loadCreationWords() {
-		String shopString = signConfig.getString("sign_creation.SHOP");
-		if(shopString != null){
-			creationWords.put("SHOP", shopString.toLowerCase());
-		} else {
-			creationWords.put("SHOP", "[shop]");
-		}
-		
-		String sellString = signConfig.getString("sign_creation.SELL");
-		if(sellString != null){
-			creationWords.put("SELL", sellString.toLowerCase());
-		} else {
-			creationWords.put("SELL", "sell");
-		}
-		
-		String buyString = signConfig.getString("sign_creation.BUY");
-		if(buyString != null){
-			creationWords.put("BUY", buyString.toLowerCase());
-		} else {
-			creationWords.put("BUY", "buy");
-		}
-		
-		String barterString = signConfig.getString("sign_creation.BARTER");
-		if(barterString != null){
-			creationWords.put("BARTER", barterString.toLowerCase());
-		} else {
-			creationWords.put("BARTER", "barter");
-		}
-		
-		String gambleString = signConfig.getString("sign_creation.GAMBLE");
-		if(gambleString != null){
-			creationWords.put("GAMBLE", gambleString.toLowerCase());
-		} else {
-			creationWords.put("BARTER", "barter");
-		}
-		
-		String adminString = signConfig.getString("sign_creation.ADMIN");
-		if(adminString != null){
-			creationWords.put("ADMIN", adminString.toLowerCase());
-		} else {
-			creationWords.put("ADMIN", "admin");
-		}
-		
-		String comboString = signConfig.getString("sign_creation.COMBO");
-		if(comboString != null){
-			creationWords.put("COMBO", comboString.toLowerCase());
-		} else {
-			creationWords.put("COMBO", "combo");
-		}
-	}
-	
-	public static int getTargetMaxLength() {
-		return targetMaxLength;
 	}
 }
