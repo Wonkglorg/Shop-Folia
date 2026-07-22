@@ -12,14 +12,9 @@ import com.snowgears.shop.listener.CreativeSelectionListener;
 import com.snowgears.shop.listener.DisplayListener;
 import com.snowgears.shop.listener.MiscListener;
 import com.snowgears.shop.listener.ShopListener;
-import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.ItemNameUtil;
-import com.snowgears.shop.util.Metrics;
-import com.snowgears.shop.util.Metrics.AdvancedPie;
-import com.snowgears.shop.util.Metrics.SimplePie;
-import com.snowgears.shop.util.Metrics.SingleLineChart;
 import com.snowgears.shop.util.NMSBullshitHandler;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopAction;
@@ -47,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
@@ -83,8 +77,6 @@ public class Shop extends JavaPlugin{
 	
 	@Getter
 	private NMSBullshitHandler nmsBullshitHandler;
-	
-	private boolean usePerms;
 	private boolean enableGUI;
 	
 	private boolean hookTowny;
@@ -192,8 +184,6 @@ public class Shop extends JavaPlugin{
 	private int debug_shopCreateCooldown;
 	private boolean debug_forceResaveAll;
 	
-	private Metrics metrics;
-	
 	public static boolean loggedDisplayDisabledWarning = false;
 	
 	// Return the custom ShopLogger so that we can log at higher levels.
@@ -268,13 +258,6 @@ public class Shop extends JavaPlugin{
 		
 		allowCreateMethodSign = config.getBoolean("creationMethod.placeSign");
 		allowCreateMethodChest = config.getBoolean("creationMethod.hitChest");
-		
-		usePerms = config.getBoolean("usePermissions");
-		if(usePerms){
-			this.logger().info("Permissions enabled, Shop will respect player permissions");
-		} else {
-			this.logger().info("Permissions disabled, everyone will be able to create/use shops by default");
-		}
 		enableGUI = config.getBoolean("enableGUI");
 		
 		commandAlias = config.getString("commandAlias");
@@ -457,168 +440,6 @@ public class Shop extends JavaPlugin{
 		} else {
 			this.worldGuardExists = false;
 		}
-		
-		int bstatsPluginId = 25211;
-		metrics = new Metrics(plugin, bstatsPluginId);
-		metrics.addCustomChart(new SingleLineChart("transactions", () -> logHandler.getRecentTransactionCount()));
-		metrics.addCustomChart(new SingleLineChart("item_volume", () -> logHandler.getRecentItemVolume()));
-		metrics.addCustomChart(new SingleLineChart("shops", () -> shopHandler.getNumberOfShops()));
-		metrics.addCustomChart(new AdvancedPie("shop_types", () -> {
-			Map<String, Integer> valueMap = new HashMap<>();
-			valueMap.put("Buy", shopHandler.getNumberOfShops(ShopType.BUY));
-			valueMap.put("Sell", shopHandler.getNumberOfShops(ShopType.SELL));
-			valueMap.put("Barter", shopHandler.getNumberOfShops(ShopType.BARTER));
-			valueMap.put("Combo", shopHandler.getNumberOfShops(ShopType.COMBO));
-			valueMap.put("Gamble", shopHandler.getNumberOfShops(ShopType.GAMBLE));
-			return valueMap;
-		}));
-		metrics.addCustomChart(new AdvancedPie("shop_display_types", () -> {
-			Map<String, Integer> valueMap = new HashMap<>();
-			valueMap.put("Floating Item", shopHandler.getNumberOfShopDisplayTypes(DisplayType.ITEM));
-			valueMap.put("Large Item", shopHandler.getNumberOfShopDisplayTypes(DisplayType.LARGE_ITEM));
-			valueMap.put("Item Frame", shopHandler.getNumberOfShopDisplayTypes(DisplayType.ITEM_FRAME));
-			valueMap.put("Glass Case", shopHandler.getNumberOfShopDisplayTypes(DisplayType.GLASS_CASE));
-			valueMap.put("None", shopHandler.getNumberOfShopDisplayTypes(DisplayType.NONE));
-			return valueMap;
-		}));
-		metrics.addCustomChart(new AdvancedPie("shop_containers", () -> shopHandler.getShopContainerCounts()));
-		metrics.addCustomChart(new SimplePie("economy_type", () -> currencyType.toString()));
-		metrics.addCustomChart(new SimplePie("fractional_currency", () -> String.valueOf(allowFractionalCurrency)));
-		// Add metrics for more configuration options
-		metrics.addCustomChart(new SimplePie("use_permissions", () -> String.valueOf(usePerms)));
-		metrics.addCustomChart(new SimplePie("allow_partial_sales", () -> String.valueOf(allowPartialSales)));
-		
-		// Group these into an advanced pie
-		metrics.addCustomChart(new AdvancedPie("shop_creation_methods", () -> {
-			Map<String, Integer> valueMap = new HashMap<>();
-			valueMap.put("Sign Creation", allowCreateMethodSign ? 1 : 0);
-			valueMap.put("Chest Creation", allowCreateMethodChest ? 1 : 0);
-			valueMap.put("Signs Disabled", allowCreateMethodSign ? 0 : 1);
-			valueMap.put("Chests Disabled", allowCreateMethodChest ? 0 : 1);
-			return valueMap;
-		}));
-		
-		metrics.addCustomChart(new SimplePie("offline_purchase_notifications", () -> String.valueOf(offlinePurchaseNotificationsEnabled)));
-		metrics.addCustomChart(new SimplePie("shop_gui_enabled", () -> String.valueOf(enableGUI)));
-		metrics.addCustomChart(new SimplePie("allow_searching_items", () -> String.valueOf(allowCreativeSelection)));
-		metrics.addCustomChart(new SimplePie("check_item_durability", () -> String.valueOf(checkItemDurability)));
-		metrics.addCustomChart(new SimplePie("ignore_item_repair_cost", () -> String.valueOf(ignoreItemRepairCost)));
-		metrics.addCustomChart(new AdvancedPie("sounds_and_effects", () -> {
-			Map<String, Integer> valueMap = new HashMap<>();
-			valueMap.put("Sounds Enabled", playSounds ? 1 : 0);
-			valueMap.put("Effects Enabled", playEffects ? 1 : 0);
-			valueMap.put("Sounds Disabled", playSounds ? 0 : 1);
-			valueMap.put("Effects Disabled", playEffects ? 0 : 1);
-			return valueMap;
-		}));
-		
-		metrics.addCustomChart(new SimplePie("worldguard_enabled", () -> String.valueOf(worldGuardExists)));
-		metrics.addCustomChart(new SimplePie("towny_enabled", () -> String.valueOf(hookTowny)));
-		metrics.addCustomChart(new SimplePie("database_type", () -> String.valueOf(config.getString("logging.type"))));
-		
-		// Track display type preferences
-		metrics.addCustomChart(new SimplePie("item_hover_display_type", () -> displayType.toString()));
-		metrics.addCustomChart(new SimplePie("hover_text_activation_type", () -> displayTagOption.toString()));
-		
-		// Track if shop auto-deletion is enabled
-		metrics.addCustomChart(new SimplePie("auto_cleanup_dead_shops", () -> String.valueOf(hoursOfflineToRemoveShops > 0)));
-		// Track if destroying shops requires sneaking
-		metrics.addCustomChart(new SimplePie("destroy_requires_sneak", () -> String.valueOf(destroyShopRequiresSneak)));
-		// Track if combo shops are inverted
-		metrics.addCustomChart(new SimplePie("inverse_combo_shops", () -> String.valueOf(inverseComboShops)));
-		
-		// Add container types tracking - group by container categories
-		metrics.addCustomChart(new AdvancedPie("enabled_containers", () -> {
-			Map<String, Integer> valueMap = new HashMap<>();
-			// Track basic chest types
-			boolean hasChests = enabledContainers.contains(Material.CHEST) || enabledContainers.contains(Material.TRAPPED_CHEST);
-			valueMap.put("Chests Allowed", hasChests ? 1 : 0);
-			valueMap.put("Chests Disabled", hasChests ? 0 : 1);
-			
-			// Track barrels
-			boolean hasBarrel = enabledContainers.contains(Material.BARREL);
-			valueMap.put("Barrels Allowed", hasBarrel ? 1 : 0);
-			valueMap.put("Barrels Disabled", hasBarrel ? 0 : 1);
-			
-			// Track if any shulker box is enabled
-			boolean hasShulker = enabledContainers.stream().anyMatch(m -> m.name().endsWith("SHULKER_BOX"));
-			valueMap.put("Shulker Boxes Allowed", hasShulker ? 1 : 0);
-			valueMap.put("Shulker Boxes Disabled", hasShulker ? 0 : 1);
-			
-			return valueMap;
-		}));
-		
-		// Track economic barriers (costs)
-		metrics.addCustomChart(new AdvancedPie("economic_barriers", () -> {
-			Map<String, Integer> valueMap = new HashMap<>();
-			valueMap.put("Creation Cost", creationCost > 0 ? 1 : 0);
-			valueMap.put("No Creation Cost", creationCost > 0 ? 0 : 1);
-			valueMap.put("Destruction Cost", destructionCost > 0 ? 1 : 0);
-			valueMap.put("No Destruction Cost", destructionCost > 0 ? 0 : 1);
-			valueMap.put("Teleport Cost", teleportCost > 0 ? 1 : 0);
-			valueMap.put("No Teleport Cost", teleportCost > 0 ? 0 : 1);
-			valueMap.put("Return Creation Cost", returnCreationCost ? 1 : 0);
-			valueMap.put("Do not Return Creation Cost", returnCreationCost ? 0 : 1);
-			return valueMap;
-		}));
-		
-		// Track display enhancement features (1.17+)
-		metrics.addCustomChart(new AdvancedPie("display_enhancements", () -> {
-			Map<String, Integer> valueMap = new HashMap<>();
-			valueMap.put("Custom Light Level", displayLightLevel > 0 ? 1 : 0);
-			valueMap.put("Normal Light Level", displayLightLevel > 0 ? 0 : 1);
-			valueMap.put("Glowing Item Frames", setGlowingItemFrame ? 1 : 0);
-			valueMap.put("Normal Item Frames", setGlowingItemFrame ? 0 : 1);
-			valueMap.put("Glowing Sign Text", setGlowingSignText ? 1 : 0);
-			valueMap.put("Normal Sign Text", setGlowingSignText ? 0 : 1);
-			return valueMap;
-		}));
-		
-		// Track which click types are used for each action
-		// Find which click type is assigned to TRANSACT
-		metrics.addCustomChart(new SimplePie("transaction_action_mapping", () -> {
-			for(Map.Entry<ShopClickType, ShopAction> entry : clickTypeActionMap.entrySet()){
-				if(entry.getValue() == ShopAction.TRANSACT){
-					return entry.getKey().toString();
-				}
-			}
-			return "NOT_SET";
-		}));
-		// Find which click type is assigned to TRANSACT_FULLSTACK
-		metrics.addCustomChart(new SimplePie("full_stack_transaction_action_mapping", () -> {
-			for(Map.Entry<ShopClickType, ShopAction> entry : clickTypeActionMap.entrySet()){
-				if(entry.getValue() == ShopAction.TRANSACT_FULLSTACK){
-					return entry.getKey().toString();
-				}
-			}
-			return "NOT_SET";
-		}));
-		// Find which click type is assigned to VIEW_DETAILS
-		metrics.addCustomChart(new SimplePie("view_details_action_mapping", () -> {
-			for(Map.Entry<ShopClickType, ShopAction> entry : clickTypeActionMap.entrySet()){
-				if(entry.getValue() == ShopAction.VIEW_DETAILS){
-					return entry.getKey().toString();
-				}
-			}
-			return "NOT_SET";
-		}));
-		// Find which click type is assigned to CYCLE_DISPLAY
-		metrics.addCustomChart(new SimplePie("cycle_display_action_mapping", () -> {
-			for(Map.Entry<ShopClickType, ShopAction> entry : clickTypeActionMap.entrySet()){
-				if(entry.getValue() == ShopAction.CYCLE_DISPLAY){
-					return entry.getKey().toString();
-				}
-			}
-			return "NOT_SET";
-		}));
-		
-		metrics.addCustomChart(new SimplePie("display_processing_interval", () -> String.valueOf(displayProcessInterval)));
-		metrics.addCustomChart(new SimplePie("display_movement_threshold", () -> String.valueOf(displayMovementThreshold)));
-		metrics.addCustomChart(new SimplePie("display_max_shop_distance", () -> String.valueOf(maxShopDisplayDistance)));
-		metrics.addCustomChart(new SimplePie("display_shop_search_radius", () -> String.valueOf(shopSearchRadius)));
-		metrics.addCustomChart(new SimplePie("display_batch_size", () -> String.valueOf(displayBatchSize)));
-		metrics.addCustomChart(new SimplePie("display_batch_delay", () -> String.valueOf(displayBatchDelay)));
-		
 		debug_allowUseOwnShop = config.getBoolean("debug.allowUseOwnShop");
 		debug_transactionDebugLogs = config.getBoolean("debug.transactionDebugLogs");
 		debug_shopCreateCooldown = config.getInt("debug.shopCreateCooldown");
@@ -647,9 +468,6 @@ public class Shop extends JavaPlugin{
 		// shutdown the database
 		if(logHandler != null){
 			logHandler.shutdown();
-		}
-		if(metrics != null){
-			metrics.shutdown();
 		}
 		
 		this.logger().info("Disabled Shop " + this.getPluginMeta().getVersion());
@@ -684,10 +502,6 @@ public class Shop extends JavaPlugin{
 	
 	public TransactionHandler getTransactionHelper() {
 		return transactionHandler;
-	}
-	
-	public boolean usePerms() {
-		return usePerms;
 	}
 	
 	public boolean getAllowCreationMethodSign() {

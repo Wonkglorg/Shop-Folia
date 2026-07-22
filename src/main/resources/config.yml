@@ -5,22 +5,8 @@
 # =================================================================== #
 #                         GENERAL SETTINGS                            #
 # =================================================================== #
-# https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml)#general-settings
-# This runs a check and notifies operators on login that a new Shop version is available #
-checkUpdates: true
-
-# Should Shop use Permissions to manage access to features?
-# * `true`  - Shop will check player permissions (https://github.com/snowgears/shopbugs/wiki/Permissions)
-#             Players will by default have no permissions and must be given specific permissions to use the plugin.
-# * `false` - Shop will allow players to create shops, buy/sell items, etc. without any permissions checks.
-#             Plugin management commands/tools are restricted to operators only. 
-usePermissions: true
-
 # This enables a graphical user interface to use all shop features without typing commands #
 enableGUI: true
-
-# This is the command alias that will be used as the base for all shop commands #
-commandAlias: shop
 
 # This will permanently delete a player's shops if they have not logged onto the server after X hours #
 # Set this to 0 to never auto-delete a player's shops #

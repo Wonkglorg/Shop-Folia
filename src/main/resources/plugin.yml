@@ -61,6 +61,9 @@ permissions:
   shop.gui.teleport:
     description: Allows player to use teleport to shops by using the gui.
     default: op
+  shop.user:
+    description: Allows users to access the /shop command with basic access to informational commands
+    default: op
   shop.operator:
     description: Allows access to operator actions like setting currency, setting the gamble item, reloading configs, creating gamble/admin shops, etc.
     default: op

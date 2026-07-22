@@ -6,7 +6,6 @@ import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
 import com.snowgears.shop.shop.ShopType;
 import static com.snowgears.shop.util.ItemNameUtil.getName;
-import static com.snowgears.shop.util.ItemNameUtil.getNameTranslatable;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.util.Components;
@@ -20,7 +19,6 @@ import static net.kyori.adventure.text.event.HoverEvent.Action;
 import static net.kyori.adventure.text.event.HoverEvent.showText;
 import net.kyori.adventure.text.event.HoverEventSource;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -86,8 +84,24 @@ public class ShopMessage{
 	 * @param context The PlaceholderContext instance containing Shop and Player
 	 * @return The formatted message with all placeholders replaced
 	 */
-	public static String formatPlainText(String messageKey, PlaceholderContext context) {
+	public static String formatPlainTextSingle(String messageKey, PlaceholderContext context) {
 		return Components.toPlainText(formatSingleMessage(messageKey, context));
+	}
+	
+	/**
+	 * Formats a message by replacing all placeholders with their respective values.
+	 *
+	 * @param messageKey The message containing placeholders
+	 * @param context The PlaceholderContext instance containing Shop and Player
+	 * @return The formatted message with all placeholders replaced
+	 */
+	public static List<String> formatPlainText(String messageKey, PlaceholderContext context) {
+		List<String> results = new ArrayList<>();
+		
+		for(var component: format(messageKey,context)){
+			results.add(Components.toPlainText(component));
+		}
+		return results;
 	}
 	
 	/**
@@ -202,7 +216,7 @@ public class ShopMessage{
 		   .replace("%build limit%",plugin.getShopListener().getBuildLimit(context.getPlayer()))
 		   .replace("%tp time remaining%",String.valueOf(plugin.getShopListener().getTeleportCooldownRemaining(context.getPlayer())))
 		   .replace("%currency name%",plugin.getCurrencyName())
-		   .replace("%currency item%",()->embedItem(getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
+		   //.replace("%currency item%",()->embedItem(getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
 		   .lazyReplace("%price sell%",()->{
 			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
 				   return((ComboShop) context.getShop()).getPriceSellString();
@@ -262,7 +276,7 @@ public class ShopMessage{
 	private static HoverEventSource<Component> getShopInfoHoverEvent(PlaceholderContext context) {
 		try{
 			Component hoverText = Component.text("");
-			List<String> hoverLines = getUnformattedMessageList("hover", "location");
+			List<String> hoverLines = formatPlainText("hover.location",context);
 			int i = 0;
 			for(String line : hoverLines){
 				i++;
@@ -310,55 +324,9 @@ public class ShopMessage{
 		return types.toString();
 	}
 	
-	/**
-	 * Helper method to handle the %item% placeholder with truncation for signs.
-	 *
-	 * @param context The PlaceholderContext instance.
-	 * @return The item name, potentially truncated to fit sign constraints.
-	 */
-	private static Component getItemPlaceholder(ItemStack stack) {
-
-		Component itemName = getName(item);
-		if(context.isForSign()){
-			return UtilMethods.trimForSign(Components.toPlainText(itemName));
-		}
-		return embedItem(itemName, item);
-	}
-	
-	/**
-	 * Helper method to handle the %barter item% placeholder with truncation for signs.
-	 *
-	 * @param context The PlaceholderContext instance.
-	 * @return The barter item name, potentially truncated to fit sign constraints.
-	 */
-	private static Component getBarterItemPlaceholder(PlaceholderContext context) {
-		ItemStack item = null;
-		if(context.getBarterItem() != null){
-			item = context.getBarterItem();
-		} else if(context.getItem() != null){
-			item = context.getItem();
-		} else if(context.getProcess() != null){
-			item = context.getProcess().getBarterItemStack();
-		} else if(context.getShop() != null && context.getShop().getSecondaryItemStack() != null){
-			if(context.getShop().getType() != ShopType.BARTER){
-				return null;
-			}
-			item = context.getShop().getSecondaryItemStack();
-		}
-		if(item == null){
-			return null;
-		}
-		
-		Component itemName = getName(item);
-		if(context.isForSign()){
-			return UtilMethods.trimForSign(itemName);
-		}
-		return embedItem(itemName, item);
-	}
-	
-	private static TextComponent getOfflineItemsPlaceholder(PlaceholderContext context, Map<ItemStack, Integer> items) {
-		TextComponent itemRowsText = new TextComponent("");
-		String itemRow = getUnformattedMessage("offline", "itemRow");
+	private static Component getOfflineItemsPlaceholder(PlaceholderContext context, Map<ItemStack, Integer> items) {
+		Component itemRowsText = Component.text("");
+		String itemRow = formatPlainTextSingle("offline.itemRow",context);
 		
 		int i = 0;
 		for(Map.Entry<ItemStack, Integer> entry : items.entrySet()){
@@ -372,8 +340,8 @@ public class ShopMessage{
 			itemContext.setPlayer(context.getPlayer());
 			itemContext.setItem(item);
 			
-			TextComponent currentRow = format(itemRow + addNewLine, itemContext);
-			itemRowsText.addExtra(currentRow);
+			Component currentRow = formatSingleMessage(itemRow + addNewLine, itemContext);
+			itemRowsText = itemRowsText.append(currentRow);
 		}
 		// If there were no lines added, just return null so that we don't log a blank line!
 		if(i == 0){
@@ -411,7 +379,7 @@ public class ShopMessage{
 				
 				// For each item, generate a line based on the template line
 				String addNewLine = (i < (outOfStock.size()) && i <= 3) ? "\n" : "";
-				Component currentRow = format(getUnformattedMessage("offline", "outOfStockShop") + addNewLine, shopContext);
+				Component currentRow = formatSingleMessage("offline.outOfStockShop." +addNewLine, shopContext);
 				// Limit out of stock shops to 3
 				if(i > 3){
 					remainingShopsMsgs.add(currentRow);

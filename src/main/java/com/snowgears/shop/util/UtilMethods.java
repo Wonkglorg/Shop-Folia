@@ -1288,7 +1288,7 @@ public class UtilMethods{
 			
 			if(word.matches(" ") && potentialLength > maxLineLength){
 				if(Shop.getPlugin() != null){
-					Shop.getPlugin().logger().spam("[ShopMessage.format]     adding line: " + currentLine.toString().trim(), true);
+					Shop.getPlugin().logger().spam("[ShopMessage.format]     adding line: " + currentLine.toString().trim());
 				}
 				linesByColor.add(currentLine.toString());
 				currentLine = new StringBuilder(latestColors);
@@ -1300,7 +1300,7 @@ public class UtilMethods{
 		// Append the last line if there's any content left
 		if(currentLine.length() > 0){
 			if(Shop.getPlugin() != null){
-				Shop.getPlugin().logger().spam("[ShopMessage.format]     adding line: " + currentLine.toString().trim(), true);
+				Shop.getPlugin().logger().spam("[ShopMessage.format]     adding line: " + currentLine.toString().trim());
 			}
 			linesByColor.add(currentLine.toString());
 		}

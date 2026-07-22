@@ -4,7 +4,7 @@ import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
-import com.wonkglorg.minecraft.util.Components;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -25,10 +25,13 @@ public class ShopCreationProcess{
 	
 	private Player player;
 	private UUID processUUID;
+	@Getter
 	private UUID playerUUID;
 	private Block clickedChest;
 	private BlockFace clickedFace;
+	@Getter
 	private ItemStack itemStack;
+	@Getter
 	private ItemStack barterItemStack;
 	private ShopType shopType;
 	boolean isAdmin;
@@ -176,18 +179,6 @@ public class ShopCreationProcess{
 		return processUUID;
 	}
 	
-	public UUID getPlayerUUID() {
-		return playerUUID;
-	}
-	
-	public ItemStack getItemStack() {
-		return itemStack;
-	}
-	
-	public ItemStack getBarterItemStack() {
-		return barterItemStack;
-	}
-	
 	public void setItemStack(ItemStack itemStack) {
 		this.itemStack = itemStack.clone();
 		this.step = ChatCreationStep.SHOP_TYPE;
@@ -219,24 +210,23 @@ public class ShopCreationProcess{
 		this.step = ChatCreationStep.FINISHED;
 	}
 	
-	public void displayFloatingText(String key, String subkey) {
+	public void displayFloatingText(String subkey) {
 		// Check if feature is enabled or not.
 		if(!Shop.getPlugin().getConfig().getBoolean("displayFloatingCreateText") || !this.display.isEnabled()){
-			ShopMessage.sendMessage(key, subkey, this, player);
+			ShopMessage.sendMessage(subkey, this, player);
 			return;
 		}
 		// Build the lines
-		String unformatted = ShopMessage.getUnformattedMessage(key, subkey);
-		String formatted = Components.toPlainText(ShopMessage.format(unformatted, this.placeholderContext));
+		String formatted = ShopMessage.formatPlainTextSingle(subkey, placeholderContext);
 		List<String> lines = UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength());
 		// Display the lines
 		displayFloatingLines(lines);
 	}
 	
-	public void displayFloatingTextList(String key, String subkey) {
+	public void displayFloatingTextList(String subkey) {
 		// Check if feature is enabled or not.
 		if(!Shop.getPlugin().getConfig().getBoolean("displayFloatingCreateText") || !this.display.isEnabled()){
-			for(String message : ShopMessage.getUnformattedMessageList(key, subkey)){
+			for(String message : ShopMessage.formatPlainText(subkey, this.placeholderContext)){
 				if(message != null && !message.isEmpty()){
 					ShopMessage.sendMessage(message, player);
 				}
@@ -245,11 +235,9 @@ public class ShopCreationProcess{
 		}
 		List<String> lines = new ArrayList<>();
 		// Build the lines
-		for(String unformatted : ShopMessage.getUnformattedMessageList(key, subkey)){
-			if(unformatted != null && !unformatted.isEmpty()){
-				String formatted = ShopMessage.formatPlainText(unformatted, this.placeholderContext);
-				lines.addAll(UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength()));
-			}
+		for(String formatted : ShopMessage.formatPlainText(subkey, this.placeholderContext)){
+			lines.addAll(UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength()));
+			
 		}
 		// Display the lines
 		displayFloatingLines(lines);

@@ -5,6 +5,7 @@ import com.snowgears.shop.handler.ShopGuiHandler;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.util.EconomyUtils;
 import com.snowgears.shop.util.ItemListType;
+import com.snowgears.shop.util.PlaceholderContext;
 import com.snowgears.shop.util.PlayerSettings;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
@@ -142,7 +143,7 @@ public class ShopGUIListener implements Listener {
                             plugin.getGuiHandler().closeWindow(player);
                             plugin.getCreativeSelectionListener().putPlayerInCreativeSelection(player, player.getLocation(), true);
 
-                            for(String message : ShopMessage.getUnformattedMessageList("guiSearchSelection", "prompt")){
+                            for(String message : ShopMessage.formatPlainText("guiSearchSelection.prompt",new PlaceholderContext())){
                                 if(message != null && !message.isEmpty())
                                     ShopMessage.sendMessage(message, player);
                             }
@@ -191,7 +192,7 @@ public class ShopGUIListener implements Listener {
                                                 if (EconomyUtils.hasSufficientFunds(player, player.getInventory(), plugin.getTeleportCost())) {
                                                     EconomyUtils.removeFunds(player, player.getInventory(), plugin.getTeleportCost());
                                                 } else {
-                                                    ShopMessage.sendMessage("interactionIssue", "teleportInsufficientFunds", player, shop);
+                                                    ShopMessage.sendMessage("interactionIssue.teleportInsufficientFunds", player, shop);
                                                     plugin.getGuiHandler().closeWindow(player);
                                                     return;
                                                 }
@@ -199,7 +200,7 @@ public class ShopGUIListener implements Listener {
                                             if(plugin.getTeleportCooldown() > 0){
                                                 int secondsRemaining = plugin.getShopListener().getTeleportCooldownRemaining(player);
                                                 if(secondsRemaining > 0){
-                                                    ShopMessage.sendMessage("interactionIssue", "teleportInsufficientCooldown", player, shop);
+                                                    ShopMessage.sendMessage("interactionIssue.teleportInsufficientCooldown", player, shop);
                                                     plugin.getGuiHandler().closeWindow(player);
                                                     return;
                                                 }
@@ -320,7 +321,7 @@ public class ShopGUIListener implements Listener {
                                 plugin.getGuiHandler().closeWindow(player);
                                 plugin.getCreativeSelectionListener().putPlayerInCreativeSelection(player, player.getLocation(), true);
 
-                                for(String message : ShopMessage.getUnformattedMessageList("guiSearchSelection", "prompt")){
+                                for(String message : ShopMessage.formatPlainText("guiSearchSelection.prompt",new PlaceholderContext())){
                                     if(message != null && !message.isEmpty())
                                         ShopMessage.sendMessage(message, player);
                                 }

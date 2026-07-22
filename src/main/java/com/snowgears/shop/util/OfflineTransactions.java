@@ -60,7 +60,7 @@ public class OfflineTransactions{
 		context.setItem(itemSold);
 		context.setBarterItem(barterItem);
 		context.setLocation(location);
-		formattedMessage = ShopMessage.formatPlainText("• " + formattedMessage, context);
+		formattedMessage = ShopMessage.formatPlainTextSingle("• " + formattedMessage, context);
 		txStrings.add(formattedMessage);
 	}
 	

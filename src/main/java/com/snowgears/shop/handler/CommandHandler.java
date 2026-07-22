@@ -53,25 +53,7 @@ public class CommandHandler extends BukkitCommand{
 			if(sender instanceof Player){
 				Player player = (Player) sender;
 				
-				if(plugin.useGUI()){
-					ShopGuiWindow window = plugin.getGuiHandler().getWindow(player);
-					window.open();
-				} else {
-					//these are commands all players have access to
-					sendCommandMessage("list", player);
-					sendCommandMessage("currency", player);
-					
-					//these are commands only operators have access to
-					if(player.hasPermission("shop.operator") || player.isOp()){
-						sendCommandMessage("setcurrency", player);
-						sendCommandMessage("setgamble", player);
-						sendCommandMessage("itemrefresh", player);
-						if(plugin.getItemListType() != ItemListType.NONE){
-							sendCommandMessage("itemlist", player);
-						}
-						sendCommandMessage("reload", player);
-					}
-				}
+
 			}
 			//these are commands that can be executed from the console
 			else {
@@ -81,39 +63,6 @@ public class CommandHandler extends BukkitCommand{
 				sender.sendMessage("/" + this.getName() + " reload - reload Shop plugin");
 			}
 		} else if(args.length == 1){
-			if(args[0].equalsIgnoreCase("list")){
-				if(sender instanceof Player){
-					Player player = (Player) sender;
-					sendCommandMessage("list_output_total", player);
-					if(plugin.usePerms()){
-						sendCommandMessage("list_output_perms", player);
-					} else {
-						sendCommandMessage("list_output_noperms", player);
-					}
-				} else {
-					sender.sendMessage("[Shop] There are " + plugin.getShopHandler().getNumberOfShops() + " shops registered on the server.");
-				}
-			} else if(args[0].equalsIgnoreCase("reload")){
-				if(sender instanceof Player){
-					Player player = (Player) sender;
-					if((plugin.usePerms() && !player.hasPermission("shop.operator")) || (!plugin.usePerms() && !player.isOp())){
-						sendCommandMessage("not_authorized", player);
-						return true;
-					}
-					plugin.reload();
-					sendCommandMessage("reload_output", player);
-				} else {
-					plugin.reload();
-					sender.sendMessage("[Shop] Reloaded plugin.");
-				}
-				
-				for(Player p : Bukkit.getOnlinePlayers()){
-					if(p != null){
-						p.closeInventory();
-					}
-				}
-				plugin.getShopHandler().removeLegacyDisplays();
-				
 			} else if(args[0].equalsIgnoreCase("currency")){
 				if(sender instanceof Player){
 					Player player = (Player) sender;

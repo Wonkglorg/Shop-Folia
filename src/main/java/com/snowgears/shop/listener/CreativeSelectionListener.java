@@ -7,6 +7,7 @@ import com.snowgears.shop.gui.ListSearchResultsWindow;
 import com.snowgears.shop.handler.ShopGuiHandler;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
+import com.snowgears.shop.util.PlaceholderContext;
 import com.snowgears.shop.util.PlayerData;
 import com.snowgears.shop.util.ShopActionType;
 import com.snowgears.shop.util.ShopCreationProcess;
@@ -85,21 +86,21 @@ public class CreativeSelectionListener implements Listener {
                 String message = null;
                 if (!player.getUniqueId().equals(shop.getOwnerUUID())) {
                     if((!plugin.usePerms() && !player.isOp()) || (plugin.usePerms() && !player.hasPermission("shop.operator"))) {
-                        ShopMessage.sendMessage("interactionIssue", "initialize", player, shop);
+                        ShopMessage.sendMessage("interactionIssue.initialize", player, shop);
                         shop.sendEffects(false, player);
                         event.setCancelled(true);
                         return;
                     }
                 }
                 if (shop.getType() == ShopType.BARTER && shop.getItemStack() == null) {
-                    ShopMessage.sendMessage("interactionIssue", "noItem", player, shop);
+                    ShopMessage.sendMessage("interactionIssue.noItem", player, shop);
                     event.setCancelled(true);
                     return;
                 }
 
                 if (player.getInventory().getItemInMainHand().getType() == Material.AIR) {
                     if (shop.getType() == ShopType.SELL) {
-                        ShopMessage.sendMessage("interactionIssue", "noItem", player, shop);
+                        ShopMessage.sendMessage("interactionIssue.noItem", player, shop);
                     } else {
                         if ((shop.getType() == ShopType.BARTER && shop.getItemStack() != null && shop.getSecondaryItemStack() == null)
                                 || shop.getType() == ShopType.BUY || shop.getType() == ShopType.COMBO) {
@@ -294,13 +295,13 @@ public class CreativeSelectionListener implements Listener {
                     if(currentProcess.getStep() == ITEM){
                         currentProcess.setItemStack(selectedItem);
                         currentProcess.setShopType(ShopType.BUY);
-                        currentProcess.displayFloatingText(ShopType.BUY.toString(), "createHitChestAmount");
+                        currentProcess.displayFloatingText(ShopType.BUY + ".createHitChestAmount");
                         removePlayerFromCreativeSelection(player);
                     }
                     //they just hit a chest with an open hand when creating a barter shop and need choose a barter item from creative selection
                     else if(currentProcess.getStep() == ShopCreationProcess.ChatCreationStep.BARTER_ITEM){
                         currentProcess.setBarterItemStack(selectedItem);
-                        currentProcess.displayFloatingText(ShopType.BARTER.toString(), "createHitChestBarterAmount");
+                        currentProcess.displayFloatingText(ShopType.BARTER + ".createHitChestBarterAmount");
                         removePlayerFromCreativeSelection(player);
                     }
                 }
@@ -319,7 +320,7 @@ public class CreativeSelectionListener implements Listener {
     public void putPlayerInCreativeSelection(Player player, Location shopSignLocation, boolean guiSearch) {
         // Sanity check, make sure players don't somehow go into creative mode when it's disabled!
         if (!plugin.allowCreativeSelection()) {
-            ShopMessage.sendMessage(ShopMessage.getUnformattedMessage("creativeSelection", "disabled"), player);
+            ShopMessage.sendMessage(ShopMessage.formatPlainTextSingle("creativeSelection.disabled",new PlaceholderContext()), player);
             return;
         }
         // Don't put them in creative if they are already in creative.
@@ -385,10 +386,10 @@ public class CreativeSelectionListener implements Listener {
         ShopCreationProcess process = plugin.getMiscListener().getShopCreationProcess(player);
         if(process != null){
             if(playerData.isGuiSearch()){
-                process.displayFloatingTextList("guiSearchSelection", "enter");
+                process.displayFloatingTextList("guiSearchSelection.enter");
             }
             else {
-                process.displayFloatingTextList("creativeSelection", "enter");
+                process.displayFloatingTextList("creativeSelection.enter");
             }
         }
     }
@@ -452,7 +453,7 @@ public class CreativeSelectionListener implements Listener {
             event.setCancelled(true);
             
             // Inform the player
-            ShopMessage.sendMessage(ShopMessage.getUnformattedMessage("creativeSelection", "noCommands"), player);
+            ShopMessage.sendMessage(ShopMessage.formatPlainTextSingle("creativeSelection.noCommands",new PlaceholderContext()), player);
             
             // Reset the message time to prevent spamming locked in place messages
             PlayerData data = playerDataMap.get(player.getUniqueId());

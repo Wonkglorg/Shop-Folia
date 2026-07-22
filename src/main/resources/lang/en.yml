@@ -265,22 +265,37 @@ guiSearchSelection:
     - "&eTo select the item, pick it up and drop it outside of the inventory window."
 
 command:
-  list: "&b/shop list &7- list your shops on the server"
-  list_output_total: "&lThere are &6%total-shops%&f shops registered on the server."
-  list_output_perms: "&7You have built %user-amount% out of your %build-limit% allotted shops."
-  list_output_noperms: "&7You own %user-amount% of these shops."
-  currency: "&b/shop currency &7- info about the currency shops use"
+  usage:
+    user:
+      -"<blue>/shop list <gray>- list your shops on the server"
+      -"<blue>/shop currency <gray>- info about the currency shops use"
+      -"<blue>/shop currency <gray>- info about the currency shops use"
+      -"<blue>/shop notify [user|owner|stock] <gray>- Toggles notifications"
+    admin:
+      -"<red>/shop setcurrency <gray>- set the currency item to item in hand"
+      -"<red>/shop setgamble <gray>- set the gamble item display to item in hand"
+      -"<red>/shop item refresh <gray>- refresh all display items on shops"
+      -"<red>/shop reload <gray>- reload Shop plugin"
+  list:
+    success-console: "<white>There are <gold>%total-shops%<white> shops registered on the server."
+    success-player:
+      - "<white>There are <gold>%total-shops%<white> shops registered on the server."
+      - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
+  currency:
+  set-currency:
+  reload:
+    success: "<green>Reloaded Market!"
+
+  notify-user:
+  notify-owner:
+  notify-stock:
+  set-gamble:
   currency_output: "&7The server is using %currency-name% as currency."
   currency_output_tip: "&7To change this, run the command '/shop setcurrency' with the item you want in your hand."
-  setcurrency: "&c/shop setcurrency &7- set the currency item to item in hand"
-  setcurrency_output: "&7The server is now using %currency item% as currency."
-  setgamble: "&c/shop setgamble &7- set the gamble item display to item in hand"
-  itemrefresh: "&c/shop item refresh &7- refresh all display items on shops"
   itemrefresh_output: "&7The display items on all of the shops have been refreshed."
   itemlist: "&b/shop itemlist <add/remove> &7- add/remove all items in inventory to the item list"
   itemlist_add: "&aAll valid items in inventory added to the item list"
   itemlist_remove: "&aAll valid items in inventory removed from the item list"
-  reload: "&c/shop reload &7- reload Shop plugin"
   reload_output: "&aSuccessfully reloaded Shop."
   error_novault: "&cThe server is not using an item based currency so no item could be set."
   error_nohand: "&cYou must be holding a valid item to use that command."
@@ -288,8 +303,6 @@ command:
   notify_user: "&7Your notifications for your own transactions with shops are now %notify-state%"
   notify_owner: "&7Your notifications for players transacting with your shops are now %notify-state%"
   notify_stock: "&7Your notifications for your shops running out of stock are now %notify-state%"
-  notify_on: "&aON"
-  notify_off: "&cOFF"
 
 sign:
   text:
