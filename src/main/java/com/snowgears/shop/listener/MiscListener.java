@@ -387,7 +387,7 @@ public class MiscListener implements Listener{
 					player.setCustomChatCompletions(autocomplete);
 				} catch(Error | Exception error){
 				} // Suppress error if autocomplete is not supported
-				if((!plugin.usePerms() && player.isOp()) || (plugin.usePerms() && player.hasPermission("shop.operator"))){
+				if((player.isOp()) || player.hasPermission("shop.operator")){
 					ShopMessage.sendMessage("adminCreateHitChest", process, player);
 				}
 				
@@ -573,7 +573,7 @@ public class MiscListener implements Listener{
 			}
 			//player trying to break their own shop
 			if(shop.getOwnerName().equals(player.getName())){
-				if(plugin.usePerms() && !(player.hasPermission("shop.destroy") || player.hasPermission("shop.operator"))){
+				if(!(player.hasPermission("shop.destroy") || player.hasPermission("shop.operator"))){
 					event.setCancelled(true);
 					ShopMessage.sendMessage("permission.destroy", player, shop);
 					return;
@@ -626,7 +626,7 @@ public class MiscListener implements Listener{
 			}
 			//player trying to break other players shop
 			else {
-				if(player.isOp() || (plugin.usePerms() && (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other")))){
+				if(player.isOp() || (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other"))){
 					PlayerDestroyShopEvent e = new PlayerDestroyShopEvent(player, shop);
 					plugin.getServer().getPluginManager().callEvent(e);
 					
@@ -671,7 +671,7 @@ public class MiscListener implements Listener{
 			if(ih instanceof DoubleChest){
 				if(shop.getOwnerUUID().equals(player.getUniqueId()) ||
 				   player.isOp() ||
-				   (plugin.usePerms() && (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other")))){
+				   (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other"))){
 					
 					// the broken block was the initial chest with the sign
 					if(shop.getChestLocation().equals(b.getLocation())){
@@ -699,7 +699,7 @@ public class MiscListener implements Listener{
 			} else {
 				if(shop.getOwnerUUID().equals(player.getUniqueId()) ||
 				   player.isOp() ||
-				   (plugin.usePerms() && (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other")))){
+				   (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other"))){
 					ShopMessage.sendMessage("interactionIssue.destroyChest", player, shop);
 					shop.sendEffects(false, player);
 				} else {
@@ -718,9 +718,7 @@ public class MiscListener implements Listener{
 			if(shop != null){
 				//if it is a shop chest, don't allow it to be broken unless its by the owner or someone with permission
 				Player player = event.getPlayer();
-				if(!(shop.getOwnerUUID().equals(player.getUniqueId()) ||
-				     player.isOp() ||
-				     (plugin.usePerms() && player.hasPermission("shop.operator")))){
+				if(!(shop.getOwnerUUID().equals(player.getUniqueId()) || player.isOp() || player.hasPermission("shop.operator"))){
 					event.setCancelled(true);
 				}
 			}
@@ -758,7 +756,7 @@ public class MiscListener implements Listener{
 			}
 			//other player is trying to
 			else {
-				if(player.isOp() || (plugin.usePerms() && player.hasPermission("shop.operator"))){
+				if(player.isOp() || player.hasPermission("shop.operator")){
 					PlayerResizeShopEvent e = new PlayerResizeShopEvent(player, shop, b.getLocation(), true);
 					Bukkit.getPluginManager().callEvent(e);
 					

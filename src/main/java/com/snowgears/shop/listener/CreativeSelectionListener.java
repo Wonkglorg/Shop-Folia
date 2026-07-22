@@ -85,7 +85,7 @@ public class CreativeSelectionListener implements Listener {
                 }
                 String message = null;
                 if (!player.getUniqueId().equals(shop.getOwnerUUID())) {
-                    if((!plugin.usePerms() && !player.isOp()) || (plugin.usePerms() && !player.hasPermission("shop.operator"))) {
+                    if((!player.isOp()) || !player.hasPermission("shop.operator")) {
                         ShopMessage.sendMessage("interactionIssue.initialize", player, shop);
                         shop.sendEffects(false, player);
                         event.setCancelled(true);

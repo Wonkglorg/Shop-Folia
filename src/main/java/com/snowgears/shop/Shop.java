@@ -1,9 +1,9 @@
 package com.snowgears.shop;
 
+import com.snowgears.shop.command.ShopCommand;
 import com.snowgears.shop.display.DisplayTagOption;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.gui.ShopGUIListener;
-import com.snowgears.shop.handler.CommandHandler;
 import com.snowgears.shop.handler.LogHandler;
 import com.snowgears.shop.handler.ShopGuiHandler;
 import com.snowgears.shop.handler.ShopHandler;
@@ -12,6 +12,7 @@ import com.snowgears.shop.listener.CreativeSelectionListener;
 import com.snowgears.shop.listener.DisplayListener;
 import com.snowgears.shop.listener.MiscListener;
 import com.snowgears.shop.listener.ShopListener;
+import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.ItemNameUtil;
@@ -26,6 +27,7 @@ import com.snowgears.shop.util.UtilMethods;
 import com.tcoded.folialib.FoliaLib;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.types.Config;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
@@ -33,16 +35,18 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.permissions.Permissible;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class Shop extends JavaPlugin{
@@ -64,7 +68,6 @@ public class Shop extends JavaPlugin{
 	@Getter
 	private CreativeSelectionListener creativeSelectionListener;
 	private ShopGUIListener guiListener;
-	private Boolean worldGuardExists;
 	
 	@Getter
 	private ShopHandler shopHandler;
@@ -79,7 +82,6 @@ public class Shop extends JavaPlugin{
 	private NMSBullshitHandler nmsBullshitHandler;
 	private boolean enableGUI;
 	
-	private boolean hookTowny;
 	@Getter
 	private String commandAlias;
 	@Getter
@@ -202,6 +204,7 @@ public class Shop extends JavaPlugin{
 	public void onEnable() {
 		// Initialize FoliaLib
 		foliaLib = new FoliaLib(this);
+		
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
 		nmsBullshitHandler = new NMSBullshitHandler(this);
@@ -414,14 +417,6 @@ public class Shop extends JavaPlugin{
 			this.logger().info("Shops will use " + ItemNameUtil.getNameAsPlainText(itemCurrency) + "(s) as the currency on the server.");
 		}
 		
-		// Load CommandHandler by initializing it once
-		new CommandHandler(this,
-				null,
-				commandAlias,
-				"Base command for the Shop plugin",
-				"/shop",
-				new ArrayList<>(Collections.singletonList(commandAlias)));
-		
 		guiHandler = new ShopGuiHandler(plugin);
 		shopHandler = new ShopHandler(plugin);
 		guiHandler.loadIconsAndTitles();
@@ -433,13 +428,6 @@ public class Shop extends JavaPlugin{
 		getServer().getPluginManager().registerEvents(creativeSelectionListener, this);
 		getServer().getPluginManager().registerEvents(guiListener, this);
 		
-		//only define different listener hooks if the plugins are present on the server
-		if(getServer().getPluginManager().getPlugin("WorldGuard") != null){
-			this.logger().notice("WorldGuard is installed, creating WorldGuard listener");
-			this.worldGuardExists = true;
-		} else {
-			this.worldGuardExists = false;
-		}
 		debug_allowUseOwnShop = config.getBoolean("debug.allowUseOwnShop");
 		debug_transactionDebugLogs = config.getBoolean("debug.transactionDebugLogs");
 		debug_shopCreateCooldown = config.getInt("debug.shopCreateCooldown");
@@ -448,6 +436,8 @@ public class Shop extends JavaPlugin{
 		displayListener.startRepeatingDisplayViewTask();
 		
 		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
+		
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
 	}
 	
 	@Override
@@ -510,12 +500,6 @@ public class Shop extends JavaPlugin{
 	
 	public boolean getAllowCreationMethodChest() {
 		return allowCreateMethodChest;
-	}
-	
-	public boolean worldGuardExists() {return worldGuardExists;}
-	
-	public boolean hookTowny() {
-		return hookTowny;
 	}
 	
 	public boolean checkItemDurability() {
@@ -698,6 +682,65 @@ public class Shop extends JavaPlugin{
 	
 	public ShopAction getShopAction(ShopClickType shopClickType) {
 		return clickTypeActionMap.get(shopClickType);
+	}
+	
+	/**
+	 * If the user either has the operator permission or is op, giving them full access to all features of the plugin
+	 */
+	public static boolean isOperator(Permissible player) {
+		return player.isOp() || !player.hasPermission(Constants.SHOP_PERMISSION_OPERATOR);
+	}
+	
+	/**
+	 * If the user is allowed to create a shop of this type, this does NOT enforce shop build limit
+	 */
+	public static boolean isAllowedToCreateShopType(Permissible player, ShopType type) {
+		return player.hasPermission("shop.create." + type.toString().toLowerCase()) || player.hasPermission("shop.create") || isOperator(player);
+	}
+	
+	/**
+	 * If the user is allowed to create a shop of any type, to find out what specific type they can create use {@link #isAllowedToCreateShopType(Permissible, ShopType)} instead
+	 */
+	public static boolean isAllowedToCreateShop(){
+	
+	}
+	
+	public static int getShopBuildLimit(Permissible player) {
+		if(player.isOp()){
+			return 99999;
+		}
+		int baseBuildLimit = -1;
+		int extraBuildLimit = 0;
+		Set<PermissionAttachmentInfo> permissions = player.getEffectivePermissions();
+		
+		// calculate base buildlimit permission first (highest number)
+		for(PermissionAttachmentInfo permInfo : permissions){
+			String perm = permInfo.getPermission();
+			// Skip if not a shop permission
+			if(!perm.startsWith("shop.")){
+				continue;
+			}
+			
+			// If it's a base build limit permission, parse the number
+			int value = 0;
+			try{
+				value = Integer.parseInt(perm.substring(perm.lastIndexOf(".") + 1));
+			} catch(NumberFormatException e){
+				continue;
+			}
+			if(perm.startsWith("shop.buildlimit.")){
+				if(value > baseBuildLimit){
+					baseBuildLimit = value;
+				}
+			}
+			
+			// If it's an extra build limit permission, parse the number
+			else if(perm.startsWith("shop.buildlimitextra.")){
+				extraBuildLimit += value;
+				
+			}
+		}
+		return baseBuildLimit + extraBuildLimit;
 	}
 	
 }

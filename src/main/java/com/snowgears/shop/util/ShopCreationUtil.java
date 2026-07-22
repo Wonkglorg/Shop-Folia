@@ -1,11 +1,14 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
+import static com.snowgears.shop.Shop.isAllowedToCreateShopType;
+import static com.snowgears.shop.Shop.isOperator;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerInitializeShopEvent;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
+import com.wonkglorg.minecraft.config.LangManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
@@ -23,10 +26,12 @@ import org.bukkit.inventory.ItemStack;
 public class ShopCreationUtil{
 	
 	private Shop plugin;
+	private LangManager lang;
 	private BlockFace[] wallFaces = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 	
 	public ShopCreationUtil(Shop plugin) {
 		this.plugin = plugin;
+		lang = plugin.getLangManager();
 	}
 	
 	public BlockFace calculateBlockFaceForSign(Player player, Block chest, BlockFace facePreference) {
@@ -48,24 +53,22 @@ public class ShopCreationUtil{
 	}
 	
 	public boolean shopCanBeCreated(Player player, Block chest) {
-		int numberOfShops = plugin.getShopHandler().getNumberOfShops(player);
-		int buildPermissionNumber = plugin.getShopListener().getBuildLimit(player);
-		
-		if((!plugin.usePerms() && !player.isOp()) || (plugin.usePerms() && !player.hasPermission("shop.operator"))){
-			if(numberOfShops >= buildPermissionNumber){
-				ShopMessage.sendMessage("permission.buildLimit", player);
-				return false;
-			}
+		if(player.isOp()){
+			return true;
 		}
 		
-		if(plugin.getWorldBlacklist().contains(chest.getWorld().getName())){
-			if((!plugin.usePerms() && !player.isOp()) || (plugin.usePerms() && !player.hasPermission("shop.operator"))){
-				ShopMessage.sendMessage("interactionIssue.worldBlacklist", player);
-				return false;
-			}
+		boolean isOperator = isOperator(player);
+		
+		//operators ignore world blacklist
+		if(!isOperator && plugin.getWorldBlacklist().contains(chest.getWorld().getName())){
+			lang.request("interaction_issue.worldBlacklist").sendToAudience(player);
+			return false;
 		}
 		
-		if(plugin.usePerms() && !player.hasPermission("shop.operator")){
+		if(isAllowedToCreateShopType(player,))
+		
+		
+		if(!isOperator){
 			boolean canCreate = false;
 			if(!player.hasPermission("shop.create")){
 				for(ShopType shopType : ShopType.values()){
@@ -81,6 +84,16 @@ public class ShopCreationUtil{
 				return false;
 			}
 		}
+		
+		
+		int numberOfShops = plugin.getShopHandler().getNumberOfShops(player);
+		int buildPermissionNumber = Shop.getShopBuildLimit(player);
+		if(numberOfShops >= buildPermissionNumber){
+			ShopMessage.sendMessage("permission.buildLimit", player);
+			return false;
+		}
+		
+
 		return true;
 	}
 	
@@ -97,6 +110,14 @@ public class ShopCreationUtil{
 		if(type == null){
 			type = ShopType.SELL;
 		}
+		
+		boolean hasOperatorPermission = isOperator(player);
+		
+		if(!isAllowedToCreateShopType(player, type)){
+			lang.request("permission.error.create").replace("%shop-type%", type).sendToAudience(player);
+			return null;
+		}
+		
 		final AbstractShop shop = AbstractShop.create(signBlock.getLocation(),
 				player.getUniqueId(),
 				pricePair.getPrice(),
@@ -107,12 +128,6 @@ public class ShopCreationUtil{
 				signDirection);
 		shop.setFakeSign(isFakeSign);
 		
-		if(plugin.usePerms()){
-			if(!(player.hasPermission("shop.create." + type.toString().toLowerCase()) || player.hasPermission("shop.create"))){
-				playerMessage = ShopMessage.formatPlainTextSingle("permission.create", new PlaceholderContext());
-			}
-		}
-		
 		if(type == ShopType.GAMBLE){
 			isAdmin = true;
 			shop.setAdmin(true);
@@ -122,10 +137,11 @@ public class ShopCreationUtil{
 		}
 		
 		//if players must pay to create shops, check that they have enough money first
-		double cost = plugin.getCreationCost();
-		if(cost > 0){
-			if(!EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
-				playerMessage = ShopMessage.formatPlainTextSingle("interactionIssue.createInsufficientFunds", new PlaceholderContext());
+		if(!hasOperatorPermission){
+			double cost = plugin.getCreationCost();
+			if(cost > 0 && !EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
+				lang.request("interaction_issue.createInsufficientFunds").sendToAudience(player);
+				return null;
 			}
 		}
 		
@@ -337,7 +353,7 @@ public class ShopCreationUtil{
 			if(shop.getType() == ShopType.BARTER && barterItem == null){
 				ShopMessage.sendMessage(shop.getType() + ".initializeInfo", player, shop);
 				process.setStep(ShopCreationProcess.ChatCreationStep.SIGN_BARTER_ITEM);
-				process.displayFloatingText(shop.getType()+ ".initializeBarter");
+				process.displayFloatingText(shop.getType() + ".initializeBarter");
 				if(plugin.allowCreativeSelection()){
 					ShopMessage.sendMessage("BUY.initializeAlt", player, shop);
 				}

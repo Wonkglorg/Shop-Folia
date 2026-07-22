@@ -44,6 +44,7 @@
 # %out of stock remaining%: (Offline Notification) Remaining number of rows not displayed
 # %tp time remaining%: The amount of seconds remaining on a players teleport to shop cooldown timer
 placeholders:
+  currency-name: "Diamond(s)"
   in-stock-color: "<green>"
   out-of-stock-color: "<red>"
   zero-price: "FREE"
@@ -168,7 +169,7 @@ interaction_issue:
   createDisplayRoom: "&cThis shop could not created because there is no room for a display item."
   createSignRoom: "&cThis shop could not created because there is no room for a wall sign."
   createOtherShop: "&cYou may not create a shop on the same chest as another player."
-  createInsufficientFunds: "&cYou do not have the funds required to create this shop."
+  createInsufficientFunds: "<red>You do not have the funds required to create this shop."
   createCooldown: "&cYou can only create a shop every few seconds."
   createCancel: "&cCancelled shop creation."
   destroyInsufficientFunds: "&cYou do not have the funds required to destroy this shop."
@@ -230,12 +231,13 @@ description:
     - '&d+---------------------------------------------------+'
 
 permission:
-  use: "&cYou are not authorized to use %shop-type% shops."
-  create: "&cYou are not authorized to create %shop-type% shops."
-  destroy: "&cYou are not authorized to destroy your own shops."
-  destroyOther: "&cYou are not authorized to destroy other players shops."
-  openOther: "&cYou are not authorized to open other players shops."
-  buildLimit: "&cYou have already reached your build limit of %user-amount%/%build-limit% shops."
+  error:
+    use: "&cYou are not authorized to use %shop-type% shops."
+    create: "&cYou are not authorized to create %shop-type% shops."
+    destroy: "&cYou are not authorized to destroy your own shops."
+    destroyOther: "&cYou are not authorized to destroy other players shops."
+    openOther: "&cYou are not authorized to open other players shops."
+    buildLimit: "&cYou have already reached your build limit of %user-amount%/%build-limit% shops."
 
 hover:
   location:
@@ -282,27 +284,32 @@ command:
       - "<white>There are <gold>%total-shops%<white> shops registered on the server."
       - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
   currency:
+    success: "<gray>The server is using %currency-name% as currency."
+    tip: "<gray>To change the currency, run the command '/shop setcurrency' with the item you want in your hand."
   set-currency:
+    error-no-console: "<red>This command can only be executed by a player"
+    error-digital-currency: "<red>The server is not using an item based currency so no item could be set."
+    error-no-item-in-hand: "<red>>You must hold a valid item to use that command."
+    success: "<green>Set the servers currency to %held-item%"
+  set-gamble:
+    error-no-console: "<red>This command can only be executed by a player"
+    error-no-item-in-hand: "<red>>You must hold a valid item to use that command."
+    success: "<green>Set the servers currency to %held-item%"
+  refresh-reload:
+    success: "<green>The display items on all of the shops have been refreshed."
   reload:
     success: "<green>Reloaded Market!"
-
-  notify-user:
-  notify-owner:
-  notify-stock:
-  set-gamble:
-  currency_output: "&7The server is using %currency-name% as currency."
-  currency_output_tip: "&7To change this, run the command '/shop setcurrency' with the item you want in your hand."
-  itemrefresh_output: "&7The display items on all of the shops have been refreshed."
-  itemlist: "&b/shop itemlist <add/remove> &7- add/remove all items in inventory to the item list"
-  itemlist_add: "&aAll valid items in inventory added to the item list"
-  itemlist_remove: "&aAll valid items in inventory removed from the item list"
-  reload_output: "&aSuccessfully reloaded Shop."
-  error_novault: "&cThe server is not using an item based currency so no item could be set."
-  error_nohand: "&cYou must be holding a valid item to use that command."
-  not_authorized: "&cYou are not authorized to use that command."
-  notify_user: "&7Your notifications for your own transactions with shops are now %notify-state%"
-  notify_owner: "&7Your notifications for players transacting with your shops are now %notify-state%"
-  notify_stock: "&7Your notifications for your shops running out of stock are now %notify-state%"
+  notify:
+    usage:
+      -"<blue>/shop notify user<gray>- shows transaction notifications when you interact with other shops"
+      -"<blue>/shop notify owner<gray>- shows transaction notifications when players interact with your shops"
+      -"<blue>/shop notify stock<gray>- shows notifications when your shop runs out of stock"
+    user:
+      success: "&7Your notifications for your own transactions with shops are now %notify-state%"
+    owner:
+      success: "&7Your notifications for players transacting with your shops are now %notify-state%"
+    stock:
+      success: "&7Your notifications for your shops running out of stock are now %notify-state%"
 
 sign:
   text:

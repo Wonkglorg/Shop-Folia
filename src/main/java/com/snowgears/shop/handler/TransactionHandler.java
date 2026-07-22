@@ -50,8 +50,7 @@ public class TransactionHandler{
 		//player did not click their own shop
 		if(!shop.getOwnerName().equals(player.getName()) || Shop.getPlugin().getDebugAllowUseOwnShop()){
 			
-			if(plugin.usePerms() && !(player.hasPermission("shop.use." + shop.getType().toString().toLowerCase()) ||
-			                          player.hasPermission("shop.use"))){
+			if(!(player.hasPermission("shop.use." + shop.getType().toString().toLowerCase()) || player.hasPermission("shop.use"))){
 				if(!player.hasPermission("shop.operator")){
 					ShopMessage.sendMessage("permission.use", player, shop);
 					return;
@@ -146,7 +145,7 @@ public class TransactionHandler{
 						ShopGuiHandler.GuiIcon guiIcon = plugin.getGuiHandler().getIconFromOption(player, PlayerSettings.Option.NOTIFICATION_STOCK);
 						
 						if(guiIcon != null && guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_STOCK_ON){
-							ShopMessage.sendMessage(actionType.toString()+".ownerNoSpace", owner, shop);
+							ShopMessage.sendMessage(actionType.toString() + ".ownerNoSpace", owner, shop);
 						}
 					}
 				}

@@ -32,13 +32,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -58,56 +55,6 @@ public class ShopListener implements Listener{
 			// Cache player name for performance optimization
 			PlayerNameCache.cacheName(event.getPlayer().getUniqueId(), event.getPlayer().getName());
 		}, 5);
-	}
-	
-	public int getBuildLimit(Player player) {
-		// If permissions are disabled, there is "no limit"
-		if(!plugin.usePerms()){
-			return 10000;
-		}
-		
-		int baseBuildLimit = -1;
-		int extraBuildLimit = 0;
-		Set<PermissionAttachmentInfo> permissions = player.getEffectivePermissions();
-		
-		// calculate base buildlimit permission first (highest number)
-		for(PermissionAttachmentInfo permInfo : permissions){
-			String perm = permInfo.getPermission();
-			// Skip if not a shop permission
-			if(!perm.startsWith("shop.")){
-				continue;
-			}
-			
-			// If it's a base build limit permission, parse the number
-			if(perm.startsWith("shop.buildlimit.")){
-				try{
-					int tempNum = Integer.parseInt(perm.substring(perm.lastIndexOf(".") + 1));
-					if(tempNum > baseBuildLimit){
-						baseBuildLimit = tempNum;
-					}
-				} catch(NumberFormatException e){
-				}
-			}
-			
-			// If it's an extra build limit permission, parse the number
-			else if(perm.startsWith("shop.buildlimitextra.")){
-				try{
-					int extraNum = Integer.parseInt(perm.substring(perm.lastIndexOf(".") + 1));
-					extraBuildLimit += extraNum;
-				} catch(NumberFormatException e){
-				}
-			}
-		}
-		
-		// If no build limit was found, return 10000 (no limit)
-		if(baseBuildLimit == -1){
-			return 10000;
-		}
-		
-		// Add build limits together
-		int playerBuildLimit = baseBuildLimit + extraBuildLimit;
-		
-		return playerBuildLimit;
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
@@ -193,7 +140,7 @@ public class ShopListener implements Listener{
 				}
 				//non-owner is trying to open shop
 				if(!shop.getOwnerUUID().equals(player.getUniqueId())){
-					if((plugin.usePerms() && player.hasPermission("shop.operator")) || (!plugin.usePerms() && player.isOp())){
+					if(Shop.isOperator(player)){
 						if(shop.isAdmin()){
 							if(shop.getType() == ShopType.GAMBLE){
 								//allow gamble shops to be opened by operators

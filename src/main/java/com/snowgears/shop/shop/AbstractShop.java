@@ -1,6 +1,7 @@
 package com.snowgears.shop.shop;
 
 import com.snowgears.shop.Shop;
+import static com.snowgears.shop.Shop.isOperator;
 import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.handler.ShopGuiHandler;
 import com.snowgears.shop.util.InventoryUtils;
@@ -37,7 +38,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -48,6 +48,8 @@ import java.util.UUID;
 
 public abstract class AbstractShop{
 	
+	@Getter
+	@Setter
 	protected UUID id = UUID.randomUUID();
 	@Setter
 	protected boolean needsSave = false;
@@ -86,7 +88,7 @@ public abstract class AbstractShop{
 	
 	protected int stock;
 	
-	public AbstractShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing) {
+	protected AbstractShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing) {
 		this.signLocation = signLoc;
 		this.owner = player;
 		this.price = pri;
@@ -114,27 +116,13 @@ public abstract class AbstractShop{
 	                                  ShopType shopType,
 	                                  BlockFace facing) {
 		
-		switch(shopType) {
-			case SELL:
-				return new SellShop(signLoc, player, pri, amt, admin, facing);
-			case BUY:
-				return new BuyShop(signLoc, player, pri, amt, admin, facing);
-			case BARTER:
-				return new BarterShop(signLoc, player, pri, amt, admin, facing);
-			case GAMBLE:
-				return new GambleShop(signLoc, player, pri, amt, admin, facing);
-			case COMBO:
-				return new ComboShop(signLoc, player, pri, priCombo, amt, admin, facing);
-		}
-		return null;
-	}
-	
-	public void setId(UUID newId) {
-		this.id = newId;
-	}
-	
-	public UUID getId() {
-		return id;
+		return switch(shopType) {
+			case SELL -> new SellShop(signLoc, player, pri, amt, admin, facing);
+			case BUY -> new BuyShop(signLoc, player, pri, amt, admin, facing);
+			case BARTER -> new BarterShop(signLoc, player, pri, amt, admin, facing);
+			case GAMBLE -> new GambleShop(signLoc, player, pri, amt, admin, facing);
+			case COMBO -> new ComboShop(signLoc, player, pri, priCombo, amt, admin, facing);
+		};
 	}
 	
 	public boolean isChunkLoaded() {
@@ -645,12 +633,12 @@ public abstract class AbstractShop{
 				//player clicked another player's shop sign
 				if(!this.getOwnerName().equals(player.getName())){
 					//player has permission to change another player's shop display
-					if((!Shop.getPlugin().usePerms() && player.isOp()) || (Shop.getPlugin().usePerms() && player.hasPermission("shop.operator"))){
+					if((isOperator(player))){
 						this.getDisplay().cycleType(player);
 					}
 					//player clicked own shop sign
 				} else {
-					if(Shop.getPlugin().usePerms() && !player.hasPermission("shop.setdisplay")){
+					if(!player.hasPermission("shop.setdisplay")){
 						return false;
 					}
 					
