@@ -19,7 +19,7 @@ public class GambleShop extends AbstractShop {
 
         this.isAdmin = true;
         this.type = ShopType.GAMBLE;
-        this.signLines = ShopMessage.getSignLines(this, this.type);
+        this.signLines = ShopMessage.getSignLines(this);
         setGambleItem();
         this.setAmount(this.gambleItem.getAmount());
     }

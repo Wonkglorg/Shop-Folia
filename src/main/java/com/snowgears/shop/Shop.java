@@ -13,7 +13,6 @@ import com.snowgears.shop.listener.DisplayListener;
 import com.snowgears.shop.listener.MiscListener;
 import com.snowgears.shop.listener.ShopListener;
 import com.snowgears.shop.shop.ShopType;
-import com.snowgears.shop.util.ConfigUpdater;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.ItemNameUtil;
@@ -31,7 +30,7 @@ import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
 import com.tcoded.folialib.FoliaLib;
 import com.wonkglorg.minecraft.config.LangManager;
-import io.papermc.paper.configuration.GlobalConfiguration.UpdateChecker;
+import com.wonkglorg.minecraft.config.types.Config;
 import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
@@ -43,7 +42,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,7 +55,7 @@ public class Shop extends JavaPlugin{
 	
 	@Getter
 	private static Shop plugin;
-	private ShopLogger logger = new ShopLogger(this, true);
+	private ShopLogger logger = new ShopLogger(this);
 	// Getter for FoliaLib
 	@Getter
 	private FoliaLib foliaLib;
@@ -184,7 +183,7 @@ public class Shop extends JavaPlugin{
 	@Getter
 	private int displayBatchDelay;
 	
-	private YamlConfiguration config;
+	private Config config;
 	@Getter
 	private LangManager langManager;
 	
@@ -203,94 +202,18 @@ public class Shop extends JavaPlugin{
 	
 	@Override
 	public void onLoad() {
-		File configFile = new File(getDataFolder(), "config.yml");
-		if(!configFile.exists()){
-			configFile.getParentFile().mkdirs();
-			UtilMethods.copy(getResource("config.yml"), configFile);
-		}
-		config = YamlConfiguration.loadConfiguration(configFile);
-		// Load logger
-		logger = new ShopLogger(this, config.getBoolean("enableLogColor"));
-		this.logger().setLogLevel(config.getString("logLevel"));
+		plugin = this;
+		config = new Config(this, Path.of("config.yml"));
+		logger.setLogLevel(config.getString("logLevel"));
 		langManager = LangManager.getInstance(this);
 	}
 	
 	@Override
 	public void onEnable() {
-		plugin = this;
-		
 		// Initialize FoliaLib
 		foliaLib = new FoliaLib(this);
-		
-		File configFile = new File(getDataFolder(), "config.yml");
-		if(!configFile.exists()){
-			configFile.getParentFile().mkdirs();
-			UtilMethods.copy(getResource("config.yml"), configFile);
-		}
-		
-		File signConfigFile = new File(getDataFolder(), "signConfig.yml");
-		if(!signConfigFile.exists()){
-			signConfigFile.getParentFile().mkdirs();
-			UtilMethods.copy(getResource("signConfig.yml"), signConfigFile);
-		}
-		
-		File displayConfigFile = new File(getDataFolder(), "displayConfig.yml");
-		if(!displayConfigFile.exists()){
-			displayConfigFile.getParentFile().mkdirs();
-			UtilMethods.copy(getResource("displayConfig.yml"), displayConfigFile);
-		}
-		
-		try{
-			// Check if we need to update any legacy config values
-			
-			// v1.10.0
-			// Check if offlinePurchaseNotifications.enabled is a new value
-			YamlConfiguration oldConfig = YamlConfiguration.loadConfiguration(configFile);
-			// One time update if the Offline Purchase Notifications feature is being started up for the very first time
-			// Previous default OFF, new default FILE
-			if(oldConfig.get("offlinePurchaseNotifications") == null && oldConfig.getString("logging.type").equals("OFF")){
-				logger.info("Config default update: v1.10.0(+) is being run for the first time, setting logging type to FILE from old default OFF");
-				oldConfig.set("logging.type", "FILE");
-				oldConfig.save(configFile);
-			}
-			
-			// v1.10.2
-			// Migrate old hookWorldGuard to new worldGuard.requireAllowShopFlag structure
-			if(oldConfig.get("hookWorldGuard") != null && oldConfig.get("worldGuard.requireAllowShopFlag") == null){
-				boolean oldValue = oldConfig.getBoolean("hookWorldGuard");
-				logger.info("Config migration: moving 'hookWorldGuard' to 'worldGuard.requireAllowShopFlag'");
-				oldConfig.set("worldGuard.requireAllowShopFlag", oldValue);
-				oldConfig.set("hookWorldGuard", null); // remove old key
-				oldConfig.save(configFile);
-			}
-			
-			// Next time we add a migration lets move it to a util class to keep things clean.
-			
-			ConfigUpdater.update(plugin, "config.yml", configFile, new ArrayList<>());
-		} catch(IOException e){
-			e.printStackTrace();
-		}
-		
-		try{
-			ConfigUpdater.update(plugin, "signConfig.yml", signConfigFile, new ArrayList<>());
-		} catch(IOException e){
-			e.printStackTrace();
-		}
-		
-		try{
-			ConfigUpdater.update(plugin, "displayConfig.yml", displayConfigFile, new ArrayList<>());
-		} catch(IOException e){
-			e.printStackTrace();
-		}
-		
-		reloadConfig();
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
-		config = YamlConfiguration.loadConfiguration(configFile);
-		// Load logger values again in case the log level was changed on a reload
-		this.logger().setLogLevel(config.getString("logLevel"));
-		this.logger().enableColor(config.getBoolean("enableLogColor"));
-		
 		nmsBullshitHandler = new NMSBullshitHandler(this);
 		
 		shopCreationUtil = new ShopCreationUtil(this);
@@ -875,7 +798,7 @@ public class Shop extends JavaPlugin{
 	
 	public String getPriceString(double price, boolean pricePer) {
 		if(price == 0){
-			return ShopMessage.getFreePriceWord();
+			return "free";
 		}
 		
 		String format = currencyFormat;
@@ -899,7 +822,7 @@ public class Shop extends JavaPlugin{
 	
 	public String getPriceComboString(double price, double priceSell, boolean pricePer) {
 		if(price == 0){
-			return ShopMessage.getFreePriceWord();
+			return "free";
 		}
 		
 		String format = currencyFormat;

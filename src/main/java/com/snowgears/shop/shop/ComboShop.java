@@ -18,7 +18,7 @@ public class ComboShop extends AbstractShop {
         super(signLoc, player, pri, amt, admin, facing);
 
         this.type = ShopType.COMBO;
-        this.signLines = ShopMessage.getSignLines(this, this.type);
+        this.signLines = ShopMessage.getSignLines(this);
         this.priceBuy = pri;
         this.priceSell = priSell;
     }

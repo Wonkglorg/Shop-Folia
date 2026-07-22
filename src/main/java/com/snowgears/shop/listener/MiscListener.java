@@ -13,6 +13,7 @@ import com.snowgears.shop.util.ShopActionType;
 import com.snowgears.shop.util.ShopCreationProcess;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,6 +23,8 @@ import org.bukkit.block.DoubleChest;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -86,7 +89,7 @@ public class MiscListener implements Listener{
 			return;
 		}
 		
-		if(!(b.getState() instanceof Sign)){
+		if(!(b.getState() instanceof Sign sign)){
 			return;
 		}
 		
@@ -180,12 +183,12 @@ public class MiscListener implements Listener{
 					if(!shop.isInitialized()){
 						shop.delete();
 						if(b.getBlockData() instanceof WallSign){
-							String[] lines = ShopMessage.getSignLines("timeout", shop);
-							Sign sign = (Sign) b.getState();
-							sign.setLine(0, lines[0]);
-							sign.setLine(1, lines[1]);
-							sign.setLine(2, lines[2]);
-							sign.setLine(3, lines[3]);
+							List<Component> lines = ShopMessage.getSignLines("timeout", shop);
+							SignSide side = sign.getSide(Side.FRONT);
+							side.line(0, lines.get(0));
+							side.line(1, lines.get(1));
+							side.line(2, lines.get(2));
+							side.line(3, lines.get(3));
 							sign.update(true);
 							cancelShopCreationProcess(player);
 						}

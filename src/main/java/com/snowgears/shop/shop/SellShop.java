@@ -12,7 +12,7 @@ public class SellShop extends AbstractShop {
         super(signLoc, player, pri, amt, admin, facing);
 
         this.type = ShopType.SELL;
-        this.signLines = ShopMessage.getSignLines(this, this.type);
+        this.signLines = ShopMessage.getSignLines(this);
     }
 
 }

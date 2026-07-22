@@ -21,7 +21,7 @@ public class BarterShop extends AbstractShop {
 
         this.type = ShopType.BARTER;
         this.barterType = ITEM;
-        this.signLines = ShopMessage.getSignLines(this, this.type);
+        this.signLines = ShopMessage.getSignLines(this);
     }
 
     @Override

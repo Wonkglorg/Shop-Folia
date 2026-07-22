@@ -308,12 +308,12 @@ sign:
         1: "<bold>%shop%"
         2: "Selling; &l%amount%"
         3: "&a%price%"
-        4: "&d%server name%"
+        4: "&d%server-display-name%"
       admin_no_display:
         1: "<bold>%sell shop%"
         2: "%item%: %amount%"
         3: "&a%price%"
-        4: "&d%server name%"
+        4: "&d%server-display-name%"
     BUY:
       normal:
         1: "%stock color%&l%shop%"
@@ -329,12 +329,12 @@ sign:
         1: "&l%shop%"
         2: "Buying; &l%amount%"
         3: "&a%price%"
-        4: "&d%server name%"
+        4: "&d%server-display-name%"
       admin_no_display:
         1: "&l%buy shop%"
         2: "%item%: %amount%"
         3: "&a%price%"
-        4: "&d%server name%"
+        4: "&d%server-display-name%"
     BARTER:
       normal:
         1: "%stock color%&l%shop%"
@@ -382,12 +382,12 @@ sign:
         1: "&l%shop%"
         2: "Buys or Sells; &l%amount%"
         3: "&a%price combo%"
-        4: "&d%server name%"
+        4: "&d%server-display-name%"
       admin_no_display:
         1: "&l%buy / sell%"
         2: "%item%: %amount%"
         3: "&a%price combo%"
-        4: "&d%server name%"
+        4: "&d%server-display-name%"
     timeout:
       1: "&cSHOP CLOSED"
       2: "&7CREATION TIMEOUT"

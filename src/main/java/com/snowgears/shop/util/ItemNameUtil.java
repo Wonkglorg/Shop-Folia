@@ -3,6 +3,9 @@ package com.snowgears.shop.util;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.event.HoverEvent.ShowItem;
+import static net.kyori.adventure.text.event.HoverEvent.showItem;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -74,6 +77,14 @@ public class ItemNameUtil{
 		
 		// Fallback to the material name
 		return getNameTranslatable(item.getType());
+	}
+	
+	public static HoverEvent<ShowItem> getItemHover(ItemStack item) {
+		if(item == null){
+			return null;
+		}
+		var dataComponents = ItemNBTUtils.getNMSItemStackDataComponents(item);
+		return showItem(item.getType().getKey(), 1, dataComponents);
 	}
 	
 	public static Component getNameTranslatable(Material material) {

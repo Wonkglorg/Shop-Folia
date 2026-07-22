@@ -245,7 +245,7 @@ public abstract class AbstractDisplay{
 				String tagLine = entry.getKey();
 				Location asTagLocation = entry.getValue();
 				
-				Shop.getPlugin().logger().spam("[Display] Adding tag line: " + tagLine, true);
+				Shop.getPlugin().logger().spam("[Display] Adding tag line: " + tagLine);
 				createTagEntity(player, tagLine, asTagLocation);
 			}
 			
@@ -297,7 +297,7 @@ public abstract class AbstractDisplay{
 		                                "/" +
 		                                location.getBlockZ() +
 		                                ": " +
-		                                text, true);
+		                                text);
 		ArmorStandData caseStandData = new ArmorStandData();
 		caseStandData.setSmall(false);
 		caseStandData.setLocation(location);

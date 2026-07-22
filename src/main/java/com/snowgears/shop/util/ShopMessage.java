@@ -2,16 +2,11 @@ package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayType;
-import com.snowgears.shop.handler.ShopGuiHandler;
-import static com.snowgears.shop.handler.ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_USER_ON;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
 import com.snowgears.shop.shop.ShopType;
 import static com.snowgears.shop.util.ItemNameUtil.getName;
 import static com.snowgears.shop.util.ItemNameUtil.getNameTranslatable;
-import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_SALE_OWNER;
-import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_SALE_USER;
-import static com.snowgears.shop.util.PlayerSettings.Option.NOTIFICATION_STOCK;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.util.Components;
@@ -206,151 +201,8 @@ public class ShopMessage{
 		   })
 		   .replace("%build limit%",plugin.getShopListener().getBuildLimit(context.getPlayer()))
 		   .replace("%tp time remaining%",String.valueOf(plugin.getShopListener().getTeleportCooldownRemaining(context.getPlayer())))
-		   .lazyReplace("%world%",()-> {
-			   if(context.getProcess() != null && context.getProcess().getClickedChest() != null){
-				   return context.getProcess().getClickedChest().getWorld().getName();
-			   } else if(context.getShop() != null){
-				   return context.getShop().getSignLocation().getWorld().getName();
-			   }
-			   return null;
-		   })
-		   .replace("%location%",()-> {
-			   Location loc = null;
-			   if(context.getLocation() != null){
-				   loc = context.getLocation();
-			   } else if(context.getProcess() != null && context.getProcess().getClickedChest() != null){
-				   loc = context.getProcess().getClickedChest().getLocation();
-			   } else if(context.getShop() != null){
-				   loc = context.getShop().getSignLocation();
-			   }
-			   if(loc == null){
-				   return null;
-			   }
-			   Component text = Component.text(UtilMethods.getCleanLocation(loc, false));
-			   if(context.getProcess() == null && context.getShop() == null){
-				   return text;
-			   }
-			   
-			   return text.hoverEvent(getShopInfoHoverEvent(context));
-		   })
 		   .replace("%currency name%",plugin.getCurrencyName())
 		   .replace("%currency item%",()->embedItem(getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
-		   .replace("%item%", ()-> ShopMessage.getItemPlaceholder(context))
-		   .lazyReplace("%item amount%", ()-> {
-			   if(context.getItem() != null){
-				   return String.valueOf(context.getItem().getAmount());
-			   } else if(context.getProcess() != null){
-				   return String.valueOf(context.getProcess().getItemAmount());
-			   } else if(context.getShop() != null && context.getShop().getItemStack() != null){
-				   return String.valueOf(context.getShop().getItemStack().getAmount());
-			   }
-			   return null;
-		   })
-		   .replace("%item enchants%",()-> {
-			   if(context.getShop() != null){
-				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getShop().getItemStack()), context.getShop().getItemStack());
-			   }
-			   if(context.getProcess() != null){
-				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getProcess().getItemStack()), context.getProcess().getItemStack());
-			   }
-			   if(context.getItem() != null){
-				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getItem()), context.getItem());
-			   }
-			   return null;
-		   })
-			.replace("%item lore%",()-> {
-				if(context.getShop() != null){
-					return embedItem(UtilMethods.getLoreString(context.getShop().getItemStack()), context.getShop().getItemStack());
-				}
-				if(context.getProcess() != null){
-					return embedItem(UtilMethods.getLoreString(context.getProcess().getItemStack()), context.getProcess().getItemStack());
-				}
-				if(context.getItem() != null){
-					return embedItem(UtilMethods.getLoreString(context.getItem()), context.getItem());
-				}
-				return null;
-			})
-			.replace("%item durability%", context.getShop() != null ? String.valueOf(context.getShop().getItemDurabilityPercent()): null)
-			.lazyReplace("%item type%", ()-> {
-				if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
-					return "???";
-				} else {
-					return Components.toPlainText(getNameTranslatable(context.getShop().getItemStack().getType()));
-				}
-			})
-		   .lazyReplace("%gamble item amount%",()-> {
-			   if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
-				   return String.valueOf(context.getShop().getAmount());
-			   }
-			   return null;
-		   })
-			.replace("%gamble item%", ()->{
-				if(context.getShop() != null && context.getShop().getType() == ShopType.GAMBLE){
-					return embedItem(getName(plugin.getGambleDisplayItem()), plugin.getGambleDisplayItem());
-				}
-				return null;
-			})
-		   .lazyReplace("%barter item amount%", ()->{
-			   if(context.getBarterItem() != null){
-				   return String.valueOf(context.getBarterItem().getAmount());
-			   }
-			   if(context.getShop() != null && context.getShop().getSecondaryItemStack() != null){
-				   return String.valueOf(context.getShop().getSecondaryItemStack().getAmount());
-			   }
-			   if(context.getProcess() != null){
-				   return String.valueOf(context.getProcess().getBarterItemAmount());
-			   }
-			   if(context.getItem() != null){
-				   return String.valueOf(context.getItem().getAmount());
-			   }
-			   return null;
-		   })
-		   .replace("%barter item%",()-> ShopMessage.getBarterItemPlaceholder(context))
-		   .lazyReplace("%barter item durability%",()-> {
-			   if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
-				   return String.valueOf(context.getShop().getSecondaryItemDurabilityPercent());
-			   }
-			   return null;
-		   })
-		   .replace("%barter item type%",()->{
-			   if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
-				   return getNameTranslatable(context.getShop().getSecondaryItemStack().getType());
-			   }
-			   return null;
-		   })
-		   .replace("%barter item enchants%",()->{
-			   if(context.getBarterItem() != null){
-				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getBarterItem()), context.getBarterItem());
-			   }
-			   if(context.getShop() != null && context.getShop().getSecondaryItemStack() != null){
-				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getShop().getSecondaryItemStack()),
-						   context.getShop().getSecondaryItemStack());
-			   }
-			   if(context.getProcess() != null){
-				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getProcess().getBarterItemStack()),
-						   context.getProcess().getBarterItemStack());
-			   }
-			   if(context.getItem() != null){
-				   return embedItem(UtilMethods.getEnchantmentsComponent(context.getItem()), context.getItem());
-			   }
-			   return null;
-		   })
-		   .replace("%barter item lore%",()->{
-			   if(context.getBarterItem() != null){
-				   return embedItem(UtilMethods.getLoreString(context.getBarterItem()), context.getBarterItem());
-			   }
-			   if(context.getShop() != null && context.getShop().getType() == ShopType.BARTER && context.getShop().getSecondaryItemStack() != null){
-				   return embedItem(UtilMethods.getLoreString(context.getShop().getSecondaryItemStack()), context.getShop().getSecondaryItemStack());
-			   }
-			   if(context.getProcess() != null){
-				   return embedItem(UtilMethods.getLoreString(context.getProcess().getBarterItemStack()), context.getProcess().getBarterItemStack());
-			   }
-			   if(context.getItem() != null){
-				   return embedItem(UtilMethods.getLoreString(context.getItem()), context.getItem());
-			   }
-			   return null;
-		   })
-		   .replace("%amount%", context.getShop() != null ? String.valueOf(context.getShop().getAmount()): null)
 		   .lazyReplace("%price sell%",()->{
 			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
 				   return((ComboShop) context.getShop()).getPriceSellString();
@@ -370,7 +222,6 @@ public class ShopMessage{
 			   return null;
 		   })
 		   .replace("%price per item%", context.getShop() != null ? context.getShop().getPricePerItemString() : null)
-		   .replace("%price%", context.getShop() != null ? context.getShop().getPriceString() : null)
 		   .lazyReplace("%stock%" ,()->{
 			   if(context.getShop() == null){
 				   return null;
@@ -386,14 +237,14 @@ public class ShopMessage{
 		   })
 		   .lazyReplace("%offline profit%",()->{
 			   String boughtString = plugin.getPriceString(context.getOfflineTransactions().getTotalProfit(), false);
-			   if(boughtString.equals(freePriceWord)){
+			   if(boughtString.equals("free")){
 				   boughtString = "0";
 			   }
 			   return boughtString;
 		   })
 		   .lazyReplace("%offline spent%",()->{
 			   String spentString = plugin.getPriceString(context.getOfflineTransactions().getTotalSpent(), false);
-			   if(spentString.equals(freePriceWord)){
+			   if(spentString.equals("free")){
 				   spentString = "0";
 			   }
 			   return spentString;
@@ -402,46 +253,6 @@ public class ShopMessage{
 		   .replace("%offline items bought%",()->ShopMessage.getOfflineItemsPlaceholder(context, context.getOfflineTransactions().getItemsBought()))
 		   .replace("%shops out of stock%",()-> ShopMessage.getShopsOutOfStockPlaceholder(context));
 		//@formatter:on
-	}
-	
-	private static net.kyori.adventure.text.event.HoverEvent<?> getItemHoverEvent(ItemStack item) {
-		if(item == null || disableItemHover){
-			return null;
-		}
-		
-		if(Shop.getPlugin().isMockBukkit()){
-			return Component.empty().hoverEvent();
-			(Action.SHOW_ITEM, new net.md_5.bungee.api.chat.hover.content.Item(item.getType().getKey().toString(), item.getAmount(), null));
-		}
-		
-		return ItemHoverEventHelper.createFrom(item);
-	}
-	
-	private static Component embedItem(String message, ItemStack item) {
-		return embedItem(Component.text(message), item);
-	}
-	
-	private static Component embedItem(Component message, ItemStack item) {
-		// If we have any NBT errors, don't try to embed the item hover text
-		if(disableItemHover){
-			return message;
-		}
-		try{
-			if(item == null){
-				return null;
-			}
-			Component msg = componentFromLegacy(UtilMethods.removeColorsIfOnlyWhite(message.toLegacyText()));
-			HoverEvent event = getItemHoverEvent(item);
-			if(event != null){
-				msg.setHoverEvent(event);
-			}
-			return (TextComponent) msg;
-		} catch(Error | Exception e){
-			plugin.logger().severe("Unable to embed item hover text, disabling item hover text for all players! Your version of : " + e.getMessage());
-			plugin.logger().debug("Error details: ", e);
-			// disableItemHover = true;
-			return message;
-		}
 	}
 	
 	private static Component getTransactionsHoverEvent(PlaceholderContext context) {
@@ -505,22 +316,11 @@ public class ShopMessage{
 	 * @param context The PlaceholderContext instance.
 	 * @return The item name, potentially truncated to fit sign constraints.
 	 */
-	private static Component getItemPlaceholder(PlaceholderContext context) {
-		ItemStack item = null;
-		if(context.getItem() != null){
-			item = context.getItem();
-		} else if(context.getProcess() != null){
-			item = context.getProcess().getItemStack();
-		} else if(context.getShop() != null || context.getShop().getItemStack() != null){
-			item = context.getShop().getItemStack();
-		}
-		if(item == null){
-			return null;
-		}
-		
+	private static Component getItemPlaceholder(ItemStack stack) {
+
 		Component itemName = getName(item);
 		if(context.isForSign()){
-			return Component.text(UtilMethods.trimForSign(Components.toPlainText(itemName)));
+			return UtilMethods.trimForSign(Components.toPlainText(itemName));
 		}
 		return embedItem(itemName, item);
 	}
@@ -669,10 +469,7 @@ public class ShopMessage{
 	//      # %amount% : The amount of items the shop is selling/buying/bartering #
 	//      # %price% : The price of the items the shop is selling (adjusted to match virtual or physical currency) #
 	//      # %owner% : The name of the shop owner #
-	//      # %server name% : The name of the server #
-	public static String%%
-	
-	getSignLines(AbstractShop shop, ShopType shopType) {
+	public static List<Component> getSignLines(AbstractShop shop) {
 		
 		DisplayType displayType = null;
 		if(shop.getDisplay() != null){
@@ -693,21 +490,28 @@ public class ShopMessage{
 			shopFormat += "_no_display";
 		}
 		
-		String % % lines = getUnformattedShopSignLines(shopType, shopFormat);
-		
-		for(int i = 0; i < lines.length; i++){
-			lines % i % = formatMessage(lines % i %, shop, null, true); lines % i % = ChatColor.translateAlternateColorCodes('&', lines % i %);
-			lines % i % = UtilMethods.trimForSign(lines % i %);
-		} return lines;
+		return getSignLines(displayType + "." + shopFormat + "." + i, shop);
 	}
 	
-	public static String%%
-	
-	getSignLines(String key, AbstractShop shop) {
-		String % % lines = shopSignTextMap.get(key); for(int i = 0; i < lines.length; i++){
-			lines % i % = formatMessage(lines % i %, shop, null, true); lines % i % = ChatColor.translateAlternateColorCodes('&', lines % i %);
-			lines % i % = UtilMethods.trimForSign(lines % i %);
-		} return lines;
+	/**
+	 * The shop lines defined in the lang config
+	 * @param key the key to search in the config for starts at "sign.text."
+	 * @param shop the shop this sign belongs to
+	 * @return a list with a capacity of 4
+	 */
+	public static List<Component> getSignLines(String key, AbstractShop shop) {
+		List<Component> lines = new ArrayList<>(4);
+		
+		for(var i = 0; i < 4; i++){
+			//@formatter:off
+			lines.add(langManager.request("sign.text." + key)
+			                     .replace("%amount%",shop.getAmount())
+			                     .replace("%price%",shop.getPrice())
+			                     .replace("%owner%",shop.getOwnerName())
+			                     .toSingleComponent());
+			//@formatter:on
+		}
+		return lines;
 	}
 	
 	public static ArrayList<String> getDisplayTags(AbstractShop shop, ShopType shopType) {
@@ -730,165 +534,5 @@ public class ShopMessage{
 			}
 		}
 		return formattedLines;
-	}
-	
-	private static void loadMessagesFromConfig() {
-		
-		for(ShopType type : ShopType.values()){
-			messageMap.put(type.toString() + "_user", chatConfig.getString("transaction." + type.toString().toUpperCase() + ".user"));
-			messageMap.put(type.toString() + "_owner", chatConfig.getString("transaction." + type.toString().toUpperCase() + ".owner"));
-			
-			messageMap.put(type.toString() + "_initialize", chatConfig.getString("interaction." + type.toString().toUpperCase() + ".initialize"));
-			if(type == ShopType.BUY || type == ShopType.COMBO){
-				messageMap.put(type.toString() + "_initializeAlt",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".initializeAlt"));
-			} else if(type == ShopType.BARTER){
-				messageMap.put(type.toString() + "_initializeInfo",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".initializeInfo"));
-				messageMap.put(type.toString() + "_initializeBarter",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".initializeBarter"));
-				messageMap.put(type.toString() + "_createHitChest",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".createHitChest"));
-				messageMap.put(type.toString() + "_createHitChestBarterAmount",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".createHitChestBarterAmount"));
-				messageMap.put(type.toString() + "_initializeBarterAlt",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".initializeBarterAlt"));
-			}
-			messageMap.put(type.toString() + "_create", chatConfig.getString("interaction." + type.toString().toUpperCase() + ".create"));
-			messageMap.put(type.toString() + "_destroy", chatConfig.getString("interaction." + type.toString().toUpperCase() + ".destroy"));
-			messageMap.put(type.toString() + "_opDestroy", chatConfig.getString("interaction." + type.toString().toUpperCase() + ".opDestroy"));
-			messageMap.put(type.toString() + "_opOpen", chatConfig.getString("interaction." + type.toString().toUpperCase() + ".opOpen"));
-			
-			messageMap.put(type.toString() + "_shopNoStock",
-					chatConfig.getString("transaction_issue." + type.toString().toUpperCase() + ".shopNoStock"));
-			messageMap.put(type.toString() + "_ownerNoStock",
-					chatConfig.getString("transaction_issue." + type.toString().toUpperCase() + ".ownerNoStock"));
-			messageMap.put(type.toString() + "_shopNoSpace",
-					chatConfig.getString("transaction_issue." + type.toString().toUpperCase() + ".shopNoSpace"));
-			messageMap.put(type.toString() + "_ownerNoSpace",
-					chatConfig.getString("transaction_issue." + type.toString().toUpperCase() + ".ownerNoSpace"));
-			messageMap.put(type.toString() + "_playerNoStock",
-					chatConfig.getString("transaction_issue." + type.toString().toUpperCase() + ".playerNoStock"));
-			messageMap.put(type.toString() + "_playerNoSpace",
-					chatConfig.getString("transaction_issue." + type.toString().toUpperCase() + ".playerNoSpace"));
-			
-			if(type != ShopType.GAMBLE){
-				messageMap.put(type.toString() + "_createHitChestAmount",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".createHitChestAmount"));
-			}
-			if(type != ShopType.BARTER){
-				messageMap.put(type.toString() + "_createHitChestPrice",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".createHitChestPrice"));
-			}
-			if(type == ShopType.COMBO){
-				messageMap.put(type.toString() + "_createHitChestPriceCombo",
-						chatConfig.getString("interaction." + type.toString().toUpperCase() + ".createHitChestPriceCombo"));
-			}
-			
-			int count = 1;
-			for(String s : chatConfig.getStringList("description." + type.toString().toUpperCase())){
-				messageMap.put(type.toString() + "_description" + count, s);
-				count++;
-			}
-		}
-		messageMap.put("initialCreateInstruction", chatConfig.getString("interaction.initialCreateInstruction"));
-		messageMap.put("createHitChest", chatConfig.getString("interaction.createHitChest"));
-		messageMap.put("adminCreateHitChest", chatConfig.getString("interaction.adminCreateHitChest"));
-		
-		messageMap.put("permission_use", chatConfig.getString("permission.use"));
-		messageMap.put("permission_create", chatConfig.getString("permission.create"));
-		messageMap.put("permission_destroy", chatConfig.getString("permission.destroy"));
-		messageMap.put("permission_destroyOther", chatConfig.getString("permission.destroyOther"));
-		messageMap.put("permission_openOther", chatConfig.getString("permission.openOther"));
-		messageMap.put("permission_buildLimit", chatConfig.getString("permission.buildLimit"));
-		
-		messageMap.put("creativeSelection_disabled", chatConfig.getString("creativeSelection.disabled"));
-		
-		messageMap.put("interactionIssue_line2", chatConfig.getString("interaction_issue.createLine2"));
-		messageMap.put("interactionIssue_line3", chatConfig.getString("interaction_issue.createLine3"));
-		messageMap.put("interactionIssue_noItem", chatConfig.getString("interaction_issue.createNoItem"));
-		messageMap.put("interactionIssue_direction", chatConfig.getString("interaction_issue.createDirection"));
-		messageMap.put("interactionIssue_sameItem", chatConfig.getString("interaction_issue.createSameItem"));
-		messageMap.put("interactionIssue_displayRoom", chatConfig.getString("interaction_issue.createDisplayRoom"));
-		messageMap.put("interactionIssue_signRoom", chatConfig.getString("interaction_issue.createSignRoom"));
-		messageMap.put("interactionIssue_createOtherPlayer", chatConfig.getString("interaction_issue.createOtherShop"));
-		messageMap.put("interactionIssue_createInsufficientFunds", chatConfig.getString("interaction_issue.createInsufficientFunds"));
-		messageMap.put("interactionIssue_createCooldown", chatConfig.getString("interaction_issue.createCooldown"));
-		messageMap.put("interactionIssue_destroyInsufficientFunds", chatConfig.getString("interaction_issue.destroyInsufficientFunds"));
-		messageMap.put("interactionIssue_createCancel", chatConfig.getString("interaction_issue.createCancel"));
-		messageMap.put("interactionIssue_teleportInsufficientFunds", chatConfig.getString("interaction_issue.teleportInsufficientFunds"));
-		messageMap.put("interactionIssue_teleportInsufficientCooldown", chatConfig.getString("interaction_issue.teleportInsufficientCooldown"));
-		messageMap.put("interactionIssue_initialize", chatConfig.getString("interaction_issue.initializeOtherShop"));
-		messageMap.put("interactionIssue_destroyChest", chatConfig.getString("interaction_issue.destroyChest"));
-		messageMap.put("interactionIssue_destroyUninitializedChest", chatConfig.getString("interaction_issue.destroyUninitializedChest"));
-		messageMap.put("interactionIssue_useOwnShop", chatConfig.getString("interaction_issue.useOwnShop"));
-		messageMap.put("interactionIssue_useShopAlreadyInUse", chatConfig.getString("interaction_issue.useShopAlreadyInUse"));
-		messageMap.put("interactionIssue_adminOpen", chatConfig.getString("interaction_issue.adminOpen"));
-		messageMap.put("interactionIssue_worldBlacklist", chatConfig.getString("interaction_issue.worldBlacklist"));
-		messageMap.put("interactionIssue_regionRestriction", chatConfig.getString("interaction_issue.regionRestriction"));
-		messageMap.put("interactionIssue_itemListDeny", chatConfig.getString("interaction_issue.itemListDeny"));
-		messageMap.put("interactionIssue_createHitChestTimeout", chatConfig.getString("interaction_issue.createHitChestTimeout"));
-		
-		int count = 1;
-		for(String s : chatConfig.getStringList("hover.location")){
-			messageMap.put("hover_location" + count, s);
-			count++;
-		}
-		count = 1;
-		for(String s : chatConfig.getStringList("creativeSelection.enter")){
-			messageMap.put("creativeSelection_enter" + count, s);
-			count++;
-		}
-		count = 1;
-		for(String s : chatConfig.getStringList("creativeSelection.prompt")){
-			messageMap.put("creativeSelection_prompt" + count, s);
-			count++;
-		}
-		
-		count = 1;
-		for(String s : chatConfig.getStringList("guiSearchSelection.enter")){
-			messageMap.put("guiSearchSelection_enter" + count, s);
-			count++;
-		}
-		count = 1;
-		for(String s : chatConfig.getStringList("guiSearchSelection.prompt")){
-			messageMap.put("guiSearchSelection_prompt" + count, s);
-			count++;
-		}
-		
-		count = 1;
-		for(String s : chatConfig.getStringList("transaction.OFFLINE_TRANSACTIONS_NOTIFICATION.summary")){
-			messageMap.put("offline_summary" + count, s);
-			count++;
-		}
-		messageMap.put("offline_itemRow", chatConfig.getString("transaction.OFFLINE_TRANSACTIONS_NOTIFICATION.itemRow"));
-		messageMap.put("offline_outOfStockShop", chatConfig.getString("transaction.OFFLINE_TRANSACTIONS_NOTIFICATION.outOfStockShop"));
-		messageMap.put("offline_moreOutOfStock", chatConfig.getString("transaction.OFFLINE_TRANSACTIONS_NOTIFICATION.moreOutOfStock"));
-		
-		messageMap.put("command_list", chatConfig.getString("command.list"));
-		messageMap.put("command_list_output_total", chatConfig.getString("command.list_output_total"));
-		messageMap.put("command_list_output_perms", chatConfig.getString("command.list_output_perms"));
-		messageMap.put("command_list_output_noperms", chatConfig.getString("command.list_output_noperms"));
-		messageMap.put("command_currency", chatConfig.getString("command.currency"));
-		messageMap.put("command_currency_output", chatConfig.getString("command.currency_output"));
-		messageMap.put("command_currency_output_tip", chatConfig.getString("command.currency_output_tip"));
-		messageMap.put("command_setcurrency", chatConfig.getString("command.setcurrency"));
-		messageMap.put("command_setcurrency_output", chatConfig.getString("command.setcurrency_output"));
-		messageMap.put("command_setgamble", chatConfig.getString("command.setgamble"));
-		messageMap.put("command_itemrefresh", chatConfig.getString("command.itemrefresh"));
-		messageMap.put("command_itemrefresh_output", chatConfig.getString("command.itemrefresh_output"));
-		messageMap.put("command_itemlist", chatConfig.getString("command.itemlist"));
-		messageMap.put("command_itemlist_add", chatConfig.getString("command.itemlist_add"));
-		messageMap.put("command_itemlist_remove", chatConfig.getString("command.itemlist_remove"));
-		messageMap.put("command_reload", chatConfig.getString("command.reload"));
-		messageMap.put("command_reload_output", chatConfig.getString("command.reload_output"));
-		messageMap.put("command_error_novault", chatConfig.getString("command.error_novault"));
-		messageMap.put("command_error_nohand", chatConfig.getString("command.error_nohand"));
-		messageMap.put("command_not_authorized", chatConfig.getString("command.not_authorized"));
-		messageMap.put("command_notify_user", chatConfig.getString("command.notify_user"));
-		messageMap.put("command_notify_owner", chatConfig.getString("command.notify_owner"));
-		messageMap.put("command_notify_stock", chatConfig.getString("command.notify_stock"));
-		messageMap.put("command_notify_on", chatConfig.getString("command.notify_on"));
-		messageMap.put("command_notify_off", chatConfig.getString("command.notify_off"));
 	}
 }

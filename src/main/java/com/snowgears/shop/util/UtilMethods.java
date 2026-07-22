@@ -6,7 +6,6 @@ import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.TranslatableComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Color;
@@ -24,6 +23,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -441,8 +441,8 @@ public class UtilMethods{
 	}
 	
 	public static int getDurabilityPercent(ItemStack item) {
-		if(item.getType().getMaxDurability() > 0){
-			double dur = ((double) (item.getType().getMaxDurability() - item.getDurability()) / (double) item.getType().getMaxDurability());
+		if(item instanceof Damageable damageable){
+			double dur = ((double) (damageable.getMaxDamage() - damageable.getDamage()) / (double) damageable.getMaxDamage());
 			return (int) (dur * 100);
 		}
 		return 100;
@@ -495,15 +495,12 @@ public class UtilMethods{
 		return (nonIntrusiveMaterials.contains(material));
 	}
 	
-	public static String getLoreString(ItemStack is) {
-		if(is.getItemMeta() == null || is.getItemMeta().getLore() == null || is.getItemMeta().getLore().isEmpty()){
-			return "";
+	public static List<Component> getLore(ItemStack is) {
+		if(!is.hasItemMeta()){
+			return List.of();
 		}
-		return is.getItemMeta().getLore().toString();
-	}
-	
-	public static String translate(String key) {
-		return new TranslatableComponent(key).toPlainText();
+		
+		return is.getItemMeta().lore();
 	}
 	
 	public static String formatTickTime(int ticks) {

@@ -337,7 +337,6 @@ displayBatchDelay: 2
 # * SPAM   : Logs extremely verbose information for deep diagnostics
 # * HYPER  : Logs at hyper speed, the deepest level of diagnostics
 logLevel: HELPFUL
-enableLogColor: false
 
 debug:
    # (default: false) Should owners be able to buy/sell from their own shop

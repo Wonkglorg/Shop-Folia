@@ -5,17 +5,19 @@ import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.handler.ShopGuiHandler;
 import com.snowgears.shop.util.InventoryUtils;
 import com.snowgears.shop.util.ItemNameUtil;
+import static com.snowgears.shop.util.ItemNameUtil.getItemHover;
 import com.snowgears.shop.util.PlaceholderContext;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopAction;
 import com.snowgears.shop.util.ShopClickType;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
-import static com.snowgears.shop.util.UtilMethods.isMCVersion17Plus;
+import com.wonkglorg.minecraft.config.lang.LangRequest;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
@@ -28,6 +30,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
@@ -39,9 +43,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public abstract class AbstractShop{
@@ -73,7 +75,7 @@ public abstract class AbstractShop{
 	@Getter
 	protected ShopType type;
 	@Getter
-	protected String[] signLines;
+	protected List<Component> signLines;
 	protected boolean signLinesRequireRefresh;
 	@Getter
 	protected boolean isPerformingTransaction;
@@ -379,43 +381,15 @@ public abstract class AbstractShop{
 		}
 		
 		// Remove "0 Damage" from item meta (old config bug)
-		this.item = this.removeZeroDamageMeta(is.clone());
+		this.item = is.clone();
 		this.calculateStock();
 		this.updateSign(true);
 	}
 	
 	public void setSecondaryItemStack(ItemStack is) {
-		this.secondaryItem = this.removeZeroDamageMeta(is.clone());
+		this.secondaryItem = is.clone();
 		this.calculateStock();
 		this.updateSign(true);
-	}
-	
-	public ItemStack removeZeroDamageMeta(ItemStack item) {
-		try{
-			// In the past we used to explicitly set the durability of an item to be 0, this caused blocks/items to be saved
-			// with extra NBT data that we don't actually want. For example, dirt shouldn't have a damage of 0.
-			// Detect if we set it to 0, and if so, remove it from the ItemMeta!
-			if(item.getItemMeta() instanceof Damageable damageable && damageable.getDamage() == 0){
-				String components = item.getItemMeta().getAsComponentString(); // example: "[minecraft:damage=53]"
-				
-				// Remove it from the array
-				components = components.replace(",minecraft:damage=0", ""); // Middle of an array
-				components = components.replace("minecraft:damage=0,", ""); // Start of an array
-				components = components.replace("minecraft:damage=0", ""); // Only object in array
-				
-				// Convert it back into an item
-				String itemTypeKey = item.getType().getKey().toString(); // example: "minecraft:diamond_sword"
-				String itemAsString = itemTypeKey + components; // results in: "minecraft:diamond_sword[minecraft:damage=53]"
-				return Bukkit.getItemFactory().createItemStack(itemAsString);
-			}
-			
-			// Default return original item
-			return item;
-		} catch(Exception | Error e){
-			Shop.getPlugin().logger().debug("Error removing zero damage meta from item: " + item);
-			Shop.getPlugin().logger().helpful("checkItemDurability feature may be unsupported on your version of Paper/Spigot!");
-			return item;
-		}
 	}
 	
 	public void refreshGuiIcon() {
@@ -443,7 +417,7 @@ public abstract class AbstractShop{
 			// Add all lore lines
 			PlaceholderContext context = new PlaceholderContext();
 			context.setShop(this);
-			lore.add(ShopMessage.format(loreLine, context));
+			lore.add(ShopMessage.formatSingleMessage(loreLine, context));
 		}
 		
 		ItemMeta iconMeta = guiIcon.getItemMeta();
@@ -459,13 +433,11 @@ public abstract class AbstractShop{
 	}
 	
 	public int getItemDurabilityPercent() {
-		ItemStack item = this.getItemStack().clone();
 		return UtilMethods.getDurabilityPercent(item);
 	}
 	
 	public int getSecondaryItemDurabilityPercent() {
-		ItemStack item = this.getSecondaryItemStack().clone();
-		return UtilMethods.getDurabilityPercent(item);
+		return UtilMethods.getDurabilityPercent(secondaryItem);
 	}
 	
 	public void updateSign() {this.updateSign(false);}
@@ -484,7 +456,7 @@ public abstract class AbstractShop{
 		}
 		// Immediately set to false to prevent multiple calls to updateSign overlapping
 		signLinesRequireRefresh = false;
-		signLines = ShopMessage.getSignLines(this, this.type);
+		signLines = ShopMessage.getSignLines(this);
 		
 		// Use the sign's location to ensure the update runs in the correct region in Folia
 		Shop.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(signLocation, task -> {
@@ -503,35 +475,36 @@ public abstract class AbstractShop{
 				return;
 			}
 			
-			String[] oldLines = signBlock.getLines();
-			String[] newLines = signLines.clone();
+			SignSide frontSideSign = signBlock.getSide(Side.FRONT);
+			List<Component> oldLines = frontSideSign.lines();
 			boolean hasSignUpdate = false;
 			// If the sign lines are the same, don't update them!
-			boolean linesMatch = newLines[0].equals(oldLines[0]) &&
-			                     newLines[1].equals(oldLines[1]) &&
-			                     newLines[2].equals(oldLines[2]) &&
-			                     newLines[3].equals(oldLines[3]);
+			//@formatter:off
+			boolean linesMatch = signLines.get(0).equals(oldLines.get(0)) &&
+			                     signLines.get(1).equals(oldLines.get(1)) &&
+			                     signLines.get(2).equals(oldLines.get(2)) &&
+			                     signLines.get(3).equals(oldLines.get(3));
 			
 			if(!isInitialized()){
 				hasSignUpdate = true; // force update the sign
-				signBlock.setLine(0, ChatColor.RED + ChatColor.stripColor(newLines[0]));
-				signBlock.setLine(1, ChatColor.RED + ChatColor.stripColor(newLines[1]));
-				signBlock.setLine(2, ChatColor.RED + ChatColor.stripColor(newLines[2]));
-				signBlock.setLine(3, ChatColor.RED + ChatColor.stripColor(newLines[3]));
+				TextColor red = TextColor.color(255,0,0);
+				frontSideSign.line(0, signLines.get(0).color(red));
+				frontSideSign.line(1, signLines.get(1).color(red));
+				frontSideSign.line(2, signLines.get(2).color(red));
+				frontSideSign.line(3, signLines.get(3).color(red));
 			} else if(!linesMatch){
 				hasSignUpdate = true; // force update the sign
-				signBlock.setLine(0, newLines[0]);
-				signBlock.setLine(1, newLines[1]);
-				signBlock.setLine(2, newLines[2]);
-				signBlock.setLine(3, newLines[3]);
+				frontSideSign.line(0, signLines.get(0));
+				frontSideSign.line(1, signLines.get(1));
+				frontSideSign.line(2, signLines.get(2));
+				frontSideSign.line(3, signLines.get(3));
 			}
+			//@formatter:on
 			// If the sign is glowing, update it if the setting has changed
-			if(isMCVersion17Plus()){
-				boolean shouldGlow = Shop.getPlugin().getGlowingSignText();
-				if(shouldGlow != signBlock.isGlowingText()){
-					hasSignUpdate = true;
-					signBlock.setGlowingText(shouldGlow);
-				}
+			boolean shouldGlow = Shop.getPlugin().getGlowingSignText();
+			if(shouldGlow != frontSideSign.isGlowingText()){
+				hasSignUpdate = true;
+				frontSideSign.setGlowingText(shouldGlow);
 			}
 			// Update the sign if it has changed
 			if(hasSignUpdate){
@@ -565,11 +538,12 @@ public abstract class AbstractShop{
 			Block b = this.getSignLocation().getBlock();
 			if(b.getBlockData() instanceof WallSign){
 				Sign signBlock = (Sign) b.getState();
-				String[] deletedLines = ShopMessage.getSignLines("deleted", this);
-				signBlock.setLine(0, deletedLines[0]);
-				signBlock.setLine(1, deletedLines[1]);
-				signBlock.setLine(2, deletedLines[2]);
-				signBlock.setLine(3, deletedLines[3]);
+				SignSide side = signBlock.getSide(Side.FRONT);
+				List<Component> deletedLines = ShopMessage.getSignLines("deleted", this);
+				side.line(0, deletedLines.get(0));
+				side.line(1, deletedLines.get(1));
+				side.line(2, deletedLines.get(2));
+				side.line(3, deletedLines.get(3));
 				signBlock.update(true);
 			}
 			
@@ -605,16 +579,49 @@ public abstract class AbstractShop{
 	}
 	
 	public void printSalesInfo(Player player) {
-		for(String message : ShopMessage.getUnformattedMessageList(this.getType().toString(), "description")){
-			if(message != null && !message.isEmpty()){
-				Map<ItemStack, Integer> items = new HashMap<>();
-				items.put(this.item, this.amount);
-				if(this.getSecondaryItemStack() != null){
-					items.put(this.getSecondaryItemStack(), (int) this.price);
-				}
-				ShopMessage.sendMessage(message, player, this);
-			}
+		LangRequest request = Shop.getPlugin().getLangManager().request("description." + this.getType().toString());
+		shopPlaceholders(request, this);
+		request.sendToAudience(player);
+	}
+	
+	public static void shopPlaceholders(LangRequest request, AbstractShop shop) {
+		//@formatter:off
+		ItemStack item = shop.item;
+		
+		request.replace("%owner%", shop.getOwnerName())
+			   .replace("%price%",shop.getPrice())
+			   .replace("%stock%",shop.getStock())
+			   .replace("%amount%",shop.getAmount())
+			   .replace("%location%",UtilMethods.getCleanLocation(shop.getSignLocation(),false))
+			   .replace("%world%",shop.getSignLocation().getWorld().getName())
+			   .replace("%item%", ItemNameUtil.getName(item).hoverEvent(getItemHover(item)))
+               .replace("%item-type%", item.getType())
+			   .replace("%item-durability%",shop.getItemDurabilityPercent())
+               .replace("%item-amount%",shop.getAmount())
+               .replace("%item-item-lore%", UtilMethods.getLore(item))
+               .replace("%item-enchants%",UtilMethods.getEnchantmentsComponent(item));
+		
+		if(shop.getType() == ShopType.GAMBLE){
+			GambleShop gambleShop = (GambleShop) shop;
+			ItemStack displayItem = Shop.getPlugin().getGambleDisplayItem();
+			ItemStack gambleItem = gambleShop.getGambleItem();
+			request.replace("%gamble-item%", ItemNameUtil.getName(displayItem).hoverEvent(getItemHover(displayItem)))
+			       .replace("%gamble-item-type%", gambleItem.getType())
+			       .replace("%gamble-durability%",UtilMethods.getDurabilityPercent(gambleItem))
+			       .replace("%gamble-item-amount%", shop.getAmount())
+			       .replace("%gamble-item-lore%", UtilMethods.getLore(gambleItem))
+			       .replace("%gamble-item-enchants%",UtilMethods.getEnchantmentsComponent(gambleItem));
 		}
+		ItemStack barterItem = shop.secondaryItem;
+		if(barterItem != null){
+			request.replace("%barter-item%", ItemNameUtil.getName(barterItem).hoverEvent(getItemHover(barterItem)))
+			       .replace("%barter-item-type%", barterItem.getType())
+			       .replace("%barter-durability%",UtilMethods.getDurabilityPercent(barterItem))
+			       .replace("%barter-item-amount%", barterItem.getAmount())
+			       .replace("%barter-item-lore%", UtilMethods.getLore(barterItem))
+				   .replace("%barter-item-enchants%",UtilMethods.getEnchantmentsComponent(barterItem));
+		}
+		//@formatter:on
 	}
 	
 	public boolean executeClickAction(PlayerInteractEvent event, ShopClickType clickType) {

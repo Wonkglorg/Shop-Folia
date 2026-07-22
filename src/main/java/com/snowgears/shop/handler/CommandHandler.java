@@ -2,6 +2,7 @@ package com.snowgears.shop.handler;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.gui.ShopGuiWindow;
+import com.snowgears.shop.handler.ShopGuiHandler.GuiIcon;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.ItemNameUtil;
@@ -43,7 +44,7 @@ public class CommandHandler extends BukkitCommand{
 	}
 	
 	private void sendCommandMessage(String subType, Player player) {
-		ShopMessage.sendMessage("command", subType, player, null);
+		ShopMessage.sendMessage(subType, player);
 	}
 	
 	@Override
@@ -280,11 +281,10 @@ public class CommandHandler extends BukkitCommand{
 	
 	private void toggleOptionAndNotifyPlayer(Player player, PlayerSettings.Option option) {
 		Shop.getPlugin().getGuiHandler().toggleNotificationSetting(player, option);
-		
 		switch(option) {
 			case NOTIFICATION_SALE_USER:
-				plugin.getGuiHandler().getIconFromOption(context.getPlayer(), NOTIFICATION_SALE_USER) ? "<green>On" : "<red>Off";
-				lang.request("command.notify_user").replace("%notify-state%",);
+				String value = plugin.getGuiHandler().getIconFromOption(player, NOTIFICATION_SALE_USER) == GuiIcon.SETTINGS_NOTIFY_USER_ON ? "<green>On" : "<red>Off";
+				lang.request("command.notify_user").replace("%notify-state%", value);
 				break;
 			case NOTIFICATION_SALE_OWNER:
 				sendCommandMessage("notify_owner", player);

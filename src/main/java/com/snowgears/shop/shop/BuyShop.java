@@ -14,7 +14,7 @@ public class BuyShop extends AbstractShop {
         super(signLoc, player, pri, amt, admin, facing);
 
         this.type = ShopType.BUY;
-        this.signLines = ShopMessage.getSignLines(this, this.type);
+        this.signLines = ShopMessage.getSignLines(this);
     }
 
     @Override
