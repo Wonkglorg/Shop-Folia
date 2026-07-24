@@ -189,7 +189,7 @@ public class ShopMessage{
 				   return context.getProcess().getShopType().toString();
 			   }
 			   if(context.getShop() != null){
-				   return ShopMessage.getCreationWord(context.getShop().getType().toString().toUpperCase());
+				   return Shop.getPlugin().getSettingsConfig().getCreationWord(context.getShop().getCreationWord());
 			   }
 			   return null;
 		   })
@@ -396,15 +396,6 @@ public class ShopMessage{
 		// No shops for player! don't add anything! p.s. should never get here.
 		return null;
 	}
-	
-	public static String formatMessage(String unformattedMessage, AbstractShop shop) {
-		PlaceholderContext context = new PlaceholderContext();
-		context.setShop(shop);
-		Component formattedMessage = format(unformattedMessage, context);
-		// Return the legacy version since we are requesting the legacy formatter!
-		return ChatColor.translateAlternateColorCodes('§', formattedMessage.toLegacyText());
-	}
-	
 	public static Component formatMessage(String unformattedMessage, AbstractShop shop, Player player, boolean forSign) {
 		PlaceholderContext context = new PlaceholderContext();
 		context.setPlayer(player);

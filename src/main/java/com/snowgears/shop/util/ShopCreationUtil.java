@@ -11,6 +11,7 @@ import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateS
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShopType;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
+import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.shop.ShopType;
 import com.wonkglorg.minecraft.config.LangManager;
 import org.bukkit.Bukkit;
@@ -364,15 +365,16 @@ public class ShopCreationUtil{
 	
 	public ShopType getShopType(String input) {
 		ShopType type = null;
-		if(input.toLowerCase().contains(ShopMessage.getCreationWord("BUY"))){
+		SettingsConfig config = Shop.getPlugin().getSettingsConfig();
+		if(input.toLowerCase().contains(config.getCreationWord(CreationWord.BUY))){
 			type = ShopType.BUY;
-		} else if(input.toLowerCase().contains(ShopMessage.getCreationWord("BARTER"))){
+		} else if(input.toLowerCase().contains(config.getCreationWord(CreationWord.BARTER))){
 			type = ShopType.BARTER;
-		} else if(input.toLowerCase().contains(ShopMessage.getCreationWord("GAMBLE"))){
+		} else if(input.toLowerCase().contains(config.getCreationWord(CreationWord.GAMBLE))){
 			type = ShopType.GAMBLE;
-		} else if(input.toLowerCase().contains(ShopMessage.getCreationWord("COMBO"))){
+		} else if(input.toLowerCase().contains(config.getCreationWord(CreationWord.COMBO))){
 			type = ShopType.COMBO;
-		} else if(input.toLowerCase().contains(ShopMessage.getCreationWord("SELL"))){
+		} else if(input.toLowerCase().contains(config.getCreationWord(CreationWord.SELL))){
 			type = ShopType.SELL;
 		}
 		return type;
@@ -506,9 +508,6 @@ public class ShopCreationUtil{
 	}
 	
 	public boolean getShopIsAdmin(String input) {
-		if(input.toLowerCase().contains(ShopMessage.getCreationWord("ADMIN"))){
-			return true;
-		}
-		return false;
+		return input.toLowerCase().contains(Shop.getPlugin().getSettingsConfig().getCreationWord(CreationWord.ADMIN));
 	}
 }

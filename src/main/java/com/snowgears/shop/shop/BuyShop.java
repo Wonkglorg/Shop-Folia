@@ -12,7 +12,7 @@ public class BuyShop extends AbstractShop{
 	
 	public BuyShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing) {
 		super(signLoc, player, pri, amt, admin, facing);
-		
+		this.creationWord = CreationWord.BUY;
 		this.type = ShopType.BUY;
 		this.signLines = ShopMessage.getSignLines(this);
 	}

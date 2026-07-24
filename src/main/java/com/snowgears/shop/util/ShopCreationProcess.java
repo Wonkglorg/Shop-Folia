@@ -203,9 +203,10 @@ public class ShopCreationProcess{
 		}
 		// Build the lines
 		String formatted = ShopMessage.formatPlainTextSingle(subkey, placeholderContext);
-		List<Component> lines = UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength());
+		//todo:jmd implement
+		//List<Component> lines = UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength());
 		// Display the lines
-		displayFloatingLines(lines);
+		displayFloatingLines(List.of(Component.empty()));
 	}
 	
 	public void displayFloatingTextList(String subkey) {
@@ -220,10 +221,11 @@ public class ShopCreationProcess{
 		}
 		List<Component> lines = new ArrayList<>();
 		// Build the lines
-		for(String formatted : ShopMessage.formatPlainText(subkey, this.placeholderContext)){
-			lines.addAll(UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength()));
-			
-		}
+		//for(String formatted : ShopMessage.formatPlainText(subkey, this.placeholderContext)){
+		//	lines.addAll(UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength()));
+		//}
+		
+		//todo:jmd implement
 		// Display the lines
 		displayFloatingLines(lines);
 	}

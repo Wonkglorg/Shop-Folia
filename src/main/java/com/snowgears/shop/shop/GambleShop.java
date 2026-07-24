@@ -18,6 +18,7 @@ public class GambleShop extends AbstractShop{
 		super(signLoc, player, pri, amt, admin, facing);
 		
 		this.isAdmin = true;
+		this.creationWord = CreationWord.GAMBLE;
 		this.type = ShopType.GAMBLE;
 		this.signLines = ShopMessage.getSignLines(this);
 		setGambleItem();

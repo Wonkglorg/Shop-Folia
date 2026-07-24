@@ -247,7 +247,8 @@ public abstract class AbstractDisplay{
 				Location asTagLocation = entry.getValue();
 				
 				Shop.getPlugin().logger().spam("[Display] Adding tag line: " + tagLine);
-				createTagEntity(player, tagLine, asTagLocation);
+				//todo:jmd implement proper tag line
+				createTagEntity(player, Component.text(tagLine), asTagLocation);
 			}
 			
 			Shop.getPlugin().getShopHandler().addActiveShopDisplayTag(player, this.shopSignLocation);

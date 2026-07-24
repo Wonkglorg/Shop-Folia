@@ -72,6 +72,8 @@ public abstract class AbstractShop{
 	@Getter
 	protected ShopType type;
 	@Getter
+	protected CreationWord creationWord;
+	@Getter
 	protected List<Component> signLines;
 	protected boolean signLinesRequireRefresh;
 	@Getter
