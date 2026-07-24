@@ -2,6 +2,7 @@ package com.snowgears.shop.display;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.util.ArmorStandData;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -28,7 +29,7 @@ public class DisplayDisabled extends AbstractDisplay {
     }
 
     @Override
-    protected void spawnArmorStandPacket(Player player, ArmorStandData armorStandData, String text) {
+    protected void spawnArmorStandPacket(Player player, ArmorStandData armorStandData, Component text) {
         Shop.getPlugin().logger().debug("Display is disabled, armor stand packet not sent");
     }
 

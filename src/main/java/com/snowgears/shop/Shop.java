@@ -12,11 +12,10 @@ import com.snowgears.shop.listener.CreativeSelectionListener;
 import com.snowgears.shop.listener.DisplayListener;
 import com.snowgears.shop.listener.MiscListener;
 import com.snowgears.shop.listener.ShopListener;
-import com.snowgears.shop.shop.ShopType;
+import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.ItemNameUtil;
-import com.snowgears.shop.util.NMSBullshitHandler;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopAction;
 import com.snowgears.shop.util.ShopClickType;
@@ -35,8 +34,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.permissions.Permissible;
-import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -46,7 +43,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.NavigableMap;
-import java.util.Set;
 import java.util.TreeMap;
 
 public class Shop extends JavaPlugin{
@@ -78,8 +74,6 @@ public class Shop extends JavaPlugin{
 	@Getter
 	private ShopCreationUtil shopCreationUtil;
 	
-	@Getter
-	private NMSBullshitHandler nmsBullshitHandler;
 	private boolean enableGUI;
 	
 	@Getter
@@ -188,8 +182,6 @@ public class Shop extends JavaPlugin{
 	
 	public static boolean loggedDisplayDisabledWarning = false;
 	
-	// Return the custom ShopLogger so that we can log at higher levels.
-	
 	public ShopLogger logger() {return logger;}
 	
 	@Override
@@ -207,7 +199,6 @@ public class Shop extends JavaPlugin{
 		
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
-		nmsBullshitHandler = new NMSBullshitHandler(this);
 		
 		shopCreationUtil = new ShopCreationUtil(this);
 		
@@ -249,15 +240,6 @@ public class Shop extends JavaPlugin{
 		// Load ShopMessage by initializing it once
 		new ShopMessage(this);
 		itemNameUtil = new ItemNameUtil();
-		
-		File fileDirectory = new File(this.getDataFolder(), "Data");
-		if(!fileDirectory.exists()){
-			boolean success;
-			success = (fileDirectory.mkdirs());
-			if(!success){
-				this.logger().severe("[Shop] Data folder could not be created!");
-			}
-		}
 		
 		allowCreateMethodSign = config.getBoolean("creationMethod.placeSign");
 		allowCreateMethodChest = config.getBoolean("creationMethod.hitChest");
@@ -464,13 +446,14 @@ public class Shop extends JavaPlugin{
 	}
 	
 	public void reload() {
-		this.logger().info("Reloading Shop " + this.getPluginMeta().getVersion());
+		this.logger().info("Loading Shop " + this.getPluginMeta().getVersion());
 		
 		HandlerList.unregisterAll(displayListener);
 		HandlerList.unregisterAll(shopListener);
 		HandlerList.unregisterAll(miscListener);
 		HandlerList.unregisterAll(creativeSelectionListener);
 		HandlerList.unregisterAll(guiListener);
+		PlayerManager.reload();
 		plugin.getShopHandler().removeAllDisplays(null);
 		
 		onDisable();
@@ -683,64 +666,6 @@ public class Shop extends JavaPlugin{
 	public ShopAction getShopAction(ShopClickType shopClickType) {
 		return clickTypeActionMap.get(shopClickType);
 	}
-	
-	/**
-	 * If the user either has the operator permission or is op, giving them full access to all features of the plugin
-	 */
-	public static boolean isOperator(Permissible player) {
-		return player.isOp() || !player.hasPermission(Constants.SHOP_PERMISSION_OPERATOR);
-	}
-	
-	/**
-	 * If the user is allowed to create a shop of this type, this does NOT enforce shop build limit
-	 */
-	public static boolean isAllowedToCreateShopType(Permissible player, ShopType type) {
-		return player.hasPermission("shop.create." + type.toString().toLowerCase()) || player.hasPermission("shop.create") || isOperator(player);
-	}
-	
-	/**
-	 * If the user is allowed to create a shop of any type, to find out what specific type they can create use {@link #isAllowedToCreateShopType(Permissible, ShopType)} instead
-	 */
-	public static boolean isAllowedToCreateShop(){
-	
-	}
-	
-	public static int getShopBuildLimit(Permissible player) {
-		if(player.isOp()){
-			return 99999;
-		}
-		int baseBuildLimit = -1;
-		int extraBuildLimit = 0;
-		Set<PermissionAttachmentInfo> permissions = player.getEffectivePermissions();
-		
-		// calculate base buildlimit permission first (highest number)
-		for(PermissionAttachmentInfo permInfo : permissions){
-			String perm = permInfo.getPermission();
-			// Skip if not a shop permission
-			if(!perm.startsWith("shop.")){
-				continue;
-			}
-			
-			// If it's a base build limit permission, parse the number
-			int value = 0;
-			try{
-				value = Integer.parseInt(perm.substring(perm.lastIndexOf(".") + 1));
-			} catch(NumberFormatException e){
-				continue;
-			}
-			if(perm.startsWith("shop.buildlimit.")){
-				if(value > baseBuildLimit){
-					baseBuildLimit = value;
-				}
-			}
-			
-			// If it's an extra build limit permission, parse the number
-			else if(perm.startsWith("shop.buildlimitextra.")){
-				extraBuildLimit += value;
-				
-			}
-		}
-		return baseBuildLimit + extraBuildLimit;
-	}
+
 	
 }

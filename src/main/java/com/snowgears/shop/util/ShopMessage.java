@@ -2,10 +2,10 @@ package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayType;
+import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
 import com.snowgears.shop.shop.ShopType;
-import static com.snowgears.shop.util.ItemNameUtil.getName;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.util.Components;
@@ -98,7 +98,7 @@ public class ShopMessage{
 	public static List<String> formatPlainText(String messageKey, PlaceholderContext context) {
 		List<String> results = new ArrayList<>();
 		
-		for(var component: format(messageKey,context)){
+		for(var component : format(messageKey, context)){
 			results.add(Components.toPlainText(component));
 		}
 		return results;
@@ -197,11 +197,11 @@ public class ShopMessage{
 		   })
 		   .replace("%shop types%", ShopMessage.getShopTypesPlaceholder(context))
 		   .replace("%total shops%",String.valueOf(plugin.getShopHandler().getNumberOfShops()))
-		   .lazyReplace("%owner%",()-> {
+		   .replace("%owner%",()-> {
 			   if(context.getProcess() != null){
-				   return String.valueOf(Bukkit.getOfflinePlayer(context.getProcess().getPlayerUUID()));
+				   return Component.text(Bukkit.getOfflinePlayer(context.getProcess().getPlayerUUID()).getName());
 			   } else if(context.getShop() != null){
-				   return context.getShop().isAdmin() ? langManager.request("placeholders.server-display-name").getRawResultSingleLine() : context.getShop().getOwnerName();
+				   return context.getShop().isAdmin() ? langManager.request("placeholders.server-display-name").toSingleComponent() : context.getShop().getOwnerName();
 			   }
 			   return null;
 		   })
@@ -213,7 +213,7 @@ public class ShopMessage{
 			   }
 			   return "0";
 		   })
-		   .replace("%build limit%",plugin.getShopListener().getBuildLimit(context.getPlayer()))
+		   .lazyReplace("%build limit%",()-> String.valueOf(PlayerProfile.getShopBuildLimit(context.getPlayer())))
 		   .replace("%tp time remaining%",String.valueOf(plugin.getShopListener().getTeleportCooldownRemaining(context.getPlayer())))
 		   .replace("%currency name%",plugin.getCurrencyName())
 		   //.replace("%currency item%",()->embedItem(getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
@@ -276,7 +276,7 @@ public class ShopMessage{
 	private static HoverEventSource<Component> getShopInfoHoverEvent(PlaceholderContext context) {
 		try{
 			Component hoverText = Component.text("");
-			List<String> hoverLines = formatPlainText("hover.location",context);
+			List<String> hoverLines = formatPlainText("hover.location", context);
 			int i = 0;
 			for(String line : hoverLines){
 				i++;
@@ -299,18 +299,16 @@ public class ShopMessage{
 		List<ShopType> typeList = new ArrayList<>(Arrays.asList(ShopType.values()));
 		Player player = context.getPlayer();
 		
-		if((!plugin.usePerms() && !player.isOp()) || (plugin.usePerms() && !player.hasPermission("shop.operator"))){
+		if((!PlayerProfile.isOperator(player))){
 			typeList.remove(ShopType.GAMBLE);
 		}
 		
-		if(plugin.usePerms()){
-			Iterator<ShopType> typeIterator = typeList.iterator();
-			while(typeIterator.hasNext()){
-				ShopType type = typeIterator.next();
-				if(!player.hasPermission("shop.operator") && !player.hasPermission("shop.create." + type.toString()) && !player.hasPermission(
-						"shop.create")){
-					typeIterator.remove();
-				}
+		Iterator<ShopType> typeIterator = typeList.iterator();
+		while(typeIterator.hasNext()){
+			ShopType type = typeIterator.next();
+			if(!player.hasPermission("shop.operator") && !player.hasPermission("shop.create." + type.toString()) && !player.hasPermission(
+					"shop.create")){
+				typeIterator.remove();
 			}
 		}
 		
@@ -326,7 +324,7 @@ public class ShopMessage{
 	
 	private static Component getOfflineItemsPlaceholder(PlaceholderContext context, Map<ItemStack, Integer> items) {
 		Component itemRowsText = Component.text("");
-		String itemRow = formatPlainTextSingle("offline.itemRow",context);
+		String itemRow = formatPlainTextSingle("offline.itemRow", context);
 		
 		int i = 0;
 		for(Map.Entry<ItemStack, Integer> entry : items.entrySet()){
@@ -379,20 +377,20 @@ public class ShopMessage{
 				
 				// For each item, generate a line based on the template line
 				String addNewLine = (i < (outOfStock.size()) && i <= 3) ? "\n" : "";
-				Component currentRow = formatSingleMessage("offline.outOfStockShop." +addNewLine, shopContext);
+				Component currentRow = formatSingleMessage("offline.outOfStockShop." + addNewLine, shopContext);
 				// Limit out of stock shops to 3
 				if(i > 3){
 					remainingShopsMsgs.add(currentRow);
 				} else {
-					shopsOutOfStock.addExtra(currentRow);
+					shopsOutOfStock = shopsOutOfStock.append(currentRow);
 				}
 			}
 			
 			if(!remainingShopsMsgs.isEmpty()){
 				String remainingMsg = getUnformattedMessage("offline", "moreOutOfStock");
 				TextComponent remaining = format(remainingMsg.replace("%out of stock remaining%", "" + remainingShopsMsgs.size()), context);
-				remaining.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new ComponentBuilder(String.join("\n", remainingShopsMsgs)).create()));
-				shopsOutOfStock.addExtra(remaining);
+				remaining.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, Component.text(String.join("\n", remainingShopsMsgs)).create()));
+				shopsOutOfStock = shopsOutOfStock.append(remaining);
 			}
 			
 			return shopsOutOfStock;
@@ -463,6 +461,7 @@ public class ShopMessage{
 	
 	/**
 	 * The shop lines defined in the lang config
+	 *
 	 * @param key the key to search in the config for starts at "sign.text."
 	 * @param shop the shop this sign belongs to
 	 * @return a list with a capacity of 4

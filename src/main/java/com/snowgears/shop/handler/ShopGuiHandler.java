@@ -7,7 +7,6 @@ import com.snowgears.shop.gui.ListPlayersWindow;
 import com.snowgears.shop.gui.PlayerSettingsWindow;
 import com.snowgears.shop.gui.ShopGuiWindow;
 import com.snowgears.shop.shop.AbstractShop;
-import com.snowgears.shop.util.ConfigUpdater;
 import com.snowgears.shop.util.PlayerSettings;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
@@ -244,12 +243,6 @@ public class ShopGuiHandler {
         if (!configFile.exists()) {
             configFile.getParentFile().mkdirs();
             UtilMethods.copy(plugin.getResource("guiConfig.yml"), configFile);
-        }
-
-        try {
-            ConfigUpdater.update(plugin, "guiConfig.yml", configFile, new ArrayList<>());
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);

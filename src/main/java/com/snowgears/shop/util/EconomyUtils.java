@@ -31,7 +31,7 @@ public class EconomyUtils {
 
     //check to see if the player has enough space to accept the funds to deposit [amount]
     //return false if they do not
-    public static boolean canAcceptFunds(OfflinePlayer player, Inventory inventory, double amount) {
+    public static boolean canAcceptFunds(Inventory inventory, double amount) {
         switch (Shop.getPlugin().getCurrencyType()) {
             case VAULT:
             case EXPERIENCE:

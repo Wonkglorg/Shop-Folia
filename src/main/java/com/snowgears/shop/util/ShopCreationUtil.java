@@ -1,11 +1,14 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
-import static com.snowgears.shop.Shop.isAllowedToCreateShopType;
-import static com.snowgears.shop.Shop.isOperator;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerInitializeShopEvent;
+import com.snowgears.shop.manager.player.PlayerProfile;
+import static com.snowgears.shop.manager.player.PlayerProfile.getShopBuildLimit;
+import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
+import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShopType;
+import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
 import com.wonkglorg.minecraft.config.LangManager;
@@ -65,35 +68,17 @@ public class ShopCreationUtil{
 			return false;
 		}
 		
-		if(isAllowedToCreateShopType(player,))
+		if(!isAllowedToCreateShop(player)){
 		
-		
-		if(!isOperator){
-			boolean canCreate = false;
-			if(!player.hasPermission("shop.create")){
-				for(ShopType shopType : ShopType.values()){
-					if(player.hasPermission("shop.create." + shopType.toString().toLowerCase())){
-						canCreate = true;
-					}
-				}
-			} else {
-				canCreate = true;
-			}
-			if(!canCreate){
-				ShopMessage.sendMessage("permission.create", player);
-				return false;
-			}
 		}
 		
-		
 		int numberOfShops = plugin.getShopHandler().getNumberOfShops(player);
-		int buildPermissionNumber = Shop.getShopBuildLimit(player);
+		int buildPermissionNumber = getShopBuildLimit(player);
 		if(numberOfShops >= buildPermissionNumber){
 			ShopMessage.sendMessage("permission.buildLimit", player);
 			return false;
 		}
 		
-
 		return true;
 	}
 	
@@ -131,8 +116,10 @@ public class ShopCreationUtil{
 		if(type == ShopType.GAMBLE){
 			isAdmin = true;
 			shop.setAdmin(true);
-			if((plugin.usePerms() && !player.hasPermission("shop.operator")) || (!plugin.usePerms() && !player.isOp())){
-				playerMessage = ShopMessage.formatPlainTextSingle("permission.create", new PlaceholderContext());
+			//todo:jmd why was this in the original? why is gamble always admin?
+			if(!hasOperatorPermission){
+				lang.request("permission.error.create").sendToAudience(player);
+				return null;
 			}
 		}
 		
@@ -143,10 +130,6 @@ public class ShopCreationUtil{
 				lang.request("interaction_issue.createInsufficientFunds").sendToAudience(player);
 				return null;
 			}
-		}
-		
-		if(player.isOp() || (plugin.usePerms() && player.hasPermission("shop.operator"))){
-			playerMessage = null;
 		}
 		
 		//prevent players (even if they are OP) from creating a shop on a double chest with another player
@@ -262,7 +245,7 @@ public class ShopCreationUtil{
 	}
 	
 	public boolean itemsCanBeInitialized(Player player, ItemStack itemStack, ItemStack barterItemStack) {
-		boolean isAdmin = (!plugin.usePerms() && player.isOp()) || (plugin.usePerms() && player.hasPermission("shop.operator"));
+		boolean isAdmin = isOperator(player);
 		
 		//if the item is on the DENY LIST or the item is not on the ALLOW LIST, don't let player initialize with it
 		// Only perform this check for non admins
@@ -285,7 +268,7 @@ public class ShopCreationUtil{
 	public boolean initializeShop(AbstractShop shop, Player player, ItemStack item, ItemStack barterItem) {
 		if(!player.getUniqueId().equals(shop.getOwnerUUID())){
 			//do not allow non operators to initialize other player's shops
-			if((!plugin.usePerms() && !player.isOp()) || (plugin.usePerms() && !player.hasPermission("shop.operator"))){
+			if(!isOperator(player)){
 				ShopMessage.sendMessage("interactionIssue.initialize", player, shop);
 				shop.sendEffects(false, player);
 				return false;

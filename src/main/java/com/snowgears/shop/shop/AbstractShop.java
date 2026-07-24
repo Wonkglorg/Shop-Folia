@@ -1,9 +1,11 @@
 package com.snowgears.shop.shop;
 
 import com.snowgears.shop.Shop;
-import static com.snowgears.shop.Shop.isOperator;
 import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.handler.ShopGuiHandler;
+import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
+import static com.snowgears.shop.shop.ShopState.OK;
+import static com.snowgears.shop.shop.ShopState.getShopState;
 import com.snowgears.shop.util.InventoryUtils;
 import com.snowgears.shop.util.ItemNameUtil;
 import static com.snowgears.shop.util.ItemNameUtil.getItemHover;
@@ -19,7 +21,6 @@ import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.Location;
@@ -86,7 +87,13 @@ public abstract class AbstractShop{
 	@Getter
 	protected boolean fakeSign;
 	
+	@Getter
 	protected int stock;
+	/**
+	 * The current state of the shop stock
+	 */
+	@Getter
+	protected ShopState shopState;
 	
 	protected AbstractShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing) {
 		this.signLocation = signLoc;
@@ -104,6 +111,8 @@ public abstract class AbstractShop{
 		
 		if(isAdmin){
 			owner = Shop.getPlugin().getShopHandler().getAdminUUID();
+			stock = Integer.MAX_VALUE;
+			shopState = OK;
 		}
 	}
 	
@@ -181,20 +190,18 @@ public abstract class AbstractShop{
 	
 	//abstract methods that must be implemented in each shop subclass
 	
-	protected int calculateStock() {
+	/**
+	 * Calculates the stock amount of the shop
+	 */
+	protected void calculateStock() {
 		if(this.isAdmin){
 			// There is always stock in the admin shop!
 			stock = Integer.MAX_VALUE;
-			return stock;
+			return;
 		}
 		if(this.getInventory() == null || this.getItemStack() == null){
-			//if stock is already calculated but now inventory is null, use old stock value
-			if(stock != -1){
-				return stock;
-			} else {
-				stock = -1;
-			}
-			return stock;
+			//leave the cached value as it was
+			return;
 		}
 		int itemsInShop = InventoryUtils.getAmount(this.getInventory(), this.getItemStack());
 		stock = itemsInShop / this.getAmount();
@@ -206,7 +213,6 @@ public abstract class AbstractShop{
 				stock = 1;
 			}
 		}
-		return stock;
 	}
 	
 	public void updateStock() {
@@ -214,6 +220,7 @@ public abstract class AbstractShop{
 		
 		// Update the stock
 		this.calculateStock();
+		shopState = ShopState.getShopState(this);
 		
 		// Update sign if needed
 		boolean hasStockChange = stock != oldStock;
@@ -231,13 +238,6 @@ public abstract class AbstractShop{
 		
 		// Allow sign to update if there is a pending change (signLinesRequireRefresh)
 		this.updateSign();
-	}
-	
-	public int getStock() {
-		if(isAdmin){
-			return Integer.MAX_VALUE;
-		}
-		return stock;
 	}
 	
 	public void setStockOnLoad(int stock) {
@@ -287,17 +287,17 @@ public abstract class AbstractShop{
 		return owner;
 	}
 	
-	public String getOwnerName() {
+	public Component getOwnerName() {
 		if(this.isAdmin()){
-			return "admin";
+			return Component.text("admin");
 		}
 		
 		if(this.getOwnerUUID() != null){
 			// Use cache first - this avoids expensive disk I/O
-			return PlayerNameCache.getName(this.getOwnerUUID());
+			return Component.text(PlayerNameCache.getName(this.getOwnerUUID()));
 		}
 		
-		return ChatColor.RED + "CLOSED";
+		return Component.text("CLOSED").color(TextColor.color(255, 0, 0));
 	}
 	
 	public OfflinePlayer getOwner() {
@@ -371,12 +371,14 @@ public abstract class AbstractShop{
 		// Remove "0 Damage" from item meta (old config bug)
 		this.item = is.clone();
 		this.calculateStock();
+		shopState = ShopState.getShopState(this);
 		this.updateSign(true);
 	}
 	
 	public void setSecondaryItemStack(ItemStack is) {
 		this.secondaryItem = is.clone();
 		this.calculateStock();
+		shopState = ShopState.getShopState(this);
 		this.updateSign(true);
 	}
 	

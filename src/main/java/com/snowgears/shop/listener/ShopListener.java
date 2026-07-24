@@ -2,6 +2,8 @@ package com.snowgears.shop.listener;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayTagOption;
+import com.snowgears.shop.manager.PlayerManager;
+import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.CurrencyType;
@@ -53,18 +55,17 @@ public class ShopListener implements Listener{
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		plugin.getFoliaLib().getScheduler().runLater(() -> {
 			// Cache player name for performance optimization
+			PlayerManager.loadProfile(event.getPlayer());
 			PlayerNameCache.cacheName(event.getPlayer().getUniqueId(), event.getPlayer().getName());
 		}, 5);
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void onShopSignClick(PlayerInteractEvent event) {
-		try{
-			if(event.getHand() == EquipmentSlot.OFF_HAND){
-				return; // off hand version, ignore.
-			}
-		} catch(NoSuchMethodError error){
+		if(event.getHand() == EquipmentSlot.OFF_HAND){
+			return; // off hand version, ignore.
 		}
+		
 		Player player = event.getPlayer();
 		
 		//player clicked the sign of a shop
@@ -140,7 +141,7 @@ public class ShopListener implements Listener{
 				}
 				//non-owner is trying to open shop
 				if(!shop.getOwnerUUID().equals(player.getUniqueId())){
-					if(Shop.isOperator(player)){
+					if(isOperator(player)){
 						if(shop.isAdmin()){
 							if(shop.getType() == ShopType.GAMBLE){
 								//allow gamble shops to be opened by operators
@@ -316,6 +317,7 @@ public class ShopListener implements Listener{
 	@EventHandler
 	public void onLogout(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
+		PlayerManager.removeProfile(player);
 		
 		// Clear shop displays and connection cache for this player
 		plugin.getShopHandler().clearShopDisplaysNearPlayer(player);

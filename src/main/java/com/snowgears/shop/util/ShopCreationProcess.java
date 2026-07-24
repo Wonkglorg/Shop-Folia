@@ -5,6 +5,7 @@ import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -243,7 +244,7 @@ public class ShopCreationProcess{
 		displayFloatingLines(lines);
 	}
 	
-	public void displayFloatingLines(List<String> lines) {
+	public void displayFloatingLines(List<Component> lines) {
 		if(!this.display.isEnabled()){
 			Shop.getPlugin().getLogger().warning("Unable to display floating text for player " + player.getName() + ", Display is disabled");
 			return;
@@ -253,7 +254,7 @@ public class ShopCreationProcess{
 		
 		Location loc = this.clickedChest.getLocation().clone().add(0.5, 0.625 + (0.248 * lines.size()), 0.5);
 		int i = 0;
-		for(String line : lines){
+		for(var line : lines){
 			this.display.createTagEntity(player, line, loc.clone().add(0, (i * -0.248), 0));
 			i++;
 		}

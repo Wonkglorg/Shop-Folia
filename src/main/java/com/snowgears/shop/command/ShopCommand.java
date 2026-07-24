@@ -6,9 +6,9 @@ import static com.snowgears.shop.Constants.SHOP_COMMAND;
 import static com.snowgears.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.snowgears.shop.Constants.SHOP_PERMISSION_USER;
 import com.snowgears.shop.Shop;
-import static com.snowgears.shop.Shop.isOperator;
 import com.snowgears.shop.gui.ShopGuiWindow;
 import com.snowgears.shop.handler.ShopGuiHandler.GuiIcon;
+import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemNameUtil;
 import com.snowgears.shop.util.PlayerSettings.Option;
@@ -174,7 +174,7 @@ public class ShopCommand extends AbstractCommand{
 			window.open();
 		} else {
 			lang.request("command.usage.user").sendToAudience(sender);
-			if(isOperator(sender)){
+			if(PlayerProfile.isOperator(sender)){
 				lang.request("command.usage.admin").sendToAudience(sender);
 			}
 		}
@@ -189,7 +189,7 @@ public class ShopCommand extends AbstractCommand{
 			lang.request("command.list.success-player")
 				.replace("%total-shops%", plugin.getShopHandler().getNumberOfShops())
 				.replace("%user-amount%", plugin.getShopHandler().getNumberOfShops(player))
-				.lazyReplace("%build-limit%",() -> String.valueOf(Shop.getShopBuildLimit(player)))
+				.lazyReplace("%build-limit%",() -> String.valueOf(PlayerProfile.getShopBuildLimit(player)))
 				.sendToAudience(sender);
 			//@formatter:on
 		} else {

@@ -4,7 +4,9 @@ import com.snowgears.shop.Shop;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentIteratorType;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.Style;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -1166,6 +1168,49 @@ public class UtilMethods{
 		ItemStack item = (ItemStack) dataInput.readObject();
 		dataInput.close();
 		return item;
+	}
+	
+	public static List<Component> splitComponent(Component component, int maxLength) {
+		List<Component> result = new ArrayList<>();
+		
+		TextComponent.Builder current = Component.text();
+		int currentLength = 0;
+		
+		component.iterable(ComponentIteratorType.DEPTH_FIRST).forEach(part -> {
+			if (!(part instanceof TextComponent textComponent)) {
+				return;
+			}
+			
+			String text = textComponent.content();
+			if (text.isEmpty()) {
+				return;
+			}
+			
+			Style style = textComponent.style();
+			
+			// Preserve whitespace
+			Matcher matcher = Pattern.compile("\\s+|\\S+").matcher(text);
+			
+			while (matcher.find()) {
+				String token = matcher.group();
+				int tokenLength = token.length();
+				
+				if (currentLength > 0 && currentLength + tokenLength > maxLength) {
+					result.add(current.build());
+					current = Component.text();
+					currentLength = 0;
+				}
+				
+				current.append(Component.text(token, style));
+				currentLength += tokenLength;
+			}
+		});
+		
+		if (!current.children().isEmpty()) {
+			result.add(current.build());
+		}
+		
+		return result;
 	}
 	
 	public static List<String> splitStringIntoLines(String text, int maxLineLength) {

@@ -8,6 +8,7 @@ import com.snowgears.shop.util.DisplayUtil;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -55,7 +56,7 @@ public abstract class AbstractDisplay{
 	
 	//spawns an armor stand packet for a specific player
 	//if player is null, all online players will get the packet
-	protected abstract void spawnArmorStandPacket(Player player, ArmorStandData armorStandData, String text);
+	protected abstract void spawnArmorStandPacket(Player player, ArmorStandData armorStandData, Component text);
 	
 	//spawns an item frame packet for a specific player
 	//if player is null, all online players will get the packet
@@ -287,7 +288,7 @@ public abstract class AbstractDisplay{
 		}
 	}
 	
-	public void createTagEntity(Player player, String text, Location location) {
+	public void createTagEntity(Player player, Component text, Location location) {
 		Shop.getPlugin().logger().debug("Spawning hologram for player " +
 		                                player.getName() +
 		                                " at " +
