@@ -1,10 +1,11 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
+import com.snowgears.shop.config.PlayerShopsConfig;
+import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerInitializeShopEvent;
-import com.snowgears.shop.manager.player.PlayerProfile;
 import static com.snowgears.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShopType;
@@ -28,12 +29,14 @@ import org.bukkit.inventory.ItemStack;
 
 public class ShopCreationUtil{
 	
-	private Shop plugin;
+	private final Shop plugin;
+	private final SettingsConfig settingsConfig;
 	private LangManager lang;
 	private BlockFace[] wallFaces = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 	
 	public ShopCreationUtil(Shop plugin) {
 		this.plugin = plugin;
+		settingsConfig = plugin.getSettingsConfig();
 		lang = plugin.getLangManager();
 	}
 	
@@ -63,7 +66,7 @@ public class ShopCreationUtil{
 		boolean isOperator = isOperator(player);
 		
 		//operators ignore world blacklist
-		if(!isOperator && plugin.getWorldBlacklist().contains(chest.getWorld().getName())){
+		if(!isOperator && settingsConfig.getWorldBlackList().contains(chest.getWorld().getName())){
 			lang.request("interaction_issue.worldBlacklist").sendToAudience(player);
 			return false;
 		}
@@ -125,7 +128,7 @@ public class ShopCreationUtil{
 		
 		//if players must pay to create shops, check that they have enough money first
 		if(!hasOperatorPermission){
-			double cost = plugin.getCreationCost();
+			double cost = settingsConfig.getCreationCost();
 			if(cost > 0 && !EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
 				lang.request("interaction_issue.createInsufficientFunds").sendToAudience(player);
 				return null;
@@ -201,7 +204,7 @@ public class ShopCreationUtil{
 			}
 			
 			if(type == ShopType.GAMBLE){
-				shop.setItemStack(plugin.getGambleDisplayItem());
+				shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());
 				shop.setAmount(1);
 				plugin.getShopHandler().addShop(shop);
 				shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
@@ -239,7 +242,7 @@ public class ShopCreationUtil{
 		// TODO: We should move this save trigger elsewhere, it doesn't belong in `sendCreationSuccess`,
 		//       it is currently non-intuitive that this is the method to save a shop when it is created.
 		//       We should move it elsewhere.
-		Shop.getPlugin().getShopHandler().saveShops(shop.getOwnerUUID(), true);
+		PlayerShopsConfig.saveShops(shop.getOwnerUUID(), true);
 		// Cleanup the shop creation process
 		cleanupShopCreationProcess(player);
 	}
@@ -283,7 +286,7 @@ public class ShopCreationUtil{
 			//make sure there is room above the shop for the display
 			Block aboveShop = shop.getChestLocation().getBlock().getRelative(BlockFace.UP);
 			if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
-				if(plugin.forceDisplayToNoneIfBlocked()){
+				if(settingsConfig.isForceDisplayToNoneIfBlocked()){
 					shop.getDisplay().setType(DisplayType.NONE, false);
 				} else {
 					ShopMessage.sendMessage("interactionIssue.displayRoom", player, shop);
@@ -294,7 +297,7 @@ public class ShopCreationUtil{
 		}
 		
 		//if players must pay to create shops, remove money first
-		double cost = plugin.getCreationCost();
+		double cost = settingsConfig.getCreationCost();
 		// Check if the shop is not an admin shop and if the shop is not a barter shop or the barter item is not null
 		// When creating a barter shop with a sign, initializeShop is called twice, we only want to charge them once both items are selected
 		if(cost > 0 && !shop.isAdmin() && !(shop.getType() == ShopType.BARTER && barterItem == null)){
@@ -337,7 +340,7 @@ public class ShopCreationUtil{
 				ShopMessage.sendMessage(shop.getType() + ".initializeInfo", player, shop);
 				process.setStep(ShopCreationProcess.ChatCreationStep.SIGN_BARTER_ITEM);
 				process.displayFloatingText(shop.getType() + ".initializeBarter");
-				if(plugin.allowCreativeSelection()){
+				if(settingsConfig.isAllowCreativeSelection()){
 					ShopMessage.sendMessage("BUY.initializeAlt", player, shop);
 				}
 			} else if(shop.getType() != ShopType.BARTER){
@@ -377,7 +380,7 @@ public class ShopCreationUtil{
 	
 	public double getShopPrice(Player player, String input, ShopType shopType) {
 		double price = 0;
-		if(plugin.getCurrencyType() == CurrencyType.VAULT){
+		if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
 			try{
 				double multiplyValue = UtilMethods.getMultiplyValue(input);
 				String line3 = UtilMethods.cleanNumberText(input);
@@ -413,7 +416,7 @@ public class ShopCreationUtil{
 	
 	public double getShopPriceCombo(Player player, String input, ShopType shopType) {
 		double priceCombo = 0;
-		if(plugin.getCurrencyType() == CurrencyType.VAULT){
+		if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
 			try{
 				double multiplyValue = UtilMethods.getMultiplyValue(input);
 				String line3 = UtilMethods.cleanNumberText(input);
@@ -445,7 +448,7 @@ public class ShopCreationUtil{
 	public PricePair getShopPricePair(Player player, String input, ShopType shopType) {
 		double price = 0;
 		double priceCombo = 0;
-		if(plugin.getCurrencyType() == CurrencyType.VAULT){
+		if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
 			try{
 				double multiplyValue = UtilMethods.getMultiplyValue(input);
 				String line3 = UtilMethods.cleanNumberText(input);

@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.UUID;
 
 public class HomeWindow extends ShopGuiWindow{
-	
+	/*
 	public HomeWindow(UUID player) {
 		super(player);
 		this.title = Shop.getPlugin().getGuiHandler().getTitle(ShopGuiHandler.GuiTitle.HOME);
@@ -59,4 +59,6 @@ public class HomeWindow extends ShopGuiWindow{
 			}
 		}
 	}
+	
+	 */
 }

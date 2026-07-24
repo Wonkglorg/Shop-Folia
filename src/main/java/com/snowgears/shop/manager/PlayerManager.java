@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlayerManager{
 	private static final Map<UUID, OnlinePlayerProfile> onlineProfiles = new ConcurrentHashMap<>();
 	private static final Map<UUID, OfflinePlayerProfile> offlineProfiles = new ConcurrentHashMap<>();
-	private static final Config PLAYER_DATA = new Config(Shop.getPlugin(), Path.of("data", "playersettings.yml"));
+	private static final Config PLAYER_DATA = new Config(Shop.getPlugin(), Path.of("data", "player-settings.yml"));
 	
 	/**
 	 * Gets the players profile if it has been loaded null otherwise

@@ -8,7 +8,6 @@ import com.snowgears.shop.util.ComparatorShopItemNameHigh;
 import com.snowgears.shop.util.ComparatorShopItemNameLow;
 import com.snowgears.shop.util.ComparatorShopPriceHigh;
 import com.snowgears.shop.util.ComparatorShopPriceLow;
-import com.snowgears.shop.util.PlayerSettings;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
@@ -19,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ListShopsWindow extends ShopGuiWindow {
-
+/*
     private List<AbstractShop> allShops;
 
     public ListShopsWindow(UUID player){
@@ -146,5 +145,7 @@ public class ListShopsWindow extends ShopGuiWindow {
             page.setItem(8, searchIcon);
         }
     }
+    
+ */
 }
 

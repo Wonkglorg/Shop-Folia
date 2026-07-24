@@ -1,7 +1,6 @@
 package com.snowgears.shop.shop;
 
 import com.snowgears.shop.Shop;
-import static com.snowgears.shop.shop.ShopState.OK;
 import com.snowgears.shop.util.EconomyUtils;
 import com.snowgears.shop.util.ShopMessage;
 import org.bukkit.Location;
@@ -30,7 +29,7 @@ public class BuyShop extends AbstractShop{
 				// Check if the player has enough funds to cover a full transaction
 				stock = (int) Math.floor(funds / this.getPrice());
 				// If the player doesn't have enough funds for a full transaction, see if they can accept a partial one
-				if(stock == 0 && Shop.getPlugin().getAllowPartialSales()){
+				if(stock == 0 && Shop.getPlugin().getSettingsConfig().isAllowPartialSales()){
 					if(this.getItemStack() == null){
 						stock = 0;
 					} else {

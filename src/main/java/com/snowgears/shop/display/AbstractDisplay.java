@@ -171,7 +171,7 @@ public abstract class AbstractDisplay{
 						frameLocation = shop.getChestLocation().clone().add(0, 1, 0);
 					}
 					
-					if(UtilMethods.isMCVersion17Plus() && Shop.getPlugin().getGlowingItemFrame()){
+					if(UtilMethods.isMCVersion17Plus() && Shop.getPlugin().getSettingsConfig().isSetGlowingItemFrame()){
 						spawnItemFramePacket(player, shop.getItemStack(), frameLocation, shop.getFacing(), true);
 					} else {
 						spawnItemFramePacket(player, shop.getItemStack(), frameLocation, shop.getFacing(), false);

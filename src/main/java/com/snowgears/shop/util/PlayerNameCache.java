@@ -89,7 +89,6 @@ public class PlayerNameCache {
     
     /**
      * Saves cache to file
-     * @param dataFolder Plugin data folder
      */
     public static void saveToFile() {
         File cacheFile = new File(Shop.getPlugin().getDataFolder(), CACHE_FILENAME);

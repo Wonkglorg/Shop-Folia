@@ -1,37 +1,7 @@
 package com.snowgears.shop.handler;
 
-import com.snowgears.shop.Shop;
-import com.snowgears.shop.gui.CommandsWindow;
-import com.snowgears.shop.gui.HomeWindow;
-import com.snowgears.shop.gui.ListPlayersWindow;
-import com.snowgears.shop.gui.PlayerSettingsWindow;
-import com.snowgears.shop.gui.ShopGuiWindow;
-import com.snowgears.shop.shop.AbstractShop;
-import com.snowgears.shop.util.PlayerSettings;
-import com.snowgears.shop.util.ShopMessage;
-import com.snowgears.shop.util.UtilMethods;
-import net.md_5.bungee.api.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 public class ShopGuiHandler {
-
+/*
     public enum GuiIcon {
         MENUBAR_BACK, HOME_SEARCH, MENUBAR_LAST_PAGE, MENUBAR_NEXT_PAGE,
         MENUBAR_SORT_PRICE_LOW, MENUBAR_SORT_PRICE_HIGH, MENUBAR_SORT_NAME_LOW, MENUBAR_SORT_NAME_HIGH,
@@ -324,4 +294,5 @@ public class ShopGuiHandler {
             }
         }
     }
+    */
 }

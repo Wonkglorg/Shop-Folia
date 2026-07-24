@@ -3,6 +3,7 @@ package com.snowgears.shop.manager.player;
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
 import static com.snowgears.shop.manager.PlayerManager.loadfromFile;
+import static com.snowgears.shop.manager.PlayerManager.saveToFile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
 import lombok.Getter;
@@ -53,6 +54,39 @@ public abstract class PlayerProfile{
 			ownedShops.get(shop.getType()).add(shop);
 		}
 		loadfromFile(this);
+	}
+	
+	/**
+	 * Toggles user notifications
+	 *
+	 * @return the value it toggled to
+	 */
+	public boolean toggleNotifyUser() {
+		notifyUser = !notifyUser;
+		saveToFile(this);
+		return notifyUser;
+	}
+	
+	/**
+	 * Toggles owner notifications
+	 *
+	 * @return the value it toggled to
+	 */
+	public boolean toggleNotifyOwner() {
+		notifyOwner = !notifyOwner;
+		saveToFile(this);
+		return notifyOwner;
+	}
+	
+	/**
+	 * Toggles stock notifications
+	 *
+	 * @return the value it toggled to
+	 */
+	public boolean toggleNotifyStock() {
+		notifyStock = !notifyStock;
+		saveToFile(this);
+		return notifyStock;
 	}
 	
 	/**

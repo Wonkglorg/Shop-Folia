@@ -1,11 +1,7 @@
 package com.snowgears.shop.gui;
 
-import org.bukkit.Bukkit;
-
-import java.util.UUID;
-
-public class OptionsWindow extends ShopGuiWindow {
-
+public class OptionsWindow extends ShopGuiWindow{
+/*
     public OptionsWindow(UUID player){
         super(player);
         this.title = "Options";
@@ -14,6 +10,7 @@ public class OptionsWindow extends ShopGuiWindow {
     }
 
     @Override
-    protected void initInvContents(){/* no-op */}
+    protected void initInvContents(){/* no-op */
+	
 }
 

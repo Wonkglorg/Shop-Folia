@@ -5,6 +5,7 @@ import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
 import lombok.Getter;
+import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -22,19 +23,26 @@ import java.util.UUID;
 
 public class ShopCreationProcess{
 	
+	@Setter
+	@Getter
 	private ChatCreationStep step;
 	
 	private Player player;
 	private UUID processUUID;
 	@Getter
 	private UUID playerUUID;
+	@Getter
 	private Block clickedChest;
+	@Getter
 	private BlockFace clickedFace;
 	@Getter
 	private ItemStack itemStack;
 	@Getter
 	private ItemStack barterItemStack;
+	@Getter
 	private ShopType shopType;
+	@Setter
+	@Getter
 	boolean isAdmin;
 	private PricePair pricePair;
 	
@@ -63,18 +71,6 @@ public class ShopCreationProcess{
 		}
 	}
 	
-	public Block getClickedChest() {
-		return clickedChest;
-	}
-	
-	public BlockFace getClickedFace() {
-		return clickedFace;
-	}
-	
-	public ShopType getShopType() {
-		return shopType;
-	}
-	
 	public void setShopType(ShopType shopType) {
 		this.shopType = shopType;
 		if(shopType == ShopType.GAMBLE){
@@ -82,14 +78,6 @@ public class ShopCreationProcess{
 		} else {
 			this.step = ChatCreationStep.ITEM_AMOUNT;
 		}
-	}
-	
-	public boolean isAdmin() {
-		return isAdmin;
-	}
-	
-	public void setAdmin(boolean admin) {
-		isAdmin = admin;
 	}
 	
 	public int getItemAmount() {
@@ -126,10 +114,6 @@ public class ShopCreationProcess{
 		}
 		return pricePair;
 	}
-	
-	public ChatCreationStep getStep() {return step;}
-	
-	public void setStep(ChatCreationStep step) {this.step = step;}
 	
 	public void setPricePair(PricePair pricePair) {
 		this.pricePair = pricePair;
@@ -219,7 +203,7 @@ public class ShopCreationProcess{
 		}
 		// Build the lines
 		String formatted = ShopMessage.formatPlainTextSingle(subkey, placeholderContext);
-		List<String> lines = UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength());
+		List<Component> lines = UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength());
 		// Display the lines
 		displayFloatingLines(lines);
 	}
@@ -234,7 +218,7 @@ public class ShopCreationProcess{
 			}
 			return;
 		}
-		List<String> lines = new ArrayList<>();
+		List<Component> lines = new ArrayList<>();
 		// Build the lines
 		for(String formatted : ShopMessage.formatPlainText(subkey, this.placeholderContext)){
 			lines.addAll(UtilMethods.splitStringIntoLines(formatted, ShopMessage.getTargetMaxLength()));

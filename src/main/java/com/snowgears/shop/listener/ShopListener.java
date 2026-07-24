@@ -241,13 +241,14 @@ public class ShopListener implements Listener{
 	@EventHandler
 	public void onLogin(PlayerJoinEvent event) {
 		//delete all shops from players that have not played in X amount of hours (if configured)
-		if(plugin.getHoursOfflineToRemoveShops() != 0){
+		int hoursOfflineToRemoveShops = plugin.getSettingsConfig().getHoursOfflineToRemoveShops();
+		if(hoursOfflineToRemoveShops != 0){
 			for(OfflinePlayer offlinePlayer : plugin.getShopHandler().getShopOwners()){
 				if(offlinePlayer.getName() != null){
 					long msSinceLastPlayed = System.currentTimeMillis() - offlinePlayer.getLastPlayed();
 					long hoursSinceLastPlayed = TimeUnit.MILLISECONDS.toHours(msSinceLastPlayed);
 					
-					if(hoursSinceLastPlayed >= plugin.getHoursOfflineToRemoveShops()){
+					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
 						for(AbstractShop shop : plugin.getShopHandler().getShops(offlinePlayer.getUniqueId())){
 							plugin.logger().notice("Deleting Shop because player " +
 							                       offlinePlayer.getName() +
@@ -264,7 +265,7 @@ public class ShopListener implements Listener{
 		final Player player = event.getPlayer();
 		
 		plugin.getFoliaLib().getScheduler().runLater(() -> {
-			if(plugin.getCurrencyType() == CurrencyType.EXPERIENCE){
+			if(plugin.getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
 				PlayerExperience exp = PlayerExperience.loadFromFile(player);
 				if(exp != null){
 					exp.apply();
@@ -308,7 +309,7 @@ public class ShopListener implements Listener{
 		long lastPlayed = player.getLastPlayed();
 		
 		//create an object that will calculate offline transactions (if sql is being used)
-		if(plugin.getLogHandler().isEnabled() && plugin.offlinePurchaseNotificationsEnabled()){
+		if(plugin.getLogHandler().isEnabled() && plugin.getSettingsConfig().isOfflinePurchaseNotificationsEnabled()){
 			OfflineTransactions offlineTransactions = new OfflineTransactions(player.getUniqueId(), lastPlayed);
 			transactionsWhileOffline.put(event.getUniqueId(), offlineTransactions);
 		}
@@ -322,7 +323,7 @@ public class ShopListener implements Listener{
 		// Clear shop displays and connection cache for this player
 		plugin.getShopHandler().clearShopDisplaysNearPlayer(player);
 		
-		if(plugin.getCurrencyType() == CurrencyType.EXPERIENCE){
+		if(plugin.getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
 			//this automatically saves to file
 			new PlayerExperience(player);
 		}
@@ -372,21 +373,19 @@ public class ShopListener implements Listener{
 	
 	@EventHandler
 	public void onChunkLoad(ChunkLoadEvent event) {
-		plugin.getShopHandler().processUnloadedShopsInChunk(event.getChunk());
-		
 		// Also rebuild shop displays for any players near this chunk
 		// This ensures displays reappear after chunk unload/load cycles
 		plugin.getShopHandler().rebuildDisplaysInChunk(event.getChunk());
 	}
 	
 	public int getTeleportCooldownRemaining(Player player) {
-		if(plugin.getTeleportCooldown() <= 0){
+		if(plugin.getSettingsConfig().getTeleportCooldown() <= 0){
 			return 0;
 		}
 		Long lastTeleport = playerLastShopTeleport.get(player.getUniqueId());
 		if(lastTeleport != null){
 			long secondsSinceLastTeleport = (System.currentTimeMillis() - lastTeleport) / 1000;
-			int secondsLeft = (int) plugin.getTeleportCooldown() - (int) secondsSinceLastTeleport;
+			int secondsLeft = (int) plugin.getSettingsConfig().getTeleportCooldown() - (int) secondsSinceLastTeleport;
 			if(secondsLeft <= 0){
 				return 0;
 			} else {

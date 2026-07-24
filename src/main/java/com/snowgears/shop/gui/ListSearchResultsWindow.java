@@ -1,18 +1,7 @@
 package com.snowgears.shop.gui;
 
-import com.snowgears.shop.Shop;
-import com.snowgears.shop.handler.ShopGuiHandler;
-import com.snowgears.shop.shop.AbstractShop;
-import com.snowgears.shop.util.ComparatorShopType;
-import org.bukkit.Bukkit;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-public class ListSearchResultsWindow extends ShopGuiWindow {
-
+public class ListSearchResultsWindow extends ShopGuiWindow{
+/*
     private ItemStack searchItem;
 
     public ListSearchResultsWindow(UUID player, ItemStack searchItem){
@@ -57,5 +46,7 @@ public class ListSearchResultsWindow extends ShopGuiWindow {
             page.setItem(53, this.getNextPageIcon());
         }
     }
+    
+ */
 }
 

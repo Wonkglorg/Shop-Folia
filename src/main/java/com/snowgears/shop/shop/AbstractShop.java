@@ -1,15 +1,13 @@
 package com.snowgears.shop.shop;
 
 import com.snowgears.shop.Shop;
+import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.AbstractDisplay;
-import com.snowgears.shop.handler.ShopGuiHandler;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import static com.snowgears.shop.shop.ShopState.OK;
-import static com.snowgears.shop.shop.ShopState.getShopState;
 import com.snowgears.shop.util.InventoryUtils;
 import com.snowgears.shop.util.ItemNameUtil;
 import static com.snowgears.shop.util.ItemNameUtil.getItemHover;
-import com.snowgears.shop.util.PlaceholderContext;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopAction;
 import com.snowgears.shop.util.ShopClickType;
@@ -39,11 +37,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -205,7 +199,7 @@ public abstract class AbstractShop{
 		}
 		int itemsInShop = InventoryUtils.getAmount(this.getInventory(), this.getItemStack());
 		stock = itemsInShop / this.getAmount();
-		if(stock == 0 && Shop.getPlugin().getAllowPartialSales()){
+		if(stock == 0 && Shop.getPlugin().getSettingsConfig().isAllowPartialSales()){
 			// Calculate the minimum items required to show as in stock
 			int minItemAmountRequired = (int) Math.ceil(1 / this.getPricePerItem());
 			
@@ -383,6 +377,7 @@ public abstract class AbstractShop{
 	}
 	
 	public void refreshGuiIcon() {
+		/*
 		if(this.type != ShopType.GAMBLE){
 			if(this.getItemStack() == null){
 				return;
@@ -390,7 +385,7 @@ public abstract class AbstractShop{
 			guiIcon = this.getItemStack().clone();
 			guiIcon.setAmount(1);
 		} else {
-			guiIcon = Shop.getPlugin().getGambleDisplayItem().clone();
+			guiIcon = Shop.getPlugin().getItemConfig().getGambleDisplayItem().clone();
 			guiIcon.setAmount(1);
 		}
 		
@@ -420,6 +415,8 @@ public abstract class AbstractShop{
 				UtilMethods.getCleanLocation(this.getSignLocation(), true));
 		
 		guiIcon.setItemMeta(iconMeta);
+		
+		 */
 	}
 	
 	public int getItemDurabilityPercent() {
@@ -491,7 +488,7 @@ public abstract class AbstractShop{
 			}
 			//@formatter:on
 			// If the sign is glowing, update it if the setting has changed
-			boolean shouldGlow = Shop.getPlugin().getGlowingSignText();
+			boolean shouldGlow = Shop.getPlugin().getSettingsConfig().isSetGlowingSignText();
 			if(shouldGlow != frontSideSign.isGlowingText()){
 				hasSignUpdate = true;
 				frontSideSign.setGlowingText(shouldGlow);
@@ -593,7 +590,7 @@ public abstract class AbstractShop{
 		
 		if(shop.getType() == ShopType.GAMBLE){
 			GambleShop gambleShop = (GambleShop) shop;
-			ItemStack displayItem = Shop.getPlugin().getGambleDisplayItem();
+			ItemStack displayItem = Shop.getPlugin().getItemConfig().getGambleDisplayItem();
 			ItemStack gambleItem = gambleShop.getGambleItem();
 			request.replace("%gamble-item%", ItemNameUtil.getName(displayItem).hoverEvent(getItemHover(displayItem)))
 			       .replace("%gamble-item-type%", gambleItem.getType())
@@ -615,7 +612,7 @@ public abstract class AbstractShop{
 	}
 	
 	public boolean executeClickAction(PlayerInteractEvent event, ShopClickType clickType) {
-		ShopAction action = Shop.getPlugin().getShopAction(clickType);
+		ShopAction action = Shop.getPlugin().getSettingsConfig().getShopAction(clickType);
 		if(action == null){
 			return false; //there is no action mapped to this click type
 		}
@@ -655,18 +652,19 @@ public abstract class AbstractShop{
 	
 	public void sendEffects(boolean success, Player player) {
 		try{
+			SettingsConfig settingsConfig = Shop.getPlugin().getSettingsConfig();
 			if(success){
-				if(Shop.getPlugin().playSounds()){
+				if(settingsConfig.isPlaySounds()){
 					player.playSound(this.getSignLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
 				}
-				if(Shop.getPlugin().playEffects()){
+				if(settingsConfig.isPlayEffects()){
 					player.getWorld().playEffect(this.getChestLocation(), Effect.STEP_SOUND, Material.EMERALD_BLOCK);
 				}
 			} else {
-				if(Shop.getPlugin().playSounds()){
+				if(settingsConfig.isPlaySounds()){
 					player.playSound(this.getSignLocation(), Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F);
 				}
-				if(Shop.getPlugin().playEffects()){
+				if(settingsConfig.isPlayEffects()){
 					player.getWorld().playEffect(this.getChestLocation(), Effect.STEP_SOUND, Material.REDSTONE_BLOCK);
 				}
 			}

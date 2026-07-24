@@ -1,5 +1,8 @@
 package com.snowgears.shop.util;
 
-public enum ShopActionType {
-    CREATE, INIT, DESTROY, TRANSACT
+public enum ShopActionType{
+	CREATE,
+	INIT,
+	DESTROY,
+	TRANSACT
 }

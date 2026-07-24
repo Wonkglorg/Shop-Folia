@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class ListPlayersWindow extends ShopGuiWindow {
-
+/*
     public ListPlayersWindow(UUID player){
         super(player);
         this.title = Shop.getPlugin().getGuiHandler().getTitle(ShopGuiHandler.GuiTitle.LIST_PLAYERS);
@@ -51,5 +51,7 @@ public class ListPlayersWindow extends ShopGuiWindow {
             page.setItem(53, this.getNextPageIcon());
         }
     }
+    
+ */
 }
 

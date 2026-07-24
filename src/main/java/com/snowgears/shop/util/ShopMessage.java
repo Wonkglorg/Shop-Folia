@@ -34,8 +34,6 @@ public class ShopMessage{
 	
 	private static final LangManager langManager = plugin.getLangManager();
 	
-	private static final boolean disableItemHover = false;
-	
 	@Getter
 	private static int targetMaxLength;
 	
@@ -215,7 +213,7 @@ public class ShopMessage{
 		   })
 		   .lazyReplace("%build limit%",()-> String.valueOf(PlayerProfile.getShopBuildLimit(context.getPlayer())))
 		   .replace("%tp time remaining%",String.valueOf(plugin.getShopListener().getTeleportCooldownRemaining(context.getPlayer())))
-		   .replace("%currency name%",plugin.getCurrencyName())
+		   .replace("%currency name%",plugin.getSettingsConfig().getCurrencyName())
 		   //.replace("%currency item%",()->embedItem(getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
 		   .lazyReplace("%price sell%",()->{
 			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
@@ -397,10 +395,6 @@ public class ShopMessage{
 		}
 		// No shops for player! don't add anything! p.s. should never get here.
 		return null;
-	}
-	
-	public static String getCreationWord(String type) {
-		return creationWords.get(type);
 	}
 	
 	public static String formatMessage(String unformattedMessage, AbstractShop shop) {

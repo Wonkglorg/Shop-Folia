@@ -219,7 +219,7 @@ public class LogHandler {
         );
 
         try {
-            boolean isBarterOrItemCurrency = transactionType == ShopType.BARTER || plugin.getCurrencyType() == CurrencyType.ITEM;
+            boolean isBarterOrItemCurrency = transactionType == ShopType.BARTER || plugin.getSettingsConfig().getCurrencyType() == CurrencyType.ITEM;
             txMetrics.addTransaction(amount, price, isBarterOrItemCurrency);
         } catch (Exception e) { /* Ignore errors, added for safety. */ }
 

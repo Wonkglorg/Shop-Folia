@@ -199,38 +199,6 @@ public class UtilMethods{
 		return (d % 1 != 0);
 	}
 	
-	public static boolean isNumber(String s) {
-		try{
-			Double.parseDouble(s);
-		} catch(NumberFormatException e){
-			return false;
-		}
-		return true;
-	}
-	
-	public static boolean isInteger(String s) {
-		try{
-			Integer.parseInt(s);
-		} catch(NumberFormatException e){
-			return false;
-		}
-		return true;
-	}
-	
-	public static boolean isDouble(String s) {
-		try{
-			Double.parseDouble(s);
-		} catch(NumberFormatException e){
-			return false;
-		}
-		return true;
-	}
-	
-	public static BlockFace yawToFace(float yaw) {
-		final BlockFace[] axis = {BlockFace.SOUTH, BlockFace.WEST, BlockFace.NORTH, BlockFace.EAST};
-		return axis[Math.round(yaw / 90f) & 0x3];
-	}
-	
 	public static float faceToYaw(BlockFace bf) {
 		switch(bf) {
 			case NORTH:

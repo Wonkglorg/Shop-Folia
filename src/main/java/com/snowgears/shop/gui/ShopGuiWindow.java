@@ -1,17 +1,7 @@
 package com.snowgears.shop.gui;
 
-
-import com.snowgears.shop.Shop;
-import com.snowgears.shop.handler.ShopGuiHandler;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.UUID;
-
-public abstract class ShopGuiWindow {
-
+public abstract class ShopGuiWindow{
+/*
     public enum GUIArea{
         TOP_BAR, BOTTOM_BAR, BODY;
     }
@@ -111,9 +101,11 @@ public abstract class ShopGuiWindow {
         }
     }
 
-    protected void makeMenuBarUpper(){/* override in subclasses */}
-    protected void makeMenuBarLower(){/* override in subclasses */}
+    protected void makeMenuBarUpper(){/* override in subclasses */
 
+/*
+    protected void makeMenuBarLower(){/* override in subclasses */
+/*
     public Player getPlayer(){
         return Bukkit.getPlayer(player);
     }
@@ -137,4 +129,7 @@ public abstract class ShopGuiWindow {
     protected ItemStack getBackIcon(){
         return Shop.getPlugin().getGuiHandler().getIcon(ShopGuiHandler.GuiIcon.MENUBAR_BACK, null, null);
     }
+    
+ */
+	
 }

@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.UUID;
 
 public class CommandsWindow extends ShopGuiWindow {
-
+/*
     public CommandsWindow(UUID player){
         super(player);
         this.title = Shop.getPlugin().getGuiHandler().getTitle(ShopGuiHandler.GuiTitle.COMMANDS);
@@ -54,4 +54,6 @@ public class CommandsWindow extends ShopGuiWindow {
             page.setItem(16, allowListRemove);
         }
     }
+    
+ */
 }

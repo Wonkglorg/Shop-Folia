@@ -81,7 +81,7 @@ public class DisplayListener implements Listener {
                     }, playerIndex); // Stagger by 1 tick per player
                 }
             }
-        }, 1, (long)(plugin.getDisplayProcessInterval() * 20)); // Convert seconds to ticks
+        }, 1, (long)(plugin.getSettingsConfig().getDisplayProcessInterval() * 20)); // Convert seconds to ticks
     }
 
     public DisplayListener(Shop instance) {

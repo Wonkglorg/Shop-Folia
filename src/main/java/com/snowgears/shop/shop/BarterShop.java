@@ -43,7 +43,7 @@ public class BarterShop extends AbstractShop {
 
     public void cycleBarterType(){
         //if shops are already using experience as the main currency, don't allow barter shops to barter experience (that would be a sell shop)
-        if(Shop.getPlugin().getCurrencyType() == CurrencyType.EXPERIENCE)
+        if(Shop.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE)
             return;
 
         if(this.barterType == ITEM){

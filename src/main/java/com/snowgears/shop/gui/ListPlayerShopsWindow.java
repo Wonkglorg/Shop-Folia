@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class ListPlayerShopsWindow extends ShopGuiWindow {
-
+/*
     private UUID playerToList;
 
     public ListPlayerShopsWindow(UUID player, UUID playerToList){
@@ -68,5 +68,7 @@ public class ListPlayerShopsWindow extends ShopGuiWindow {
             page.setItem(53, this.getNextPageIcon());
         }
     }
+    
+ */
 }
 

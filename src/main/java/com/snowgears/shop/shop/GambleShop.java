@@ -2,7 +2,6 @@ package com.snowgears.shop.shop;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayType;
-import static com.snowgears.shop.shop.ShopState.OK;
 import com.snowgears.shop.util.ShopMessage;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
@@ -41,7 +40,7 @@ public class GambleShop extends AbstractShop{
 		this.getDisplay().spawn(player);
 		
 		Shop.getPlugin().getFoliaLib().getScheduler().runLater(() -> {
-			setItemStack(Shop.getPlugin().getGambleDisplayItem());
+			setItemStack(Shop.getPlugin().getItemConfig().getGambleDisplayItem());
 			if(initialDisplayType == null){
 				display.setType(Shop.getPlugin().getDisplayType(), false);
 				getDisplay().spawn(player);

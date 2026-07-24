@@ -1,30 +1,9 @@
 package com.snowgears.shop.gui;
 
-import com.snowgears.shop.Shop;
-import com.snowgears.shop.handler.ShopGuiHandler;
-import com.snowgears.shop.shop.AbstractShop;
-import com.snowgears.shop.util.EconomyUtils;
-import com.snowgears.shop.util.ItemListType;
-import com.snowgears.shop.util.PlaceholderContext;
-import com.snowgears.shop.util.PlayerSettings;
-import com.snowgears.shop.util.ShopMessage;
-import com.snowgears.shop.util.UtilMethods;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.UUID;
 
 public class ShopGUIListener implements Listener{
+	/*
 	
 	private Shop plugin;
 	
@@ -427,4 +406,6 @@ public class ShopGUIListener implements Listener{
 			}
 		}
 	}
+	
+	 */
 }

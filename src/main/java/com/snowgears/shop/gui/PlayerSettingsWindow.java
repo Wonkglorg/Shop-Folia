@@ -2,7 +2,6 @@ package com.snowgears.shop.gui;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.handler.ShopGuiHandler;
-import com.snowgears.shop.util.PlayerSettings;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -10,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.UUID;
 
 public class PlayerSettingsWindow extends ShopGuiWindow {
-
+/*
     public PlayerSettingsWindow(UUID player){
         super(player);
         this.title = Shop.getPlugin().getGuiHandler().getTitle(ShopGuiHandler.GuiTitle.SETTINGS);
@@ -37,6 +36,8 @@ public class PlayerSettingsWindow extends ShopGuiWindow {
             page.setItem(12, stockNotifyIcon);
         }
     }
+    
+ */
 
 }
 

@@ -7,11 +7,10 @@ import static com.snowgears.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.snowgears.shop.Constants.SHOP_PERMISSION_USER;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.gui.ShopGuiWindow;
-import com.snowgears.shop.handler.ShopGuiHandler.GuiIcon;
+import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemNameUtil;
-import com.snowgears.shop.util.PlayerSettings.Option;
 import com.wonkglorg.minecraft.command.AbstractCommand;
 import com.wonkglorg.minecraft.config.LangManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -74,10 +73,7 @@ public class ShopCommand extends AbstractCommand{
 			return -1;
 		}
 		
-		plugin.getGuiHandler().toggleNotificationSetting(player, Option.NOTIFICATION_SALE_OWNER);
-		String state = plugin.getGuiHandler().getIconFromOption(player, Option.NOTIFICATION_SALE_OWNER) == GuiIcon.SETTINGS_NOTIFY_OWNER_ON
-		               ? "<green>On"
-		               : "<red>Off";
+		String state = PlayerManager.getOnlineProfile(player).toggleNotifyOwner() ? "<green>On" : "<red>Off";
 		lang.request("command.notify.owner.success").replace("%notify-state%", state).sendToAudience(ctx.getSource().getSender());
 		return 0;
 	}
@@ -87,10 +83,7 @@ public class ShopCommand extends AbstractCommand{
 			return -1;
 		}
 		
-		plugin.getGuiHandler().toggleNotificationSetting(player, Option.NOTIFICATION_STOCK);
-		String state = plugin.getGuiHandler().getIconFromOption(player, Option.NOTIFICATION_STOCK) == GuiIcon.SETTINGS_NOTIFY_STOCK_ON
-		               ? "<green>On"
-		               : "<red>Off";
+		String state = PlayerManager.getOnlineProfile(player).toggleNotifyStock() ? "<green>On" : "<red>Off";
 		lang.request("command.notify.stock.success").replace("%notify-state%", state).sendToAudience(ctx.getSource().getSender());
 		return 0;
 	}
@@ -100,10 +93,7 @@ public class ShopCommand extends AbstractCommand{
 			return -1;
 		}
 		
-		plugin.getGuiHandler().toggleNotificationSetting(player, Option.NOTIFICATION_SALE_USER);
-		String state = plugin.getGuiHandler().getIconFromOption(player, Option.NOTIFICATION_SALE_USER) == GuiIcon.SETTINGS_NOTIFY_USER_ON
-		               ? "<green>On"
-		               : "<red>Off";
+		String state = PlayerManager.getOnlineProfile(player).toggleNotifyUser() ? "<green>On" : "<red>Off";
 		lang.request("command.notify.user.success").replace("%notify-state%", state).sendToAudience(ctx.getSource().getSender());
 		return 0;
 	}
@@ -122,8 +112,10 @@ public class ShopCommand extends AbstractCommand{
 			return 1;
 		}
 		heldItem.setAmount(1);
-		plugin.setGambleDisplayItem(player.getInventory().getItemInMainHand());
-		lang.request("command.set-gamble.success").replace("%held-item%", ItemNameUtil.getName(plugin.getGambleDisplayItem())).sendToAudience(sender);
+		plugin.getItemConfig().setGambleDisplayItem(player.getInventory().getItemInMainHand());
+		lang.request("command.set-gamble.success")
+		    .replace("%held-item%", ItemNameUtil.getName(plugin.getItemConfig().getGambleDisplayItem()))
+		    .sendToAudience(sender);
 		return 0;
 	}
 	
@@ -135,7 +127,7 @@ public class ShopCommand extends AbstractCommand{
 			return -1;
 		}
 		
-		if(plugin.getCurrencyType() != CurrencyType.ITEM){
+		if(plugin.getSettingsConfig().getCurrencyType() != CurrencyType.ITEM){
 			lang.request("command.set-currency.error-digital-currency").sendToAudience(sender);
 			return 1;
 		}
@@ -146,8 +138,10 @@ public class ShopCommand extends AbstractCommand{
 			return 1;
 		}
 		heldItem.setAmount(1);
-		plugin.setItemCurrency(heldItem);
-		lang.request("command.set-currency.success").replace("%held-item%", ItemNameUtil.getName(plugin.getItemCurrency())).sendToAudience(sender);
+		plugin.getItemConfig().setCurrencyItem(heldItem);
+		lang.request("command.set-currency.success")
+			.replace("%held-item%", ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))
+		    .sendToAudience(sender);
 		return 0;
 	}
 	
@@ -169,9 +163,9 @@ public class ShopCommand extends AbstractCommand{
 	
 	private int usageMessage(CommandContext<CommandSourceStack> ctx) {
 		CommandSender sender = ctx.getSource().getSender();
-		if(plugin.useGUI() && sender instanceof Player player){
-			ShopGuiWindow window = plugin.getGuiHandler().getWindow(player);
-			window.open();
+		if(plugin.getSettingsConfig().isEnableGUI() && sender instanceof Player player){
+			//ShopGuiWindow window = plugin.getGuiHandler().getWindow(player);
+			//window.open();
 		} else {
 			lang.request("command.usage.user").sendToAudience(sender);
 			if(PlayerProfile.isOperator(sender)){

@@ -1,9 +1,9 @@
 package com.snowgears.shop.handler;
 
 import com.snowgears.shop.Shop;
+import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
-import com.snowgears.shop.util.PlayerSettings;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.Transaction;
 import com.snowgears.shop.util.TransactionError;
@@ -48,7 +48,7 @@ public class TransactionHandler{
 		}
 		
 		//player did not click their own shop
-		if(!shop.getOwnerName().equals(player.getName()) || Shop.getPlugin().getDebugAllowUseOwnShop()){
+		if(!shop.getOwnerName().equals(player.getName()) || Shop.getPlugin().getSettingsConfig().isDebugAllowUseOwnShop()){
 			
 			if(!(player.hasPermission("shop.use." + shop.getType().toString().toLowerCase()) || player.hasPermission("shop.use"))){
 				if(!player.hasPermission("shop.operator")){
@@ -61,7 +61,7 @@ public class TransactionHandler{
 				int clickedSide = UtilMethods.calculateSideFromClickedSign(player, event.getClickedBlock());
 				//clicked left side of sign
 				if(clickedSide >= 0){
-					if(plugin.inverseComboShops()){
+					if(plugin.getSettingsConfig().isInverseComboShops()){
 						executeTransactionSequence(player, shop, ShopType.SELL, fullStackOrder);
 					} else {
 						executeTransactionSequence(player, shop, ShopType.BUY, fullStackOrder);
@@ -69,7 +69,7 @@ public class TransactionHandler{
 				}
 				//clicked right side of sign
 				else {
-					if(plugin.inverseComboShops()){
+					if(plugin.getSettingsConfig().isInverseComboShops()){
 						executeTransactionSequence(player, shop, ShopType.BUY, fullStackOrder);
 					} else {
 						executeTransactionSequence(player, shop, ShopType.SELL, fullStackOrder);
@@ -124,13 +124,10 @@ public class TransactionHandler{
 				if(!shop.isAdmin()){
 					Player owner = shop.getOwner().getPlayer();
 					//the shop owner is online
-					if(owner != null && notifyOwner(shop)){
-						ShopGuiHandler.GuiIcon guiIcon = plugin.getGuiHandler().getIconFromOption(player, PlayerSettings.Option.NOTIFICATION_STOCK);
-						
-						if(guiIcon != null && guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_STOCK_ON){
-							ShopMessage.sendMessage(actionType.toString() + ".ownerNoStock", owner, shop);
-						}
+					if(owner != null && notifyOwner(shop) && PlayerManager.getOnlineProfile(player).isNotifyStock()){
+						ShopMessage.sendMessage(actionType.toString() + ".ownerNoStock", owner, shop);
 					}
+					
 				}
 				//message = ShopMessage.getUnformattedMessage(actionType.toString(), "shopNoStock");
 				break;
@@ -142,9 +139,7 @@ public class TransactionHandler{
 					Player owner = shop.getOwner().getPlayer();
 					//the shop owner is online
 					if(owner != null && notifyOwner(shop)){
-						ShopGuiHandler.GuiIcon guiIcon = plugin.getGuiHandler().getIconFromOption(player, PlayerSettings.Option.NOTIFICATION_STOCK);
-						
-						if(guiIcon != null && guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_STOCK_ON){
+						if(PlayerManager.getOnlineProfile(player).isNotifyStock()){
 							ShopMessage.sendMessage(actionType.toString() + ".ownerNoSpace", owner, shop);
 						}
 					}
@@ -168,22 +163,15 @@ public class TransactionHandler{
 		double price = transaction.getPrice();
 		String message = ShopMessage.getMessageFromOrders(transactionType, "user", price, transaction.getAmount());
 		
-		ShopGuiHandler.GuiIcon guiIcon = plugin.getGuiHandler().getIconFromOption(player, PlayerSettings.Option.NOTIFICATION_SALE_USER);
-		if(guiIcon != null && guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_USER_ON){
-			if(message != null && !message.isEmpty()){
-				ShopMessage.sendMessage(message, player, shop);
-			}
+		if(PlayerManager.getOnlineProfile(player).isNotifyUser() && message != null && !message.isEmpty()){
+			ShopMessage.sendMessage(message, player, shop);
 		}
 		
 		Player owner = Bukkit.getPlayer(shop.getOwnerUUID());
 		if((owner != null) && (!shop.isAdmin())){
 			message = ShopMessage.getMessageFromOrders(transactionType, "owner", price, transaction.getAmount());
-			
-			guiIcon = plugin.getGuiHandler().getIconFromOption(owner, PlayerSettings.Option.NOTIFICATION_SALE_OWNER);
-			if(guiIcon != null && guiIcon == ShopGuiHandler.GuiIcon.SETTINGS_NOTIFY_OWNER_ON){
-				if(message != null && !message.isEmpty()){
-					ShopMessage.sendMessage(message, owner, player, shop);
-				}
+			if(PlayerManager.getOnlineProfile(player).isNotifyOwner() && message != null && !message.isEmpty()){
+				ShopMessage.sendMessage(message, owner, player, shop);
 			}
 		}
 		

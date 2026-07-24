@@ -25,6 +25,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -32,9 +33,9 @@ import org.bukkit.util.EulerAngle;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class Display extends AbstractDisplay{
-	
 	
 	public Display(Location shopSignLocation) {
 		super(shopSignLocation);
@@ -42,8 +43,8 @@ public class Display extends AbstractDisplay{
 	
 	@Override
 	protected void spawnItemPacket(Player player, ItemStack is, Location location) {
-		net.minecraft.world.item.ItemStack itemStack = nmsHelper.getMCItemStack(is);
-		Level serverLevel = nmsHelper.getMCLevel(location);
+		net.minecraft.world.item.ItemStack itemStack = ((CraftItemStack) is).handle;
+		Level serverLevel = ((CraftWorld) location.getWorld()).getHandle();
 		
 		ItemEntity entityItem = new ItemEntity(serverLevel, location.getX(), location.getY(), location.getZ(), itemStack);
 		int entityID = entityItem.getId();
@@ -126,9 +127,9 @@ public class Display extends AbstractDisplay{
 		
 		//armor stand only going to have equipment if text is not populated
 		if(text == null){
-			ArrayList equipmentList = new ArrayList();
-			net.minecraft.world.item.ItemStack itemStack = nmsHelper.getMCItemStack(armorStandData.getEquipment());
-			equipmentList.add(new Pair(getMojangEquipmentSlot(armorStandData.getEquipmentSlot()), itemStack));
+			List<Pair<net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList = new ArrayList();
+			var itemStack = ((CraftItemStack) armorStandData.getEquipment()).handle;
+			equipmentList.add(new Pair<>(getMojangEquipmentSlot(armorStandData.getEquipmentSlot()), itemStack));
 			
 			spawnEntityEquipmentPacket = new ClientboundSetEquipmentPacket(armorStand.getId(), equipmentList);
 		}
@@ -142,7 +143,7 @@ public class Display extends AbstractDisplay{
 	
 	@Override
 	protected void spawnItemFramePacket(Player player, ItemStack is, Location location, BlockFace facing, boolean isGlowing) {
-		ServerLevel worldServer = nmsHelper.getMCServerLevel(location);
+		ServerLevel worldServer = ((CraftWorld) location.getWorld()).getHandle();
 		BlockPos blockPosition = new BlockPos((int) location.getX(), (int) location.getY(), (int) location.getZ());
 		ItemFrame itemFrame;
 		
@@ -155,8 +156,7 @@ public class Display extends AbstractDisplay{
 		int entityID = itemFrame.getId();
 		this.addEntityID(player, entityID);
 		itemFrame.setPos(location.getX(), location.getY(), location.getZ());
-		
-		net.minecraft.world.item.ItemStack itemStack = nmsHelper.getMCItemStack(is);
+		var itemStack = ((CraftItemStack) is).handle;
 		
 		itemFrame.setItem(itemStack);
 		itemFrame.setDirection(getMojangDirection(facing));
@@ -265,7 +265,7 @@ public class Display extends AbstractDisplay{
 	
 	@Override
 	public String getItemNameNMS(ItemStack item) {
-		net.minecraft.world.item.ItemStack itemStack = nmsHelper.getMCItemStack(item);
+		var itemStack = ((CraftItemStack) item).handle;
 		return itemStack.getItem().getName(itemStack).getString();
 	}
 }

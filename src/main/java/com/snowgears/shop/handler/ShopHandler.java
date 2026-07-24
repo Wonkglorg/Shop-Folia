@@ -2,6 +2,11 @@ package com.snowgears.shop.handler;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.PlayerShopsConfig;
+import static com.snowgears.shop.config.PlayerShopsConfig.SHOPS_DATA_FOLDER;
+import static com.snowgears.shop.config.PlayerShopsConfig.saveShops;
+import com.snowgears.shop.config.SettingsConfig;
+import com.snowgears.shop.display.AbstractDisplay;
+import com.snowgears.shop.display.Display;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.shop.AbstractShop;
@@ -23,13 +28,11 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.block.data.type.WallSign;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -39,11 +42,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -52,11 +56,8 @@ import java.util.stream.Stream;
 
 public class ShopHandler{
 	
-	private Shop plugin;
-	/**
-	 * The folder directory where all shops are present
-	 */
-	private Path shopDir;
+	private final Shop plugin;
+	private final SettingsConfig settingsConfig;
 	
 	private ConcurrentHashMap<Location, AbstractShop> allShops = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<UUID, List<Location>> playerShops = new ConcurrentHashMap<>();
@@ -88,9 +89,8 @@ public class ShopHandler{
 	
 	public ShopHandler(Shop instance) {
 		plugin = instance;
+		settingsConfig = plugin.getSettingsConfig();
 		adminUUID = UUID.randomUUID();
-		shopDir = instance.getDataPath().resolve("data", "shops");
-		initItemList();
 		loadShops();
 	}
 	
@@ -202,7 +202,7 @@ public class ShopHandler{
 			chunkShops.put(chunkKey, chunkShopLocations);
 		}
 		
-		plugin.getGuiHandler().reloadPlayerHeadIcon(shop);
+		//plugin.getGuiHandler().reloadPlayerHeadIcon(shop);
 	}
 	
 	//This method should only be used by AbstractShop object to delete
@@ -252,40 +252,8 @@ public class ShopHandler{
 			// we only hold off on doing this if we are bulk deleting shops for users to prevent repeated saves.
 			// The forceSave flag should rarely be `false`, and you should be careful when setting it to false.
 			if(forceSave){
-				this.saveShops(shop.getOwnerUUID(), true);
+				PlayerShopsConfig.saveShops(shop.getOwnerUUID(), true);
 			}
-		}
-	}
-	
-	public void processUnloadedShopsInChunk(Chunk chunk) {
-		String key = UtilMethods.getChunkKey(chunk);
-		if(unloadedShopsByChunk.containsKey(key)){
-			List<UUID> playerUUIDs = new ArrayList<>();
-			List<Location> shopLocations = getUnloadedShopsByChunk(key);
-			for(Location shopLocation : shopLocations){
-				AbstractShop shop = getShop(shopLocation);
-				if(shop != null){
-					// Run at the shop's location to ensure it works in the correct region in Folia
-					plugin.getFoliaLib().getScheduler().runAtLocation(shopLocation, task -> {
-						boolean loadSuccess = shop.load();
-						if(loadSuccess){
-							if(!playerUUIDs.contains(shop.getOwnerUUID())){
-								playerUUIDs.add(shop.getOwnerUUID());
-							}
-						}
-					});
-				}
-			}
-			unloadedShopsByChunk.remove(key);
-		}
-	}
-	
-	public void addUnloadedShopToChunkList(AbstractShop shop) {
-		String chunkKey = UtilMethods.getChunkKey(shop.getSignLocation());
-		List<Location> shopLocations = getUnloadedShopsByChunk(chunkKey);
-		if(!shopLocations.contains(shop.getSignLocation())){
-			shopLocations.add(shop.getSignLocation());
-			unloadedShopsByChunk.put(chunkKey, shopLocations);
 		}
 	}
 	
@@ -302,20 +270,6 @@ public class ShopHandler{
 			}
 		}
 		return shops;
-	}
-	
-	public int numShopsNeedSave(UUID player) {
-		List<AbstractShop> shops = getShops(player);
-		
-		// Default does not need to be saved;
-		int needToBeSaved = 0;
-		for(AbstractShop shop : shops){
-			if(shop.needsSave()){
-				needToBeSaved++;
-			}
-		}
-		
-		return needToBeSaved;
 	}
 	
 	public List<AbstractShop> getShopsByItem(ItemStack itemStack) {
@@ -368,17 +322,6 @@ public class ShopHandler{
 	}
 	
 	/**
-	 * Gets shop locations near a specific location within a default radius of 1 chunk
-	 * (which covers a 3x3 chunk area)
-	 *
-	 * @param location The center location to search around
-	 * @return HashSet of shop locations in the surrounding chunks
-	 */
-	public HashSet<Location> getShopLocationsNearLocation(Location location) {
-		return getShopLocationsNearLocation(location, plugin.getShopSearchRadius());
-	}
-	
-	/**
 	 * Gets shop locations near a specific location within a specified chunk radius
 	 *
 	 * @param location The center location to search around
@@ -416,7 +359,7 @@ public class ShopHandler{
 	 * @return List of shops in the surrounding chunks
 	 */
 	public List<AbstractShop> getShopsNearLocation(Location location) {
-		return getShopsNearLocation(location, plugin.getShopSearchRadius());
+		return getShopsNearLocation(location, settingsConfig.getShopSearchRadius());
 	}
 	
 	/**
@@ -502,7 +445,7 @@ public class ShopHandler{
 		
 		// Check if player has moved enough to warrant processing
 		Location lastLocation = lastProcessedLocations.get(player.getUniqueId());
-		double movementThreshold = plugin.getDisplayMovementThreshold();
+		double movementThreshold = settingsConfig.getDisplayMovementThreshold();
 		
 		// Skip processing if player hasn't moved enough and this isn't the first check
 		if(lastLocation != null &&
@@ -525,8 +468,8 @@ public class ShopHandler{
 				
 				// Get all shop locations within the maximum display distance in one batch
 				HashSet<Location> nearbyShopLocations = getShopLocationsNearLocationWithinDistance(playerLocation,
-						plugin.getShopSearchRadius(),
-						plugin.getMaxShopDisplayDistance() * plugin.getMaxShopDisplayDistance());
+						settingsConfig.getShopSearchRadius(),
+						settingsConfig.getMaxShopDisplayDistance() * settingsConfig.getMaxShopDisplayDistance());
 				
 				// Create a batch operation for all displays to minimize interference
 				// This helps prevent the "bouncing" effect when displays are created one by one
@@ -583,7 +526,7 @@ public class ShopHandler{
 			
 			double distance = playerLocation.distance(shop.getSignLocation());
 			
-			if(distance < plugin.getMaxShopDisplayDistance()){
+			if(distance < settingsConfig.getMaxShopDisplayDistance()){
 				// Within display distance, should be shown
 				displaysToShow.add(shopLocation);
 			} else {
@@ -629,8 +572,8 @@ public class ShopHandler{
 			
 			// Process in distance order with small delays between batches to reduce visual clutter
 			// Use configurable batch size from config
-			int batchSize = plugin.getDisplayBatchSize();
-			int batchDelay = plugin.getDisplayBatchDelay();
+			int batchSize = settingsConfig.getDisplayBatchSize();
+			int batchDelay = settingsConfig.getDisplayBatchDelay();
 			int totalBatches = (sortedLocations.size() + batchSize - 1) / batchSize;
 			
 			plugin.logger().debug("Creating " + sortedLocations.size() + " displays in " + totalBatches + " batches for " + player.getName());
@@ -886,26 +829,12 @@ public class ShopHandler{
 		}
 	}
 	
-	/**
-	 * Saves the shops for a player.
-	 *
-	 * @param player The UUID of the player to save the shops for.
-	 * @return The number of shops saved.
-	 * 1+: Total number of shops saved for player
-	 * 0:  No shops need updating (file was not touched)
-	 * -1: No shops for player exist (file was deleted)
-	 * -2: Failed to save new shop file, left original file intact
-	 * -3: Backup file exists, but needs to be manually restored
-	 * -5: Critical error, total data loss for player, all files are missing
-	 */
-	private boolean immediateShutdown = false;
-	
 	public void loadShops() {
 		plugin.getFoliaLib().getScheduler().runAsync(task -> {
 			
-			if(!Files.exists(shopDir)){
+			if(!Files.exists(SHOPS_DATA_FOLDER)){
 				try{
-					Files.createDirectories(shopDir);
+					Files.createDirectories(SHOPS_DATA_FOLDER);
 				} catch(IOException e){
 					Shop.getPlugin().logger().severe("Unable to create shop directory." + e.getMessage());
 					return;
@@ -918,7 +847,7 @@ public class ShopHandler{
 			// Initialize player name cache (simple check for existing cache file)
 			PlayerNameCache.initialize();
 			
-			try(Stream<Path> walk = Files.walk(shopDir)){
+			try(Stream<Path> walk = Files.walk(SHOPS_DATA_FOLDER)){
 				walk.forEach(path -> {
 					if(!Files.isRegularFile(path)){
 						return;
@@ -937,26 +866,17 @@ public class ShopHandler{
 						} else {
 							playerUUID = adminUUID;
 						}
-						PlayerShopsConfig config = new PlayerShopsConfig(path);
+						PlayerShopsConfig config = new PlayerShopsConfig(SHOPS_DATA_FOLDER.resolve(fileName + ".yml"));
 						for(var shop : config.loadShops()){
-							//if chunk its in is already loaded, calculate it here
-							if(shop.isChunkLoaded()){
-								//run this task synchronously
-								Shop.getPlugin().getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), task -> {
-									boolean loadSuccess = shop.load();
-									if(loadSuccess){
-										addShop(shop);
-									}
-								});
-							}
-							//if the chunk is not already loaded, add it to a list to calculate it at chunkloadevent later
-							else {
-								Shop.getPlugin().logger().debug("Chunk not loaded. Adding shop to unloadedList to load later: " + shop);
-								addUnloadedShopToChunkList(shop);
-								addShop(shop);
-							}
+							//run this task synchronously
+							Shop.getPlugin().getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
+								boolean loadSuccess = shop.load();
+								if(loadSuccess){
+									addShop(shop);
+								}
+							});
 						}
-						if(plugin.getDebugForceResaveAll()){
+						if(settingsConfig.isDebugForceResaveAll()){
 							saveShops(playerUUID, true);
 						}
 					} catch(IllegalArgumentException iae){
@@ -970,28 +890,30 @@ public class ShopHandler{
 		});
 	}
 	
-	private UUID uidFromString(String ownerString) {
-		int index = ownerString.indexOf("(");
-		String uidString = ownerString.substring(index + 1, ownerString.length() - 1);
-		return UUID.fromString(uidString);
-	}
-	
-	private ShopType typeFromString(String typeString) {
-		if(typeString.contains("sell")){
-			return ShopType.SELL;
-		} else if(typeString.contains("buy")){
-			return ShopType.BUY;
-		} else if(typeString.contains("barter")){
-			return ShopType.BARTER;
-		} else if(typeString.contains("combo")){
-			return ShopType.COMBO;
-		} else {
-			return ShopType.GAMBLE;
-		}
-	}
-	
 	public boolean isChest(Block b) {
-		return plugin.getEnabledContainers().contains(b.getType());
+		return settingsConfig.getEnabledContainers().contains(b.getType());
+	}
+	
+	public static int saveAllShops() {
+		Set<UUID> allPlayersWithShops = new HashSet<>();
+		for(AbstractShop shop : Shop.getPlugin().getShopHandler().getAllShops()){
+			allPlayersWithShops.add(shop.getOwnerUUID());
+		}
+		
+		int numberUpdated = 0;
+		int playersWithUpdate = 0;
+		for(UUID player : allPlayersWithShops){
+			int shopsUpdated = saveShops(player);
+			
+			if(shopsUpdated > 0){
+				numberUpdated += shopsUpdated;
+				playersWithUpdate++;
+			}
+		}
+		if(playersWithUpdate > 0){
+			Shop.getPlugin().logger().info("Saved " + playersWithUpdate + " Player Shop file updates to disk");
+		}
+		return numberUpdated;
 	}
 	
 	public boolean passesItemListCheck(ItemStack is) {
@@ -1015,99 +937,6 @@ public class ShopHandler{
 		}
 		
 		return true;
-	}
-	
-	public void addInventoryToItemList(Inventory inventory) {
-		for(ItemStack is : inventory.getContents()){
-			if(is != null && is.getType() != Material.AIR){
-				ItemStack itemClone = is.clone();
-				itemClone.setAmount(1);
-				boolean doNotAdd = false;
-				for(ItemStack itemInList : itemListItems){
-					if(itemInList.isSimilar(itemClone)){
-						doNotAdd = true;
-					}
-				}
-				if(!doNotAdd){
-					itemListItems.add(itemClone);
-				}
-			}
-		}
-		saveItemList();
-	}
-	
-	public void removeInventoryFromItemList(Inventory inventory) {
-		Iterator<ItemStack> itemIterator = itemListItems.iterator();
-		while(itemIterator.hasNext()){
-			ItemStack listItem = itemIterator.next();
-			for(ItemStack toRemove : inventory.getContents()){
-				if(toRemove != null && toRemove.getType() != Material.AIR){
-					ItemStack itemClone = toRemove.clone();
-					itemClone.setAmount(1);
-					if(listItem.isSimilar(itemClone)){
-						itemIterator.remove();
-					}
-				}
-			}
-		}
-		saveItemList();
-	}
-	
-	public void initItemList() {
-		if(plugin.getItemListType() == ItemListType.NONE){
-			return;
-		}
-		
-		try{
-			File itemListFile = new File(plugin.getDataFolder() + "/itemList.yml");
-			
-			if(!itemListFile.exists()){ // file doesn't exist{
-				itemListFile.createNewFile();
-				return;
-			}
-			
-			YamlConfiguration config = YamlConfiguration.loadConfiguration(itemListFile);
-			for(String key : config.getKeys(false)){
-				ItemStack is = config.getItemStack(key);
-				if(is != null){
-					is.setAmount(1);
-					itemListItems.add(is);
-				}
-			}
-			
-		} catch(IOException e){
-			e.printStackTrace();
-		}
-	}
-	
-	public void saveItemList() {
-		if(plugin.getItemListType() == ItemListType.NONE){
-			return;
-		}
-		
-		try{
-			File itemListFile = new File(plugin.getDataFolder() + "/itemList.yml");
-			
-			if(!itemListFile.exists()){ // file doesn't exist{
-				itemListFile.createNewFile();
-			} else {
-				itemListFile.delete();
-				itemListFile.createNewFile();
-			}
-			
-			YamlConfiguration config = YamlConfiguration.loadConfiguration(itemListFile);
-			for(int i = 0; i < itemListItems.size(); i++){
-				ItemStack is = itemListItems.get(i);
-				if(is != null){
-					config.set("" + i, is);
-				}
-			}
-			
-			config.save(itemListFile);
-			
-		} catch(IOException e){
-			e.printStackTrace();
-		}
 	}
 	
 	/**
@@ -1184,7 +1013,7 @@ public class ShopHandler{
 				continue;
 			}
 			
-			if(isPlayerNearChunk(player, chunk, plugin.getMaxShopDisplayDistance())){
+			if(isPlayerNearChunk(player, chunk, settingsConfig.getMaxShopDisplayDistance())){
 				plugin.logger().debug("Rebuilding shop displays for " + player.getName() + " in chunk " + chunkKey);
 				
 				// Don't force a refresh - just run the normal process which respects all the checks
@@ -1225,5 +1054,9 @@ public class ShopHandler{
 	 */
 	public void removeCachedPlayerConnection(UUID playerId) {
 		playerConnectionCache.remove(playerId);
+	}
+	
+	public AbstractDisplay createDisplay(Location signLocation) {
+		return new Display(signLocation);
 	}
 }

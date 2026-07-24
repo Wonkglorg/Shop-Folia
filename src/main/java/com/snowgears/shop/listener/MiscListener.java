@@ -1,9 +1,11 @@
 package com.snowgears.shop.listener;
 
 import com.snowgears.shop.Shop;
+import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.event.PlayerDestroyShopEvent;
 import com.snowgears.shop.event.PlayerResizeShopEvent;
 import com.snowgears.shop.shop.AbstractShop;
+import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.DisplayUtil;
@@ -49,12 +51,14 @@ import java.util.UUID;
 
 public class MiscListener implements Listener{
 	
-	public Shop plugin;
+	private final Shop plugin;
+	private final SettingsConfig settingsConfig;
 	private HashMap<UUID, ShopCreationProcess> playerChatCreationSteps = new HashMap<>();
 	private HashMap<UUID, Long> lastChatCreation = new HashMap<>();
 	
 	public MiscListener(Shop instance) {
 		plugin = instance;
+		settingsConfig = instance.getSettingsConfig();
 	}
 	
 	//prevent emptying of bucket when player clicks on shop sign
@@ -85,7 +89,7 @@ public class MiscListener implements Listener{
 		final Block b = event.getBlock();
 		final Player player = event.getPlayer();
 		
-		if(!plugin.getAllowCreationMethodSign()){
+		if(!settingsConfig.isAllowCreateMethodSign()){
 			return;
 		}
 		
@@ -95,11 +99,11 @@ public class MiscListener implements Listener{
 		
 		BlockFace signDirection = null;
 		Block chest = null;
-		if(b.getBlockData() instanceof WallSign){
-			signDirection = ((WallSign) b.getBlockData()).getFacing();
+		if(b.getBlockData() instanceof WallSign wallSign){
+			signDirection = wallSign.getFacing();
 			chest = b.getRelative(signDirection.getOppositeFace());
-		} else if(b.getBlockData() instanceof Rotatable){ //regular sign post
-			signDirection = ((Rotatable) b.getBlockData()).getRotation();
+		} else if(b.getBlockData() instanceof Rotatable rotatable){ //regular sign post
+			signDirection = rotatable.getRotation();
 			//adjust the sign direction to cordinal direction if its not already one
 			if(signDirection.toString().indexOf('_') != -1){
 				String adjustedDirString = signDirection.toString().substring(0, signDirection.toString().indexOf('_'));
@@ -115,7 +119,7 @@ public class MiscListener implements Listener{
 		boolean isAdmin = false;
 		if(plugin.getShopHandler().isChest(chest)){
 			final Sign signBlock = (Sign) b.getState();
-			if(event.getLine(0).toLowerCase().contains(ShopMessage.getCreationWord("SHOP").toLowerCase())){
+			if(event.getLine(0).toLowerCase().contains(plugin.getSettingsConfig().getCreationWord(CreationWord.SHOP).toLowerCase())){
 				
 				if(!plugin.getShopCreationUtil().shopCanBeCreated(player, chest)){
 					cancelShopCreationProcess(player);
@@ -173,7 +177,7 @@ public class MiscListener implements Listener{
 				playerChatCreationSteps.put(player.getUniqueId(), process);
 				
 				process.displayFloatingText(type + ".initialize");
-				if(plugin.allowCreativeSelection() && (type == ShopType.BUY || type == ShopType.COMBO)){
+				if(settingsConfig.isAllowCreativeSelection() && (type == ShopType.BUY || type == ShopType.COMBO)){
 					ShopMessage.sendMessage(type + ".initializeAlt", player, shop);
 				}
 				
@@ -256,7 +260,7 @@ public class MiscListener implements Listener{
 			
 			if(clicked.getBlockData() instanceof WallSign){
 				
-				if(!plugin.getAllowCreationMethodSign()){
+				if(!settingsConfig.isAllowCreateMethodSign()){
 					return;
 				}
 				
@@ -283,10 +287,9 @@ public class MiscListener implements Listener{
 					plugin.getLogHandler().logAction(player, shop, ShopActionType.INIT);
 				}
 				
-				return;
 			} else if(plugin.getShopHandler().isChest(clicked)){
 				
-				if(!plugin.getAllowCreationMethodChest()){
+				if(!settingsConfig.isAllowCreateMethodChest()){
 					return;
 				}
 				
@@ -305,7 +308,7 @@ public class MiscListener implements Listener{
 				}
 				
 				if(event.getItem() == null || event.getItem().getType() == Material.AIR){
-					if(plugin.allowCreativeSelection()){
+					if(settingsConfig.isAllowCreativeSelection()){
 						//TODO this section needs to check if the current step is to get the barter item
 						ShopCreationProcess currentProcess = playerChatCreationSteps.get(player.getUniqueId());
 						// Check if last created process is within 80ms, if so, cancel the event
@@ -318,7 +321,8 @@ public class MiscListener implements Listener{
 							return;
 						} else if(currentProcess == null && player.isSneaking()){
 							//if the player has created a new process in the last 5 seconds, block them from creating another
-							if(lastCreatedProcess != null && (new Date().getTime() - lastCreatedProcess) < plugin.getDebugShopCreateCooldown()){
+							if(lastCreatedProcess != null &&
+							   (new Date().getTime() - lastCreatedProcess) < settingsConfig.getDebugShopCreateCooldown()){
 								ShopMessage.sendMessage("interactionIssue.createCooldown", player);
 								return;
 							}
@@ -356,7 +360,7 @@ public class MiscListener implements Listener{
 				if(lastCreatedProcess != null){
 					//if the player has created a new process in the last 5 seconds, block them from creating another
 					long diff = (new Date().getTime() - lastCreatedProcess);
-					if(diff < plugin.getDebugShopCreateCooldown()){
+					if(diff < settingsConfig.getDebugShopCreateCooldown()){
 						ShopMessage.sendMessage("interactionIssue.createCooldown", player);
 						return;
 					}
@@ -456,7 +460,7 @@ public class MiscListener implements Listener{
 					
 					if(process.getShopType() == ShopType.BARTER){
 						process.displayFloatingText(process.getShopType().toString() + ".createHitChest");
-						if(plugin.allowCreativeSelection()){
+						if(settingsConfig.isAllowCreativeSelection()){
 							ShopMessage.sendMessage(process.getShopType().toString() + ".initializeBarterAlt", player);
 						}
 					} else {
@@ -563,7 +567,7 @@ public class MiscListener implements Listener{
 				return;
 			}
 			
-			if(plugin.getDestroyShopRequiresSneak()){
+			if(settingsConfig.isDestroyShopRequiresSneak()){
 				if(!player.isSneaking()){
 					event.setCancelled(true);
 					Shop.getPlugin().logger().trace("[MiscListener.shopDestroy : getDestroyShopRequiresSneak] updateSign");
@@ -580,7 +584,7 @@ public class MiscListener implements Listener{
 				}
 				
 				//if players must pay to create shops, remove money first
-				double cost = plugin.getDestructionCost();
+				double cost = settingsConfig.getDestructionCost();
 				if(cost > 0){
 					// Check for funds
 					if(!EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
@@ -610,12 +614,12 @@ public class MiscListener implements Listener{
 					event.setDropItems(false);
 				}
 				
-				if((!shop.isAdmin()) && plugin.returnCreationCost() && plugin.getCreationCost() > 0){
-					if(plugin.getCurrencyType() != CurrencyType.ITEM){
-						EconomyUtils.addFunds(shop.getOwner(), player.getInventory(), plugin.getCreationCost());
+				if((!shop.isAdmin()) && settingsConfig.isReturnCreationCost() && settingsConfig.getCreationCost() > 0){
+					if(settingsConfig.getCurrencyType() != CurrencyType.ITEM){
+						EconomyUtils.addFunds(shop.getOwner(), player.getInventory(), settingsConfig.getCreationCost());
 					} else {
-						ItemStack currencyDrop = plugin.getItemCurrency().clone();
-						currencyDrop.setAmount((int) plugin.getCreationCost());
+						ItemStack currencyDrop = plugin.getItemConfig().getCurrencyItem().clone();
+						currencyDrop.setAmount((int) settingsConfig.getCreationCost());
 						shop.getChestLocation().getWorld().dropItemNaturally(shop.getChestLocation(), currencyDrop);
 					}
 				}

@@ -1,6 +1,7 @@
 package com.snowgears.shop.shop;
 
-import com.snowgears.shop.util.ShopMessage;
+import com.snowgears.shop.Shop;
+import com.snowgears.shop.config.SettingsConfig;
 
 public enum ShopType{
 	
@@ -32,12 +33,30 @@ public enum ShopType{
 	}
 	
 	public String toCreationWord() {
+		SettingsConfig settingsConfig = Shop.getPlugin().getSettingsConfig();
 		return switch(this) {
-			case SELL -> ShopMessage.getCreationWord("SELL");
-			case BUY -> ShopMessage.getCreationWord("BUY");
-			case BARTER -> ShopMessage.getCreationWord("BARTER");
-			case COMBO -> ShopMessage.getCreationWord("COMBO");
-			default -> ShopMessage.getCreationWord("GAMBLE");
+			case SELL -> settingsConfig.getCreationWord(CreationWord.SELL);
+			case BUY -> settingsConfig.getCreationWord(CreationWord.BUY);
+			case BARTER -> settingsConfig.getCreationWord(CreationWord.BARTER);
+			case COMBO -> settingsConfig.getCreationWord(CreationWord.COMBO);
+			default -> settingsConfig.getCreationWord(CreationWord.GAMBLE);
 		};
+	}
+	
+	public static ShopType typeFromString(String typeString) {
+		if(typeString == null){
+			return SELL;
+		}
+		if(typeString.contains("sell")){
+			return ShopType.SELL;
+		} else if(typeString.contains("buy")){
+			return ShopType.BUY;
+		} else if(typeString.contains("barter")){
+			return ShopType.BARTER;
+		} else if(typeString.contains("combo")){
+			return ShopType.COMBO;
+		} else {
+			return ShopType.GAMBLE;
+		}
 	}
 }
