@@ -17,7 +17,6 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -29,7 +28,7 @@ public class SettingsConfig extends Config{
 	@Getter
 	private @Nullable String logLevel;
 	@Getter
-	private DisplayType displayType;
+	private DisplayType displayTypeDefault;
 	@Getter
 	private DisplayTagOption displayTagOption;
 	@Getter
@@ -68,7 +67,7 @@ public class SettingsConfig extends Config{
 	@Getter
 	private int hoursOfflineToRemoveShops;
 	@Getter
-	private TreeMap<Object, Object> priceSuffixes;
+	private TreeMap<Double, String> priceSuffixes;
 	@Getter
 	private double priceSuffixMinimumValue;
 	@Getter
@@ -104,9 +103,9 @@ public class SettingsConfig extends Config{
 	@Getter
 	private ItemListType itemListType;
 	@Getter
-	private @NotNull List<String> worldBlackList;
+	private @NotNull List<String> worldBlackList = new ArrayList<>();
 	@Getter
-	private Map<ShopClickType, ShopAction> clickTypeActionMap;
+	private Map<ShopClickType, ShopAction> clickTypeActionMap = new EnumMap<>(ShopClickType.class);
 	
 	@Getter
 	private Map<CreationWord, String> creationWords = new EnumMap<>(CreationWord.class);
@@ -157,9 +156,9 @@ public class SettingsConfig extends Config{
 		silentLoad();
 		logLevel = getString("logLevel");
 		try{
-			displayType = DisplayType.valueOf(getString("displayType"));
+			displayTypeDefault = DisplayType.valueOf(getString("displayType"));
 		} catch(Exception _){
-			displayType = DisplayType.ITEM;
+			displayTypeDefault = DisplayType.ITEM;
 		}
 		
 		try{
@@ -261,7 +260,6 @@ public class SettingsConfig extends Config{
 		
 		worldBlackList.addAll(getStringList("worldBlacklist"));
 		
-		clickTypeActionMap = new HashMap<>();
 		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.transactWithShop")), ShopAction.TRANSACT);
 		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.transactWithShopFullStack")), ShopAction.TRANSACT_FULLSTACK);
 		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.viewShopDetails")), ShopAction.VIEW_DETAILS);

@@ -43,7 +43,7 @@ public class GambleShop extends AbstractShop{
 		Shop.getPlugin().getFoliaLib().getScheduler().runLater(() -> {
 			setItemStack(Shop.getPlugin().getItemConfig().getGambleDisplayItem());
 			if(initialDisplayType == null){
-				display.setType(Shop.getPlugin().getDisplayType(), false);
+				display.setType(Shop.getPlugin().getSettingsConfig().getDisplayTypeDefault(), false);
 				getDisplay().spawn(player);
 			} else {
 				display.setType(initialDisplayType, false);

@@ -164,9 +164,8 @@ public class UtilMethods{
 			return "-" + formatLongToKString(-value, formatZeros);
 		}
 		
-		Map.Entry<Double, String> e = Shop.getPlugin().getPriceSuffixes().floorEntry(value);
-		Double minimumValue = Shop.getPlugin().getPriceSuffixMinimumValue();
-		;
+		Map.Entry<Double, String> e = Shop.getPlugin().getSettingsConfig().getPriceSuffixes().floorEntry(value);
+		Double minimumValue = Shop.getPlugin().getSettingsConfig().getPriceSuffixMinimumValue();
 		
 		if(value < 1000 || e == null || value < minimumValue){
 			if(isDecimal(value)){
@@ -951,32 +950,6 @@ public class UtilMethods{
 		return null;
 	}
 	
-	//returns if Minecraft version 1.17 or above
-	public static boolean isMCVersion17Plus() {
-		//LIGHT only available in MC 1.17+
-		try{
-			if(Material.LIGHT != null){
-				return true;
-			}
-		} catch(NoSuchFieldError e){
-			return false;
-		}
-		return false;
-	}
-	
-	//returns if Minecraft version 1.14 or above
-	public static boolean isMCVersion14Plus() {
-		//LIGHT only available in MC 1.17+
-		try{
-			if(Material.BARREL != null){
-				return true;
-			}
-		} catch(NoSuchFieldError e){
-			return false;
-		}
-		return false;
-	}
-	
 	//this takes a dirty (pre-cleaned) string and finds how much to multiply the final by
 	//this utility allows the input of numbers like 1.2k (1200)
 	public static double getMultiplyValue(String text) {
@@ -986,7 +959,7 @@ public class UtilMethods{
 		String priceSuffix = priceString.replaceAll("[0-9.]", "");
 		
 		// Load the suffixes from the config values
-		NavigableMap<Double, String> configPriceSuffixes = Shop.getPlugin().getPriceSuffixes();
+		NavigableMap<Double, String> configPriceSuffixes = Shop.getPlugin().getSettingsConfig().getPriceSuffixes();
 		
 		// Search for a suffix match
 		for(Map.Entry<Double, String> entry : configPriceSuffixes.entrySet()){
@@ -1138,6 +1111,7 @@ public class UtilMethods{
 		return item;
 	}
 	
+	/*
 	public static List<Component> splitComponent(Component component, int maxLength) {
 		List<Component> result = new ArrayList<>();
 		
@@ -1180,6 +1154,8 @@ public class UtilMethods{
 		
 		return result;
 	}
+	
+	 */
 	
 	public static List<String> splitStringIntoLines(String text, int maxLineLength) {
 		final String HEX_COLOR_CODE_REGEX = "(§x§.§.§.§.§.§.)"; // Hex code format using mc color codes

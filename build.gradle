@@ -105,10 +105,6 @@ dependencies {
         implementation "com.github.WonkyLibs:Config:${config_version}"
     }
 
-    if (enableScheduler) {
-        implementation "com.github.WonkyLibs:Scheduler:${scheduler_version}"
-    }
-
     if (enableCommand) {
         implementation "com.github.WonkyLibs:Command:${command_version}"
     }
@@ -124,15 +120,6 @@ dependencies {
     compileOnly "org.projectlombok:lombok:${lombok_version}"
     annotationProcessor "org.projectlombok:lombok:${lombok_version}"
 
-    //test dependencies
-    testImplementation platform("org.junit:junit-bom:${junit_version}")
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    testImplementation "org.mockito:mockito-core:${mockito_version}"
-    testImplementation "io.papermc.paper:paper-api:${minecraft_version}.build.+"
-
-
     //Core dependencies
     compileOnly 'it.unimi.dsi:fastutil:8.5.6'
     compileOnly 'net.milkbowl.vault:VaultAPI:1.7'
@@ -143,6 +130,20 @@ dependencies {
 
     //FoliaLib
     implementation 'com.github.technicallycoded:FoliaLib:0.4.4'
+
+
+    //test dependencies
+    testImplementation platform("org.junit:junit-bom:${junit_version}")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation 'net.milkbowl.vault:VaultAPI:1.7'
+    testImplementation "org.mockito:mockito-core:${mockito_version}"
+    testImplementation "io.papermc.paper:paper-api:${minecraft_version}.build.+"
+    testImplementation "org.mockbukkit.mockbukkit:mockbukkit-v26.1.2:4.114.0"
+
+
+
 }
 
 tasks {

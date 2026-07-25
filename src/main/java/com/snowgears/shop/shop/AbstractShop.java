@@ -514,7 +514,7 @@ public abstract class AbstractShop{
 			// First, remove the shop from the shop handler in case of any errors with later methods.
 			Shop.getPlugin().getShopHandler().removeShop(this, forceSave);
 			
-			if(UtilMethods.isMCVersion17Plus() && Shop.getPlugin().getDisplayLightLevel() > 0 && this.getChestLocation() != null){
+			if(Shop.getPlugin().getSettingsConfig().getDisplayLightLevel() > 0 && this.getChestLocation() != null){
 				Block chestBlock = this.getChestLocation().getBlock();
 				if(chestBlock != null && Shop.getPlugin().getShopHandler().isChest(chestBlock)){
 					Block displayBlock = chestBlock.getRelative(BlockFace.UP);

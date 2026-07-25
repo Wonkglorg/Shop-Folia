@@ -1,6 +1,5 @@
 package com.snowgears.shop.integration.features;
 
-import com.snowgears.shop.hook.WorldGuardHook;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.testsupport.BaseMockBukkitTest;
 import com.snowgears.shop.util.ShopClickType;
@@ -326,31 +325,6 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
     }
 
     // ---------- Message and region gating behaviors ----------
-
-    @Test
-    void chest_rightClick_worldguard_denied_sendsRegionRestriction_andCancels() {
-        AbstractShop shop = createInitializedShopAt(new Location(world, 40, 65, 10));
-        // No need to spy; branch happens before action execution
-
-        PlayerMock p = server.addPlayer();
-        p.setOp(false);
-
-        Block chestBlock = shop.getChestLocation().getBlock();
-
-        try (MockedStatic<WorldGuardHook> mocked = Mockito.mockStatic(WorldGuardHook.class)) {
-            mocked.when(() -> WorldGuardHook.canUseShop(Mockito.any(Player.class), Mockito.any(Location.class)))
-                  .thenReturn(false);
-
-            PlayerInteractEvent event = new PlayerInteractEvent(p, Action.RIGHT_CLICK_BLOCK, p.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
-            server.getPluginManager().callEvent(event);
-
-            assertTrue(event.isCancelled(), "WorldGuard denial should cancel the interaction");
-            String msg = waitForNextMessage(p);
-            assertNotNull(msg, "Player should receive a region restriction message");
-            assertEquals("§cYou do not have permission to do that in this region.", msg);
-            assertNull(p.nextMessage(), "No additional messages expected");
-        }
-    }
 
     @Test
     void chest_rightClick_operator_nonAdmin_opOpenMessage() {

@@ -19,8 +19,6 @@ import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.ItemNameUtil;
 import com.snowgears.shop.util.PlayerNameCache;
-import com.snowgears.shop.util.ShopAction;
-import com.snowgears.shop.util.ShopClickType;
 import com.snowgears.shop.util.ShopCreationUtil;
 import com.snowgears.shop.util.ShopLogger;
 import com.snowgears.shop.util.ShopMessage;
@@ -38,7 +36,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.List;
 import java.util.NavigableMap;
 
 public class Shop extends JavaPlugin{
@@ -73,19 +70,7 @@ public class Shop extends JavaPlugin{
 	@Getter
 	private String commandAlias;
 	@Getter
-	private DisplayType displayType;
-	@Getter
 	private DisplayTagOption displayTagOption;
-	@Getter
-	private DisplayType[] displayCycle;
-	
-	@Getter
-	private int displayLightLevel;
-	
-	@Getter
-	private NavigableMap<Double, String> priceSuffixes;
-	@Getter
-	private Double priceSuffixMinimumValue;
 	private Economy econ = null;
 	@Getter
 	private ItemListType itemListType;
@@ -105,6 +90,8 @@ public class Shop extends JavaPlugin{
 	
 	public static boolean loggedDisplayDisabledWarning = false;
 	
+	private boolean isMockBukkit = false;
+	
 	@Getter
 	private boolean immediateShutdown = false;
 	
@@ -121,6 +108,8 @@ public class Shop extends JavaPlugin{
 	
 	@Override
 	public void onEnable() {
+		this.isMockBukkit = plugin.getServer().getClass().getPackage().getName().contains("mockbukkit");
+		System.out.println("MockBukkit: " + isMockBukkit);
 		// Initialize FoliaLib
 		foliaLib = new FoliaLib(this);
 		
@@ -170,7 +159,9 @@ public class Shop extends JavaPlugin{
 		
 		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
 		
-		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
+		if(!isMockBukkit){
+			this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
+		}
 	}
 	
 	/**
@@ -234,15 +225,6 @@ public class Shop extends JavaPlugin{
 	
 	public TransactionHandler getTransactionHelper() {
 		return transactionHandler;
-	}
-	
-	private Boolean isMockBukkit = null;
-	
-	public boolean isMockBukkit() {
-		if(this.isMockBukkit == null){
-			this.isMockBukkit = plugin.getServer().getClass().getPackage().getName().contains("mockbukkit");
-		}
-		return this.isMockBukkit;
 	}
 	
 	public String getPriceString(double price, boolean pricePer) {

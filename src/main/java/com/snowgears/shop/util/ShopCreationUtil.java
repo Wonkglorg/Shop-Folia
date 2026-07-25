@@ -194,12 +194,12 @@ public class ShopCreationUtil{
 				return null;
 			}
 			
-			if(UtilMethods.isMCVersion17Plus() && plugin.getDisplayLightLevel() > 0){
+			if(plugin.getSettingsConfig().getDisplayLightLevel() > 0){
 				Block displayBlock = shop.getChestLocation().getBlock().getRelative(BlockFace.UP);
 				if(UtilMethods.materialIsNonIntrusive(displayBlock.getType())){
 					displayBlock.setType(Material.LIGHT);
 					Light data = (Light) displayBlock.getBlockData();
-					data.setLevel(plugin.getDisplayLightLevel());
+					data.setLevel(plugin.getSettingsConfig().getDisplayLightLevel());
 					displayBlock.setBlockData(data);
 				}
 			}
@@ -283,7 +283,7 @@ public class ShopCreationUtil{
 			return false;
 		}
 		
-		if(plugin.getDisplayType() != DisplayType.NONE){
+		if(plugin.getSettingsConfig().getDisplayTypeDefault() != DisplayType.NONE){
 			//make sure there is room above the shop for the display
 			Block aboveShop = shop.getChestLocation().getBlock().getRelative(BlockFace.UP);
 			if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){

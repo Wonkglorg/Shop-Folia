@@ -43,7 +43,7 @@ public class Display extends AbstractDisplay{
 	
 	@Override
 	protected void spawnItemPacket(Player player, ItemStack is, Location location) {
-		net.minecraft.world.item.ItemStack itemStack = ((CraftItemStack) is).handle;
+		net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(is);
 		Level serverLevel = ((CraftWorld) location.getWorld()).getHandle();
 		
 		ItemEntity entityItem = new ItemEntity(serverLevel, location.getX(), location.getY(), location.getZ(), itemStack);
@@ -128,7 +128,7 @@ public class Display extends AbstractDisplay{
 		//armor stand only going to have equipment if text is not populated
 		if(text == null){
 			List<Pair<net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList = new ArrayList();
-			var itemStack = ((CraftItemStack) armorStandData.getEquipment()).handle;
+			var itemStack = CraftItemStack.asNMSCopy(armorStandData.getEquipment());
 			equipmentList.add(new Pair<>(getMojangEquipmentSlot(armorStandData.getEquipmentSlot()), itemStack));
 			
 			spawnEntityEquipmentPacket = new ClientboundSetEquipmentPacket(armorStand.getId(), equipmentList);
@@ -156,7 +156,7 @@ public class Display extends AbstractDisplay{
 		int entityID = itemFrame.getId();
 		this.addEntityID(player, entityID);
 		itemFrame.setPos(location.getX(), location.getY(), location.getZ());
-		var itemStack = ((CraftItemStack) is).handle;
+		var itemStack = CraftItemStack.asNMSCopy(is);
 		
 		itemFrame.setItem(itemStack);
 		itemFrame.setDirection(getMojangDirection(facing));
@@ -265,7 +265,7 @@ public class Display extends AbstractDisplay{
 	
 	@Override
 	public String getItemNameNMS(ItemStack item) {
-		var itemStack = ((CraftItemStack) item).handle;
+		var itemStack = CraftItemStack.asNMSCopy(item);
 		return itemStack.getItem().getName(itemStack).getString();
 	}
 }

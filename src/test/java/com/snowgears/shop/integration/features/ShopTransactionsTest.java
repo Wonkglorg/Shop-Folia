@@ -13,6 +13,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -66,13 +67,13 @@ public class ShopTransactionsTest extends BaseMockBukkitTest {
         assertEquals("§cThis shop is out of stock.", waitForNextMessage(other));
         assertEquals("§c[Shop] Your selling shop at <(54, 65, 9)> is out of stock.", waitForNextMessage(owner));
         // Shop sign should also show out of stock color/text
-        assertEquals("§4§4§l[sell shop]", shop.getSignLines()[0]);
+        assertEquals("§4§4§l[sell shop]", shop.getSignLines().getFirst());
         // add stock to shop
         shop.getChestLocation().getChunk().load(true); // chest location is null if chunk is not loaded for MockBukkit
         shop.getInventory().addItem(new ItemStack(Material.DIRT, 8));
         shop.updateStock();
         // Shop sign should now show in stock color/text
-        assertEquals("§a§a§l[sell shop]", shop.getSignLines()[0]);
+        assertEquals("§a§a§l[sell shop]", shop.getSignLines().getFirst());
 
         // Make sure we setup inventories correctly and verify the current contents
         assertEquals(0, InventoryUtils.getAmount(other.getInventory(), new ItemStack(Material.DIRT)));

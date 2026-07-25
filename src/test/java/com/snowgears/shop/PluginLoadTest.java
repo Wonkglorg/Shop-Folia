@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
  * This ensures that MockBukkit is correctly wired into the build and that the plugin’s lifecycle
  * methods do not immediately throw exceptions when run on a mock server.
  */
-public class PluginLoadTest extends BaseMockBukkitTest {
+class PluginLoadTest extends BaseMockBukkitTest {
     @Test
     void pluginShouldEnable() {
         assertNotNull(getPlugin(), "Plugin should be loaded by MockBukkit");

@@ -158,14 +158,15 @@ public class PlayerShopsConfig extends Config{
 	
 	public static int saveShops(final UUID player) {return saveShops(player, false);}
 	
-	public static int saveShops(final UUID player, boolean force) {
+	public static int saveShops(final UUID uuid, boolean force) {
 		// Check if any of the players shops want to be saved
 		Shop plugin = Shop.getPlugin();
 		if(plugin.isImmediateShutdown()){
 			return 0;
 		}
-		String playerName = player == plugin.getShopHandler().getAdminUUID() ? "admin" : plugin.getServer().getOfflinePlayer(player).getName();
-		List<AbstractShop> shops = PlayerProfile.getShops(player);
+		boolean isAdminShops = uuid.equals(plugin.getShopHandler().getAdminUUID());
+		String playerName = isAdminShops ? "admin" : plugin.getServer().getOfflinePlayer(uuid).getName();
+		List<AbstractShop> shops = PlayerProfile.getShops(uuid);
 		
 		int needToBeSaved = 0;
 		for(AbstractShop shop : shops){
@@ -175,7 +176,7 @@ public class PlayerShopsConfig extends Config{
 		}
 		
 		if(!force && needToBeSaved == 0 && !shops.isEmpty()){
-			logger.trace("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + player.toString());
+			logger.trace("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + uuid.toString());
 			return 0;
 		}
 		
@@ -183,12 +184,12 @@ public class PlayerShopsConfig extends Config{
 		logger.debug("attempting to save shops for player " +
 		             playerName +
 		             " (" +
-		             player.toString() +
+		             uuid.toString() +
 		             ") isAdmin: " +
-		             (player == plugin.getShopHandler().getAdminUUID()));
+		             (uuid == plugin.getShopHandler().getAdminUUID()));
 		
-		Path tempFile = SHOPS_DATA_FOLDER.resolve(playerName + ".tmp");
-		Path file = SHOPS_DATA_FOLDER.resolve(playerName + ".yml");
+		Path tempFile = SHOPS_DATA_FOLDER.resolve(isAdminShops ? playerName : uuid + ".tmp");
+		Path file = SHOPS_DATA_FOLDER.resolve(isAdminShops ? playerName : uuid + ".yml");
 		if(shops.isEmpty()){
 			try{
 				Files.deleteIfExists(tempFile);
@@ -206,14 +207,14 @@ public class PlayerShopsConfig extends Config{
 			}
 			
 			//this is to remove a bug that caused one shop to be saved to multiple files at one point
-			if(!shop.getOwnerUUID().equals(player)){
+			if(!shop.getOwnerUUID().equals(uuid)){
 				continue;
 			}
 			if(!shop.isInitialized()){
 				continue;
 			}
 			shopNumber++;
-			var section = config.createSection("shops." + player + "." + shopNumber);
+			var section = config.createSection("shops." + uuid + "." + shopNumber);
 			
 			section.set("id", shop.getId());
 			section.set("location", locationToString(shop.getSignLocation()));

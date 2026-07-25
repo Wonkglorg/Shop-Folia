@@ -85,7 +85,7 @@ public abstract class AbstractDisplay{
 		
 		DisplayType displayType = this.getType();
 		if(displayType == null){
-			displayType = Shop.getPlugin().getDisplayType();
+			displayType = Shop.getPlugin().getSettingsConfig().getDisplayTypeDefault();
 		}
 		
 		//two display entities on the chest
@@ -171,7 +171,7 @@ public abstract class AbstractDisplay{
 						frameLocation = shop.getChestLocation().clone().add(0, 1, 0);
 					}
 					
-					if(UtilMethods.isMCVersion17Plus() && Shop.getPlugin().getSettingsConfig().isSetGlowingItemFrame()){
+					if(Shop.getPlugin().getSettingsConfig().isSetGlowingItemFrame()){
 						spawnItemFramePacket(player, shop.getItemStack(), frameLocation, shop.getFacing(), true);
 					} else {
 						spawnItemFramePacket(player, shop.getItemStack(), frameLocation, shop.getFacing(), false);
@@ -201,7 +201,7 @@ public abstract class AbstractDisplay{
 			lowerTagLocation = UtilMethods.pushLocationInDirection(lowerTagLocation, this.getShop().getFacing(), 0.2);
 			
 			Block displayBlock = lowerTagLocation.getBlock();
-			if(UtilMethods.isMCVersion14Plus() && this.isChunkLoaded()){
+			if(this.isChunkLoaded()){
 				if(displayBlock.getType() == Material.BARREL || displayBlock.getRelative(BlockFace.DOWN).getType() == Material.BARREL){
 					lowerTagLocation = lowerTagLocation.add(0, .25, 0);
 				}
@@ -337,10 +337,10 @@ public abstract class AbstractDisplay{
 		if(getShop().getFacing() == null){
 			return;
 		}
-		DisplayType[] cycle = Shop.getPlugin().getDisplayCycle();
+		DisplayType[] cycle = Shop.getPlugin().getSettingsConfig().getDisplayCycle();
 		DisplayType displayType = this.type;
 		if(displayType == null){
-			displayType = Shop.getPlugin().getDisplayType();
+			displayType = Shop.getPlugin().getSettingsConfig().getDisplayTypeDefault();
 		}
 		
 		int index = -1;

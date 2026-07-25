@@ -1,6 +1,7 @@
 package com.snowgears.shop.integration.features;
 
 import com.snowgears.shop.Shop;
+import com.snowgears.shop.config.PlayerShopsConfig;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.testsupport.BaseMockBukkitTest;
 import org.bukkit.Location;
@@ -59,7 +60,7 @@ public class ShopSaveTest extends BaseMockBukkitTest {
         assertTrue(shop.isInitialized(), "Shop should be initialized after creation flow");
 
         // Act: explicitly save the player's shops
-        int shopsSaved = plugin.getShopHandler().saveShops(player.getUniqueId(), true);
+        int shopsSaved = PlayerShopsConfig.saveShops(player.getUniqueId(), true);
         assertEquals(1, shopsSaved, "Exactly one shop should be saved");
 
         // Assert: file exists, has content, and no leftover .bak remains
@@ -101,7 +102,7 @@ public class ShopSaveTest extends BaseMockBukkitTest {
             }
             return invocation.callRealMethod();
         })) {
-            int result = plugin.getShopHandler().saveShops(player.getUniqueId(), true);
+            int result = PlayerShopsConfig.saveShops(player.getUniqueId(), true);
             assertEquals(-2, result, "Should return -2 when temp file cannot be created, but file was left untouched (and/or restored successfully from backup)");
         }
 
@@ -135,7 +136,7 @@ public class ShopSaveTest extends BaseMockBukkitTest {
                                  Mockito.doThrow(new IOException("Simulated: yaml save failed"))
                                          .when(mock).save(Mockito.any(File.class));
                              })) {
-            int result = plugin.getShopHandler().saveShops(player.getUniqueId(), true);
+            int result = PlayerShopsConfig.saveShops(player.getUniqueId(), true);
             assertEquals(-2, result, "Should return -2 when YAML save fails, but file was left untouched (and/or restored successfully from backup)");
         }
 
@@ -199,7 +200,7 @@ public class ShopSaveTest extends BaseMockBukkitTest {
             }
             return invocation.callRealMethod();
         })) {
-            int result = plugin.getShopHandler().saveShops(player.getUniqueId(), true);
+            int result = PlayerShopsConfig.saveShops(player.getUniqueId(), true);
             assertEquals(-5, result, "Should return -5 on total data loss");
             server.getScheduler().waitAsyncEventsFinished();
             server.getScheduler().waitAsyncTasksFinished();
@@ -301,7 +302,7 @@ public class ShopSaveTest extends BaseMockBukkitTest {
         assertTrue(shop.isInitialized());
 
         // Save and verify file exists
-        int savedFirst = plugin.getShopHandler().saveShops(player.getUniqueId(), true);
+        int savedFirst = PlayerShopsConfig.saveShops(player.getUniqueId(), true);
         assertEquals(1, savedFirst);
         File dataDir = new File(plugin.getDataFolder(), "Data");
         File playerFile = new File(dataDir, player.getUniqueId().toString() + ".yml");
@@ -314,7 +315,7 @@ public class ShopSaveTest extends BaseMockBukkitTest {
         assertNull(plugin.getShopHandler().getShop(shop.getSignLocation()), "Shop should be removed after breaking sign");
 
         // Save again; file should be removed because player has no shops now
-        int savedSecond = plugin.getShopHandler().saveShops(player.getUniqueId(), true);
+        int savedSecond = PlayerShopsConfig.saveShops(player.getUniqueId(), true);
         assertEquals(-1, savedSecond, "File should be deleted when player has no shops");
         assertFalse(playerFile.exists(), "Player save should be removed when player has no shops");
     }
@@ -345,7 +346,7 @@ public class ShopSaveTest extends BaseMockBukkitTest {
         assertTrue(playerFile.exists(), "Precondition: player YAML exists");
 
         // Act: saving for a player with no shops should delete the file
-        int shopsSaved = plugin.getShopHandler().saveShops(randomPlayer, true);
+        int shopsSaved = PlayerShopsConfig.saveShops(randomPlayer, true);
         assertEquals(-1, shopsSaved, "No shops should be saved for a player with no shops");
         assertFalse(playerFile.exists(), "Player YAML file should be deleted when no shops exist");
     }
@@ -381,7 +382,7 @@ public class ShopSaveTest extends BaseMockBukkitTest {
             }
             return invocation.callRealMethod();
         })) {
-            int savedCount = plugin.getShopHandler().saveShops(player.getUniqueId(), true);
+            int savedCount = PlayerShopsConfig.saveShops(player.getUniqueId(), true);
             assertEquals(1, savedCount);
         }
 

@@ -125,32 +125,29 @@ public class ShopLogger extends Logger{
 	
 	@Override
 	public void log(@NotNull Level level, @NotNull String message) {
-		
-		if(this.getLogLevel().intValue() > level.intValue()){
+		if(getLogLevel().intValue() > level.intValue()){
 			return;
 		}
-		// Add color formatting & reroute messages
+		
 		if(level == Level.SEVERE){
-			severe(message);
+			super.log(Level.SEVERE, message);
 		} else if(level == Level.WARNING){
-			warning(message);
+			super.log(Level.WARNING, message);
 		} else if(level == Level.INFO){
-			info(message);
+			super.log(Level.INFO, message);
 		} else if(level == NOTICE){
-			notice(message);
+			super.log(Level.INFO, "[Notice] {}", message);
 		} else if(level == HELPFUL){
-			helpful(message);
+			super.log(Level.INFO, "[Helpful] {}", message);
 		} else if(level == DEBUG){
-			debug(message);
+			super.log(Level.INFO, "[Debug] {}", message);
 		} else if(level == TRACE){
-			trace(message);
+			super.log(Level.INFO, "[Trace] {}", message);
 		} else if(level == SPAM){
-			spam(message);
+			super.log(Level.INFO, "[Spam] {}", message);
 		} else if(level == HYPER){
-			hyper(message);
-		}
-		// Catch some custom unknown log level
-		else {
+			super.log(Level.INFO, "[Hyper] {}", message);
+		} else {
 			super.log(level, message);
 		}
 	}

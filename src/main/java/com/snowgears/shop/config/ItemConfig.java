@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class ItemConfig extends Config{
 	/**
-	 * The item used as currency (if set to item in {@link Shop#getCurrencyType()}
+	 * The item used as currency (if set to item in {@link SettingsConfig#getCurrencyType()}
 	 */
 	@Getter
 	private ItemStack currencyItem;

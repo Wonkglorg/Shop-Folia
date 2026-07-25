@@ -157,7 +157,7 @@ public abstract class BaseMockBukkitTest {
     }
     protected static void setupEconomy() {
         // Inject Economy mock if Vault currency is enabled
-        if (plugin.getCurrencyType() == CurrencyType.VAULT) {
+        if (plugin.getSettingsConfig().getCurrencyType() == CurrencyType.VAULT) {
             Economy mockedEconomy = Mockito.mock(Economy.class);
             Mockito.when(mockedEconomy.getBalance(Mockito.any(org.bukkit.OfflinePlayer.class))).thenReturn(10_000.0);
             Mockito.when(mockedEconomy.withdrawPlayer(Mockito.any(org.bukkit.OfflinePlayer.class), Mockito.anyDouble()))

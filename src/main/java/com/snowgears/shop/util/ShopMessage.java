@@ -32,13 +32,13 @@ public class ShopMessage{
 	
 	private static final Shop plugin = Shop.getPlugin();
 	
-	private static final LangManager langManager = plugin.getLangManager();
+	private static final LangManager lang = plugin.getLangManager();
 	
 	@Getter
 	private static int targetMaxLength;
 	
 	public ShopMessage(Shop plugin) {
-		targetMaxLength = langManager.getDefaultLang().getInt("targetMaxLength", 40);
+		targetMaxLength = lang.getDefaultLang().getInt("targetMaxLength", 40);
 	}
 	
 	/**
@@ -199,7 +199,7 @@ public class ShopMessage{
 			   if(context.getProcess() != null){
 				   return Component.text(Bukkit.getOfflinePlayer(context.getProcess().getPlayerUUID()).getName());
 			   } else if(context.getShop() != null){
-				   return context.getShop().isAdmin() ? langManager.request("placeholders.server-display-name").toSingleComponent() : context.getShop().getOwnerName();
+				   return context.getShop().isAdmin() ? lang.request("placeholders.server-display-name").toSingleComponent() : context.getShop().getOwnerName();
 			   }
 			   return null;
 		   })
@@ -238,7 +238,7 @@ public class ShopMessage{
 			   if(context.getShop() == null){
 				   return null;
 			   } else if(context.getShop().isAdmin()){
-				   return langManager.request("placeholders.admin-stock").getRawResultSingleLine();
+				   return lang.request("placeholders.admin-stock").getRawResultSingleLine();
 			   } else {
 				   return String.valueOf(context.getShop().getStock());
 			   }
@@ -383,13 +383,16 @@ public class ShopMessage{
 					shopsOutOfStock = shopsOutOfStock.append(currentRow);
 				}
 			}
-			
+			//todo:jmd
+			/*
 			if(!remainingShopsMsgs.isEmpty()){
+				lang.request("transaction.OFFLINE_TRANSACTIONS_NOTIFICATION.moreOutOfStock").replace("%out-of-stock-remaining%",remainingShopsMsgs)
 				String remainingMsg = getUnformattedMessage("offline", "moreOutOfStock");
 				TextComponent remaining = format(remainingMsg.replace("%out of stock remaining%", "" + remainingShopsMsgs.size()), context);
 				remaining.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, Component.text(String.join("\n", remainingShopsMsgs)).create()));
 				shopsOutOfStock = shopsOutOfStock.append(remaining);
 			}
+			 */
 			
 			return shopsOutOfStock;
 		}
@@ -402,12 +405,13 @@ public class ShopMessage{
 		context.setShop(shop);
 		context.setForSign(forSign);
 		// Return the legacy version since we are requesting the legacy formatter!
-		return format(unformattedMessage, context);
+		return formatSingleMessage(unformattedMessage, context);
 	}
 	
 	// Perform partial formatting to insert transaction purchase amounts since they might differ from shop amounts (partial sales)
 	public static String getMessageFromOrders(ShopType transactionType, String subKey, double price, int amount) {
-		String message = ShopMessage.getUnformattedMessage(transactionType.toString(), subKey);
+		//todo
+		String message = "";//ShopMessage.getUnformattedMessage(transactionType.toString(), subKey);
 		String priceStr = Shop.getPlugin().getPriceString(price, false);
 		message = message.replace("%price%", priceStr);
 		message = message.replace("%item amount%", "" + amount);
@@ -427,7 +431,7 @@ public class ShopMessage{
 			displayType = shop.getDisplay().getType();
 		}
 		if(displayType == null){
-			displayType = Shop.getPlugin().getDisplayType();
+			displayType = Shop.getPlugin().getSettingsConfig().getDisplayTypeDefault();
 		}
 		
 		String shopFormat;
@@ -441,10 +445,10 @@ public class ShopMessage{
 			shopFormat += "_no_display";
 		}
 		
-		return getSignLines(displayType + "." + shopFormat + "." + i, shop);
+		return getSignLines(displayType + "." + shopFormat, shop);
 	}
 	
-	/**
+	 /**
 	 * The shop lines defined in the lang config
 	 *
 	 * @param key the key to search in the config for starts at "sign.text."
@@ -456,7 +460,7 @@ public class ShopMessage{
 		
 		for(var i = 0; i < 4; i++){
 			//@formatter:off
-			lines.add(langManager.request("sign.text." + key)
+			lines.add(lang.request("sign.text." + key)
 			                     .replace("%amount%",shop.getAmount())
 			                     .replace("%price%",shop.getPrice())
 			                     .replace("%owner%",shop.getOwnerName())
@@ -467,7 +471,9 @@ public class ShopMessage{
 	}
 	
 	public static ArrayList<String> getDisplayTags(AbstractShop shop, ShopType shopType) {
+		//todo
 		ArrayList<String> formattedLines = new ArrayList<>();
+		/*
 		List<String> lines = displayTextMap.get(shopType.toString().toUpperCase() + "_normal");
 		
 		String formattedLine;
@@ -485,6 +491,8 @@ public class ShopMessage{
 				}
 			}
 		}
+		
+		 */
 		return formattedLines;
 	}
 }

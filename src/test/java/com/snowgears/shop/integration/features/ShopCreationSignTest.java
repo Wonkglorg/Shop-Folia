@@ -2,6 +2,7 @@ package com.snowgears.shop.integration.features;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.shop.AbstractShop;
+import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.testsupport.BaseMockBukkitTest;
 import com.snowgears.shop.util.ShopMessage;
 import net.kyori.adventure.text.Component;
@@ -61,10 +62,10 @@ public class ShopCreationSignTest extends BaseMockBukkitTest {
 
         // Fire SignChangeEvent with proper lines
         List<Component> lines = new ArrayList<>();
-        lines.add(Component.text(ShopMessage.getCreationWord("SHOP")));
+        lines.add(Component.text(Shop.getPlugin().getSettingsConfig().getCreationWord(CreationWord.SHOP)));
         lines.add(Component.text("1"));      // amount
         lines.add(Component.text("10"));     // price
-        lines.add(Component.text(ShopMessage.getCreationWord("SELL")));
+        lines.add(Component.text(Shop.getPlugin().getSettingsConfig().getCreationWord(CreationWord.SELL)));
         SignChangeEvent signEvent = new SignChangeEvent(signBlock, (Player) player, lines, Side.FRONT);
         server.getPluginManager().callEvent(signEvent);
 
