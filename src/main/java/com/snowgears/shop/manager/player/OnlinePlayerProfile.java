@@ -25,6 +25,10 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 		return isAllowedToCreateShop(player);
 	}
 	
+	public boolean isAllowedToUseShop(ShopType type) {
+		return isAllowedToUseShop(player, type);
+	}
+	
 	public int getShopBuildLimit() {
 		return getShopBuildLimit(player);
 	}

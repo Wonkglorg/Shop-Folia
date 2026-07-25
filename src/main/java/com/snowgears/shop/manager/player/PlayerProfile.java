@@ -138,6 +138,21 @@ public abstract class PlayerProfile{
 	}
 	
 	/**
+	 * If the user is allowed to create a shop of any type, to find out what specific type they can create use {@link #isAllowedToCreateShopType(Permissible, ShopType)} instead
+	 */
+	public static boolean isAllowedToUseShop(Permissible player, ShopType type) {
+		if(isOperator(player)){
+			return true;
+		}
+		if(player.hasPermission("shop.use")){
+			return true;
+		}
+		
+		return player.hasPermission("shop.use." + type.toString().toLowerCase());
+		
+	}
+	
+	/**
 	 *
 	 * @param player the player to check.
 	 * @return all shop types the player is allowed to build

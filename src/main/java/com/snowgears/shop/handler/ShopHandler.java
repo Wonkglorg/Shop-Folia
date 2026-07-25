@@ -50,8 +50,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ShopHandler{
@@ -101,7 +101,7 @@ public class ShopHandler{
 	public AbstractShop getShopByChest(Block shopChest) {
 		
 		try{
-			if(isChest(shopChest)){
+			if(isAllowedContainer(shopChest)){
 				
 				AbstractShop shop = null;
 				InventoryHolder ih = null;
@@ -159,7 +159,7 @@ public class ShopHandler{
 	public AbstractShop getShopTouchingBlock(Block block) {
 		BlockFace[] faces = {BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST};
 		for(BlockFace face : faces){
-			if(this.isChest(block.getRelative(face))){
+			if(this.isAllowedContainer(block.getRelative(face))){
 				Block shopChest = block.getRelative(face);
 				for(BlockFace newFace : faces){
 					if(shopChest.getRelative(newFace).getBlockData() instanceof WallSign){
@@ -258,7 +258,7 @@ public class ShopHandler{
 	}
 	
 	public List<AbstractShop> getAllShops() {
-		return allShops.values().stream().collect(Collectors.toCollection(ArrayList::new));
+		return new ArrayList<>(allShops.values());
 	}
 	
 	public List<AbstractShop> getShops(UUID player) {
@@ -841,10 +841,7 @@ public class ShopHandler{
 				}
 			}
 			
-			int numShopsLoaded = 0;
-			
-			boolean convertLegacySaves = false;
-			// Initialize player name cache (simple check for existing cache file)
+			AtomicInteger numShopsLoaded = new AtomicInteger(0);
 			PlayerNameCache.initialize();
 			
 			try(Stream<Path> walk = Files.walk(SHOPS_DATA_FOLDER)){
@@ -857,9 +854,8 @@ public class ShopHandler{
 					}
 					
 					UUID playerUUID = null;
-					String fileName;
+					String fileName = path.getFileName().toString().replace(".yml", "");
 					try{
-						fileName = path.getFileName().toString();
 						//all files are saved as UUID.yml except for admin shops which are admin.yml
 						if(!fileName.equals("admin")){
 							playerUUID = UUID.fromString(fileName);
@@ -868,11 +864,17 @@ public class ShopHandler{
 						}
 						PlayerShopsConfig config = new PlayerShopsConfig(SHOPS_DATA_FOLDER.resolve(fileName + ".yml"));
 						for(var shop : config.loadShops()){
-							//run this task synchronously
+							numShopsLoaded.incrementAndGet();
 							Shop.getPlugin().getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
-								boolean loadSuccess = shop.load();
-								if(loadSuccess){
-									addShop(shop);
+								try{
+									boolean loadSuccess = shop.load();
+									if(loadSuccess){
+										addShop(shop);
+									} else {
+										plugin.logger().warning("Unable to load shop " + shop.getId());
+									}
+								} catch(Exception e){
+									plugin.logger().severe("Unable to load shop " + shop + " in " + path.getFileName());
 								}
 							});
 						}
@@ -880,17 +882,17 @@ public class ShopHandler{
 							saveShops(playerUUID, true);
 						}
 					} catch(IllegalArgumentException iae){
-						plugin.logger().severe("Unable to load file: '" + path + "' not a valid uuid!");
+						plugin.logger().severe("Unable to load file: '" + path + "' '" + path.getFileName() + "' is not a valid uuid!");
 					}
 				});
 			} catch(IOException e){
 				throw new RuntimeException(e);
 			}
-			Shop.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded + " Shops!");
+			Shop.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " Shops!");
 		});
 	}
 	
-	public boolean isChest(Block b) {
+	public boolean isAllowedContainer(Block b) {
 		return settingsConfig.getEnabledContainers().contains(b.getType());
 	}
 	

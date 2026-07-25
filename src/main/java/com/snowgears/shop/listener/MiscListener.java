@@ -117,7 +117,7 @@ public class MiscListener implements Listener{
 		int amount = 0;
 		ShopType type = null;
 		boolean isAdmin = false;
-		if(plugin.getShopHandler().isChest(chest)){
+		if(plugin.getShopHandler().isAllowedContainer(chest)){
 			final Sign signBlock = (Sign) b.getState();
 			if(event.getLine(0).toLowerCase().contains(plugin.getSettingsConfig().getCreationWord(CreationWord.SHOP).toLowerCase())){
 				
@@ -287,7 +287,7 @@ public class MiscListener implements Listener{
 					plugin.getLogHandler().logAction(player, shop, ShopActionType.INIT);
 				}
 				
-			} else if(plugin.getShopHandler().isChest(clicked)){
+			} else if(plugin.getShopHandler().isAllowedContainer(clicked)){
 				
 				if(!settingsConfig.isAllowCreateMethodChest()){
 					return;
@@ -652,7 +652,7 @@ public class MiscListener implements Listener{
 					event.setCancelled(true);
 				}
 			}
-		} else if(plugin.getShopHandler().isChest(b)){
+		} else if(plugin.getShopHandler().isAllowedContainer(b)){
 			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
 			// protect shops that are in the middle of a shop creation process from being destroyed
 			if(this.isChestInShopCreationProcess(b.getLocation())){
@@ -734,7 +734,7 @@ public class MiscListener implements Listener{
 		Block b = event.getBlockPlaced();
 		Player player = event.getPlayer();
 		
-		if(plugin.getShopHandler().isChest(b)){
+		if(plugin.getShopHandler().isAllowedContainer(b)){
 			ArrayList<BlockFace> doubleChestFaces = new ArrayList<>();
 			doubleChestFaces.add(BlockFace.NORTH);
 			doubleChestFaces.add(BlockFace.EAST);

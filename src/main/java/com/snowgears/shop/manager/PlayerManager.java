@@ -60,10 +60,17 @@ public class PlayerManager{
 	 */
 	public static void saveToFile(PlayerProfile profile) {
 		String basePath = "player." + profile.getUuid();
-		PLAYER_DATA.set(basePath + "notify-owner", profile.isNotifyOwner());
-		PLAYER_DATA.set(basePath + "notify-stock", profile.isNotifyStock());
-		PLAYER_DATA.set(basePath + "notify-user", profile.isNotifyUser());
-		PLAYER_DATA.save();
+		setOrRemove(basePath + ".notify-owner", profile.isNotifyOwner());
+		setOrRemove(basePath + ".notify-stock", profile.isNotifyStock());
+		setOrRemove(basePath + ".notify-user", profile.isNotifyUser());
+	}
+	
+	private static void setOrRemove(String path, boolean value) {
+		if(value){
+			PLAYER_DATA.set(path, true);
+		} else {
+			PLAYER_DATA.set(path, null);
+		}
 	}
 	
 	/**
@@ -74,9 +81,9 @@ public class PlayerManager{
 	public static void loadfromFile(PlayerProfile profile) {
 		String basePath = "player." + profile.getUuid();
 		
-		profile.setNotifyOwner(PLAYER_DATA.getBoolean(basePath + "notify-owner", false));
-		profile.setNotifyStock(PLAYER_DATA.getBoolean(basePath + "notify-stock", false));
-		profile.setNotifyUser(PLAYER_DATA.getBoolean(basePath + "notify-user", false));
+		profile.setNotifyOwner(PLAYER_DATA.getBoolean(basePath + ".notify-owner", false));
+		profile.setNotifyStock(PLAYER_DATA.getBoolean(basePath + ".notify-stock", false));
+		profile.setNotifyUser(PLAYER_DATA.getBoolean(basePath + ".notify-user", false));
 	}
 	
 	public static void reload() {

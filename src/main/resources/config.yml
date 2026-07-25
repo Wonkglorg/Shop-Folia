@@ -250,7 +250,7 @@ logging:
     - "useSSL=false"
 
 # Logging must be enabled for purchase notifications to appear!
-# Check en.yml to customize the offline purchase notification message #
+# Check lang/en.yml to customize the offline purchase notification message #
 offlinePurchaseNotifications:
   # Should offline purchases be shown to the user
   enabled: true

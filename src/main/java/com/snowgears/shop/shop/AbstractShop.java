@@ -155,7 +155,7 @@ public abstract class AbstractShop{
 			Block chestBlock = signBlock.getRelative(facing.getOppositeFace());
 			chestLocation = chestBlock.getLocation();
 			
-			if(!Shop.getPlugin().getShopHandler().isChest(chestBlock)){
+			if(!Shop.getPlugin().getShopHandler().isAllowedContainer(chestBlock)){
 				Shop.getPlugin().logger().warning(
 						"Error attempting to load shop! Invalid block type detected when trying to load Shop Chest (detected: " +
 						chestBlock.getType() +
@@ -516,7 +516,7 @@ public abstract class AbstractShop{
 			
 			if(Shop.getPlugin().getSettingsConfig().getDisplayLightLevel() > 0 && this.getChestLocation() != null){
 				Block chestBlock = this.getChestLocation().getBlock();
-				if(chestBlock != null && Shop.getPlugin().getShopHandler().isChest(chestBlock)){
+				if(chestBlock != null && Shop.getPlugin().getShopHandler().isAllowedContainer(chestBlock)){
 					Block displayBlock = chestBlock.getRelative(BlockFace.UP);
 					if(UtilMethods.materialIsNonIntrusive(displayBlock.getType())){
 						displayBlock.setType(Material.AIR);

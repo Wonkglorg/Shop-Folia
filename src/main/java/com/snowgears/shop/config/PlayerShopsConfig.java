@@ -45,12 +45,10 @@ public class PlayerShopsConfig extends Config{
 	
 	public List<AbstractShop> loadShops() {
 		if(!contains("shops")){
-			return null;
+			return new ArrayList<>();
 		}
 		
 		List<AbstractShop> shops = new ArrayList<>();
-		
-		int numShopsLoaded = 0;
 		Set<String> allShopOwners = getKeys("shops", false);
 		
 		for(String shopOwner : allShopOwners){
@@ -145,7 +143,6 @@ public class PlayerShopsConfig extends Config{
 					shop.setNeedsSave(true);
 				}
 				shops.add(shop);
-				numShopsLoaded++;
 				playerLoadedShops++;
 			}
 			String ownerName = shopOwner.equals("admin")
@@ -156,7 +153,7 @@ public class PlayerShopsConfig extends Config{
 		return shops;
 	}
 	
-	public static int saveShops(final UUID player) {return saveShops(player, false);}
+	public static int saveShops(final UUID uuid) {return saveShops(uuid, false);}
 	
 	public static int saveShops(final UUID uuid, boolean force) {
 		// Check if any of the players shops want to be saved
@@ -176,7 +173,7 @@ public class PlayerShopsConfig extends Config{
 		}
 		
 		if(!force && needToBeSaved == 0 && !shops.isEmpty()){
-			logger.trace("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + uuid.toString());
+			logger.trace("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + uuid);
 			return 0;
 		}
 		
@@ -184,7 +181,7 @@ public class PlayerShopsConfig extends Config{
 		logger.debug("attempting to save shops for player " +
 		             playerName +
 		             " (" +
-		             uuid.toString() +
+		             uuid +
 		             ") isAdmin: " +
 		             (uuid == plugin.getShopHandler().getAdminUUID()));
 		
@@ -216,7 +213,7 @@ public class PlayerShopsConfig extends Config{
 			shopNumber++;
 			var section = config.createSection("shops." + uuid + "." + shopNumber);
 			
-			section.set("id", shop.getId());
+			section.set("id", shop.getId().toString());
 			section.set("location", locationToString(shop.getSignLocation()));
 			if(shop.getFacing() != null){
 				section.set("facing", shop.getFacing().toString());
@@ -234,9 +231,9 @@ public class PlayerShopsConfig extends Config{
 			 * 					type = type + shop.getType().toString();
 			 *
 			 */
-			section.set("type", shop.getType());
+			section.set("type", shop.getType().toString());
 			if(shop.getDisplay().getType() != null){
-				section.set("displayType", shop.getDisplay().getType());
+				section.set("displayType", shop.getDisplay().getType().toString());
 			} else {
 				section.set("displayType", null);
 			}

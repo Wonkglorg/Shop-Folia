@@ -11,8 +11,9 @@ import com.snowgears.shop.util.OfflineTransactions;
 import com.snowgears.shop.util.PlayerExperience;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopClickType;
-import com.snowgears.shop.util.ShopMessage;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
+import com.wonkglorg.minecraft.config.LangManager;
+import com.wonkglorg.minecraft.config.lang.LangRequest;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -44,11 +45,13 @@ import java.util.concurrent.TimeUnit;
 public class ShopListener implements Listener{
 	
 	private Shop plugin;
+	private final LangManager lang;
 	private HashMap<UUID, OfflineTransactions> transactionsWhileOffline = new HashMap<>();
 	private HashMap<UUID, Long> playerLastShopTeleport = new HashMap<>();
 	
 	public ShopListener(Shop instance) {
 		plugin = instance;
+		lang = plugin.getLangManager();
 	}
 	
 	@EventHandler
@@ -100,7 +103,7 @@ public class ShopListener implements Listener{
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onShopChestClick(PlayerInteractEvent event) {
 		if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
-			if(plugin.getShopHandler().isChest(event.getClickedBlock())){
+			if(plugin.getShopHandler().isAllowedContainer(event.getClickedBlock())){
 				try{
 					if(event.getHand() == EquipmentSlot.OFF_HAND){
 						return; // off hand version, ignore.
@@ -114,7 +117,7 @@ public class ShopListener implements Listener{
 					return;
 				}
 				
-				if((!plugin.getShopHandler().isChest(shop.getChestLocation().getBlock())) ||
+				if((!plugin.getShopHandler().isAllowedContainer(shop.getChestLocation().getBlock())) ||
 				   !(shop.getSignLocation().getBlock().getBlockData() instanceof WallSign)){
 					plugin.logger().warning("Deleting Shop because chest does not exist, or sign is not exist! " + shop);
 					shop.delete();
@@ -153,7 +156,9 @@ public class ShopListener implements Listener{
 							//we are cancelling this event regardless so no need to check if the action was performed
 							
 						} else {
-							ShopMessage.sendMessage("interaction" + shop.getType().toString() + "opOpen", player, shop);
+							LangRequest request = lang.request("interaction." + shop.getType().toString() + "opOpen");
+							AbstractShop.shopPlaceholders(request, shop);
+							request.sendToAudience(player);
 						}
 					} else {
 						// Cancel event to prevent other players from opening the chest
@@ -161,7 +166,9 @@ public class ShopListener implements Listener{
 						
 						boolean actionPerformed = shop.executeClickAction(event, ShopClickType.RIGHT_CLICK_CHEST);
 						if(!actionPerformed){
-							ShopMessage.sendMessage("permission.openOther", player, shop);
+							LangRequest request = lang.request("permission.error.openOther");
+							AbstractShop.shopPlaceholders(request, shop);
+							request.sendToAudience(player);
 						}
 						
 						if(plugin.getDisplayTagOption() == DisplayTagOption.RIGHT_CLICK_CHEST){
@@ -171,7 +178,7 @@ public class ShopListener implements Listener{
 				}
 			}
 		} else if(event.getAction() == Action.LEFT_CLICK_BLOCK){
-			if(plugin.getShopHandler().isChest(event.getClickedBlock())){
+			if(plugin.getShopHandler().isAllowedContainer(event.getClickedBlock())){
 				try{
 					if(event.getHand() == EquipmentSlot.OFF_HAND){
 						return; // off hand version, ignore.
@@ -208,7 +215,7 @@ public class ShopListener implements Listener{
 			Block block = blockIterator.next();
 			if(Tag.WALL_SIGNS.isTagged(block.getType())){
 				shop = plugin.getShopHandler().getShop(block.getLocation());
-			} else if(plugin.getShopHandler().isChest(block)){
+			} else if(plugin.getShopHandler().isAllowedContainer(block)){
 				shop = plugin.getShopHandler().getShopByChest(block);
 			}
 			

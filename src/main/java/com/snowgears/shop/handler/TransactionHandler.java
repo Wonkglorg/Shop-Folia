@@ -2,12 +2,15 @@ package com.snowgears.shop.handler;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.manager.PlayerManager;
+import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.Transaction;
 import com.snowgears.shop.util.TransactionError;
 import com.snowgears.shop.util.UtilMethods;
+import com.wonkglorg.minecraft.config.LangManager;
+import com.wonkglorg.minecraft.config.lang.LangRequest;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -19,24 +22,28 @@ import java.util.UUID;
 
 public class TransactionHandler{
 	
-	private Shop plugin;
+	private final Shop plugin;
+	private final LangManager lang;
 	private HashMap<Location, UUID> shopMessageCooldown = new HashMap<>(); //shop location, shop owner
 	
 	public TransactionHandler(Shop instance) {
 		plugin = instance;
+		lang = plugin.getLangManager();
 	}
 	
 	public void executeTransactionFromEvent(PlayerInteractEvent event, AbstractShop shop, boolean fullStackOrder) {
 		Player player = event.getPlayer();
 		
 		if(shop.isPerformingTransaction()){
-			ShopMessage.sendMessage("interactionIssue.useShopAlreadyInUse", player, shop);
+			LangRequest request = lang.request("interaction_issue.useShopAlreadyInUse");
+			AbstractShop.shopPlaceholders(request, shop);
+			request.sendToAudience(player);
 			event.setCancelled(true);
 			return;
 		}
 		
 		//delete shop if it does not have a chest attached to it
-		if(!(plugin.getShopHandler().isChest(shop.getChestLocation().getBlock()))){
+		if(!(plugin.getShopHandler().isAllowedContainer(shop.getChestLocation().getBlock()))){
 			plugin.getLogger().warning("Deleting Shop because chest does not exist! " + shop);
 			shop.delete();
 			return;
@@ -48,13 +55,12 @@ public class TransactionHandler{
 		}
 		
 		//player did not click their own shop
-		if(!shop.getOwnerName().equals(player.getName()) || Shop.getPlugin().getSettingsConfig().isDebugAllowUseOwnShop()){
-			
-			if(!(player.hasPermission("shop.use." + shop.getType().toString().toLowerCase()) || player.hasPermission("shop.use"))){
-				if(!player.hasPermission("shop.operator")){
-					ShopMessage.sendMessage("permission.use", player, shop);
-					return;
-				}
+		if(!shop.getOwnerUUID().equals(player.getUniqueId()) || Shop.getPlugin().getSettingsConfig().isDebugAllowUseOwnShop()){
+			if(!PlayerProfile.isAllowedToUseShop(player, shop.getType())){
+				LangRequest request = lang.request("permission.error.use");
+				AbstractShop.shopPlaceholders(request, shop);
+				request.sendToAudience(player);
+				return;
 			}
 			//for COMBO shops, shops can execute either a BUY or a SELL depending on the side of sign that was clicked
 			if(shop.getType() == ShopType.COMBO){

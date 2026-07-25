@@ -4,7 +4,6 @@ import com.snowgears.shop.command.ShopCommand;
 import com.snowgears.shop.config.ItemConfig;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.DisplayTagOption;
-import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.gui.ShopGUIListener;
 import com.snowgears.shop.handler.LogHandler;
 import com.snowgears.shop.handler.ShopGuiHandler;
@@ -17,7 +16,6 @@ import com.snowgears.shop.listener.ShopListener;
 import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
-import com.snowgears.shop.util.ItemNameUtil;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopCreationUtil;
 import com.snowgears.shop.util.ShopLogger;
@@ -35,8 +33,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.NavigableMap;
 
 public class Shop extends JavaPlugin{
 	
@@ -62,8 +58,6 @@ public class Shop extends JavaPlugin{
 	private ShopHandler shopHandler;
 	@Getter
 	private ShopGuiHandler guiHandler;
-	@Getter
-	private ItemNameUtil itemNameUtil;
 	@Getter
 	private ShopCreationUtil shopCreationUtil;
 	
@@ -104,14 +98,12 @@ public class Shop extends JavaPlugin{
 		itemConfig = new ItemConfig();
 		logger.setLogLevel(settingsConfig.getLogLevel());
 		langManager = LangManager.getInstance(this);
+		foliaLib = new FoliaLib(this);
 	}
 	
 	@Override
 	public void onEnable() {
 		this.isMockBukkit = plugin.getServer().getClass().getPackage().getName().contains("mockbukkit");
-		System.out.println("MockBukkit: " + isMockBukkit);
-		// Initialize FoliaLib
-		foliaLib = new FoliaLib(this);
 		
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
@@ -124,9 +116,6 @@ public class Shop extends JavaPlugin{
 		creativeSelectionListener = new CreativeSelectionListener(this);
 		displayListener = new DisplayListener(this);
 		guiListener = new ShopGUIListener();
-		// Load ShopMessage by initializing it once
-		new ShopMessage(this);
-		itemNameUtil = new ItemNameUtil();
 		if(itemConfig.getGambleDisplayItem() == null){
 			itemConfig.setGambleDisplayItem(new ItemStack(Material.DIAMOND));
 		}

@@ -13,9 +13,6 @@ import static com.wonkglorg.minecraft.util.Components.toComponent;
 import lombok.Getter;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.event.HoverEvent;
-import static net.kyori.adventure.text.event.HoverEvent.Action;
 import static net.kyori.adventure.text.event.HoverEvent.showText;
 import net.kyori.adventure.text.event.HoverEventSource;
 import org.bukkit.Bukkit;
@@ -37,7 +34,7 @@ public class ShopMessage{
 	@Getter
 	private static int targetMaxLength;
 	
-	public ShopMessage(Shop plugin) {
+	public ShopMessage() {
 		targetMaxLength = lang.getDefaultLang().getInt("targetMaxLength", 40);
 	}
 	
@@ -100,71 +97,6 @@ public class ShopMessage{
 			results.add(Components.toPlainText(component));
 		}
 		return results;
-	}
-	
-	/**
-	 * Swaps in placeholder values, sends fancy message with Click/Hover events to Player
-	 */
-	public static void sendMessage(String messageKey, Audience player, PlaceholderContext context) {
-		LangRequest request = Shop.getPlugin().getLangManager().request(messageKey);
-		fillRequest(request, context);
-		request.sendToAudience(player);
-	}
-	
-	/**
-	 * Swaps in placeholder values, sends fancy message with Click/Hover events to Player
-	 */
-	public static void sendMessage(String message, Player player) {
-		PlaceholderContext context = new PlaceholderContext();
-		context.setPlayer(player);
-		sendMessage(message, player, context);
-	}
-	
-	/**
-	 * Swaps in placeholder values, sends fancy message with Click/Hover events to Player
-	 */
-	public static void sendMessage(String message, Player player, ItemStack item) {
-		PlaceholderContext context = new PlaceholderContext();
-		context.setPlayer(player);
-		context.setItem(item);
-		sendMessage(message, player, context);
-	}
-	
-	/**
-	 * Swaps in placeholder values, sends fancy message with Click/Hover events to Player
-	 */
-	public static void sendMessage(String message, Player player, AbstractShop shop) {
-		sendMessage(message, player, player, shop);
-	}
-	
-	/**
-	 * Swaps in placeholder values, sends fancy message with Click/Hover events to Player
-	 */
-	public static void sendMessage(String message, Player player, Player user, AbstractShop shop) {
-		PlaceholderContext context = new PlaceholderContext();
-		context.setPlayer(user);
-		context.setShop(shop);
-		sendMessage(message, player, context);
-	}
-	
-	/**
-	 * Swaps in placeholder values, sends fancy message with Click/Hover events to Player
-	 */
-	public static void sendMessage(String message, ShopCreationProcess process, Player player) {
-		PlaceholderContext context = new PlaceholderContext();
-		context.setPlayer(player);
-		context.setProcess(process);
-		sendMessage(message, player, context);
-	}
-	
-	/**
-	 * Swaps in placeholder values, sends fancy message with Click/Hover events to Player
-	 */
-	public static void sendMessage(String message, Player player, OfflineTransactions offlineTxs) {
-		PlaceholderContext context = new PlaceholderContext();
-		context.setPlayer(player);
-		context.setOfflineTransactions(offlineTxs);
-		sendMessage(message, player, context);
 	}
 	
 	/**
@@ -399,6 +331,7 @@ public class ShopMessage{
 		// No shops for player! don't add anything! p.s. should never get here.
 		return null;
 	}
+	
 	public static Component formatMessage(String unformattedMessage, AbstractShop shop, Player player, boolean forSign) {
 		PlaceholderContext context = new PlaceholderContext();
 		context.setPlayer(player);
@@ -448,7 +381,7 @@ public class ShopMessage{
 		return getSignLines(displayType + "." + shopFormat, shop);
 	}
 	
-	 /**
+	/**
 	 * The shop lines defined in the lang config
 	 *
 	 * @param key the key to search in the config for starts at "sign.text."
