@@ -6,6 +6,7 @@ import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.ShopMessage;
+import static com.snowgears.shop.util.ShopMessage.request;
 import com.snowgears.shop.util.Transaction;
 import com.snowgears.shop.util.TransactionError;
 import com.snowgears.shop.util.UtilMethods;
@@ -85,7 +86,9 @@ public class TransactionHandler{
 				executeTransactionSequence(player, shop, shop.getType(), fullStackOrder);
 			}
 		} else {
-			ShopMessage.sendMessage("interactionIssue.useOwnShop", player, shop);
+			LangRequest request = lang.request("interaction_issue.useOwnShop");
+			AbstractShop.shopPlaceholders(request, shop);
+			request.sendToAudience(player);
 			shop.sendEffects(false, player);
 		}
 		event.setCancelled(true);
@@ -113,55 +116,43 @@ public class TransactionHandler{
 		
 		// If there was an issue with the transaction, send the error message and bail out early
 		if(issue != TransactionError.NONE){
-			//there was an issue when checking transaction, send reason to player
-			this.sendErrorMessage(player, shop, actionType, transaction);
+			switch(transaction.getError()) {
+				case INSUFFICIENT_FUNDS_SHOP:
+					if(!shop.isAdmin()){
+						Player owner = shop.getOwner().getPlayer();
+						//the shop owner is online
+						if(owner != null && notifyOwner(shop) && PlayerManager.getOnlineProfile(player).isNotifyStock()){
+							request("transaction_issue." + actionType.toString() + ".ownerNoStock", shop).sendToAudience(player);
+						}
+						
+					}
+					request("transaction_issue." + actionType.toString() + ".ownerNoStock", shop).sendToAudience(player);
+					return;
+				case INSUFFICIENT_FUNDS_PLAYER:
+					request("transaction_issue." + actionType.toString() + ".playerNoStock", shop).sendToAudience(player);
+					return;
+				case INVENTORY_FULL_SHOP:
+					if(!shop.isAdmin()){
+						Player owner = shop.getOwner().getPlayer();
+						//the shop owner is online
+						if(owner != null && notifyOwner(shop) && PlayerManager.getOnlineProfile(player).isNotifyStock()){
+							request("transaction_issue." + actionType.toString() + ".ownerNoSpace", owner, shop).sendToAudience(player);
+						}
+						
+					}
+					request("transaction_issue." + actionType.toString() + ".shopNoSpace", shop).sendToAudience(player);
+					return;
+				case INVENTORY_FULL_PLAYER:
+					request("transaction_issue." + actionType.toString() + ".playerNoSpace", shop).sendToAudience(player);
+					return;
+			}
+			shop.sendEffects(false, player);
 			return;
 		}
 		
 		//the transaction has finished and the exchange event has not been cancelled
 		sendExchangeMessagesAndLog(shop, player, actionType, transaction);
 		shop.sendEffects(true, player);
-	}
-	
-	private void sendErrorMessage(Player player, AbstractShop shop, ShopType actionType, Transaction transaction) {
-		String message = null;
-		switch(transaction.getError()) {
-			case INSUFFICIENT_FUNDS_SHOP:
-				if(!shop.isAdmin()){
-					Player owner = shop.getOwner().getPlayer();
-					//the shop owner is online
-					if(owner != null && notifyOwner(shop) && PlayerManager.getOnlineProfile(player).isNotifyStock()){
-						ShopMessage.sendMessage(actionType.toString() + ".ownerNoStock", owner, shop);
-					}
-					
-				}
-				//message = ShopMessage.getUnformattedMessage(actionType.toString(), "shopNoStock");
-				break;
-			case INSUFFICIENT_FUNDS_PLAYER:
-				//message = ShopMessage.getUnformattedMessage(actionType.toString(), "playerNoStock");
-				break;
-			case INVENTORY_FULL_SHOP:
-				if(!shop.isAdmin()){
-					Player owner = shop.getOwner().getPlayer();
-					//the shop owner is online
-					if(owner != null && notifyOwner(shop)){
-						if(PlayerManager.getOnlineProfile(player).isNotifyStock()){
-							ShopMessage.sendMessage(actionType.toString() + ".ownerNoSpace", owner, shop);
-						}
-					}
-				}
-				//message = ShopMessage.getUnformattedMessage(actionType.toString(), "shopNoSpace");
-				break;
-			case INVENTORY_FULL_PLAYER:
-				//message = ShopMessage.getUnformattedMessage(actionType.toString(), "playerNoSpace");
-				break;
-		}
-		
-		// Since there was an error during the transaction, send the message, then exit the transaction early.
-		if(message != null && !message.isEmpty()){
-			ShopMessage.sendMessage(message, player, shop);
-		}
-		shop.sendEffects(false, player);
 	}
 	
 	private void sendExchangeMessagesAndLog(AbstractShop shop, Player player, ShopType transactionType, Transaction transaction) {

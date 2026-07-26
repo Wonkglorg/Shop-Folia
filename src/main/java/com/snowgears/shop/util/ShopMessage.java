@@ -11,7 +11,6 @@ import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.util.Components;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
 import lombok.Getter;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import static net.kyori.adventure.text.event.HoverEvent.showText;
 import net.kyori.adventure.text.event.HoverEventSource;
@@ -45,42 +44,8 @@ public class ShopMessage{
 	 * @param context The PlaceholderContext instance containing Shop and Player
 	 * @return The formatted message with all placeholders replaced
 	 */
-	public static Component formatSingleMessage(String messageKey, PlaceholderContext context) {
-		if(messageKey == null){
-			return Component.text("");
-		}
-		
-		LangRequest request = Shop.getPlugin().getLangManager().request(messageKey);
-		fillRequest(request, context);
-		return request.toSingleComponent();
-	}
-	
-	/**
-	 * Formats a message by replacing all placeholders with their respective values.
-	 *
-	 * @param messageKey The message containing placeholders
-	 * @param context The PlaceholderContext instance containing Shop and Player
-	 * @return The formatted message with all placeholders replaced
-	 */
-	public static List<Component> format(String messageKey, PlaceholderContext context) {
-		if(messageKey == null){
-			return List.of(Component.text(""));
-		}
-		
-		LangRequest request = Shop.getPlugin().getLangManager().request(messageKey);
-		fillRequest(request, context);
-		return request.toComponent();
-	}
-	
-	/**
-	 * Formats a message by replacing all placeholders with their respective values.
-	 *
-	 * @param messageKey The message containing placeholders
-	 * @param context The PlaceholderContext instance containing Shop and Player
-	 * @return The formatted message with all placeholders replaced
-	 */
 	public static String formatPlainTextSingle(String messageKey, PlaceholderContext context) {
-		return Components.toPlainText(formatSingleMessage(messageKey, context));
+		return Components.toPlainText(request(messageKey, context).toSingleComponent());
 	}
 	
 	/**
@@ -93,10 +58,49 @@ public class ShopMessage{
 	public static List<String> formatPlainText(String messageKey, PlaceholderContext context) {
 		List<String> results = new ArrayList<>();
 		
-		for(var component : format(messageKey, context)){
+		for(var component : request(messageKey, context).toComponent()){
 			results.add(Components.toPlainText(component));
 		}
 		return results;
+	}
+	
+	/**
+	 * Resolves and fills the langreqwuest with it's placeholder context values.
+	 *
+	 * @param messageKey the key to look for
+	 * @param context the context to use to fill it
+	 * @return the request.
+	 */
+	public static LangRequest request(String messageKey, PlaceholderContext context) {
+		if(messageKey == null){
+			return LangRequest.literal("null-value");
+		}
+		
+		LangRequest request = Shop.getPlugin().getLangManager().request(messageKey);
+		fillRequest(request, context);
+		return request;
+	}
+	
+	/**
+	 * Resolves and fills the langreqwuest with it's placeholder context values.
+	 *
+	 * @param messageKey the key to look for
+	 * @param shop the shop to use to fill it
+	 * @return the request.
+	 */
+	public static LangRequest request(String messageKey, AbstractShop shop) {
+		return request(messageKey, PlaceholderContext.of(shop));
+	}
+	
+	/**
+	 * Resolves and fills the langreqwuest with it's placeholder context values.
+	 *
+	 * @param messageKey the key to look for
+	 * @param shop the shop to use to fill it
+	 * @return the request.
+	 */
+	public static LangRequest request(String messageKey, Player player, AbstractShop shop) {
+		return request(messageKey, PlaceholderContext.of(shop).setPlayer(player));
 	}
 	
 	/**
@@ -106,6 +110,12 @@ public class ShopMessage{
 	public static void fillRequest(LangRequest request, PlaceholderContext context) {
 		//@formatter:off
 	Shop plugin = Shop.getPlugin();
+	request.replace("%player%", context.getPlayer() != null ? context.getPlayer().getName() : "");
+	if(context.getShop() != null){
+		AbstractShop.shopPlaceholders(request,context.getShop());
+	}
+	
+	
 	request.replace("%player%", context.getPlayer() != null ? context.getPlayer().getName() : "")
 		   .lazyReplace("%user%", ()-> {
 					if(context.getPlayer() != null){
@@ -330,15 +340,6 @@ public class ShopMessage{
 		}
 		// No shops for player! don't add anything! p.s. should never get here.
 		return null;
-	}
-	
-	public static Component formatMessage(String unformattedMessage, AbstractShop shop, Player player, boolean forSign) {
-		PlaceholderContext context = new PlaceholderContext();
-		context.setPlayer(player);
-		context.setShop(shop);
-		context.setForSign(forSign);
-		// Return the legacy version since we are requesting the legacy formatter!
-		return formatSingleMessage(unformattedMessage, context);
 	}
 	
 	// Perform partial formatting to insert transaction purchase amounts since they might differ from shop amounts (partial sales)
