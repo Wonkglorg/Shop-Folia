@@ -213,22 +213,6 @@ public class ShopMessage{
 		return toComponent(context.getOfflineTransactions().getTransactionsLore());
 	}
 	
-	private static HoverEventSource<Component> getShopInfoHoverEvent(PlaceholderContext context) {
-		try{
-			Component hoverText = Component.text("");
-			List<String> hoverLines = formatPlainText("hover.location", context);
-			int i = 0;
-			for(String line : hoverLines){
-				i++;
-				// Add new lines between text
-				hoverText = hoverText.append((format(line + (i == hoverLines.size() ? "" : "\n"), context)));
-			}
-			return showText(hoverText);
-		} catch(Exception _){
-		}
-		return null;
-	}
-	
 	/**
 	 * Helper method to handle the %shop types% placeholder.
 	 *
@@ -278,7 +262,7 @@ public class ShopMessage{
 			itemContext.setPlayer(context.getPlayer());
 			itemContext.setItem(item);
 			
-			Component currentRow = formatSingleMessage(itemRow + addNewLine, itemContext);
+			Component currentRow = ShopMessage.request(itemRow + addNewLine, itemContext).toSingleComponent();
 			itemRowsText = itemRowsText.append(currentRow);
 		}
 		// If there were no lines added, just return null so that we don't log a blank line!
@@ -317,7 +301,7 @@ public class ShopMessage{
 				
 				// For each item, generate a line based on the template line
 				String addNewLine = (i < (outOfStock.size()) && i <= 3) ? "\n" : "";
-				Component currentRow = formatSingleMessage("offline.outOfStockShop." + addNewLine, shopContext);
+				Component currentRow = request("offline.outOfStockShop." + addNewLine, shopContext).toSingleComponent();
 				// Limit out of stock shops to 3
 				if(i > 3){
 					remainingShopsMsgs.add(currentRow);

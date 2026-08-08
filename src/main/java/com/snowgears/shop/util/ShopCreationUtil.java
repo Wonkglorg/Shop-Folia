@@ -9,7 +9,6 @@ import com.snowgears.shop.event.PlayerInitializeShopEvent;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import static com.snowgears.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
-import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.CreationWord;
@@ -80,7 +79,7 @@ public class ShopCreationUtil{
 		int numberOfShops = plugin.getShopHandler().getNumberOfShops(player);
 		int buildPermissionNumber = getShopBuildLimit(player);
 		if(numberOfShops >= buildPermissionNumber){
-			ShopMessage.sendMessage("permission.buildLimit", player);
+			lang.request("permission.error.buildLimit").sendToAudience(player);
 			return false;
 		}
 		
@@ -147,7 +146,7 @@ public class ShopCreationUtil{
 		
 		if(playerMessage != null){
 			if(!playerMessage.isEmpty()){
-				ShopMessage.sendMessage(playerMessage, player, shop);
+				ShopMessage.request(playerMessage, player, shop).sendToAudience(player);
 			}
 			return null;
 		}
@@ -159,7 +158,7 @@ public class ShopCreationUtil{
 			if(existingShop != null){
 				//if the block they are adding a sign to is already a shop, do not let them
 				if(chestBlock.getLocation().equals(existingShop.getChestLocation())){
-					ShopMessage.sendMessage("interactionIssue.createOtherPlayer", player, shop);
+					ShopMessage.request("interactionIssue.createOtherPlayer", player, shop).sendToAudience(player);
 					return null;
 				}
 			}
@@ -168,7 +167,7 @@ public class ShopCreationUtil{
 				if(!signBlock.getType().toString().contains("_SIGN")){
 					return null;
 				}
-				String wallSignString = signBlock.getType().toString().replaceAll("_SIGN", "_WALL_SIGN");
+				String wallSignString = signBlock.getType().toString().replace("_SIGN", "_WALL_SIGN");
 				signBlock.setType(Material.valueOf(wallSignString));
 				
 				Directional wallSignData = (Directional) signBlock.getBlockData();
@@ -238,7 +237,7 @@ public class ShopCreationUtil{
 		Shop.getPlugin().logger().trace("[ShopCreationUtil.sendCreationSuccess] updateSign");
 		shop.updateSign(true);
 		shop.setNeedsSave(true);
-		ShopMessage.sendMessage(shop.getType() + ".create", player, shop);
+		ShopMessage.request(shop.getType() + ".create", player, shop).sendToAudience(player);
 		shop.sendEffects(true, player);
 		// Save the shop to disk
 		// TODO: We should move this save trigger elsewhere, it doesn't belong in `sendCreationSuccess`,
@@ -257,14 +256,14 @@ public class ShopCreationUtil{
 		if(!isAdmin){
 			boolean passesItemList = plugin.getShopHandler().passesItemListCheck(itemStack);
 			if(!passesItemList){
-				ShopMessage.sendMessage("interactionIssue.itemListDeny", player);
+				lang.request("interaction_issue.itemListDeny").sendToAudience(player);
 				return false;
 			}
 		}
 		
 		// Always perform this check, even if admin!
 		if(InventoryUtils.itemstacksAreSimilar(itemStack, barterItemStack)){
-			ShopMessage.sendMessage("interactionIssue.sameItem", player);
+			lang.request("interaction_issue.createSameItem").sendToAudience(player);
 			return false;
 		}
 		return true;
@@ -274,7 +273,7 @@ public class ShopCreationUtil{
 		if(!player.getUniqueId().equals(shop.getOwnerUUID())){
 			//do not allow non operators to initialize other player's shops
 			if(!isOperator(player)){
-				ShopMessage.sendMessage("interactionIssue.initialize", player, shop);
+				ShopMessage.request("interactionIssue.initialize", player, shop).sendToAudience(player);
 				shop.sendEffects(false, player);
 				return false;
 			}
@@ -291,7 +290,7 @@ public class ShopCreationUtil{
 				if(settingsConfig.isForceDisplayToNoneIfBlocked()){
 					shop.getDisplay().setType(DisplayType.NONE, false);
 				} else {
-					ShopMessage.sendMessage("interactionIssue.displayRoom", player, shop);
+					ShopMessage.request("interactionIssue.displayRoom", player, shop).sendToAudience(player);
 					shop.sendEffects(false, player);
 					return false;
 				}
@@ -305,7 +304,7 @@ public class ShopCreationUtil{
 		if(cost > 0 && !shop.isAdmin() && !(shop.getType() == ShopType.BARTER && barterItem == null)){
 			boolean removed = EconomyUtils.removeFunds(player, player.getInventory(), cost);
 			if(!removed){
-				ShopMessage.sendMessage("interactionIssue.createInsufficientFunds", player, shop);
+				ShopMessage.request("interactionIssue.createInsufficientFunds", player, shop).sendToAudience(player);
 				shop.sendEffects(false, player);
 				return false;
 			}
@@ -339,11 +338,11 @@ public class ShopCreationUtil{
 			
 			ShopCreationProcess process = plugin.getMiscListener().getShopCreationProcess(player);
 			if(shop.getType() == ShopType.BARTER && barterItem == null){
-				ShopMessage.sendMessage(shop.getType() + ".initializeInfo", player, shop);
+				ShopMessage.request(shop.getType() + ".initializeInfo", player, shop).sendToAudience(player);
 				process.setStep(ShopCreationProcess.ChatCreationStep.SIGN_BARTER_ITEM);
 				process.displayFloatingText(shop.getType() + ".initializeBarter");
 				if(settingsConfig.isAllowCreativeSelection()){
-					ShopMessage.sendMessage("BUY.initializeAlt", player, shop);
+					ShopMessage.request("BUY.initializeAlt", player, shop).sendToAudience(player);
 				}
 			} else if(shop.getType() != ShopType.BARTER){
 				return true;
@@ -397,7 +396,7 @@ public class ShopCreationUtil{
 				
 				price *= multiplyValue;
 			} catch(NumberFormatException e){
-				ShopMessage.sendMessage("interactionIssue.line3", player);
+				lang.request("interaction_issue.line3").sendToAudience(player);
 				return -1;
 			}
 		} else {
@@ -406,13 +405,13 @@ public class ShopCreationUtil{
 				price = Long.parseLong(line3);
 				
 			} catch(NumberFormatException e){
-				ShopMessage.sendMessage("interactionIssue.line3", player);
+				lang.request("interactionIssue.line3").sendToAudience(player);
 				return -1;
 			}
 		}
 		//only allow price to be zero if the type is selling
 		if(price < 0 || (price == 0 && shopType == ShopType.BARTER)){
-			ShopMessage.sendMessage("interactionIssue.line3", player);
+			lang.request("interactionIssue.line3").sendToAudience(player);
 			return -1;
 		}
 		return price;
@@ -434,7 +433,7 @@ public class ShopCreationUtil{
 				priceCombo *= multiplyValue;
 				
 			} catch(NumberFormatException e){
-				ShopMessage.sendMessage("interactionIssue.line3", player);
+				lang.request("interactionIssue.line3").sendToAudience(player);
 				return -1;
 			}
 		} else {
@@ -442,7 +441,7 @@ public class ShopCreationUtil{
 				String line3 = UtilMethods.cleanNumberText(input);
 				priceCombo = Long.parseLong(line3);
 			} catch(NumberFormatException e){
-				ShopMessage.sendMessage("interactionIssue.line3", player);
+				lang.request("interactionIssue.line3").sendToAudience(player);
 				return -1;
 			}
 		}
@@ -482,7 +481,7 @@ public class ShopCreationUtil{
 				priceCombo *= multiplyValue;
 				
 			} catch(NumberFormatException e){
-				ShopMessage.sendMessage("interactionIssue.line3", player);
+				lang.request("interactionIssue.line3").sendToAudience(player);
 				return null;
 			}
 		} else {
@@ -497,13 +496,13 @@ public class ShopCreationUtil{
 					price = Long.parseLong(line3);
 				}
 			} catch(NumberFormatException e){
-				ShopMessage.sendMessage("interactionIssue.line3", player);
+				lang.request("interactionIssue.line3").sendToAudience(player);
 				return null;
 			}
 		}
 		//only allow price to be zero if the type is selling
 		if(price < 0 || (price == 0 && shopType == ShopType.BARTER)){
-			ShopMessage.sendMessage("interactionIssue.line3", player);
+			lang.request("interactionIssue.line3").sendToAudience(player);
 			return null;
 		}
 		return new PricePair(price, priceCombo);
