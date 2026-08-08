@@ -99,58 +99,52 @@ public class ShopHandler{
 	}
 	
 	public AbstractShop getShopByChest(Block shopChest) {
-		
-		try{
-			if(isAllowedContainer(shopChest)){
+		if(isAllowedContainer(shopChest)){
+			
+			AbstractShop shop = null;
+			InventoryHolder ih = null;
+			
+			//if the shop is a single chest or double chest, add the chest blocks to check
+			if(shopChest.getState() instanceof Chest){
+				Chest chest = (Chest) shopChest.getState();
+				ih = chest.getInventory().getHolder();
 				
-				AbstractShop shop = null;
-				InventoryHolder ih = null;
-				
-				//if the shop is a single chest or double chest, add the chest blocks to check
-				if(shopChest.getState() instanceof Chest){
-					Chest chest = (Chest) shopChest.getState();
-					ih = chest.getInventory().getHolder();
+				if(ih instanceof DoubleChest){
 					
-					if(ih instanceof DoubleChest){
-						
-						DoubleChest dc = (DoubleChest) ih;
-						Chest leftChest = (Chest) dc.getLeftSide();
-						Chest rightChest = (Chest) dc.getRightSide();
-						
-						for(BlockFace direction : directions){
-							shop = this.getShop(leftChest.getBlock().getRelative(direction).getLocation());
-							if(shop != null){
-								//make sure the shop sign you found is actually attached to the correct shop
-								if(leftChest.getLocation().equals(shop.getChestLocation()) ||
-								   rightChest.getLocation().equals(shop.getChestLocation())){
-									return shop;
-								}
-							}
-							shop = this.getShop(rightChest.getBlock().getRelative(direction).getLocation());
-							if(shop != null){
-								//make sure the shop sign you found is actually attached to the correct shop
-								if(shop.getChestLocation().equals(leftChest.getLocation()) ||
-								   shop.getChestLocation().equals(rightChest.getLocation())){
-									return shop;
-								}
+					DoubleChest dc = (DoubleChest) ih;
+					Chest leftChest = (Chest) dc.getLeftSide();
+					Chest rightChest = (Chest) dc.getRightSide();
+					
+					for(BlockFace direction : directions){
+						shop = this.getShop(leftChest.getBlock().getRelative(direction).getLocation());
+						if(shop != null){
+							//make sure the shop sign you found is actually attached to the correct shop
+							if(leftChest.getLocation().equals(shop.getChestLocation()) || rightChest.getLocation().equals(shop.getChestLocation())){
+								return shop;
 							}
 						}
-						return null;
-					}
-				}
-				
-				for(BlockFace direction : directions){
-					shop = this.getShop(shopChest.getRelative(direction).getLocation());
-					if(shop != null){
-						//make sure the shop sign you found is actually attached to the correct shop
-						if(shopChest.getLocation().equals(shop.getChestLocation())){
-							return shop;
+						shop = this.getShop(rightChest.getBlock().getRelative(direction).getLocation());
+						if(shop != null){
+							//make sure the shop sign you found is actually attached to the correct shop
+							if(shop.getChestLocation().equals(leftChest.getLocation()) || shop.getChestLocation().equals(rightChest.getLocation())){
+								return shop;
+							}
 						}
 					}
+					return null;
 				}
-				return null;
 			}
-		} catch(NoClassDefFoundError e){
+			
+			for(BlockFace direction : directions){
+				shop = this.getShop(shopChest.getRelative(direction).getLocation());
+				if(shop != null){
+					//make sure the shop sign you found is actually attached to the correct shop
+					if(shopChest.getLocation().equals(shop.getChestLocation())){
+						return shop;
+					}
+				}
+			}
+			return null;
 		}
 		
 		return null;
@@ -1007,7 +1001,7 @@ public class ShopHandler{
 		}
 		
 		// Process for all players who might be able to see shops in this chunk
-		for(Player player : chunk.getWorld().getPlayers()){
+		for(Player player : chunk.getWorld().getPlayers()){ //todo:mjd replace with chunk player iteration and see if it stays the same?
 			// Skip players who recently teleported
 			Long lastTeleport = teleportCooldowns.get(player.getUniqueId());
 			if(lastTeleport != null && System.currentTimeMillis() - lastTeleport < TELEPORT_COOLDOWN_MS){

@@ -4,17 +4,24 @@ import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.event.PlayerDestroyShopEvent;
 import com.snowgears.shop.event.PlayerResizeShopEvent;
+import com.snowgears.shop.manager.player.PlayerProfile;
+import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToDestroyShop;
+import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
+import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.DisplayUtil;
 import com.snowgears.shop.util.EconomyUtils;
+import com.snowgears.shop.util.PlaceholderContext;
 import com.snowgears.shop.util.PricePair;
 import com.snowgears.shop.util.ShopActionType;
 import com.snowgears.shop.util.ShopCreationProcess;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
+import com.wonkglorg.minecraft.config.LangManager;
+import com.wonkglorg.minecraft.util.Components;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -53,12 +60,14 @@ public class MiscListener implements Listener{
 	
 	private final Shop plugin;
 	private final SettingsConfig settingsConfig;
+	private final LangManager lang;
 	private HashMap<UUID, ShopCreationProcess> playerChatCreationSteps = new HashMap<>();
 	private HashMap<UUID, Long> lastChatCreation = new HashMap<>();
 	
 	public MiscListener(Shop instance) {
 		plugin = instance;
 		settingsConfig = instance.getSettingsConfig();
+		this.lang = instance.getLangManager();
 	}
 	
 	//prevent emptying of bucket when player clicks on shop sign
@@ -118,8 +127,9 @@ public class MiscListener implements Listener{
 		ShopType type = null;
 		boolean isAdmin = false;
 		if(plugin.getShopHandler().isAllowedContainer(chest)){
-			final Sign signBlock = (Sign) b.getState();
-			if(event.getLine(0).toLowerCase().contains(plugin.getSettingsConfig().getCreationWord(CreationWord.SHOP).toLowerCase())){
+			if(Components.toPlainText(event.line(0)).toLowerCase().contains(plugin.getSettingsConfig()
+			                                                                      .getCreationWord(CreationWord.SHOP)
+			                                                                      .toLowerCase())){
 				
 				if(!plugin.getShopCreationUtil().shopCanBeCreated(player, chest)){
 					cancelShopCreationProcess(player);
@@ -128,25 +138,26 @@ public class MiscListener implements Listener{
 				}
 				
 				try{
-					String line2 = UtilMethods.cleanNumberText(event.getLine(1));
+					String line2 = UtilMethods.cleanNumberText(Components.toPlainText(event.line(1)));
 					amount = Integer.parseInt(line2);
 					if(amount < 1){
-						ShopMessage.sendMessage("interactionIssue.line2", player);
-						ShopMessage.sendMessage("interactionIssue.createCancel", player);
+						lang.request("interaction_issue.createLine2").sendToAudience(player);
+						lang.request("interaction_issue.createCancel").sendToAudience(player);
 						cancelShopCreationProcess(player);
 						event.setCancelled(true);
 						return;
 					}
 				} catch(NumberFormatException e){
-					ShopMessage.sendMessage("interactionIssue.line2", player);
-					ShopMessage.sendMessage("interactionIssue.createCancel", player);
+					lang.request("interaction_issue.createLine2").sendToAudience(player);
+					lang.request("interaction_issue.createCancel").sendToAudience(player);
 					cancelShopCreationProcess(player);
 					event.setCancelled(true);
 					return;
 				}
 				
-				type = plugin.getShopCreationUtil().getShopType(event.getLine(3));
-				isAdmin = plugin.getShopCreationUtil().getShopIsAdmin(event.getLine(3));
+				String line = Components.toPlainText(event.line(3));
+				type = plugin.getShopCreationUtil().getShopType(line);
+				isAdmin = plugin.getShopCreationUtil().getShopIsAdmin(line);
 				
 				if(type == null){
 					type = ShopType.SELL;
@@ -160,7 +171,7 @@ public class MiscListener implements Listener{
 				
 				AbstractShop shop = plugin.getShopCreationUtil().createShop(player,
 						chest,
-						signBlock.getBlock(),
+						sign.getBlock(),
 						pricePair,
 						amount,
 						isAdmin,
@@ -178,7 +189,7 @@ public class MiscListener implements Listener{
 				
 				process.displayFloatingText(type + ".initialize");
 				if(settingsConfig.isAllowCreativeSelection() && (type == ShopType.BUY || type == ShopType.COMBO)){
-					ShopMessage.sendMessage(type + ".initializeAlt", player, shop);
+					ShopMessage.request(type + ".initializeAlt", player, shop).sendToAudience(player);
 				}
 				
 				//give player a limited amount of time to finish creating the shop until it is deleted
@@ -216,16 +227,14 @@ public class MiscListener implements Listener{
 			process.display.removeDisplayEntities(player, true);
 			playerChatCreationSteps.remove(player.getUniqueId());
 			// Send message that the creation was cancelled
-			ShopMessage.sendMessage("interactionIssue.createCancel", player);
+			lang.request("interaction_issue.createCancel").sendToAudience(player);
 		}
 		
 		// Remove player from creative selection if they are in it!
 		// The Bukkit API can only change player game modes in a sync task, not an async task
-		plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable(){
-			public void run() {
-				plugin.getCreativeSelectionListener().removePlayerFromCreativeSelection(player);
-			}
-		}, 1);
+		plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin,
+				() -> plugin.getCreativeSelectionListener().removePlayerFromCreativeSelection(player),
+				1);
 	}
 	
 	public boolean isChestInShopCreationProcess(Location location) {
@@ -318,12 +327,11 @@ public class MiscListener implements Listener{
 						}
 						if(currentProcess != null && currentProcess.getStep() == ShopCreationProcess.ChatCreationStep.BARTER_ITEM){
 							plugin.getCreativeSelectionListener().putPlayerInCreativeSelection(player, clicked.getLocation(), false);
-							return;
 						} else if(currentProcess == null && player.isSneaking()){
 							//if the player has created a new process in the last 5 seconds, block them from creating another
 							if(lastCreatedProcess != null &&
 							   (new Date().getTime() - lastCreatedProcess) < settingsConfig.getDebugShopCreateCooldown()){
-								ShopMessage.sendMessage("interactionIssue.createCooldown", player);
+								lang.request("interaction_issue.createCooldown").sendToAudience(player);
 								return;
 							}
 							
@@ -361,7 +369,7 @@ public class MiscListener implements Listener{
 					//if the player has created a new process in the last 5 seconds, block them from creating another
 					long diff = (new Date().getTime() - lastCreatedProcess);
 					if(diff < settingsConfig.getDebugShopCreateCooldown()){
-						ShopMessage.sendMessage("interactionIssue.createCooldown", player);
+						lang.request("interaction_issue.createCooldown").sendToAudience(player);
 						return;
 					}
 				}
@@ -383,7 +391,8 @@ public class MiscListener implements Listener{
 				lastChatCreation.put(player.getUniqueId(), new Date().getTime());
 				
 				//send player text prompts after they have clicked the chest with the item they want to create a shop with
-				ShopMessage.sendMessage("initialCreateInstruction", process, player);
+				PlaceholderContext context = new PlaceholderContext().setProcess(process);
+				ShopMessage.request("interaction.initialCreateInstruction", context).sendToAudience(player);
 				process.displayFloatingText("createHitChest");
 				List<String> autocomplete = new ArrayList<>();
 				Arrays.asList(ShopType.values()).forEach((shopType -> autocomplete.add(shopType.toString().toLowerCase())));
@@ -391,8 +400,9 @@ public class MiscListener implements Listener{
 					player.setCustomChatCompletions(autocomplete);
 				} catch(Error | Exception error){
 				} // Suppress error if autocomplete is not supported
-				if((player.isOp()) || player.hasPermission("shop.operator")){
-					ShopMessage.sendMessage("adminCreateHitChest", process, player);
+				if(PlayerProfile.isOperator(player)){
+					context.setPlayer(player);
+					ShopMessage.request("interaction.adminCreateHitChest", context).sendToAudience(player);
 				}
 				
 				//give player a limited amount of time to finish creating the shop until it is deleted
@@ -404,7 +414,8 @@ public class MiscListener implements Listener{
 						currentProcess.cleanup();
 						playerChatCreationSteps.remove(player.getUniqueId());
 						plugin.getCreativeSelectionListener().removePlayerFromCreativeSelection(player);
-						ShopMessage.sendMessage("interactionIssue.createHitChestTimeout", currentProcess, player);
+						context.setProcess(currentProcess).setPlayer(player);
+						ShopMessage.request("interactionIssue.createHitChestTimeout", context).sendToAudience(player);
 					}
 				}, 30 * 20); // 30 seconds * 20 ticks
 			}
@@ -431,7 +442,8 @@ public class MiscListener implements Listener{
 					event.setCancelled(true);
 					
 					if(type == ShopType.GAMBLE){
-						ShopMessage.sendMessage(type + ".createHitChestPrice", process, player);
+						PlaceholderContext context = new PlaceholderContext().setProcess(process).setPlayer(player);
+						ShopMessage.request(type + ".createHitChestPrice", context).sendToAudience(player);
 					} else {
 						process.displayFloatingText(type + ".createHitChestAmount");
 					}
@@ -442,14 +454,14 @@ public class MiscListener implements Listener{
 						String textAmt = UtilMethods.cleanNumberText(event.getMessage());
 						amount = Integer.parseInt(textAmt);
 						if(amount < 1){
-							ShopMessage.sendMessage("interactionIssue.line2", player);
-							ShopMessage.sendMessage("interactionIssue.createCancel", player);
+							lang.request("interaction_issue.createLine2").sendToAudience(player);
+							lang.request("interaction_issue.createCancel").sendToAudience(player);
 							event.setCancelled(true);
 							return;
 						}
 					} catch(NumberFormatException e){
-						ShopMessage.sendMessage("interactionIssue.line2", player);
-						ShopMessage.sendMessage("interactionIssue.createCancel", player);
+						lang.request("interaction_issue.createLine2").sendToAudience(player);
+						lang.request("interaction_issue.createCancel").sendToAudience(player);
 						process.cleanup();
 						//instead of cancelling the chat event, just let them know what they typed wasnt a number and break them out of the creation process so they aren't chat locked
 						playerChatCreationSteps.remove(player.getUniqueId());
@@ -459,9 +471,9 @@ public class MiscListener implements Listener{
 					event.setCancelled(true);
 					
 					if(process.getShopType() == ShopType.BARTER){
-						process.displayFloatingText(process.getShopType().toString() + ".createHitChest");
+						process.displayFloatingText(process.getShopType() + ".createHitChest");
 						if(settingsConfig.isAllowCreativeSelection()){
-							ShopMessage.sendMessage(process.getShopType().toString() + ".initializeBarterAlt", player);
+							lang.request(process.getShopType().toString() + ".initializeBarterAlt").sendToAudience(player);
 						}
 					} else {
 						process.displayFloatingText(process.getShopType().toString() + ".createHitChestPrice");
@@ -511,14 +523,13 @@ public class MiscListener implements Listener{
 						String textAmt = UtilMethods.cleanNumberText(event.getMessage());
 						barterAmount = Integer.parseInt(textAmt);
 						if(barterAmount < 1){
-							ShopMessage.sendMessage("interactionIssue.line2", player);
-							ShopMessage.sendMessage("interactionIssue.createCancel", player);
+							lang.request("interaction_issue.createLine2").sendToAudience(player);
 							event.setCancelled(true);
 							return;
 						}
 					} catch(NumberFormatException e){
-						ShopMessage.sendMessage("interactionIssue.line2", player);
-						ShopMessage.sendMessage("interactionIssue.createCancel", player);
+						lang.request("interaction_issue.createLine2").sendToAudience(player);
+						lang.request("interaction_issue.createCancel").sendToAudience(player);
 						//instead of cancelling the chat event, just let them know what they typed wasnt a number and break them out of the creation process so they aren't chat locked
 						process.cleanup();
 						playerChatCreationSteps.remove(player.getUniqueId());
@@ -567,19 +578,18 @@ public class MiscListener implements Listener{
 				return;
 			}
 			
-			if(settingsConfig.isDestroyShopRequiresSneak()){
-				if(!player.isSneaking()){
-					event.setCancelled(true);
-					Shop.getPlugin().logger().trace("[MiscListener.shopDestroy : getDestroyShopRequiresSneak] updateSign");
-					shop.updateSign();
-					return;
-				}
+			if(settingsConfig.isDestroyShopRequiresSneak() && !player.isSneaking()){
+				event.setCancelled(true);
+				Shop.getPlugin().logger().trace("[MiscListener.shopDestroy : getDestroyShopRequiresSneak] updateSign");
+				shop.updateSign();
+				return;
 			}
+			
 			//player trying to break their own shop
-			if(shop.getOwnerName().equals(player.getName())){
-				if(!(player.hasPermission("shop.destroy") || player.hasPermission("shop.operator"))){
+			if(shop.getOwnerUUID().equals(player.getUniqueId())){
+				if(!isAllowedToDestroyShop(player, shop.getType())){
 					event.setCancelled(true);
-					ShopMessage.sendMessage("permission.destroy", player, shop);
+					ShopMessage.request("permission.destroy", player, shop).sendToAudience(player);
 					return;
 				}
 				
@@ -588,14 +598,14 @@ public class MiscListener implements Listener{
 				if(cost > 0){
 					// Check for funds
 					if(!EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
-						ShopMessage.sendMessage("interactionIssue.destroyInsufficientFunds", player, shop);
+						ShopMessage.request("interaction_issue.destroyInsufficientFunds", player, shop).sendToAudience(player);
 						event.setCancelled(true);
 						return;
 					}
 					// Remove funds
 					boolean removed = EconomyUtils.removeFunds(player, player.getInventory(), cost);
 					if(!removed){
-						ShopMessage.sendMessage("interactionIssue.destroyInsufficientFunds", player, shop);
+						ShopMessage.request("interaction_issue.destroyInsufficientFunds", player, shop).sendToAudience(player);
 						event.setCancelled(true);
 						return;
 					}
@@ -623,40 +633,41 @@ public class MiscListener implements Listener{
 						shop.getChestLocation().getWorld().dropItemNaturally(shop.getChestLocation(), currencyDrop);
 					}
 				}
-				
-				ShopMessage.sendMessage(shop.getType().toString() + ".destroy", player, shop);
+				ShopMessage.request("interaction" + shop.getType().toString() + ".destroy", player, shop).sendToAudience(player);
 				// We already log on ShopActionType.DESTROY in the Log Handler, so don't log the shop destroy reason
 				shop.delete();
 			}
 			//player trying to break other players shop
 			else {
-				if(player.isOp() || (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other"))){
-					PlayerDestroyShopEvent e = new PlayerDestroyShopEvent(player, shop);
-					plugin.getServer().getPluginManager().callEvent(e);
-					
-					if(e.isCancelled()){
-						event.setCancelled(true);
-						return;
-					}
-					
-					plugin.getLogHandler().logAction(player, shop, ShopActionType.DESTROY);
-					
-					if(shop.isFakeSign()){
-						event.setDropItems(false);
-					}
-					
-					ShopMessage.sendMessage(shop.getType().toString() + ".opDestroy", player, shop);
-					shop.delete();
-				} else {
-					ShopMessage.sendMessage("permission.destroyOther", player, shop);
+				if(!PlayerProfile.isAllowedToDestroyShopOther(player)){
+					ShopMessage.request("permission.destroyOther", player, shop).sendToAudience(player);
 					event.setCancelled(true);
+					
+					return;
 				}
+				PlayerDestroyShopEvent e = new PlayerDestroyShopEvent(player, shop);
+				plugin.getServer().getPluginManager().callEvent(e);
+				
+				if(e.isCancelled()){
+					event.setCancelled(true);
+					return;
+				}
+				
+				plugin.getLogHandler().logAction(player, shop, ShopActionType.DESTROY);
+				
+				if(shop.isFakeSign()){
+					event.setDropItems(false);
+				}
+				
+				ShopMessage.request("interaction." + shop.getType().toString() + ".opDestroy", player, shop).sendToAudience(player);
+				shop.delete();
 			}
+			
 		} else if(plugin.getShopHandler().isAllowedContainer(b)){
 			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
 			// protect shops that are in the middle of a shop creation process from being destroyed
 			if(this.isChestInShopCreationProcess(b.getLocation())){
-				ShopMessage.sendMessage("interactionIssue.destroyUninitializedChest", player);
+				lang.request("interaction_issue.destroyUninitializedChest").sendToAudience(player);
 				event.setCancelled(true); // don't break chest
 				return;
 			}
@@ -673,13 +684,11 @@ public class MiscListener implements Listener{
 			InventoryHolder ih = ((InventoryHolder) b.getState()).getInventory().getHolder();
 			
 			if(ih instanceof DoubleChest){
-				if(shop.getOwnerUUID().equals(player.getUniqueId()) ||
-				   player.isOp() ||
-				   (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other"))){
+				if(shop.getOwnerUUID().equals(player.getUniqueId()) || isAllowedToDestroyShopOther(player)){
 					
 					// the broken block was the initial chest with the sign
 					if(shop.getChestLocation().equals(b.getLocation())){
-						ShopMessage.sendMessage("interactionIssue.destroyChest", player, shop);
+						ShopMessage.request("interactionIssue.destroyChest", player, shop).sendToAudience(player);
 						// event.setCancelled(true);
 						shop.sendEffects(false, player);
 						return;
@@ -694,20 +703,17 @@ public class MiscListener implements Listener{
 						// Explicitly allow the chest to be broken since it is the "Expansion" chest
 						// we need to uncancel the event so that the chest can be broken.
 						event.setCancelled(false);
-						return;
 					}
 				} else {
-					ShopMessage.sendMessage("permission.destroyOther", player, shop);
+					ShopMessage.request("permission.destroyOther", player, shop).sendToAudience(player);
 					// event.setCancelled(true);
 				}
 			} else {
-				if(shop.getOwnerUUID().equals(player.getUniqueId()) ||
-				   player.isOp() ||
-				   (player.hasPermission("shop.operator") || player.hasPermission("shop.destroy.other"))){
-					ShopMessage.sendMessage("interactionIssue.destroyChest", player, shop);
+				if(shop.getOwnerUUID().equals(player.getUniqueId()) || isAllowedToDestroyShopOther(player)){
+					ShopMessage.request("interactionIssue.destroyChest", player, shop).sendToAudience(player);
 					shop.sendEffects(false, player);
 				} else {
-					ShopMessage.sendMessage("permission.destroyOther", player, shop);
+					ShopMessage.request("permission.destroyOther", player, shop).sendToAudience(player);
 				}
 				// event.setCancelled(true);
 			}
@@ -735,12 +741,6 @@ public class MiscListener implements Listener{
 		Player player = event.getPlayer();
 		
 		if(plugin.getShopHandler().isAllowedContainer(b)){
-			ArrayList<BlockFace> doubleChestFaces = new ArrayList<>();
-			doubleChestFaces.add(BlockFace.NORTH);
-			doubleChestFaces.add(BlockFace.EAST);
-			doubleChestFaces.add(BlockFace.SOUTH);
-			doubleChestFaces.add(BlockFace.WEST);
-			
 			//find out if the player placed a chest next to an already active shop
 			AbstractShop shop = plugin.getShopHandler().getShopTouchingBlock(b);
 			if(shop == null || (b.getType() != shop.getChestLocation().getBlock().getType())){
@@ -754,19 +754,16 @@ public class MiscListener implements Listener{
 				
 				if(e.isCancelled()){
 					event.setCancelled(true);
-					return;
 				}
-				return;
 			}
 			//other player is trying to
 			else {
-				if(player.isOp() || player.hasPermission("shop.operator")){
+				if(isOperator(player)){
 					PlayerResizeShopEvent e = new PlayerResizeShopEvent(player, shop, b.getLocation(), true);
 					Bukkit.getPluginManager().callEvent(e);
 					
 					if(e.isCancelled()){
 						event.setCancelled(true);
-						return;
 					}
 					
 				} else {

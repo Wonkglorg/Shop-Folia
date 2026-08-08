@@ -5,6 +5,7 @@ import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
+import com.snowgears.shop.util.PlaceholderContext;
 import com.snowgears.shop.util.ShopMessage;
 import static com.snowgears.shop.util.ShopMessage.request;
 import com.snowgears.shop.util.Transaction;
@@ -161,14 +162,14 @@ public class TransactionHandler{
 		String message = ShopMessage.getMessageFromOrders(transactionType, "user", price, transaction.getAmount());
 		
 		if(PlayerManager.getOnlineProfile(player).isNotifyUser() && message != null && !message.isEmpty()){
-			ShopMessage.sendMessage(message, player, shop);
+			ShopMessage.request(message, player, shop).sendToAudience(player);
 		}
 		
 		Player owner = Bukkit.getPlayer(shop.getOwnerUUID());
 		if((owner != null) && (!shop.isAdmin())){
 			message = ShopMessage.getMessageFromOrders(transactionType, "owner", price, transaction.getAmount());
 			if(PlayerManager.getOnlineProfile(player).isNotifyOwner() && message != null && !message.isEmpty()){
-				ShopMessage.sendMessage(message, owner, player, shop);
+				ShopMessage.request(message, PlaceholderContext.of(shop).setPlayer(player)).sendToAudience(owner);
 			}
 		}
 		

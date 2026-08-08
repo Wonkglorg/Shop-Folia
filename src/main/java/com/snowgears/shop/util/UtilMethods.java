@@ -1,6 +1,7 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
+import com.wonkglorg.minecraft.util.Components;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import net.kyori.adventure.text.Component;
@@ -978,7 +979,7 @@ public class UtilMethods{
 	
 	public static String cleanNumberText(String text) {
 		String cleaned = "";
-		String toClean = ChatColor.stripColor(text).trim(); // remove color and whitespace not between characters
+		String toClean = text.trim();
 		for(int i = 0; i < toClean.length(); i++){
 			if(Character.isDigit(toClean.charAt(i))){
 				cleaned += toClean.charAt(i);
@@ -990,99 +991,6 @@ public class UtilMethods{
 		}
 		return cleaned;
 	}
-	
-	public static ChatColor getChatColorByCode(String colorCode) {
-		switch(colorCode) {
-			case "&b":
-				return ChatColor.AQUA;
-			case "&0":
-				return ChatColor.BLACK;
-			case "&9":
-				return ChatColor.BLUE;
-			case "&l":
-				return ChatColor.BOLD;
-			case "&3":
-				return ChatColor.DARK_AQUA;
-			case "&1":
-				return ChatColor.DARK_BLUE;
-			case "&8":
-				return ChatColor.DARK_GRAY;
-			case "&2":
-				return ChatColor.DARK_GREEN;
-			case "&5":
-				return ChatColor.DARK_PURPLE;
-			case "&4":
-				return ChatColor.DARK_RED;
-			case "&6":
-				return ChatColor.GOLD;
-			case "&7":
-				return ChatColor.GRAY;
-			case "&a":
-				return ChatColor.GREEN;
-			case "&o":
-				return ChatColor.ITALIC;
-			case "&d":
-				return ChatColor.LIGHT_PURPLE;
-			case "&k":
-				return ChatColor.MAGIC;
-			case "&c":
-				return ChatColor.RED;
-			case "&r":
-				return ChatColor.RESET;
-			case "&m":
-				return ChatColor.STRIKETHROUGH;
-			case "&n":
-				return ChatColor.UNDERLINE;
-			case "&f":
-				return ChatColor.WHITE;
-			case "&e":
-				return ChatColor.YELLOW;
-			default:
-				return ChatColor.RESET;
-		}
-	}
-	
-	public static ChatColor getChatColor(String message) {
-		if(message.startsWith("&") && message.length() > 1){
-			ChatColor cc = getChatColorByCode(message.substring(0, 2));
-			if(cc != ChatColor.RESET){
-				return cc;
-			}
-		}
-		return null;
-	}
-	
-	public static boolean deleteDirectory(File directory) {
-		if(directory.exists()){
-			File[] files = directory.listFiles();
-			if(null != files){
-				for(int i = 0; i < files.length; i++){
-					if(files[i].isDirectory()){
-						deleteDirectory(files[i]);
-					} else {
-						files[i].delete();
-					}
-				}
-			}
-		}
-		return (directory.delete());
-	}
-	
-	public static void copy(InputStream in, File file) {
-		try{
-			OutputStream out = new FileOutputStream(file);
-			byte[] buf = new byte[1024];
-			int len;
-			while((len = in.read(buf)) > 0){
-				out.write(buf, 0, len);
-			}
-			out.close();
-			in.close();
-		} catch(Exception e){
-			e.printStackTrace();
-		}
-	}
-	
 	public static String itemStackToBase64(ItemStack item) throws IOException {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);

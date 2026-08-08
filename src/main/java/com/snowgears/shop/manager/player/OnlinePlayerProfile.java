@@ -18,15 +18,31 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	}
 	
 	public boolean isAllowedToCreateShopType(ShopType type) {
-		return isAllowedToCreateShopType(player, type);
+		return isAllowedToCreateShop(player, type);
 	}
 	
 	public boolean isAllowedToCreateShop() {
 		return isAllowedToCreateShop(player);
 	}
 	
+	public boolean isAllowedToUseShop() {
+		return isAllowedToUseShop(player);
+	}
+	
 	public boolean isAllowedToUseShop(ShopType type) {
 		return isAllowedToUseShop(player, type);
+	}
+	
+	public boolean isAllowedToDestroyShop() {
+		return isAllowedToDestroyShop(player);
+	}
+	
+	public boolean isAllowedToDestroyShop(ShopType type) {
+		return isAllowedToDestroyShop(player, type);
+	}
+	
+	public boolean isAllowedToDestroyShopOther() {
+		return isAllowedToDestroyShopOther(player);
 	}
 	
 	public int getShopBuildLimit() {

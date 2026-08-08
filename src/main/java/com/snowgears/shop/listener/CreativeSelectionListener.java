@@ -3,17 +3,15 @@ package com.snowgears.shop.listener;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.event.PlayerInitializeShopEvent;
-import com.snowgears.shop.gui.HomeWindow;
-import com.snowgears.shop.gui.ListSearchResultsWindow;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
-import com.snowgears.shop.util.PlaceholderContext;
 import com.snowgears.shop.util.PlayerData;
 import com.snowgears.shop.util.ShopActionType;
 import com.snowgears.shop.util.ShopCreationProcess;
 import static com.snowgears.shop.util.ShopCreationProcess.ChatCreationStep.BARTER_ITEM;
 import static com.snowgears.shop.util.ShopCreationProcess.ChatCreationStep.ITEM;
 import com.snowgears.shop.util.ShopMessage;
+import com.wonkglorg.minecraft.config.LangManager;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -57,11 +55,13 @@ import java.util.logging.Level;
 public class CreativeSelectionListener implements Listener{
 	
 	private final Shop plugin;
+	private final LangManager lang;
 	private final SettingsConfig settingsConfig;
 	private HashMap<UUID, PlayerData> playerDataMap = new HashMap<>();
 	
 	public CreativeSelectionListener(Shop instance) {
 		plugin = instance;
+		this.lang = plugin.getLangManager();
 		settingsConfig = plugin.getSettingsConfig();
 	}
 	
@@ -79,29 +79,27 @@ public class CreativeSelectionListener implements Listener{
 			
 			if(clicked.getBlockData() instanceof WallSign){
 				AbstractShop shop = plugin.getShopHandler().getShop(clicked.getLocation());
-				if(shop == null){
-					return;
-				} else if(shop.isInitialized()){
+				if(shop == null || shop.isInitialized()){
 					return;
 				}
-				String message = null;
+				
 				if(!player.getUniqueId().equals(shop.getOwnerUUID())){
 					if((!player.isOp()) || !player.hasPermission("shop.operator")){
-						ShopMessage.sendMessage("interactionIssue.initialize", player, shop);
+						ShopMessage.request("interactionIssue.initialize", player, shop).sendToAudience(player);
 						shop.sendEffects(false, player);
 						event.setCancelled(true);
 						return;
 					}
 				}
 				if(shop.getType() == ShopType.BARTER && shop.getItemStack() == null){
-					ShopMessage.sendMessage("interactionIssue.noItem", player, shop);
+					ShopMessage.request("interaction_issue.noItem", player, shop).sendToAudience(player);
 					event.setCancelled(true);
 					return;
 				}
 				
 				if(player.getInventory().getItemInMainHand().getType() == Material.AIR){
 					if(shop.getType() == ShopType.SELL){
-						ShopMessage.sendMessage("interactionIssue.noItem", player, shop);
+						ShopMessage.request("interaction_issue.noItem", player, shop).sendToAudience(player);
 					} else {
 						if((shop.getType() == ShopType.BARTER && shop.getItemStack() != null && shop.getSecondaryItemStack() == null) ||
 						   shop.getType() == ShopType.BUY ||
@@ -328,7 +326,7 @@ public class CreativeSelectionListener implements Listener{
 	public void putPlayerInCreativeSelection(Player player, Location shopSignLocation, boolean guiSearch) {
 		// Sanity check, make sure players don't somehow go into creative mode when it's disabled!
 		if(!settingsConfig.isAllowCreativeSelection()){
-			ShopMessage.sendMessage(ShopMessage.formatPlainTextSingle("creativeSelection.disabled", new PlaceholderContext()), player);
+			lang.request("creativeSelection.disabled").sendToAudience(player);
 			return;
 		}
 		// Don't put them in creative if they are already in creative.
@@ -462,7 +460,7 @@ public class CreativeSelectionListener implements Listener{
 			event.setCancelled(true);
 			
 			// Inform the player
-			ShopMessage.sendMessage(ShopMessage.formatPlainTextSingle("creativeSelection.noCommands", new PlaceholderContext()), player);
+			lang.request("creativeSelection.noCommand").sendToAudience(player);
 			
 			// Reset the message time to prevent spamming locked in place messages
 			PlayerData data = playerDataMap.get(player.getUniqueId());

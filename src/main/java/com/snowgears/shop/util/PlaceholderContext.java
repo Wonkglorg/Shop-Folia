@@ -38,8 +38,9 @@ public class PlaceholderContext{
 		return this;
 	}
 	
-	public void setOfflinePlayer(OfflinePlayer offlinePlayer) {
+	public PlaceholderContext setOfflinePlayer(OfflinePlayer offlinePlayer) {
 		this.offlinePlayer = offlinePlayer;
+		return this;
 	}
 	
 	public Player getPlayer() {
@@ -50,28 +51,34 @@ public class PlaceholderContext{
 		return offlinePlayer;
 	}
 	
-	public void setItem(ItemStack item) {
+	public PlaceholderContext setItem(ItemStack item) {
 		this.item = item;
+		return this;
 	}
 	
 	public ItemStack getItem() {
 		return item;
 	}
 	
-	public void setBarterItem(ItemStack barterItem) {this.barterItem = barterItem;}
+	public PlaceholderContext setBarterItem(ItemStack barterItem) {
+		this.barterItem = barterItem;
+		return this;
+	}
 	
 	public ItemStack getBarterItem() {return barterItem;}
 	
-	public void setProcess(ShopCreationProcess process) {
+	public PlaceholderContext setProcess(ShopCreationProcess process) {
 		this.process = process;
+		return this;
 	}
 	
 	public ShopCreationProcess getProcess() {
 		return process;
 	}
 	
-	public void setOfflineTransactions(OfflineTransactions offlineTransactions) {
+	public PlaceholderContext setOfflineTransactions(OfflineTransactions offlineTransactions) {
 		this.offlineTransactions = offlineTransactions;
+		return this;
 	}
 	
 	public OfflineTransactions getOfflineTransactions() {
@@ -80,10 +87,14 @@ public class PlaceholderContext{
 	
 	public Location getLocation() {return location;}
 	
-	public void setLocation(Location location) {this.location = location;}
+	public PlaceholderContext setLocation(Location location) {
+		this.location = location;
+		return this;
+	}
 	
-	public void setForSign(boolean forSign) {
+	public PlaceholderContext setForSign(boolean forSign) {
 		this.forSign = forSign;
+		return this;
 	}
 	
 	public boolean isForSign() {

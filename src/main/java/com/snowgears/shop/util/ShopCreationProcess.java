@@ -198,7 +198,7 @@ public class ShopCreationProcess{
 	public void displayFloatingText(String subkey) {
 		// Check if feature is enabled or not.
 		if(!Shop.getPlugin().getConfig().getBoolean("displayFloatingCreateText") || !this.display.isEnabled()){
-			ShopMessage.sendMessage(subkey, this, player);
+			ShopMessage.request(subkey, new PlaceholderContext().setProcess(this).setPlayer(player)).sendToAudience(player);
 			return;
 		}
 		// Build the lines
@@ -214,7 +214,7 @@ public class ShopCreationProcess{
 		if(!Shop.getPlugin().getConfig().getBoolean("displayFloatingCreateText") || !this.display.isEnabled()){
 			for(String message : ShopMessage.formatPlainText(subkey, this.placeholderContext)){
 				if(message != null && !message.isEmpty()){
-					ShopMessage.sendMessage(message, player);
+					Shop.getPlugin().getLangManager().request(message).sendToAudience(player);
 				}
 			}
 			return;

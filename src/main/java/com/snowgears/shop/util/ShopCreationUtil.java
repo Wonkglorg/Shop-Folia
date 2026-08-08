@@ -6,9 +6,10 @@ import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerInitializeShopEvent;
+import com.snowgears.shop.manager.player.PlayerProfile;
 import static com.snowgears.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
-import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShopType;
+import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.CreationWord;
@@ -55,7 +56,7 @@ public class ShopCreationUtil{
 				return face;
 			}
 		}
-		ShopMessage.sendMessage("interactionIssue.signRoom", player);
+		lang.request("interaction_issue.signRoom").sendToAudience(player);
 		return null;
 	}
 	
@@ -102,7 +103,7 @@ public class ShopCreationUtil{
 		
 		boolean hasOperatorPermission = isOperator(player);
 		
-		if(!isAllowedToCreateShopType(player, type)){
+		if(!PlayerProfile.isAllowedToCreateShop(player, type)){
 			lang.request("permission.error.create").replace("%shop-type%", type).sendToAudience(player);
 			return null;
 		}
@@ -366,15 +367,16 @@ public class ShopCreationUtil{
 	public ShopType getShopType(String input) {
 		ShopType type = null;
 		SettingsConfig config = Shop.getPlugin().getSettingsConfig();
-		if(input.toLowerCase().contains(config.getCreationWord(CreationWord.BUY))){
+		input = input.toLowerCase();
+		if(input.contains(config.getCreationWord(CreationWord.BUY))){
 			type = ShopType.BUY;
-		} else if(input.toLowerCase().contains(config.getCreationWord(CreationWord.BARTER))){
+		} else if(input.contains(config.getCreationWord(CreationWord.BARTER))){
 			type = ShopType.BARTER;
-		} else if(input.toLowerCase().contains(config.getCreationWord(CreationWord.GAMBLE))){
+		} else if(input.contains(config.getCreationWord(CreationWord.GAMBLE))){
 			type = ShopType.GAMBLE;
-		} else if(input.toLowerCase().contains(config.getCreationWord(CreationWord.COMBO))){
+		} else if(input.contains(config.getCreationWord(CreationWord.COMBO))){
 			type = ShopType.COMBO;
-		} else if(input.toLowerCase().contains(config.getCreationWord(CreationWord.SELL))){
+		} else if(input.contains(config.getCreationWord(CreationWord.SELL))){
 			type = ShopType.SELL;
 		}
 		return type;

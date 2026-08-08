@@ -30,12 +30,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class DisplayListener implements Listener{
 	
-	public Shop plugin;
-	private ArrayList<ItemStack> allServerRecipeResults = new ArrayList<>();
+	public final Shop plugin;
+	private static final Random RANDOM = ThreadLocalRandom.current();
+	private final List<ItemStack> allServerRecipeResults = new ArrayList<>();
 	private WrappedTask repeatingViewTask;
 	private WrappedTask repeatingDisplayTask;
 	
@@ -53,9 +56,7 @@ public class DisplayListener implements Listener{
 									shopObj.getDisplay().showDisplayTags(player);
 								}
 							}
-						} catch(IllegalStateException e){
-							//do nothing, the block iterator missed a block for a player
-						} catch(Exception e){
+						} catch(Exception _){
 							//do nothing, the block iterator missed a block for a player
 						}
 					}
@@ -87,8 +88,8 @@ public class DisplayListener implements Listener{
 		plugin = instance;
 		
 		// Load all recipes on server once all other plugins are loaded
-		plugin.getFoliaLib().getScheduler().runLater(task -> {
-			HashMap<ItemStack, Boolean> recipes = new HashMap();
+		plugin.getFoliaLib().getScheduler().runLater(_ -> {
+			HashMap<ItemStack, Boolean> recipes = new HashMap<>();
 			Iterator<Recipe> recipeIterator = plugin.getServer().recipeIterator();
 			while(recipeIterator.hasNext()){
 				ItemStack result = recipeIterator.next().getResult();
@@ -107,7 +108,7 @@ public class DisplayListener implements Listener{
 		}
 		
 		if(InventoryUtils.isEmpty(shop.getInventory())){
-			int index = new Random().nextInt(allServerRecipeResults.size());
+			int index = RANDOM.nextInt(allServerRecipeResults.size());
 			return allServerRecipeResults.get(index);
 		} else {
 			return InventoryUtils.getRandomItem(shop.getInventory());
@@ -175,39 +176,34 @@ public class DisplayListener implements Listener{
 	
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onShopInventoryClose(InventoryCloseEvent event) {
-		try{
-			if(event.getInventory().getHolder() instanceof Container){
-				Container container = ((Container) event.getInventory().getHolder());
-				AbstractShop shop = plugin.getShopHandler().getShopByChest(container.getBlock());
-				
-				if(shop == null){
-					return;
-				}
-				
-				shop.updateStock();
-				
-				//make sure to set gamble item again if player set it to new custom items
-				if(shop.getType() == ShopType.GAMBLE){
-					((GambleShop) shop).setGambleItem();
-				}
+		if(event.getInventory().getHolder() instanceof Container container){
+			AbstractShop shop = plugin.getShopHandler().getShopByChest(container.getBlock());
+			
+			if(shop == null){
+				return;
 			}
-			//for some reason, DoubleChest does not extend Container like Chest does
-			else if(event.getInventory().getHolder() instanceof DoubleChest){
-				DoubleChest doubleChest = ((DoubleChest) event.getInventory().getHolder());
-				AbstractShop shop = plugin.getShopHandler().getShopByChest(doubleChest.getLocation().getBlock());
-				
-				if(shop == null){
-					return;
-				}
-				
-				shop.updateStock();
-				
-				//make sure to set gamble item again if player set it to new custom items
-				if(shop.getType() == ShopType.GAMBLE){
-					((GambleShop) shop).setGambleItem();
-				}
+			
+			shop.updateStock();
+			
+			//make sure to set gamble item again if player set it to new custom items
+			if(shop.getType() == ShopType.GAMBLE){
+				((GambleShop) shop).setGambleItem();
 			}
-		} catch(NoClassDefFoundError e){
+		}
+		//for some reason, DoubleChest does not extend Container like Chest does
+		else if(event.getInventory().getHolder() instanceof DoubleChest doubleChest){
+			AbstractShop shop = plugin.getShopHandler().getShopByChest(doubleChest.getLocation().getBlock());
+			
+			if(shop == null){
+				return;
+			}
+			
+			shop.updateStock();
+			
+			//make sure to set gamble item again if player set it to new custom items
+			if(shop.getType() == ShopType.GAMBLE){
+				((GambleShop) shop).setGambleItem();
+			}
 		}
 	}
 	

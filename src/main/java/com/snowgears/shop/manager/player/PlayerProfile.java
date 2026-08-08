@@ -15,7 +15,6 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,43 +112,77 @@ public abstract class PlayerProfile{
 	/**
 	 * If the user is allowed to create a shop of this type, this does NOT enforce shop build limit
 	 */
-	public static boolean isAllowedToCreateShopType(Permissible player, ShopType type) {
-		return player.hasPermission("shop.create." + type.toString().toLowerCase()) || player.hasPermission("shop.create") || isOperator(player);
+	public static boolean isAllowedToCreateShop(Permissible player, ShopType type) {
+		return hasActionPermission("shop.create", player, type);
 	}
 	
 	/**
-	 * If the user is allowed to create a shop of any type, to find out what specific type they can create use {@link #isAllowedToCreateShopType(Permissible, ShopType)} instead
+	 * If the user is allowed to create a shop of any type, to find out what specific type they can create use {@link #isAllowedToCreateShop(Permissible, ShopType)} instead
 	 */
 	public static boolean isAllowedToCreateShop(Permissible player) {
+		return hasActionPermission("shop.create", player);
+	}
+	
+	/**
+	 * If the user is allowed to use any of the shop types, to find out what specific type they can use, use {@link #isAllowedToUseShop(Permissible, ShopType)} instead
+	 */
+	public static boolean isAllowedToUseShop(Permissible player) {
+		return hasActionPermission("shop.use", player);
+	}
+	
+	/**
+	 * If the user is allowed to use a shop of this type
+	 */
+	public static boolean isAllowedToUseShop(Permissible player, ShopType type) {
+		return hasActionPermission("shop.use", player, type);
+	}
+	
+	/**
+	 * If the user is allowed to destroy any of the shop types, to find out what specific type they can destroy, use {@link #isAllowedToDestroyShop(Permissible, ShopType)} instead
+	 */
+	public static boolean isAllowedToDestroyShop(Permissible player) {
+		return hasActionPermission("shop.destroy", player);
+	}
+	
+	/**
+	 * If the user is allowed to use a shop of this type
+	 */
+	public static boolean isAllowedToDestroyShop(Permissible player, ShopType type) {
+		return hasActionPermission("shop.destroy", player, type);
+	}
+	
+	/**
+	 * If the user is allowed to destroy someone else's shop
+	 */
+	public static boolean isAllowedToDestroyShopOther(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.destroy.other");
+	}
+	
+	private static boolean hasActionPermission(String permissionBase, Permissible player) {
 		if(isOperator(player)){
 			return true;
 		}
-		if(player.hasPermission("shop.create")){
+		if(player.hasPermission(permissionBase)){
 			return true;
 		}
 		
 		for(ShopType shopType : ShopType.values()){
-			if(player.hasPermission("shop.create." + shopType.toString().toLowerCase())){
+			if(player.hasPermission(permissionBase + "." + shopType.toString().toLowerCase())){
 				return true;
 			}
 		}
-		
 		return false;
 	}
 	
-	/**
-	 * If the user is allowed to create a shop of any type, to find out what specific type they can create use {@link #isAllowedToCreateShopType(Permissible, ShopType)} instead
-	 */
-	public static boolean isAllowedToUseShop(Permissible player, ShopType type) {
+	private static boolean hasActionPermission(String permissionBase, Permissible player, ShopType type) {
 		if(isOperator(player)){
 			return true;
 		}
-		if(player.hasPermission("shop.use")){
+		if(player.hasPermission(permissionBase)){
 			return true;
 		}
 		
-		return player.hasPermission("shop.use." + type.toString().toLowerCase());
-		
+		return player.hasPermission(permissionBase + "." + type.toString().toLowerCase());
 	}
 	
 	/**
@@ -169,13 +202,7 @@ public abstract class PlayerProfile{
 			return typeList;
 		}
 		
-		Iterator<ShopType> typeIterator = typeList.iterator();
-		while(typeIterator.hasNext()){
-			ShopType type = typeIterator.next();
-			if(!player.hasPermission("shop.create." + type.toString())){
-				typeIterator.remove();
-			}
-		}
+		typeList.removeIf(type -> !player.hasPermission("shop.create." + type.toString()));
 		return typeList;
 	}
 	
