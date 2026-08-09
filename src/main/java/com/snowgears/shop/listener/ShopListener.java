@@ -340,10 +340,7 @@ public class ShopListener implements Listener{
 	
 	@EventHandler
 	public void onChunkLoad(ChunkLoadEvent event) {
-		// Also rebuild shop displays for any players near this chunk
-		// This ensures displays reappear after chunk unload/load cycles
 		plugin.getShopmanager().processUnloadedShopsInChunk(event.getChunk());
-		plugin.getShopmanager().getDisplayManager().rebuildDisplaysInChunk(event.getChunk());
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)

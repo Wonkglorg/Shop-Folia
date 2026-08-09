@@ -54,6 +54,7 @@ public abstract class AbstractShop{
 	protected long creationDate;
 	@Setter
 	protected boolean needsSave = false;
+	@Getter
 	protected boolean isLoaded = false;
 	/**
 	 * The location of the sign

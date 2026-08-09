@@ -15,8 +15,10 @@ import org.bukkit.block.Block;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -72,6 +74,26 @@ public class ShopManager{
 			settingsConfig.silentSave();
 		}
 		
+	}
+	
+	public Set<AbstractShop> getShopsNearLocation(Location location, int chunkRadius) {
+		if(chunkRadius < 0){
+			throw new IllegalArgumentException("Chunk radius cannot be negative");
+		}
+		
+		int chunkX = location.getBlockX() >> 4;
+		int chunkZ = location.getBlockZ() >> 4;
+		UUID worldId = location.getWorld().getUID();
+		
+		Set<AbstractShop> shops = new HashSet<>();
+		
+		for(int x = chunkX - chunkRadius; x <= chunkX + chunkRadius; x++){
+			for(int z = chunkZ - chunkRadius; z <= chunkZ + chunkRadius; z++){
+				shops.addAll(getShops(new ChunkKey(worldId, x, z)));
+			}
+		}
+		
+		return shops;
 	}
 	
 	public AbstractShop getShopBySign(Location loc) {
