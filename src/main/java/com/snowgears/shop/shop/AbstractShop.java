@@ -48,6 +48,8 @@ public abstract class AbstractShop{
 	@Getter
 	@Setter
 	protected UUID id = UUID.randomUUID();
+	@Getter
+	protected long creationDate;
 	@Setter
 	protected boolean needsSave = false;
 	protected boolean isLoaded = false;
@@ -90,10 +92,11 @@ public abstract class AbstractShop{
 	/**
 	 * The current state of the shop stock
 	 */
+	@Setter
 	@Getter
 	protected ShopState shopState;
 	
-	protected AbstractShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing) {
+	protected AbstractShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
 		this.signLocation = signLoc;
 		this.owner = player;
 		this.price = pri;
@@ -101,7 +104,7 @@ public abstract class AbstractShop{
 		this.isAdmin = admin;
 		this.item = null;
 		this.facing = facing;
-		
+		this.creationDate = creationDate;
 		this.signLinesRequireRefresh = true; // Reload signs on load in case config changed!
 		
 		display = Shop.getPlugin().getShopHandler().createDisplay(this.signLocation);
@@ -121,14 +124,15 @@ public abstract class AbstractShop{
 	                                  int amt,
 	                                  Boolean admin,
 	                                  ShopType shopType,
-	                                  BlockFace facing) {
+	                                  BlockFace facing,
+	                                  long creationDate) {
 		
 		return switch(shopType) {
-			case SELL -> new SellShop(signLoc, player, pri, amt, admin, facing);
-			case BUY -> new BuyShop(signLoc, player, pri, amt, admin, facing);
-			case BARTER -> new BarterShop(signLoc, player, pri, amt, admin, facing);
-			case GAMBLE -> new GambleShop(signLoc, player, pri, amt, admin, facing);
-			case COMBO -> new ComboShop(signLoc, player, pri, priCombo, amt, admin, facing);
+			case SELL -> new SellShop(signLoc, player, pri, amt, admin, facing, creationDate);
+			case BUY -> new BuyShop(signLoc, player, pri, amt, admin, facing, creationDate);
+			case BARTER -> new BarterShop(signLoc, player, pri, amt, admin, facing, creationDate);
+			case GAMBLE -> new GambleShop(signLoc, player, pri, amt, admin, facing, creationDate);
+			case COMBO -> new ComboShop(signLoc, player, pri, priCombo, amt, admin, facing, creationDate);
 		};
 	}
 	

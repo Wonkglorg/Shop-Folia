@@ -1,13 +1,12 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
-import com.wonkglorg.minecraft.util.Components;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.ComponentIteratorType;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.format.Style;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -16,6 +15,9 @@ import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.MusicInstrument;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -41,11 +43,7 @@ import org.bukkit.util.io.BukkitObjectOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -57,8 +55,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class UtilMethods{
-	
-	private static ArrayList<Material> nonIntrusiveMaterials = new ArrayList<>();
+	private static final Registry<MusicInstrument> musicInstrumentRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT);
+	private static final ArrayList<Material> nonIntrusiveMaterials = new ArrayList<>();
 	
 	public static Component trimForSign(String text) {
 		return trim(toComponent(text), 80);
@@ -571,7 +569,12 @@ public class UtilMethods{
 				// Try to get the instrument type from item data if available
 				MusicInstrumentMeta instrumentMeta = (MusicInstrumentMeta) item.getItemMeta();
 				if(instrumentMeta != null && instrumentMeta.getInstrument() != null){
-					String instrumentKey = instrumentMeta.getInstrument().getKey().getKey();
+					
+					NamespacedKey key = musicInstrumentRegistry.getKey(instrumentMeta.getInstrument());
+					String instrumentKey = "NON";
+					if(key != null){
+						instrumentKey = key.getKey();
+					}
 					// Format the instrument key properly (e.g., "ponder_goat_horn" -> "Ponder")
 					String soundType = instrumentKey.replace("_goat_horn", "");
 					message = message.append(Component.text(" [Sound: " + capitalize(soundType) + "]"));
@@ -583,9 +586,7 @@ public class UtilMethods{
 			// Add support for displaying bee hive/nest information
 			else if(itemType.equals("BEE_NEST") || itemType.equals("BEEHIVE")){
 				try{
-					if(item.getItemMeta() instanceof BlockStateMeta){
-						BlockStateMeta blockStateMeta = (BlockStateMeta) item.getItemMeta();
-						
+					if(item.getItemMeta() instanceof BlockStateMeta blockStateMeta){
 						if(blockStateMeta.hasBlockState() && blockStateMeta.getBlockState() instanceof org.bukkit.block.Beehive){
 							var beehive = (org.bukkit.block.Beehive) blockStateMeta.getBlockState();
 							
@@ -991,6 +992,7 @@ public class UtilMethods{
 		}
 		return cleaned;
 	}
+	
 	public static String itemStackToBase64(ItemStack item) throws IOException {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);

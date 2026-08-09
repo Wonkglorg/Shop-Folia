@@ -16,8 +16,8 @@ public class ComboShop extends AbstractShop{
 	private final double priceBuy;
 	private final double priceSell;
 	
-	public ComboShop(Location signLoc, UUID player, double pri, double priSell, int amt, Boolean admin, BlockFace facing) {
-		super(signLoc, player, pri, amt, admin, facing);
+	public ComboShop(Location signLoc, UUID player, double pri, double priSell, int amt, Boolean admin, BlockFace facing, long creationDate) {
+		super(signLoc, player, pri, amt, admin, facing, creationDate);
 		this.creationWord = CreationWord.COMBO;
 		this.type = ShopType.COMBO;
 		this.signLines = ShopMessage.getSignLines(this);

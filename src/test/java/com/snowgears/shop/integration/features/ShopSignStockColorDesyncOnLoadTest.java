@@ -61,7 +61,7 @@ public class ShopSignStockColorDesyncOnLoadTest extends BaseMockBukkitTest {
                 shopAmount,
                 false,
                 ShopType.SELL,
-                BlockFace.NORTH
+                BlockFace.NORTH,System.currentTimeMillis()
         );
         assertNotNull(shop);
 

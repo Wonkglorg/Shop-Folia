@@ -52,6 +52,15 @@ public enum ShopState{
 		}
 	}
 	
+	public static ShopState from(String input) {
+		for(var value : ShopState.values()){
+			if(value.toString().equalsIgnoreCase(input)){
+				return value;
+			}
+		}
+		return EMPTY;
+	}
+	
 	public static CompletableFuture<ShopState> getShopStateAsync(AbstractShop shop) {
 		CompletableFuture<ShopState> future = new CompletableFuture<>();
 		

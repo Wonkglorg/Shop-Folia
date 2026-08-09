@@ -3,14 +3,13 @@ package com.snowgears.shop.db;
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayType;
-import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
+import com.snowgears.shop.shop.ShopState;
 import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemNameUtil;
 import com.snowgears.shop.util.OfflineTransactions;
-import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopActionType;
 import com.tcoded.folialib.impl.PlatformScheduler;
 import com.wonkglorg.database.DatabaseType;
@@ -42,16 +41,22 @@ import java.util.logging.Level;
 public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	private static final String SHOP_INSERT_SQL = """
 			INSERT INTO shops
-			(shop_uuid, owner_uuid, item, price,price_combo_sell, amount,last_known_stock_count, shop_type,sign_facing, display_type,fake_sign, barter_item, timestamp, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
-			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+			(shop_uuid, owner_uuid, item, price,price_combo_sell, amount,last_known_stock_count, last_known_stock_status, shop_type,sign_facing, display_type,fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
+			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 			ON CONFLICT(shop_uuid, owner_uuid) DO NOTHING;
 			""";
 	private static final String SHOP_SELECT_SQL = """
-			SELECT shop_uuid, owner_uuid, item, price,price_combo_sell, amount, last_known_stock_count, destroyed_time, shop_type,sign_facing, display_type, fake_sign, barter_item, timestamp, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z FROM shops;
+			SELECT shop_uuid, owner_uuid, item, price,price_combo_sell, amount, last_known_stock_count,last_known_stock_status, destroyed_time, shop_type,sign_facing, display_type, fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z
+			  FROM shops
+			 WHERE destroyed_time = 0 OR 1 = ?;
+			""";
+	
+	private static final String SHOP_CACHE_STOCK_SQL = """
+			UPDATE shops SET last_known_stock_count = ?, last_known_stock_status = ? WHERE shop_uuid = ?
 			""";
 	
 	private static final String SHOP_UPDATE_SQL = """
-			UPDATE shops SET owner_uuid = ?, item = ?, price = ?, price_combo_sell = ?, amount = ?, last_known_stock_count = ?, shop_type = ?, sign_facing = ?, display_type = ?, fake_sign = ?, barter_item = ?, timestamp = ?, item_type = ?, item_barter_type = ?, shop_world = ?, shop_x = ?, shop_y = ?, shop_z = ? WHERE shop_uuid = ?
+			UPDATE shops SET owner_uuid = ?, item = ?, price = ?, price_combo_sell = ?, amount = ?, last_known_stock_count = ?, shop_type = ?, sign_facing = ?, display_type = ?, fake_sign = ?, barter_item = ?, item_type = ?, item_barter_type = ?, shop_world = ?, shop_x = ?, shop_y = ?, shop_z = ? WHERE shop_uuid = ?
 			""";
 	
 	private final Shop plugin;
@@ -121,97 +126,12 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 	}
 	
-	/**
-	 * Saves the shops of a specific player
-	 *
-	 * @param uuid the player
-	 * @param force if all shops should be force saved.
-	 */
-	public void saveShops(UUID uuid, boolean force) {
-		if(plugin.isImmediateShutdown()){
-			return;
-		}
-		boolean isAdminShops = Constants.adminUUID.equals(uuid);
-		String playerName = isAdminShops ? "admin" : PlayerNameCache.getName(uuid);
-		
-		List<AbstractShop> shops = PlayerProfile.getShops(uuid);
-		
-		int needToBeSaved = 0;
-		for(AbstractShop shop : shops){
-			if(shop.needsSave()){
-				needToBeSaved++;
-			}
-		}
-		
-		if(!force && needToBeSaved == 0 && !shops.isEmpty()){
-			plugin.logger().trace("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + uuid);
-			return;
-		}
-		
-		scheduler.runAsync(_ -> {
-			for(var shop : shops){
-				if(plugin.isImmediateShutdown()){
-					return;
-				}
-				
-				if(!shop.needsSave() && !force){
-					continue;
-				}
-				if(!shop.isInitialized()){
-					continue;
-				}
-				
-				updateShop(shop);
-				
-				shop.setNeedsSave(false);
-			}
-			
-		});
-	}
-	
-	private void updateShop(AbstractShop shop) {
-		try(var ps = getConnection().prepareStatement(SHOP_UPDATE_SQL)){
-			ItemStack mainStack = shop.getItemStack().clone();
-			mainStack.setAmount(1);
-			ItemStack barterStack = shop.getSecondaryItemStack();
-			if(barterStack != null){
-				barterStack = barterStack.clone();
-				barterStack.setAmount(1);
-			}
-			Location signLocation = shop.getSignLocation();
-			ps.setString(1, shop.getOwnerUUID().toString());
-			ps.setString(2, ItemStackJsonCodec.serialize(mainStack));
-			ps.setDouble(3, shop.getPrice());
-			ps.setDouble(4, shop.getType() == ShopType.COMBO ? ((ComboShop) shop).getPriceSell() : 0);
-			ps.setInt(5, shop.getAmount());
-			ps.setInt(6, shop.getStock());
-			ps.setString(7, shop.getType().toString());
-			ps.setString(8, shop.getFacing().toString());
-			ps.setString(9,
-					(shop.getDisplay() != null && shop.getDisplay().getType() != null)
-					? shop.getDisplay().getType().toString()
-					: DisplayType.NONE.toString());
-			ps.setInt(10, shop.isFakeSign() ? 1 : 0);
-			ps.setString(11, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
-			ps.setLong(12, System.currentTimeMillis());
-			ps.setString(13, mainStack.getType().toString());
-			ps.setString(14, barterStack != null ? barterStack.getType().toString() : null);
-			ps.setString(15, signLocation.getWorld().getName());
-			ps.setInt(16, signLocation.getBlockX());
-			ps.setInt(17, signLocation.getBlockY());
-			ps.setInt(18, signLocation.getBlockZ()); // The shop UUID identifies the row to update.
-			ps.setString(19, shop.getId().toString());
-			ps.executeUpdate();
-		} catch(SQLException e){
-			PluginLogger.error("Error while updating shop " + shop.getId(), e);
-		}
-	}
-	
-	public CompletableFuture<List<AbstractShop>> getShops() {
+	public CompletableFuture<List<AbstractShop>> getShops(boolean includeDeleted) {
 		CompletableFuture<List<AbstractShop>> future = new CompletableFuture<>();
 		scheduler.runAsync(t -> {
 			List<AbstractShop> shops = new ArrayList<>();
 			try(var ps = getConnection().prepareStatement(SHOP_SELECT_SQL)){
+				ps.setInt(1, includeDeleted ? 1 : 0);
 				var resultSet = ps.executeQuery();
 				while(resultSet.next()){
 					shops.add(buildShop(resultSet));
@@ -225,6 +145,35 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		return future;
 	}
 	
+	public void cacheStockValues(Collection<AbstractShop> shops) {
+		if(shops == null || shops.isEmpty()){
+			return;
+		}
+		try(Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(SHOP_CACHE_STOCK_SQL)){
+			connection.setAutoCommit(false);
+			try{
+				for(AbstractShop shop : shops){
+					if(shop == null || !shop.isInitialized()){
+						continue;
+					}
+					ps.setInt(1, shop.getStock());
+					ps.setString(2, shop.getShopState().toString());
+					ps.setString(3, shop.getId().toString());
+					ps.addBatch();
+				}
+				ps.executeBatch();
+				connection.commit();
+			} catch(SQLException e){
+				connection.rollback();
+				throw e;
+			} finally{
+				connection.setAutoCommit(true);
+			}
+		} catch(SQLException e){
+			PluginLogger.error("Error while caching shop stock values", e);
+		}
+	}
+	
 	private AbstractShop buildShop(ResultSet set) throws SQLException {
 		UUID id = UUID.fromString(set.getString("shop_uuid"));
 		UUID ownerId = UUID.fromString(set.getString("owner_uuid"));
@@ -235,17 +184,22 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		double price = set.getDouble("price");
 		double priceSell = set.getDouble("price_combo_sell");
 		int amount = set.getInt("amount");
+		long creationTime = set.getLong("creation_time");
 		boolean isAdmin = Constants.adminUUID.equals(ownerId);
-		ShopType shopType = ShopType.valueOf(set.getString("shop_type"));
+		ShopType shopType = ShopType.from(set.getString("shop_type"));
+		if(shopType == null){
+			throw new IllegalArgumentException("Shoptype is invalid provided: " + set.getString("shop_type"));
+		}
 		BlockFace facing = BlockFace.valueOf(set.getString("sign_facing"));
 		// This inits a new shop but won't have a chestLocation until load().
-		AbstractShop shop = AbstractShop.create(signLocation, ownerId, price, priceSell, amount, isAdmin, shopType, facing);
+		AbstractShop shop = AbstractShop.create(signLocation, ownerId, price, priceSell, amount, isAdmin, shopType, facing, creationTime);
 		shop.setId(id);
 		ItemStack stack = ItemStackJsonCodec.deserialize(set.getString("item"));
 		
 		int stock = set.getInt("last_known_stock_count");
 		shop.setStockOnLoad(stock);
-		
+		ShopState state = ShopState.from(set.getString("last_known_stock_status"));
+		shop.setShopState(state);
 		shop.setItemStack(stack);
 		if(shop.getType() == ShopType.BARTER){
 			ItemStack barterItem = ItemStackJsonCodec.deserialize(set.getString("barter_item"));
@@ -282,21 +236,22 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setDouble(5, shop.getType() == ShopType.COMBO ? ((ComboShop) shop).getPriceSell() : 0);
 		ps.setInt(6, shop.getAmount());
 		ps.setInt(7, shop.getStock());
-		ps.setString(8, shop.getType().toString());
-		ps.setString(9, shop.getFacing().toString());
-		ps.setString(10,
+		ps.setString(8, shop.getShopState().toString());
+		ps.setString(9, shop.getType().toString().toUpperCase());
+		ps.setString(10, shop.getFacing().toString().toUpperCase());
+		ps.setString(11,
 				(shop.getDisplay() != null && shop.getDisplay().getType() != null)
 				? shop.getDisplay().getType().toString()
 				: DisplayType.NONE.toString());
-		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
-		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
-		ps.setLong(13, System.currentTimeMillis());
-		ps.setString(14, mainStack.getType().toString());
-		ps.setString(15, barterStack != null ? barterStack.getType().toString() : null);
-		ps.setString(16, signLocation.getWorld().getName());
-		ps.setInt(17, signLocation.getBlockX());
-		ps.setInt(18, signLocation.getBlockY());
-		ps.setInt(19, signLocation.getBlockZ());
+		ps.setInt(12, shop.isFakeSign() ? 1 : 0);
+		ps.setString(13, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+		ps.setLong(14, System.currentTimeMillis());
+		ps.setString(15, mainStack.getType().toString());
+		ps.setString(16, barterStack != null ? barterStack.getType().toString() : null);
+		ps.setString(17, signLocation.getWorld().getName());
+		ps.setInt(18, signLocation.getBlockX());
+		ps.setInt(19, signLocation.getBlockY());
+		ps.setInt(20, signLocation.getBlockZ());
 	}
 	
 	public void addPlayer(UUID uuid, String name) {
@@ -443,5 +398,95 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	public void calculateOfflineTransactions(OfflineTransactions offlineTransactions) {
 	
+	}
+	
+	public void updateShops(Collection<? extends AbstractShop> shops) {
+		if(shops == null || shops.isEmpty() || plugin.isImmediateShutdown()){
+			return;
+		}
+		
+		if(plugin.isImmediateShutdown()){
+			return;
+		}
+		
+		try(Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(SHOP_UPDATE_SQL)){
+			
+			connection.setAutoCommit(false);
+			
+			try{
+				List<AbstractShop> updatedShops = new ArrayList<>();
+				
+				for(AbstractShop shop : shops){
+					if(plugin.isImmediateShutdown()){
+						connection.rollback();
+						return;
+					}
+					
+					if(shop == null || !shop.isInitialized()){
+						continue;
+					}
+					
+					updateShopValues(shop, ps);
+					ps.addBatch();
+					updatedShops.add(shop);
+				}
+				
+				if(updatedShops.isEmpty()){
+					connection.rollback();
+					return;
+				}
+				
+				ps.executeBatch();
+				connection.commit();
+				
+				for(AbstractShop shop : updatedShops){
+					shop.setNeedsSave(false);
+				}
+				
+			} catch(SQLException e){
+				connection.rollback();
+				throw e;
+			} finally{
+				connection.setAutoCommit(true);
+			}
+			
+		} catch(SQLException e){
+			PluginLogger.error("Error while batch updating shops", e);
+		}
+	}
+	
+	private void updateShopValues(AbstractShop shop, PreparedStatement ps) throws SQLException {
+		ItemStack mainStack = shop.getItemStack().clone();
+		mainStack.setAmount(1);
+		
+		ItemStack barterStack = shop.getSecondaryItemStack();
+		if(barterStack != null){
+			barterStack = barterStack.clone();
+			barterStack.setAmount(1);
+		}
+		
+		Location signLocation = shop.getSignLocation();
+		
+		ps.setString(1, shop.getOwnerUUID().toString());
+		ps.setString(2, ItemStackJsonCodec.serialize(mainStack));
+		ps.setDouble(3, shop.getPrice());
+		ps.setDouble(4, shop.getType() == ShopType.COMBO ? ((ComboShop) shop).getPriceSell() : 0);
+		ps.setInt(5, shop.getAmount());
+		ps.setInt(6, shop.getStock());
+		ps.setString(7, shop.getType().toString().toUpperCase());
+		ps.setString(8, shop.getFacing().toString().toUpperCase());
+		ps.setString(9,
+				shop.getDisplay() != null && shop.getDisplay().getType() != null
+				? shop.getDisplay().getType().toString()
+				: DisplayType.NONE.toString());
+		ps.setInt(10, shop.isFakeSign() ? 1 : 0);
+		ps.setString(11, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+		ps.setString(12, mainStack.getType().toString());
+		ps.setString(13, barterStack != null ? barterStack.getType().toString() : null);
+		ps.setString(14, signLocation.getWorld().getName());
+		ps.setInt(15, signLocation.getBlockX());
+		ps.setInt(16, signLocation.getBlockY());
+		ps.setInt(17, signLocation.getBlockZ());
+		ps.setString(18, shop.getId().toString());
 	}
 }

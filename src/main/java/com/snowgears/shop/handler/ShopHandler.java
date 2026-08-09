@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -84,6 +83,29 @@ public class ShopHandler{
 	public ShopHandler(Shop instance) {
 		plugin = instance;
 		settingsConfig = plugin.getSettingsConfig();
+	}
+	
+	public void processUnloadedShopsInChunk(Chunk chunk) {
+		String key = UtilMethods.getChunkKey(chunk);
+		if(unloadedShopsByChunk.containsKey(key)){
+			List<UUID> playerUUIDs = new ArrayList<>();
+			List<Location> shopLocations = getUnloadedShopsByChunk(key);
+			for(Location shopLocation : shopLocations){
+				AbstractShop shop = getShop(shopLocation);
+				if(shop != null){
+					// Run at the shop's location to ensure it works in the correct region in Folia
+					plugin.getFoliaLib().getScheduler().runAtLocation(shopLocation, task -> {
+						boolean loadSuccess = shop.load();
+						if(loadSuccess){
+							if(!playerUUIDs.contains(shop.getOwnerUUID())){
+								playerUUIDs.add(shop.getOwnerUUID());
+							}
+						}
+					});
+				}
+			}
+			unloadedShopsByChunk.remove(key);
+		}
 	}
 	
 	public AbstractShop getShop(Location loc) {
@@ -239,7 +261,7 @@ public class ShopHandler{
 			// we only hold off on doing this if we are bulk deleting shops for users to prevent repeated saves.
 			// The forceSave flag should rarely be `false`, and you should be careful when setting it to false.
 			if(forceSave){
-				plugin.getDatabase().saveShops(shop.getOwnerUUID(), true);
+				plugin.getDatabase().removeShop(shop);
 			}
 		}
 	}
@@ -828,22 +850,21 @@ public class ShopHandler{
 				}
 			}
 			
-			plugin.getDatabase().getShops().thenAccept(shops -> {
+			plugin.getDatabase().getShops(false).thenAccept(shops -> {
 				AtomicInteger loadedShops = new AtomicInteger();
 				for(var shop : shops){
-					Shop.getPlugin().getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
-						loadedShops.getAndIncrement();
-						try{
-							boolean loadSuccess = shop.load();
-							if(loadSuccess){
+					loadedShops.getAndIncrement();
+					//if chunk its in is already loaded, calculate it here
+					if(shop.isChunkLoaded()){
+						plugin.getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
+							if(shop.load()){
 								addShop(shop);
-							} else {
-								plugin.logger().warning("Unable to load shop " + shop.getId());
 							}
-						} catch(Exception e){
-							plugin.logger().severe("Unable to load shop " + shop);
-						}
-					});
+						});
+					} else {
+						addUnloadedShopToChunkList(shop);
+						addShop(shop);
+					}
 				}
 				Shop.getPlugin().logger().log(Level.INFO, "Loaded " + loadedShops + " Shops!");
 			});
@@ -859,15 +880,9 @@ public class ShopHandler{
 		return settingsConfig.getEnabledContainers().contains(b.getType());
 	}
 	
-	public static void saveAllShops() {
-		Set<UUID> allPlayersWithShops = new HashSet<>();
-		for(AbstractShop shop : Shop.getPlugin().getShopHandler().getAllShops()){
-			allPlayersWithShops.add(shop.getOwnerUUID());
-		}
-		
-		for(UUID player : allPlayersWithShops){
-			Shop.getPlugin().getDatabase().saveShops(player, false);
-		}
+	public void saveAllShops() {
+		plugin.getDatabase().updateShops(allShops.values().stream().filter(AbstractShop::needsSave).toList());
+		plugin.getDatabase().cacheStockValues(allShops.values());
 	}
 	
 	public boolean passesItemListCheck(ItemStack is) {
@@ -886,11 +901,16 @@ public class ShopHandler{
 		}
 		
 		//item not similar to anything in our item list
-		if(plugin.getItemListType() == ItemListType.ALLOW_LIST){
-			return false;
+		return plugin.getItemListType() != ItemListType.ALLOW_LIST;
+	}
+	
+	public void addUnloadedShopToChunkList(AbstractShop shop) {
+		String chunkKey = UtilMethods.getChunkKey(shop.getSignLocation());
+		List<Location> shopLocations = getUnloadedShopsByChunk(chunkKey);
+		if(!shopLocations.contains(shop.getSignLocation())){
+			shopLocations.add(shop.getSignLocation());
+			unloadedShopsByChunk.put(chunkKey, shopLocations);
 		}
-		
-		return true;
 	}
 	
 	/**

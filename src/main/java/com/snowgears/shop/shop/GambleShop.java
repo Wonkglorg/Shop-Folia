@@ -14,8 +14,8 @@ public class GambleShop extends AbstractShop{
 	
 	private ItemStack gambleItem;
 	
-	public GambleShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing) {
-		super(signLoc, player, pri, amt, admin, facing);
+	public GambleShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
+		super(signLoc, player, pri, amt, admin, facing,creationDate);
 		
 		this.isAdmin = true;
 		this.creationWord = CreationWord.GAMBLE;

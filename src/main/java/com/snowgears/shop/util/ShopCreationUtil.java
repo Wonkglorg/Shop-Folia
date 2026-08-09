@@ -1,7 +1,6 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.migrate.PlayerShopsConfig;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
@@ -117,7 +116,8 @@ public class ShopCreationUtil{
 				amount,
 				isAdmin,
 				type,
-				signDirection);
+				signDirection,
+				System.currentTimeMillis());
 		shop.setFakeSign(isFakeSign);
 		
 		if(type == ShopType.GAMBLE){
@@ -238,7 +238,7 @@ public class ShopCreationUtil{
 		// TODO: We should move this save trigger elsewhere, it doesn't belong in `sendCreationSuccess`,
 		//       it is currently non-intuitive that this is the method to save a shop when it is created.
 		//       We should move it elsewhere.
-		plugin.getDatabase().saveShops(shop.getOwnerUUID(), true);
+		plugin.getDatabase().addShop(shop);
 		// Cleanup the shop creation process
 		cleanupShopCreationProcess(player);
 	}

@@ -158,6 +158,7 @@ public class Shop extends JavaPlugin{
 				database.addShops(PlayerShopsConfig.loadLegacyShops());
 				logger.info("Finished Migrating files to database!");
 				settingsConfig.setMigrateOldData(false);
+				settingsConfig.silentSave();
 			}
 		} catch(Exception e){
 			logger.severe("Unable to load shop database" + e.getMessage());
@@ -183,7 +184,7 @@ public class Shop extends JavaPlugin{
 		
 		//save any remaining shops (usually not required but just in case)
 		if(shopHandler != null){
-			ShopHandler.saveAllShops();
+			shopHandler.saveAllShops();
 		}
 		
 		this.logger().info("Disabled Shop " + this.getPluginMeta().getVersion());

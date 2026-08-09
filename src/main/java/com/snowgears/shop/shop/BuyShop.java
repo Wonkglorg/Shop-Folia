@@ -10,8 +10,8 @@ import java.util.UUID;
 
 public class BuyShop extends AbstractShop{
 	
-	public BuyShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing) {
-		super(signLoc, player, pri, amt, admin, facing);
+	public BuyShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
+		super(signLoc, player, pri, amt, admin, facing,creationDate);
 		this.creationWord = CreationWord.BUY;
 		this.type = ShopType.BUY;
 		this.signLines = ShopMessage.getSignLines(this);

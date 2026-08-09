@@ -38,7 +38,7 @@ public class ShopMissingBlocksTest extends BaseMockBukkitTest {
         Location signLoc = new Location(world, 5, 65, 5);
         world.getBlockAt(signLoc).setType(Material.AIR);
 
-        AbstractShop shop = AbstractShop.create(signLoc, player.getUniqueId(), 10, 0, 1, false, ShopType.SELL, null);
+        AbstractShop shop = AbstractShop.create(signLoc, player.getUniqueId(), 10, 0, 1, false, ShopType.SELL, null,System.currentTimeMillis());
         assertNotNull(shop);
 
         boolean loaded = shop.load();
@@ -54,7 +54,7 @@ public class ShopMissingBlocksTest extends BaseMockBukkitTest {
         Location signLoc = new Location(world, 6, 65, 5);
         world.getBlockAt(signLoc).setType(Material.OAK_SIGN); // standing sign, not a WallSign
 
-        AbstractShop shop = AbstractShop.create(signLoc, player.getUniqueId(), 10, 0, 1, false, ShopType.SELL, null);
+        AbstractShop shop = AbstractShop.create(signLoc, player.getUniqueId(), 10, 0, 1, false, ShopType.SELL, null,System.currentTimeMillis());
         assertNotNull(shop);
 
         boolean loaded = shop.load();
@@ -78,7 +78,7 @@ public class ShopMissingBlocksTest extends BaseMockBukkitTest {
         Block behind = signBlock.getRelative(BlockFace.NORTH.getOppositeFace());
         behind.setType(Material.STONE);
 
-        AbstractShop shop = AbstractShop.create(signLoc, player.getUniqueId(), 10, 0, 1, false, ShopType.SELL, null);
+        AbstractShop shop = AbstractShop.create(signLoc, player.getUniqueId(), 10, 0, 1, false, ShopType.SELL, null,System.currentTimeMillis());
         assertNotNull(shop);
 
         boolean loaded = shop.load();

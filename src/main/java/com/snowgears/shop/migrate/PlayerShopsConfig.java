@@ -147,7 +147,15 @@ public class PlayerShopsConfig extends Config{
 				}
 				
 				// This inits a new shop but won't have a chestLocation until load().
-				AbstractShop shop = AbstractShop.create(signLoc, owner, price, priceSell, amount, isAdmin, shopType, facing);
+				AbstractShop shop = AbstractShop.create(signLoc,
+						owner,
+						price,
+						priceSell,
+						amount,
+						isAdmin,
+						shopType,
+						facing,
+						System.currentTimeMillis());
 				if(id != null){
 					shop.setId(id);
 				}

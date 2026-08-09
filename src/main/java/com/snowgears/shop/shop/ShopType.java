@@ -43,6 +43,15 @@ public enum ShopType{
 		};
 	}
 	
+	public static ShopType from(String input) {
+		for(var value : ShopType.values()){
+			if(value.toString().equalsIgnoreCase(input)){
+				return value;
+			}
+		}
+		return null;
+	}
+	
 	public static ShopType typeFromString(String typeString) {
 		if(typeString == null){
 			return SELL;
