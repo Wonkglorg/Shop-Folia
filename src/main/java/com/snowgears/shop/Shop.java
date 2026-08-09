@@ -6,7 +6,6 @@ import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.db.ShopDatabase;
 import com.snowgears.shop.display.DisplayTagOption;
 import com.snowgears.shop.gui.ShopGUIListener;
-import com.snowgears.shop.handler.ShopGuiHandler;
 import com.snowgears.shop.handler.ShopHandler;
 import com.snowgears.shop.handler.TransactionHandler;
 import com.snowgears.shop.listener.DisplayListener;
@@ -49,8 +48,6 @@ public class Shop extends JavaPlugin{
 	
 	@Getter
 	private ShopHandler shopHandler;
-	@Getter
-	private ShopGuiHandler guiHandler;
 	@Getter
 	private ShopCreationUtil shopCreationUtil;
 	
@@ -131,9 +128,6 @@ public class Shop extends JavaPlugin{
 		shopHandler = new ShopHandler(plugin);
 		initializeDatabase();
 		shopHandler.loadShops();
-		
-		guiHandler = new ShopGuiHandler();
-		//guiHandler.loadIconsAndTitles();
 		
 		displayListener = new DisplayListener(this);
 		getServer().getPluginManager().registerEvents(displayListener, this);

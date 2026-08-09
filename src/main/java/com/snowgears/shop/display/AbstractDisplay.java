@@ -35,10 +35,10 @@ public abstract class AbstractDisplay{
 	protected Location shopSignLocation;
 	@Getter
 	protected DisplayType type;
-	protected HashMap<UUID, ArrayList<Integer>> entityIDs; //player UUID. display entities
-	protected HashMap<UUID, ArrayList<Integer>> displayTagEntityIDs; //player UUID. display tags
+	protected Map<UUID, List<Integer>> entityIDs; //player UUID. display entities
+	protected Map<UUID, List<Integer>> displayTagEntityIDs; //player UUID. display tags
 	
-	public AbstractDisplay(Location shopSignLocation) {
+	protected AbstractDisplay(Location shopSignLocation) {
 		this.shopSignLocation = shopSignLocation;
 		entityIDs = new HashMap<>();
 		displayTagEntityIDs = new HashMap<>();
@@ -600,7 +600,7 @@ public abstract class AbstractDisplay{
 		if(player == null || displayTagEntityIDs == null){
 			return false;
 		}
-		ArrayList<Integer> entityTagIDs = displayTagEntityIDs.get(player.getUniqueId());
+		List<Integer> entityTagIDs = displayTagEntityIDs.get(player.getUniqueId());
 		return entityTagIDs != null && !entityTagIDs.isEmpty();
 	}
 	
@@ -608,7 +608,7 @@ public abstract class AbstractDisplay{
 		if(player == null){
 			return;
 		}
-		ArrayList<Integer> tagIDs = displayTagEntityIDs.get(player.getUniqueId());
+		List<Integer> tagIDs = displayTagEntityIDs.get(player.getUniqueId());
 		if(tagIDs == null){
 			tagIDs = new ArrayList<>();
 		}
@@ -620,7 +620,7 @@ public abstract class AbstractDisplay{
 		if(player == null){
 			return;
 		}
-		ArrayList<Integer> entityIDs = this.entityIDs.get(player.getUniqueId());
+		List<Integer> entityIDs = this.entityIDs.get(player.getUniqueId());
 		if(entityIDs == null){
 			entityIDs = new ArrayList<>();
 		}
@@ -628,20 +628,20 @@ public abstract class AbstractDisplay{
 		this.entityIDs.put(player.getUniqueId(), entityIDs);
 	}
 	
-	protected ArrayList<Integer> getAllDisplayTagEntityIDs() {
-		ArrayList<Integer> allDisplayTagEntityIDs = new ArrayList<>();
+	protected List<Integer> getAllDisplayTagEntityIDs() {
+		List<Integer> allDisplayTagEntityIDs = new ArrayList<>();
 		if(displayTagEntityIDs != null){
-			for(Map.Entry<UUID, ArrayList<Integer>> entry : displayTagEntityIDs.entrySet()){
+			for(Map.Entry<UUID, List<Integer>> entry : displayTagEntityIDs.entrySet()){
 				allDisplayTagEntityIDs.addAll(entry.getValue());
 			}
 		}
 		return allDisplayTagEntityIDs;
 	}
 	
-	protected ArrayList<Integer> getAllEntityIDs() {
-		ArrayList<Integer> allEntityIDs = new ArrayList<>();
+	protected List<Integer> getAllEntityIDs() {
+		List<Integer> allEntityIDs = new ArrayList<>();
 		if(entityIDs != null){
-			for(Map.Entry<UUID, ArrayList<Integer>> entry : entityIDs.entrySet()){
+			for(Map.Entry<UUID, List<Integer>> entry : entityIDs.entrySet()){
 				allEntityIDs.addAll(entry.getValue());
 			}
 		}

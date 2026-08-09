@@ -8,6 +8,13 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.NonNull;
 
+/**
+ * Fired when a shop is created in order
+ * <br><br>====ORDER====<br>
+ * Sign is Placed and creation word entered-> {@link PlayerCreateShopEvent} <br>
+ * Item is defined for shop -> {@link PlayerInitializeShopEvent}<br>
+ * Item was defined and shop is ready -> {@link PlayerPostInitializeShopEvent}<br>
+ */
 public class PlayerCreateShopEvent extends Event implements Cancellable{
 	
 	private static final HandlerList handlers = new HandlerList();

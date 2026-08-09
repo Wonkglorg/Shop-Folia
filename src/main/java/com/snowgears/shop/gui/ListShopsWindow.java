@@ -1,22 +1,5 @@
 package com.snowgears.shop.gui;
 
-import com.snowgears.shop.Shop;
-import com.snowgears.shop.handler.ShopGuiHandler;
-import com.snowgears.shop.shop.AbstractShop;
-import com.snowgears.shop.shop.ShopType;
-import com.snowgears.shop.util.ComparatorShopItemNameHigh;
-import com.snowgears.shop.util.ComparatorShopItemNameLow;
-import com.snowgears.shop.util.ComparatorShopPriceHigh;
-import com.snowgears.shop.util.ComparatorShopPriceLow;
-import org.bukkit.Bukkit;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 public class ListShopsWindow extends ShopGuiWindow {
 /*
     private List<AbstractShop> allShops;

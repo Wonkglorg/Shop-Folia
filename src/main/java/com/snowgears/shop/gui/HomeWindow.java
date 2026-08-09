@@ -1,14 +1,5 @@
 package com.snowgears.shop.gui;
 
-import com.snowgears.shop.Shop;
-import com.snowgears.shop.handler.ShopGuiHandler;
-import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.UUID;
-
 public class HomeWindow extends ShopGuiWindow{
 	/*
 	public HomeWindow(UUID player) {

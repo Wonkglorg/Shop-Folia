@@ -10,6 +10,10 @@ import org.jspecify.annotations.NonNull;
 
 /**
  * Called during shop initialisation with items. currently initializing item will be null at the time of calling use {@link PlayerPostInitializeShopEvent} if access to the item being set for the shop is required
+ * <br><br>====ORDER====<br>
+ * Sign is Placed and creation word entered-> {@link PlayerCreateShopEvent} <br>
+ * Item is defined for shop -> {@link PlayerInitializeShopEvent}<br>
+ * Item was defined and shop is ready -> {@link PlayerPostInitializeShopEvent}<br>
  */
 public class PlayerInitializeShopEvent extends Event implements Cancellable {
 

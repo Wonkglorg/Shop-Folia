@@ -1,16 +1,5 @@
 package com.snowgears.shop.gui;
 
-import com.snowgears.shop.Shop;
-import com.snowgears.shop.handler.ShopGuiHandler;
-import com.snowgears.shop.shop.AbstractShop;
-import com.snowgears.shop.util.ComparatorShopItemNameLow;
-import org.bukkit.Bukkit;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
 public class ListPlayerShopsWindow extends ShopGuiWindow {
 /*
     private UUID playerToList;
