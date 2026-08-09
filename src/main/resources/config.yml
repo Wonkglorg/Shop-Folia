@@ -170,10 +170,6 @@ creationMethod:
 # This will show shop creation instructions as floating text above shops #
 displayFloatingCreateText: true
 
-# This will allow players to use the limited creative mode selection tool to choose shop items when creating a shop #
-# This is triggered when the player right clicks a chest with an empty hand #
-allowCreativeSelection: true
-
 # If this is set to true, shops will require you to be sneaking (holding 'shift') to destroy them
 destroyShopRequiresSneak: false
 

@@ -137,7 +137,6 @@ public class Shop extends JavaPlugin{
 		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
 		getServer().getPluginManager().registerEvents(new MiscListener(this), this);
-		getServer().getPluginManager().registerEvents(new CreativeSelectionListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopGUIListener(), this);
 		
 		displayListener.startRepeatingDisplayViewTask();

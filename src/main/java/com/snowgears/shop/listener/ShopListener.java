@@ -32,7 +32,6 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -333,48 +332,6 @@ public class ShopListener implements Listener{
 			//this automatically saves to file
 			new PlayerExperience(player);
 		}
-	}
-	
-	@EventHandler(ignoreCancelled = true)
-	public void onTeleport(PlayerTeleportEvent event) {
-		final Player player = event.getPlayer();
-		
-		// Skip shop display processing if player is in creative selection mode
-		CreativeSelectionListener creativeModeListener = plugin.getCreativeSelectionListener();
-		if(creativeModeListener != null && creativeModeListener.isPlayerInCreativeSelection(player)){
-			plugin.logger().debug("Skipping shop display refresh for " + player.getName() + " (in creative selection)");
-			return;
-		}
-		
-		// Immediate attempt right after teleport
-		plugin.getShopHandler().forceProcessShopDisplaysNearPlayer(player);
-		
-		// Staggered display updates after teleport
-		// First delayed attempt - wait for chunks to load
-		plugin.getFoliaLib().getScheduler().runLater(() -> {
-			if(player.isOnline()){
-				// Check again inside the delayed task in case player entered selection during the delay
-				if(creativeModeListener != null && creativeModeListener.isPlayerInCreativeSelection(player)){
-					plugin.logger().debug("Skipping delayed shop display refresh for " + player.getName() + " (in creative selection)");
-					return;
-				}
-				plugin.logger().debug("First display refresh for " + player.getName() + " after teleport");
-				plugin.getShopHandler().forceProcessShopDisplaysNearPlayer(player);
-			}
-		}, 5); // 5 ticks (250ms) delay
-		
-		// Second attempt - for completeness
-		plugin.getFoliaLib().getScheduler().runLater(() -> {
-			if(player.isOnline()){
-				// Check again inside the delayed task in case player entered selection during the delay
-				if(creativeModeListener != null && creativeModeListener.isPlayerInCreativeSelection(player)){
-					plugin.logger().debug("Skipping delayed shop display refresh for " + player.getName() + " (in creative selection)");
-					return;
-				}
-				plugin.logger().debug("Second display refresh for " + player.getName() + " after teleport");
-				plugin.getShopHandler().forceProcessShopDisplaysNearPlayer(player);
-			}
-		}, 15); // 750ms delay
 	}
 	
 	@EventHandler

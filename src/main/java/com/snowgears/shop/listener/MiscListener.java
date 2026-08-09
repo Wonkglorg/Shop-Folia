@@ -10,8 +10,6 @@ import static com.snowgears.shop.manager.PlayerManager.cancelShopCreationProcess
 import static com.snowgears.shop.manager.PlayerManager.cleanupShopCreationProcess;
 import static com.snowgears.shop.manager.PlayerManager.getShopCreationProcess;
 import static com.snowgears.shop.manager.PlayerManager.isInShopCreationProcess;
-import static com.snowgears.shop.manager.PlayerManager.putPlayerInCreativeSelection;
-import static com.snowgears.shop.manager.PlayerManager.removePlayerFromCreativeSelection;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToDestroyShop;
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
@@ -195,9 +193,6 @@ public class MiscListener implements Listener{
 				addShopCreationProcess(player.getUniqueId(), process);
 				
 				process.displayFloatingText(type + ".initialize");
-				if(settingsConfig.isAllowCreativeSelection() && (type == ShopType.BUY || type == ShopType.COMBO)){
-					ShopMessage.request(type + ".initializeAlt", player, shop).sendToAudience(player);
-				}
 				
 				//give player a limited amount of time to finish creating the shop until it is deleted
 				plugin.getFoliaLib().getScheduler().runLater(() -> {
@@ -300,47 +295,18 @@ public class MiscListener implements Listener{
 				}
 				
 				if(event.getItem() == null || event.getItem().getType() == Material.AIR){
-					if(settingsConfig.isAllowCreativeSelection()){
-						//TODO this section needs to check if the current step is to get the barter item
-						ShopCreationProcess currentProcess = getShopCreationProcess(player.getUniqueId());
-						// Check if last created process is within 80ms, if so, cancel the event
-						Long lastCreatedProcess = lastChatCreation.get(player.getUniqueId());
-						if(lastCreatedProcess != null && (new Date().getTime() - lastCreatedProcess) < 80){
-							return;
-						}
-						if(currentProcess != null && currentProcess.getStep() == ShopCreationProcess.ChatCreationStep.BARTER_ITEM){
-							putPlayerInCreativeSelection(player, clicked.getLocation(), false);
-						} else if(currentProcess == null && player.isSneaking()){
-							//if the player has created a new process in the last 5 seconds, block them from creating another
-							if(lastCreatedProcess != null &&
-							   (new Date().getTime() - lastCreatedProcess) < settingsConfig.getDebugShopCreateCooldown()){
-								lang.request("interaction_issue.createCooldown").sendToAudience(player);
-								return;
-							}
-							
-							BlockFace signFacing = plugin.getShopCreationUtil().calculateBlockFaceForSign(player, clicked, event.getBlockFace());
-							if(signFacing == null){
-								return;
-							}
-							
-							ShopCreationProcess process = new ShopCreationProcess(player, clicked, signFacing);
-							addShopCreationProcess(player.getUniqueId(), process);
-							lastChatCreation.put(player.getUniqueId(), new Date().getTime());
-							putPlayerInCreativeSelection(player, clicked.getLocation(), false);
-						}
-					}
 					return;
-				} else {
-					ShopCreationProcess currentProcess = getShopCreationProcess(player.getUniqueId());
-					plugin.logger().debug("Current Shop Creation Process: " + currentProcess);
-					if(currentProcess != null && currentProcess.getStep() == ShopCreationProcess.ChatCreationStep.BARTER_ITEM){
-						if(!plugin.getShopCreationUtil().itemsCanBeInitialized(player, currentProcess.getItemStack(), event.getItem())){
-							return;
-						}
-						currentProcess.setBarterItemStack(event.getItem());
-						currentProcess.displayFloatingText(currentProcess.getShopType().toString() + ".createHitChestBarterAmount");
+				}
+				ShopCreationProcess currentProcess = getShopCreationProcess(player.getUniqueId());
+				plugin.logger().debug("Current Shop Creation Process: " + currentProcess);
+				if(currentProcess != null && currentProcess.getStep() == ShopCreationProcess.ChatCreationStep.BARTER_ITEM){
+					if(!plugin.getShopCreationUtil().itemsCanBeInitialized(player, currentProcess.getItemStack(), event.getItem())){
 						return;
 					}
+					currentProcess.setBarterItemStack(event.getItem());
+					currentProcess.displayFloatingText(currentProcess.getShopType().toString() + ".createHitChestBarterAmount");
+					return;
+					
 				}
 				
 				if(!player.isSneaking()){
@@ -392,11 +358,10 @@ public class MiscListener implements Listener{
 				final UUID originalProcessUUID = process.getUniqueID();
 				plugin.getFoliaLib().getScheduler().runLater(() -> {
 					//the shop has still not been initialized with an item from a player
-					ShopCreationProcess currentProcess = getShopCreationProcess(player.getUniqueId());
-					if(currentProcess != null && currentProcess.getUniqueID().equals(originalProcessUUID)){
+					ShopCreationProcess currProcess = getShopCreationProcess(player.getUniqueId());
+					if(currProcess != null && currProcess.getUniqueID().equals(originalProcessUUID)){
 						cleanupShopCreationProcess(player);
-						removePlayerFromCreativeSelection(player);
-						context.setProcess(currentProcess).setPlayer(player);
+						context.setProcess(currProcess).setPlayer(player);
 						ShopMessage.request("interactionIssue.createHitChestTimeout", context).sendToAudience(player);
 					}
 				}, 30 * 20); // 30 seconds * 20 ticks
@@ -452,9 +417,6 @@ public class MiscListener implements Listener{
 					
 					if(process.getShopType() == ShopType.BARTER){
 						process.displayFloatingText(process.getShopType() + ".createHitChest");
-						if(settingsConfig.isAllowCreativeSelection()){
-							lang.request(process.getShopType().toString() + ".initializeBarterAlt").sendToAudience(player);
-						}
 					} else {
 						process.displayFloatingText(process.getShopType().toString() + ".createHitChestPrice");
 					}

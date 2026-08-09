@@ -1,2 +1,7 @@
 #add custom items to be selectable when creating a shop via command.
 items:
+  survivor_trident_gen1:
+    == org.bukkit.itemstack:
+      stuff: s
+  survivor_trident_gen2:
+    nexo_id:

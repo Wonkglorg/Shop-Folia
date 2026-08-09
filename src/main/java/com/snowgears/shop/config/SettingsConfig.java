@@ -54,8 +54,6 @@ public class SettingsConfig extends Config{
 	@Getter
 	private boolean ignoreItemRepairCost;
 	@Getter
-	private boolean allowCreativeSelection;
-	@Getter
 	private boolean forceDisplayToNoneIfBlocked;
 	/**
 	 * The type of currency to use on the server
@@ -190,7 +188,6 @@ public class SettingsConfig extends Config{
 		enableGUI = getBoolean("enableGUI");
 		checkItemDurability = getBoolean("checkItemDurability");
 		ignoreItemRepairCost = getBoolean("ignoreItemRepairCost");
-		allowCreativeSelection = getBoolean("allowCreativeSelection");
 		forceDisplayToNoneIfBlocked = getBoolean("forceDisplayToNoneIfBlocked");
 		displayLightLevel = getInt("displayLightLevel");
 		setGlowingItemFrame = getBoolean("setGlowingItemFrame");

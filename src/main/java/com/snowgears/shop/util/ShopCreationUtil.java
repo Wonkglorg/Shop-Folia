@@ -337,9 +337,6 @@ public class ShopCreationUtil{
 				ShopMessage.request(shop.getType() + ".initializeInfo", player, shop).sendToAudience(player);
 				process.setStep(ShopCreationProcess.ChatCreationStep.SIGN_BARTER_ITEM);
 				process.displayFloatingText(shop.getType() + ".initializeBarter");
-				if(settingsConfig.isAllowCreativeSelection()){
-					ShopMessage.request("BUY.initializeAlt", player, shop).sendToAudience(player);
-				}
 			} else if(shop.getType() != ShopType.BARTER){
 				return true;
 			}

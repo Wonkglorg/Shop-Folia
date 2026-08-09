@@ -5,6 +5,7 @@ import com.snowgears.shop.handler.ShopHandler;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemNameUtil;
+import com.snowgears.shop.util.OfflineTransactions;
 import com.snowgears.shop.util.ShopActionType;
 import com.tcoded.folialib.impl.PlatformScheduler;
 import com.wonkglorg.database.DatabaseType;
@@ -207,5 +208,9 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				e.printStackTrace();
 			}
 		});
+	}
+	
+	public void calculateOfflineTransactions(OfflineTransactions offlineTransactions) {
+	
 	}
 }
