@@ -172,10 +172,8 @@ public class TransactionHandler{
 				ShopMessage.request(message, PlaceholderContext.of(shop).setPlayer(player)).sendToAudience(owner);
 			}
 		}
-		
-		int amount = transaction.getAmount();
-		
-		plugin.getLogHandler().logTransaction(player, shop, transactionType, price, amount);
+		//todo:mjd is that right or is the transaction already accumulated here? how about partial sales?
+		plugin.getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), player.getUniqueId(), 1, null);
 	}
 	
 	private boolean notifyOwner(final AbstractShop shop) {

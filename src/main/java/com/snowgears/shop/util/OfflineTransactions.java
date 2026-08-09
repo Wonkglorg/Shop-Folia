@@ -70,7 +70,7 @@ public class OfflineTransactions{
 	
 	private void calculate() {
 		isCalculating = true;
-		Shop.getPlugin().getLogHandler().calculateOfflineTransactions(this);
+		Shop.getPlugin().getDatabase().calculateOfflineTransactions(this);
 	}
 	
 	public void setIsCalculating(boolean isCalculating) {

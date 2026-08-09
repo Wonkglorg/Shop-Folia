@@ -3,6 +3,7 @@ package com.snowgears.shop.util;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.manager.player.PlayerProfile;
+import static com.snowgears.shop.manager.player.PlayerProfile.getTeleportCooldownRemaining;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
 import com.snowgears.shop.shop.ShopType;
@@ -10,10 +11,11 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.util.Components;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
+import com.wonkglorg.minecraft.util.date.DateType;
+import com.wonkglorg.minecraft.util.date.DurationBuilder;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import static net.kyori.adventure.text.event.HoverEvent.showText;
-import net.kyori.adventure.text.event.HoverEventSource;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -154,7 +156,7 @@ public class ShopMessage{
 			   return "0";
 		   })
 		   .lazyReplace("%build limit%",()-> String.valueOf(PlayerProfile.getShopBuildLimit(context.getPlayer())))
-		   .replace("%tp time remaining%",String.valueOf(plugin.getShopListener().getTeleportCooldownRemaining(context.getPlayer())))
+		   .replace("%tp time remaining%",DurationBuilder.create(getTeleportCooldownRemaining(context.getPlayer().getUniqueId())).noDecimals().typesToShow(DateType.SECOND).toTimeString())
 		   .replace("%currency name%",plugin.getSettingsConfig().getCurrencyName())
 		   //.replace("%currency item%",()->embedItem(getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
 		   .lazyReplace("%price sell%",()->{

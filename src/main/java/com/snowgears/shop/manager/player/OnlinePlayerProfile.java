@@ -3,6 +3,7 @@ package com.snowgears.shop.manager.player;
 import com.snowgears.shop.shop.ShopType;
 import org.bukkit.entity.Player;
 
+import java.time.Duration;
 import java.util.List;
 
 public class OnlinePlayerProfile extends OfflinePlayerProfile{
@@ -57,4 +58,15 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 		return getBuildableShopTypes(player);
 	}
 	
+	public Duration getTeleportCooldownRemaining() {
+		return getTeleportCooldownRemaining(offlinePlayer.getUniqueId());
+	}
+	
+	public boolean canTeleport() {
+		return canTeleport(offlinePlayer.getUniqueId());
+	}
+	
+	public void addTeleportCooldown() {
+		addTeleportCooldown(offlinePlayer.getUniqueId());
+	}
 }

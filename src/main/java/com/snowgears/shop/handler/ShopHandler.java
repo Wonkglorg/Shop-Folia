@@ -71,7 +71,7 @@ public class ShopHandler{
 	//we will be loading these shops at time of chunkload and resaving them so they are saved with the 'facing' variable
 	private ConcurrentHashMap<String, List<Location>> unloadedShopsByChunk = new ConcurrentHashMap<>();
 	@Getter
-	private UUID adminUUID;
+	private static final UUID adminUUID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 	private BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 	
 	private ArrayList<ItemStack> itemListItems = new ArrayList<>();
@@ -90,7 +90,6 @@ public class ShopHandler{
 	public ShopHandler(Shop instance) {
 		plugin = instance;
 		settingsConfig = plugin.getSettingsConfig();
-		adminUUID = UUID.randomUUID();
 		loadShops();
 	}
 	
@@ -883,6 +882,10 @@ public class ShopHandler{
 				throw new RuntimeException(e);
 			}
 			Shop.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " Shops!");
+			List<AbstractShop> shops = getAllShops();
+			for(var hook : plugin.getShopServiceProvider().getShopLoadHooks()){
+				hook.accept(shops);
+			}
 		});
 	}
 	

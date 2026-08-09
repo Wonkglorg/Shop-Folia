@@ -6,6 +6,8 @@ import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerInitializeShopEvent;
+import static com.snowgears.shop.manager.PlayerManager.cleanupShopCreationProcess;
+import static com.snowgears.shop.manager.PlayerManager.getShopCreationProcess;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import static com.snowgears.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
@@ -188,7 +190,7 @@ public class ShopCreationUtil{
 			PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, shop);
 			plugin.getServer().getPluginManager().callEvent(e);
 			
-			plugin.getLogHandler().logAction(player, shop, ShopActionType.CREATE);
+			plugin.getDatabase().logAction(player, shop, ShopActionType.CREATE);
 			
 			if(e.isCancelled()){
 				return null;
@@ -211,7 +213,7 @@ public class ShopCreationUtil{
 				shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
 				
 				plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
-				plugin.getLogHandler().logAction(player, shop, ShopActionType.INIT);
+				plugin.getDatabase().logAction(player, shop, ShopActionType.INIT);
 				return null;
 			}
 			
@@ -222,13 +224,7 @@ public class ShopCreationUtil{
 		return shop;
 	}
 	
-	public void cleanupShopCreationProcess(Player player) {
-		ShopCreationProcess process = plugin.getMiscListener().getShopCreationProcess(player);
-		if(process != null){
-			process.cleanup();
-			plugin.getMiscListener().removeShopCreationProcess(player);
-		}
-	}
+
 	
 	public void sendCreationSuccess(Player player, AbstractShop shop) {
 		if(shop.getDisplay() != null){
@@ -336,7 +332,7 @@ public class ShopCreationUtil{
 			
 			shop.setItemStack(item);
 			
-			ShopCreationProcess process = plugin.getMiscListener().getShopCreationProcess(player);
+			ShopCreationProcess process = getShopCreationProcess(player.getUniqueId());
 			if(shop.getType() == ShopType.BARTER && barterItem == null){
 				ShopMessage.request(shop.getType() + ".initializeInfo", player, shop).sendToAudience(player);
 				process.setStep(ShopCreationProcess.ChatCreationStep.SIGN_BARTER_ITEM);

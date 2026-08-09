@@ -3,6 +3,7 @@ package com.snowgears.shop.shop;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.AbstractDisplay;
+import com.snowgears.shop.manager.PlayerManager;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import static com.snowgears.shop.shop.ShopState.OK;
 import com.snowgears.shop.util.InventoryUtils;
@@ -564,7 +565,7 @@ public abstract class AbstractShop{
 			
 			player.teleport(loc);
 		}
-		Shop.getPlugin().getShopListener().addTeleportCooldown(player);
+		PlayerManager.addTeleportCooldown(player.getUniqueId());
 	}
 	
 	public void printSalesInfo(Player player) {
@@ -660,14 +661,14 @@ public abstract class AbstractShop{
 					player.playSound(this.getSignLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
 				}
 				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(this.getChestLocation(), Effect.STEP_SOUND, Material.EMERALD_BLOCK);
+					player.getWorld().playEffect(this.getChestLocation(), Effect.DESTROY_BLOCK, Material.EMERALD_BLOCK);
 				}
 			} else {
 				if(settingsConfig.isPlaySounds()){
 					player.playSound(this.getSignLocation(), Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F);
 				}
 				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(this.getChestLocation(), Effect.STEP_SOUND, Material.REDSTONE_BLOCK);
+					player.getWorld().playEffect(this.getChestLocation(), Effect.DESTROY_BLOCK, Material.REDSTONE_BLOCK);
 				}
 			}
 		} catch(Error | Exception _){

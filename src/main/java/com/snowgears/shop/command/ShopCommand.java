@@ -6,7 +6,6 @@ import static com.snowgears.shop.Constants.SHOP_COMMAND;
 import static com.snowgears.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.snowgears.shop.Constants.SHOP_PERMISSION_USER;
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.gui.ShopGuiWindow;
 import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.util.CurrencyType;

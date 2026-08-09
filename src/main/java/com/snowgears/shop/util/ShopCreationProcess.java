@@ -155,7 +155,7 @@ public class ShopCreationProcess{
 			
 			if(initializedShop){
 				Shop.getPlugin().getShopCreationUtil().sendCreationSuccess(player, shop);
-				Shop.getPlugin().getLogHandler().logAction(player, shop, ShopActionType.INIT);
+				Shop.getPlugin().getDatabase().logAction(player, shop, ShopActionType.INIT);
 			}
 		});
 	}

@@ -47,7 +47,6 @@ public class ShopListener implements Listener{
 	private Shop plugin;
 	private final LangManager lang;
 	private HashMap<UUID, OfflineTransactions> transactionsWhileOffline = new HashMap<>();
-	private HashMap<UUID, Long> playerLastShopTeleport = new HashMap<>();
 	
 	public ShopListener(Shop instance) {
 		plugin = instance;
@@ -316,7 +315,7 @@ public class ShopListener implements Listener{
 		long lastPlayed = player.getLastPlayed();
 		
 		//create an object that will calculate offline transactions (if sql is being used)
-		if(plugin.getLogHandler().isEnabled() && plugin.getSettingsConfig().isOfflinePurchaseNotificationsEnabled()){
+		if(plugin.getSettingsConfig().isOfflinePurchaseNotificationsEnabled()){
 			OfflineTransactions offlineTransactions = new OfflineTransactions(player.getUniqueId(), lastPlayed);
 			transactionsWhileOffline.put(event.getUniqueId(), offlineTransactions);
 		}
@@ -383,26 +382,5 @@ public class ShopListener implements Listener{
 		// Also rebuild shop displays for any players near this chunk
 		// This ensures displays reappear after chunk unload/load cycles
 		plugin.getShopHandler().rebuildDisplaysInChunk(event.getChunk());
-	}
-	
-	public int getTeleportCooldownRemaining(Player player) {
-		if(plugin.getSettingsConfig().getTeleportCooldown() <= 0){
-			return 0;
-		}
-		Long lastTeleport = playerLastShopTeleport.get(player.getUniqueId());
-		if(lastTeleport != null){
-			long secondsSinceLastTeleport = (System.currentTimeMillis() - lastTeleport) / 1000;
-			int secondsLeft = (int) plugin.getSettingsConfig().getTeleportCooldown() - (int) secondsSinceLastTeleport;
-			if(secondsLeft <= 0){
-				return 0;
-			} else {
-				return secondsLeft;
-			}
-		}
-		return 0;
-	}
-	
-	public void addTeleportCooldown(Player player) {
-		playerLastShopTeleport.put(player.getUniqueId(), System.currentTimeMillis());
 	}
 }

@@ -3,23 +3,23 @@ package com.snowgears.shop;
 import com.snowgears.shop.command.ShopCommand;
 import com.snowgears.shop.config.ItemConfig;
 import com.snowgears.shop.config.SettingsConfig;
+import com.snowgears.shop.db.ShopDatabase;
 import com.snowgears.shop.display.DisplayTagOption;
 import com.snowgears.shop.gui.ShopGUIListener;
-import com.snowgears.shop.handler.LogHandler;
 import com.snowgears.shop.handler.ShopGuiHandler;
 import com.snowgears.shop.handler.ShopHandler;
 import com.snowgears.shop.handler.TransactionHandler;
-import com.snowgears.shop.listener.CreativeSelectionListener;
 import com.snowgears.shop.listener.DisplayListener;
 import com.snowgears.shop.listener.MiscListener;
 import com.snowgears.shop.listener.ShopListener;
 import com.snowgears.shop.manager.PlayerManager;
+import com.snowgears.shop.service.ShopService;
+import com.snowgears.shop.service.ShopServiceProvider;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopCreationUtil;
 import com.snowgears.shop.util.ShopLogger;
-import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
 import com.tcoded.folialib.FoliaLib;
 import com.wonkglorg.minecraft.config.LangManager;
@@ -29,9 +29,9 @@ import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Shop extends JavaPlugin{
@@ -44,15 +44,8 @@ public class Shop extends JavaPlugin{
 	private FoliaLib foliaLib;
 	
 	@Getter
-	private ShopListener shopListener;
-	@Getter
 	private DisplayListener displayListener;
 	private TransactionHandler transactionHandler;
-	@Getter
-	private MiscListener miscListener;
-	@Getter
-	private CreativeSelectionListener creativeSelectionListener;
-	private ShopGUIListener guiListener;
 	
 	@Getter
 	private ShopHandler shopHandler;
@@ -72,8 +65,6 @@ public class Shop extends JavaPlugin{
 	private NamespacedKey signLocationNameSpacedKey;
 	@Getter
 	private NamespacedKey playerUUIDNameSpacedKey;
-	@Getter
-	private LogHandler logHandler;
 	
 	@Getter
 	private SettingsConfig settingsConfig;
@@ -81,6 +72,10 @@ public class Shop extends JavaPlugin{
 	private ItemConfig itemConfig;
 	@Getter
 	private LangManager langManager;
+	@Getter
+	private ShopDatabase database;
+	@Getter
+	private ShopServiceProvider shopServiceProvider;
 	
 	public static boolean loggedDisplayDisabledWarning = false;
 	
@@ -99,6 +94,13 @@ public class Shop extends JavaPlugin{
 		logger.setLogLevel(settingsConfig.getLogLevel());
 		langManager = LangManager.getInstance(this);
 		foliaLib = new FoliaLib(this);
+		try{
+			database = new ShopDatabase(plugin);
+		} catch(Exception e){
+			logger.severe("Unable to load shop database" + e.getMessage());
+			logger.debug("Unable to load shop database", e);
+			immediateShutdown();
+		}
 	}
 	
 	@Override
@@ -110,12 +112,7 @@ public class Shop extends JavaPlugin{
 		
 		shopCreationUtil = new ShopCreationUtil(this);
 		
-		shopListener = new ShopListener(this);
 		transactionHandler = new TransactionHandler(this);
-		miscListener = new MiscListener(this);
-		creativeSelectionListener = new CreativeSelectionListener(this);
-		displayListener = new DisplayListener(this);
-		guiListener = new ShopGUIListener();
 		if(itemConfig.getGambleDisplayItem() == null){
 			itemConfig.setGambleDisplayItem(new ItemStack(Material.DIAMOND));
 		}
@@ -136,13 +133,12 @@ public class Shop extends JavaPlugin{
 		guiHandler = new ShopGuiHandler();
 		shopHandler = new ShopHandler(plugin);
 		//guiHandler.loadIconsAndTitles();
-		logHandler = new LogHandler(plugin, settingsConfig);
 		
-		getServer().getPluginManager().registerEvents(displayListener, this);
-		getServer().getPluginManager().registerEvents(shopListener, this);
-		getServer().getPluginManager().registerEvents(miscListener, this);
-		getServer().getPluginManager().registerEvents(creativeSelectionListener, this);
-		getServer().getPluginManager().registerEvents(guiListener, this);
+		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
+		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
+		getServer().getPluginManager().registerEvents(new MiscListener(this), this);
+		getServer().getPluginManager().registerEvents(new CreativeSelectionListener(this), this);
+		getServer().getPluginManager().registerEvents(new ShopGUIListener(), this);
 		
 		displayListener.startRepeatingDisplayViewTask();
 		
@@ -151,6 +147,10 @@ public class Shop extends JavaPlugin{
 		if(!isMockBukkit){
 			this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
 		}
+		
+		shopServiceProvider = new ShopServiceProvider(this);
+		
+		getServer().getServicesManager().register(ShopService.class, shopServiceProvider, this, ServicePriority.Normal);
 	}
 	
 	/**
@@ -176,27 +176,12 @@ public class Shop extends JavaPlugin{
 		// Save player name cache to ensure no data loss
 		PlayerNameCache.saveToFile();
 		
-		// shutdown the database
-		if(logHandler != null){
-			logHandler.shutdown();
-		}
-		
 		this.logger().info("Disabled Shop " + this.getPluginMeta().getVersion());
 	}
 	
 	public void reload() {
 		this.logger().info("Loading Shop " + this.getPluginMeta().getVersion());
-		
-		HandlerList.unregisterAll(displayListener);
-		HandlerList.unregisterAll(shopListener);
-		HandlerList.unregisterAll(miscListener);
-		HandlerList.unregisterAll(creativeSelectionListener);
-		HandlerList.unregisterAll(guiListener);
 		PlayerManager.reload();
-		plugin.getShopHandler().removeAllDisplays(null);
-		
-		onDisable();
-		onEnable();
 	}
 	
 	private boolean setupEconomy() {
@@ -229,10 +214,8 @@ public class Shop extends JavaPlugin{
 		if(format.contains("[price]")){
 			if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
 				return format.replace("[price]", UtilMethods.formatLongToKString(price, true));
-				//return format.replace("[price]", new DecimalFormat("0.00").format(price).toString());
 			} else if(pricePer){
 				return format.replace("[price]", UtilMethods.formatLongToKString(price, false));
-				//return format.replace("[price]", new DecimalFormat("#.##").format(price).toString());
 			} else {
 				return format.replace("[price]", "" + (int) price);
 			}
@@ -251,14 +234,10 @@ public class Shop extends JavaPlugin{
 			format = format.replace("[name]", settingsConfig.getCurrencyName());
 		}
 		if(format.contains("[price]")){
-			if(settingsConfig.getCurrencyType() == CurrencyType.VAULT)
-			//return format.replace("[price]", new DecimalFormat("0.00").format(price)+"/"+new DecimalFormat("0.00").format(priceSell).toString());
-			{
+			if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
 				return format.replace("[price]",
 						UtilMethods.formatLongToKString(price, true) + "/" + UtilMethods.formatLongToKString(priceSell, true));
-			} else if(pricePer)
-			//return format.replace("[price]", new DecimalFormat("#.##").format(price).toString()+"/"+new DecimalFormat("0.00").format(priceSell).toString());
-			{
+			} else if(pricePer){
 				return format.replace("[price]",
 						UtilMethods.formatLongToKString(price, false) + "/" + UtilMethods.formatLongToKString(priceSell, true));
 			} else {

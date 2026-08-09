@@ -2,6 +2,7 @@ package com.snowgears.shop.manager.player;
 
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
+import com.snowgears.shop.manager.PlayerManager;
 import static com.snowgears.shop.manager.PlayerManager.loadfromFile;
 import static com.snowgears.shop.manager.PlayerManager.saveToFile;
 import com.snowgears.shop.shop.AbstractShop;
@@ -13,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +30,7 @@ public abstract class PlayerProfile{
 	@Getter
 	private final UUID uuid;
 	@Getter
-	private final OfflinePlayer offlinePlayer;
+	protected final OfflinePlayer offlinePlayer;
 	@Getter
 	@Setter
 	private boolean notifyUser;
@@ -253,5 +255,17 @@ public abstract class PlayerProfile{
 	 */
 	public static List<AbstractShop> getShops(UUID uuid) {
 		return Shop.getPlugin().getShopHandler().getShops(uuid);
+	}
+	
+	public static Duration getTeleportCooldownRemaining(UUID uuid) {
+		return PlayerManager.getTeleportCooldownRemaining(uuid);
+	}
+	
+	public static boolean canTeleport(UUID uuid) {
+		return PlayerManager.canTeleport(uuid);
+	}
+	
+	public static void addTeleportCooldown(UUID uuid) {
+		PlayerManager.addTeleportCooldown(uuid);
 	}
 }

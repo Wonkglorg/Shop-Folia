@@ -17,8 +17,10 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class SettingsConfig extends Config{
@@ -85,7 +87,7 @@ public class SettingsConfig extends Config{
 	@Getter
 	private String currencyFormat;
 	@Getter
-	private ArrayList<Object> enabledContainers;
+	private Set<Material> enabledContainers;
 	@Getter
 	private boolean inverseComboShops;
 	@Getter
@@ -221,6 +223,9 @@ public class SettingsConfig extends Config{
 			allowFractionalCurrency = getBoolean("allowFractionalCurrency");
 		}
 		
+		
+		//todo:mjd compare the current currency to the one last logged in the db and update the action if it differs.
+		
 		offlinePurchaseNotificationsEnabled = getBoolean("offlinePurchaseNotifications.enabled");
 		
 		if(offlinePurchaseNotificationsEnabled && getString("logging.type").toUpperCase().equals("OFF")){
@@ -234,7 +239,7 @@ public class SettingsConfig extends Config{
 		currencyName = getString("currency.name");
 		currencyFormat = getString("currency.format", "");
 		
-		enabledContainers = new ArrayList<>();
+		enabledContainers = new HashSet<>();
 		for(String materialString : getStringList("enabledContainers")){
 			try{
 				enabledContainers.add(Material.valueOf(materialString));

@@ -126,7 +126,6 @@ dependencies {
     compileOnly 'com.griefcraft.lwc:LWCX:2.2.7'
     implementation 'com.zaxxer:HikariCP:5.0.1'
     implementation 'org.mariadb.jdbc:mariadb-java-client:2.7.5'
-    implementation 'com.h2database:h2:2.1.214'
 
     //FoliaLib
     implementation 'com.github.technicallycoded:FoliaLib:0.4.4'
