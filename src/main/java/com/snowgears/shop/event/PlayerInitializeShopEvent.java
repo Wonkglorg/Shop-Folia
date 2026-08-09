@@ -8,6 +8,9 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.NonNull;
 
+/**
+ * Called during shop initialisation with items. currently initializing item will be null at the time of calling use {@link PlayerPostInitializeShopEvent} if access to the item being set for the shop is required
+ */
 public class PlayerInitializeShopEvent extends Event implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

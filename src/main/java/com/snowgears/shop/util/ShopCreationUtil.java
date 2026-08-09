@@ -1,11 +1,12 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.config.PlayerShopsConfig;
+import com.snowgears.shop.migrate.PlayerShopsConfig;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerInitializeShopEvent;
+import com.snowgears.shop.event.PlayerPostInitializeShopEvent;
 import static com.snowgears.shop.manager.PlayerManager.cleanupShopCreationProcess;
 import static com.snowgears.shop.manager.PlayerManager.getShopCreationProcess;
 import com.snowgears.shop.manager.player.PlayerProfile;
@@ -224,8 +225,6 @@ public class ShopCreationUtil{
 		return shop;
 	}
 	
-
-	
 	public void sendCreationSuccess(Player player, AbstractShop shop) {
 		if(shop.getDisplay() != null){
 			shop.getDisplay().spawn(player);
@@ -239,7 +238,7 @@ public class ShopCreationUtil{
 		// TODO: We should move this save trigger elsewhere, it doesn't belong in `sendCreationSuccess`,
 		//       it is currently non-intuitive that this is the method to save a shop when it is created.
 		//       We should move it elsewhere.
-		PlayerShopsConfig.saveShops(shop.getOwnerUUID(), true);
+		plugin.getDatabase().saveShops(shop.getOwnerUUID(), true);
 		// Cleanup the shop creation process
 		cleanupShopCreationProcess(player);
 	}
@@ -306,14 +305,11 @@ public class ShopCreationUtil{
 			}
 		}
 		
-		try{
-			//stop the edge case of shulker boxes being able to be used in shulker chests
-			if(Tag.SHULKER_BOXES.isTagged(item.getType())){
-				if(shop.getChestLocation().getBlock().getState() instanceof ShulkerBox){
-					return false;
-				}
+		//stop the edge case of shulker boxes being able to be used in shulker chests
+		if(Tag.SHULKER_BOXES.isTagged(item.getType())){
+			if(shop.getChestLocation().getBlock().getState() instanceof ShulkerBox){
+				return false;
 			}
-		} catch(NoSuchFieldError e){
 		}
 		
 		if(!itemsCanBeInitialized(player, item, barterItem)){
@@ -321,7 +317,7 @@ public class ShopCreationUtil{
 			return false;
 		}
 		
-		if(shop.getItemStack() == null && item != null){
+		if(shop.getItemStack() == null){
 			
 			PlayerInitializeShopEvent e = new PlayerInitializeShopEvent(player, shop);
 			Bukkit.getServer().getPluginManager().callEvent(e);
@@ -338,6 +334,7 @@ public class ShopCreationUtil{
 				process.setStep(ShopCreationProcess.ChatCreationStep.SIGN_BARTER_ITEM);
 				process.displayFloatingText(shop.getType() + ".initializeBarter");
 			} else if(shop.getType() != ShopType.BARTER){
+				Bukkit.getServer().getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
 				return true;
 			}
 		}
@@ -351,6 +348,7 @@ public class ShopCreationUtil{
 			}
 			
 			shop.setSecondaryItemStack(barterItem);
+			Bukkit.getServer().getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
 			return true;
 		}
 		return false;

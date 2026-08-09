@@ -1,21 +1,17 @@
 package com.snowgears.shop.handler;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.config.PlayerShopsConfig;
-import static com.snowgears.shop.config.PlayerShopsConfig.SHOPS_DATA_FOLDER;
-import static com.snowgears.shop.config.PlayerShopsConfig.saveShops;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.display.Display;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.manager.PlayerManager;
+import static com.snowgears.shop.migrate.PlayerShopsConfig.SHOPS_DATA_FOLDER;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.util.DisplayUtil;
 import com.snowgears.shop.util.ItemListType;
-import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.UtilMethods;
-import lombok.Getter;
 import net.minecraft.server.network.ServerPlayerConnection;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -36,10 +32,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -52,7 +48,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.stream.Stream;
 
 public class ShopHandler{
 	
@@ -70,8 +65,7 @@ public class ShopHandler{
 	//shops that still need to calculate their facing direction based on sign are considered "unloaded"
 	//we will be loading these shops at time of chunkload and resaving them so they are saved with the 'facing' variable
 	private ConcurrentHashMap<String, List<Location>> unloadedShopsByChunk = new ConcurrentHashMap<>();
-	@Getter
-	private static final UUID adminUUID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+	
 	private BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 	
 	private ArrayList<ItemStack> itemListItems = new ArrayList<>();
@@ -199,6 +193,7 @@ public class ShopHandler{
 	}
 	
 	//This method should only be used by AbstractShop object to delete
+	@Internal
 	public void removeShop(AbstractShop shop, boolean forceSave) {
 		boolean changed = false;
 		if(allShops.containsKey(shop.getSignLocation())){
@@ -245,7 +240,7 @@ public class ShopHandler{
 			// we only hold off on doing this if we are bulk deleting shops for users to prevent repeated saves.
 			// The forceSave flag should rarely be `false`, and you should be careful when setting it to false.
 			if(forceSave){
-				PlayerShopsConfig.saveShops(shop.getOwnerUUID(), true);
+				plugin.getDatabase().saveShops(shop.getOwnerUUID(), true);
 			}
 		}
 	}
@@ -834,54 +829,26 @@ public class ShopHandler{
 				}
 			}
 			
-			AtomicInteger numShopsLoaded = new AtomicInteger(0);
-			PlayerNameCache.initialize();
+			plugin.getDatabase().getShops().thenAccept(shops -> {
+				AtomicInteger loadedShops = new AtomicInteger();
+				for(var shop : shops){
+					Shop.getPlugin().getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
+						loadedShops.getAndIncrement();
+						try{
+							boolean loadSuccess = shop.load();
+							if(loadSuccess){
+								addShop(shop);
+							} else {
+								plugin.logger().warning("Unable to load shop " + shop.getId());
+							}
+						} catch(Exception e){
+							plugin.logger().severe("Unable to load shop " + shop);
+						}
+					});
+				}
+				Shop.getPlugin().logger().log(Level.INFO, "Loaded " + loadedShops + " Shops!");
+			});
 			
-			try(Stream<Path> walk = Files.walk(SHOPS_DATA_FOLDER)){
-				walk.forEach(path -> {
-					if(!Files.isRegularFile(path)){
-						return;
-					}
-					if(!path.toString().endsWith(".yml")){
-						return;
-					}
-					
-					UUID playerUUID = null;
-					String fileName = path.getFileName().toString().replace(".yml", "");
-					try{
-						//all files are saved as UUID.yml except for admin shops which are admin.yml
-						if(!fileName.equals("admin")){
-							playerUUID = UUID.fromString(fileName);
-						} else {
-							playerUUID = adminUUID;
-						}
-						PlayerShopsConfig config = new PlayerShopsConfig(SHOPS_DATA_FOLDER.resolve(fileName + ".yml"));
-						for(var shop : config.loadShops()){
-							numShopsLoaded.incrementAndGet();
-							Shop.getPlugin().getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
-								try{
-									boolean loadSuccess = shop.load();
-									if(loadSuccess){
-										addShop(shop);
-									} else {
-										plugin.logger().warning("Unable to load shop " + shop.getId());
-									}
-								} catch(Exception e){
-									plugin.logger().severe("Unable to load shop " + shop + " in " + path.getFileName());
-								}
-							});
-						}
-						if(settingsConfig.isDebugForceResaveAll()){
-							saveShops(playerUUID, true);
-						}
-					} catch(IllegalArgumentException iae){
-						plugin.logger().severe("Unable to load file: '" + path + "' '" + path.getFileName() + "' is not a valid uuid!");
-					}
-				});
-			} catch(IOException e){
-				throw new RuntimeException(e);
-			}
-			Shop.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " Shops!");
 			List<AbstractShop> shops = getAllShops();
 			for(var hook : plugin.getShopServiceProvider().getShopLoadHooks()){
 				hook.accept(shops);
@@ -893,26 +860,15 @@ public class ShopHandler{
 		return settingsConfig.getEnabledContainers().contains(b.getType());
 	}
 	
-	public static int saveAllShops() {
+	public static void saveAllShops() {
 		Set<UUID> allPlayersWithShops = new HashSet<>();
 		for(AbstractShop shop : Shop.getPlugin().getShopHandler().getAllShops()){
 			allPlayersWithShops.add(shop.getOwnerUUID());
 		}
 		
-		int numberUpdated = 0;
-		int playersWithUpdate = 0;
 		for(UUID player : allPlayersWithShops){
-			int shopsUpdated = saveShops(player);
-			
-			if(shopsUpdated > 0){
-				numberUpdated += shopsUpdated;
-				playersWithUpdate++;
-			}
+			Shop.getPlugin().getDatabase().saveShops(player, false);
 		}
-		if(playersWithUpdate > 0){
-			Shop.getPlugin().logger().info("Saved " + playersWithUpdate + " Player Shop file updates to disk");
-		}
-		return numberUpdated;
 	}
 	
 	public boolean passesItemListCheck(ItemStack is) {

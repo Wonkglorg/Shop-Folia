@@ -16,13 +16,22 @@ public final class ItemStackJsonCodec {
 
     private ItemStackJsonCodec() {
     }
-
+    
     public static String serialize(ItemStack itemStack) {
         if (itemStack == null) {
             return null;
         }
-
-        Map<String, Object> data = itemStack.serialize();
+        
+        ItemStack item = itemStack.clone();
+        item.setAmount(1);
+        
+        Map<String, Object> data = item.serialize();
+        
+        //those fields are unnecessary in the database, no need to store them
+        data.remove("DataVersion");
+        data.remove("count");
+        data.remove("schema_version");
+        
         return GSON.toJson(data);
     }
 
@@ -38,6 +47,10 @@ public final class ItemStackJsonCodec {
                 element,
                 Map.class
         );
+        
+
+        //todo:mjd check if this is needed or not to deserialize
+        //data.put("count", 1);
 
         return ItemStack.deserialize(data);
     }

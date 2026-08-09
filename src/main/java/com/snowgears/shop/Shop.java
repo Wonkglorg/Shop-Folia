@@ -13,11 +13,11 @@ import com.snowgears.shop.listener.DisplayListener;
 import com.snowgears.shop.listener.MiscListener;
 import com.snowgears.shop.listener.ShopListener;
 import com.snowgears.shop.manager.PlayerManager;
+import com.snowgears.shop.migrate.PlayerShopsConfig;
 import com.snowgears.shop.service.ShopService;
 import com.snowgears.shop.service.ShopServiceProvider;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
-import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopCreationUtil;
 import com.snowgears.shop.util.ShopLogger;
 import com.snowgears.shop.util.UtilMethods;
@@ -94,13 +94,6 @@ public class Shop extends JavaPlugin{
 		logger.setLogLevel(settingsConfig.getLogLevel());
 		langManager = LangManager.getInstance(this);
 		foliaLib = new FoliaLib(this);
-		try{
-			database = new ShopDatabase(plugin);
-		} catch(Exception e){
-			logger.severe("Unable to load shop database" + e.getMessage());
-			logger.debug("Unable to load shop database", e);
-			immediateShutdown();
-		}
 	}
 	
 	@Override
@@ -109,6 +102,8 @@ public class Shop extends JavaPlugin{
 		
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
+		
+		initializeDatabase();
 		
 		shopCreationUtil = new ShopCreationUtil(this);
 		
@@ -130,11 +125,17 @@ public class Shop extends JavaPlugin{
 				return;
 			}
 		}
+		
+		shopServiceProvider = new ShopServiceProvider(this);
+		
+		getServer().getServicesManager().register(ShopService.class, shopServiceProvider, this, ServicePriority.Normal);
+		
 		guiHandler = new ShopGuiHandler();
 		shopHandler = new ShopHandler(plugin);
 		//guiHandler.loadIconsAndTitles();
 		
-		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
+		displayListener = new DisplayListener(this);
+		getServer().getPluginManager().registerEvents(displayListener, this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
 		getServer().getPluginManager().registerEvents(new MiscListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopGUIListener(), this);
@@ -146,10 +147,22 @@ public class Shop extends JavaPlugin{
 		if(!isMockBukkit){
 			this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
 		}
-		
-		shopServiceProvider = new ShopServiceProvider(this);
-		
-		getServer().getServicesManager().register(ShopService.class, shopServiceProvider, this, ServicePriority.Normal);
+	}
+	
+	private void initializeDatabase() {
+		try{
+			database = new ShopDatabase(plugin);
+			if(settingsConfig.isMigrateOldData()){
+				logger.info("Migrating Legacy files to database!");
+				database.addShops(PlayerShopsConfig.loadLegacyShops());
+				logger.info("Finished Migrating files to database!");
+				settingsConfig.setMigrateOldData(false);
+			}
+		} catch(Exception e){
+			logger.severe("Unable to load shop database" + e.getMessage());
+			logger.debug("Unable to load shop database", e);
+			immediateShutdown();
+		}
 	}
 	
 	/**
@@ -171,9 +184,6 @@ public class Shop extends JavaPlugin{
 		if(shopHandler != null){
 			ShopHandler.saveAllShops();
 		}
-		
-		// Save player name cache to ensure no data loss
-		PlayerNameCache.saveToFile();
 		
 		this.logger().info("Disabled Shop " + this.getPluginMeta().getVersion());
 	}

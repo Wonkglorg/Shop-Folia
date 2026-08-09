@@ -146,6 +146,8 @@ public class SettingsConfig extends Config{
 	private int debugShopCreateCooldown;
 	@Getter
 	private boolean debugForceResaveAll;
+	@Getter
+	private boolean migrateOldData;
 	
 	public SettingsConfig() {
 		super(Shop.getPlugin(), Path.of("config.yml"));
@@ -220,7 +222,6 @@ public class SettingsConfig extends Config{
 			allowFractionalCurrency = getBoolean("allowFractionalCurrency");
 		}
 		
-		
 		//todo:mjd compare the current currency to the one last logged in the db and update the action if it differs.
 		
 		offlinePurchaseNotificationsEnabled = getBoolean("offlinePurchaseNotifications.enabled");
@@ -283,6 +284,7 @@ public class SettingsConfig extends Config{
 		debugTransactionDebugLogs = getBoolean("debug.transactionDebugLogs");
 		debugShopCreateCooldown = getInt("debug.shopCreateCooldown");
 		debugForceResaveAll = getBoolean("debug.forceResaveAll");
+		migrateOldData = getBoolean("debug.migrateOldData");
 	}
 	
 	public String getCreationWord(CreationWord wordKey) {
@@ -291,5 +293,10 @@ public class SettingsConfig extends Config{
 	
 	public ShopAction getShopAction(ShopClickType type) {
 		return clickTypeActionMap.get(type);
+	}
+	
+	public void setMigrateOldData(boolean migrateOldData) {
+		this.migrateOldData = migrateOldData;
+		set("debug.migrateOldData", migrateOldData);
 	}
 }

@@ -183,6 +183,8 @@ tasks.named("shadowJar") {
 
     destinationDirectory.set(file(jarOutputDir))
 
+    relocate("com.tcoded.folialib", "com.snowgears.shop.lib.folialib")
+
     doLast {
         println("Shadow jar generated at: ${archiveFile.get().asFile.absolutePath}")
     }

@@ -4,15 +4,17 @@ import com.snowgears.shop.Shop;
 import com.snowgears.shop.util.EconomyUtils;
 import com.snowgears.shop.util.InventoryUtils;
 import com.snowgears.shop.util.ShopMessage;
+import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 
 import java.util.UUID;
 
+@Getter
 public class ComboShop extends AbstractShop{
 	
-	private double priceBuy;
-	private double priceSell;
+	private final double priceBuy;
+	private final double priceSell;
 	
 	public ComboShop(Location signLoc, UUID player, double pri, double priSell, int amt, Boolean admin, BlockFace facing) {
 		super(signLoc, player, pri, amt, admin, facing);
@@ -34,14 +36,6 @@ public class ComboShop extends AbstractShop{
 	
 	public String getPriceComboString() {
 		return Shop.getPlugin().getPriceComboString(this.price, this.priceSell, false);
-	}
-	
-	public double getPriceBuy() {
-		return priceBuy;
-	}
-	
-	public double getPriceSell() {
-		return priceSell;
 	}
 	
 	@Override

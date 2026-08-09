@@ -2,6 +2,10 @@ package com.snowgears.shop.listener;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayTagOption;
+import com.snowgears.shop.event.PlayerDestroyShopEvent;
+import com.snowgears.shop.event.PlayerExchangeShopEvent;
+import com.snowgears.shop.event.PlayerGambleShopEvent;
+import com.snowgears.shop.event.PlayerPostInitializeShopEvent;
 import com.snowgears.shop.manager.PlayerManager;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
@@ -43,9 +47,9 @@ import java.util.concurrent.TimeUnit;
 
 public class ShopListener implements Listener{
 	
-	private Shop plugin;
+	private final Shop plugin;
 	private final LangManager lang;
-	private HashMap<UUID, OfflineTransactions> transactionsWhileOffline = new HashMap<>();
+	private final HashMap<UUID, OfflineTransactions> transactionsWhileOffline = new HashMap<>();
 	
 	public ShopListener(Shop instance) {
 		plugin = instance;
@@ -339,5 +343,27 @@ public class ShopListener implements Listener{
 		// Also rebuild shop displays for any players near this chunk
 		// This ensures displays reappear after chunk unload/load cycles
 		plugin.getShopHandler().rebuildDisplaysInChunk(event.getChunk());
+	}
+	
+	@EventHandler
+	public void destroyShop(PlayerDestroyShopEvent event) {
+		plugin.getDatabase().removeShop(event.getShop());
+	}
+	
+	@EventHandler
+	public void newShop(PlayerPostInitializeShopEvent event) {
+		plugin.getDatabase().addShop(event.getShop());
+	}
+	
+	@EventHandler
+	public void logShopPurchase(PlayerExchangeShopEvent event) {
+		AbstractShop shop = event.getShop();
+		plugin.getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), event.getPlayer().getUniqueId(), 1, null);
+	}
+	
+	@EventHandler
+	public void logShopGamble(PlayerGambleShopEvent event) {
+		AbstractShop shop = event.getShop();
+		plugin.getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), event.getPlayer().getUniqueId(), 1, event.getGambleItem());
 	}
 }

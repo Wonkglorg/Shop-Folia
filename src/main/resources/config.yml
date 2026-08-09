@@ -332,4 +332,6 @@ debug:
   #                  Can be helpful if you have very old nbt data or items that are incompatible in player files.
   # Note: MAKE BACKUP BEFORE USING THIS!
   forceResaveAll: false
+  # If old data should be migrated
+  migrateOldData: false
 

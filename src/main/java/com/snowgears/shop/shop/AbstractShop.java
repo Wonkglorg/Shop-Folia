@@ -1,5 +1,6 @@
 package com.snowgears.shop.shop;
 
+import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.AbstractDisplay;
@@ -107,7 +108,7 @@ public abstract class AbstractShop{
 		fakeSign = false;
 		
 		if(isAdmin){
-			owner = Shop.getPlugin().getShopHandler().getAdminUUID();
+			owner = Constants.getAdminUUID();
 			stock = Integer.MAX_VALUE;
 			shopState = OK;
 		}
@@ -345,7 +346,7 @@ public abstract class AbstractShop{
 	public void setAdmin(boolean isAdmin) {
 		this.isAdmin = isAdmin;
 		if(isAdmin){
-			this.owner = Shop.getPlugin().getShopHandler().getAdminUUID();
+			this.owner = Constants.getAdminUUID();
 		}
 	}
 	

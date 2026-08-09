@@ -2,6 +2,7 @@ package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.event.PlayerExchangeShopEvent;
+import com.snowgears.shop.event.PlayerGambleShopEvent;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
 import com.snowgears.shop.shop.GambleShop;
@@ -204,13 +205,24 @@ public class Transaction{
 		}
 		
 		// Check if any other plugins want to cancel the transaction
-		PlayerExchangeShopEvent e = new PlayerExchangeShopEvent(player, shop);
+		PlayerExchangeShopEvent e = new PlayerExchangeShopEvent(player,shop);
 		Bukkit.getPluginManager().callEvent(e);
 		if(e.isCancelled()){
 			if(TX_DEBUG_LOGGING){
 				System.out.println("!!! CANCELLED because of plugin hooking into shop!");
 			}
 			return this.setError(TransactionError.CANCELLED);
+		}
+		
+		if(shop.getType() == ShopType.GAMBLE){
+			PlayerGambleShopEvent gambleEvent = new PlayerGambleShopEvent(player, shop, itemBeingSold);
+			Bukkit.getPluginManager().callEvent(gambleEvent);
+			if(gambleEvent.isCancelled()){
+				if(TX_DEBUG_LOGGING){
+					System.out.println("!!! CANCELLED because of plugin hooking into shop!");
+				}
+				return this.setError(TransactionError.CANCELLED);
+			}
 		}
 		
 		// There were no errors, so we are good to proceed!

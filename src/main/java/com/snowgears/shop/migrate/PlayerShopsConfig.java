@@ -1,5 +1,6 @@
-package com.snowgears.shop.config;
+package com.snowgears.shop.migrate;
 
+import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.manager.player.PlayerProfile;
@@ -24,7 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 /**
  * Represents a players shops in form of a yml config.
@@ -43,7 +46,65 @@ public class PlayerShopsConfig extends Config{
 		super(path);
 	}
 	
-	public List<AbstractShop> loadShops() {
+	public static List<AbstractShop> loadLegacyShops() {
+		List<AbstractShop> shops = new ArrayList<>();
+		if(!Files.exists(SHOPS_DATA_FOLDER)){
+			try{
+				Files.createDirectories(SHOPS_DATA_FOLDER);
+			} catch(IOException e){
+				Shop.getPlugin().logger().severe("Unable to create shop directory." + e.getMessage());
+				return shops;
+			}
+		}
+		
+		AtomicInteger numShopsLoaded = new AtomicInteger(0);
+		
+		try(Stream<Path> walk = Files.walk(SHOPS_DATA_FOLDER)){
+			walk.forEach(path -> {
+				if(!Files.isRegularFile(path)){
+					return;
+				}
+				if(!path.toString().endsWith(".yml")){
+					return;
+				}
+				
+				UUID playerUUID = null;
+				String fileName = path.getFileName().toString().replace(".yml", "");
+				try{
+					//all files are saved as UUID.yml except for admin shops which are admin.yml
+					if(!fileName.equals("admin")){
+						playerUUID = UUID.fromString(fileName);
+					} else {
+						playerUUID = Constants.getAdminUUID();
+					}
+					PlayerShopsConfig config = new PlayerShopsConfig(SHOPS_DATA_FOLDER.resolve(fileName + ".yml"));
+					for(var shop : config.loadShops()){
+						numShopsLoaded.incrementAndGet();
+						Shop.getPlugin().getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
+							try{
+								boolean loadSuccess = shop.load();
+								if(loadSuccess){
+									shops.add(shop);
+								} else {
+									Shop.getPlugin().logger().warning("Unable to load shop " + shop.getId());
+								}
+							} catch(Exception e){
+								Shop.getPlugin().logger().severe("Unable to load shop " + shop + " in " + path.getFileName());
+							}
+						});
+					}
+				} catch(IllegalArgumentException iae){
+					Shop.getPlugin().logger().severe("Unable to load file: '" + path + "' '" + path.getFileName() + "' is not a valid uuid!");
+				}
+			});
+		} catch(IOException e){
+			throw new RuntimeException(e);
+		}
+		Shop.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " Shops!");
+		return shops;
+	}
+	
+	private List<AbstractShop> loadShops() {
 		if(!contains("shops")){
 			return new ArrayList<>();
 		}
@@ -70,7 +131,7 @@ public class PlayerShopsConfig extends Config{
 				}
 				boolean isAdmin;
 				if(shopOwner.equals("admin")){
-					owner = Shop.getPlugin().getShopHandler().getAdminUUID();
+					owner = Constants.getAdminUUID();
 					isAdmin = true;
 				} else {
 					owner = UUID.fromString(shopOwner);
@@ -153,15 +214,15 @@ public class PlayerShopsConfig extends Config{
 		return shops;
 	}
 	
-	public static int saveShops(final UUID uuid) {return saveShops(uuid, false);}
+	public int saveShops(final UUID uuid) {return saveShops(uuid, false);}
 	
-	public static int saveShops(final UUID uuid, boolean force) {
+	public int saveShops(final UUID uuid, boolean force) {
 		// Check if any of the players shops want to be saved
 		Shop plugin = Shop.getPlugin();
 		if(plugin.isImmediateShutdown()){
 			return 0;
 		}
-		boolean isAdminShops = uuid.equals(plugin.getShopHandler().getAdminUUID());
+		boolean isAdminShops = uuid.equals(Constants.getAdminUUID());
 		String playerName = isAdminShops ? "admin" : plugin.getServer().getOfflinePlayer(uuid).getName();
 		List<AbstractShop> shops = PlayerProfile.getShops(uuid);
 		
@@ -178,12 +239,7 @@ public class PlayerShopsConfig extends Config{
 		}
 		
 		// There are shops that need to be saved, so go ahead and save the file!
-		logger.debug("attempting to save shops for player " +
-		             playerName +
-		             " (" +
-		             uuid +
-		             ") isAdmin: " +
-		             (uuid == plugin.getShopHandler().getAdminUUID()));
+		logger.debug("attempting to save shops for player " + playerName + " (" + uuid + ") isAdmin: " + (uuid.equals(Constants.getAdminUUID())));
 		
 		Path tempFile = SHOPS_DATA_FOLDER.resolve(isAdminShops ? playerName : uuid + ".tmp");
 		Path file = SHOPS_DATA_FOLDER.resolve(isAdminShops ? playerName : uuid + ".yml");
