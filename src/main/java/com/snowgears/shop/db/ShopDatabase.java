@@ -42,16 +42,16 @@ import java.util.logging.Level;
 public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	private static final String SHOP_INSERT_SQL = """
 			INSERT INTO shops
-			(shop_uuid, owner_uuid, item, price,price_combo_sell, amount,last_known_stock_count, active, shop_type,sign_facing, display_type,fake_sign, barter_item, timestamp, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
-			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+			(shop_uuid, owner_uuid, item, price,price_combo_sell, amount,last_known_stock_count, shop_type,sign_facing, display_type,fake_sign, barter_item, timestamp, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
+			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 			ON CONFLICT(shop_uuid, owner_uuid) DO NOTHING;
 			""";
 	private static final String SHOP_SELECT_SQL = """
-			SELECT shop_uuid, owner_uuid, item, price,price_combo_sell, amount, last_known_stock_count, active, shop_type,sign_facing, display_type, fake_sign, barter_item, timestamp, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z FROM shops;
+			SELECT shop_uuid, owner_uuid, item, price,price_combo_sell, amount, last_known_stock_count, destroyed_time, shop_type,sign_facing, display_type, fake_sign, barter_item, timestamp, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z FROM shops;
 			""";
 	
 	private static final String SHOP_UPDATE_SQL = """
-			UPDATE shops SET owner_uuid = ?, item = ?, price = ?, price_combo_sell = ?, amount = ?, last_known_stock_count = ?, active = ?, shop_type = ?, sign_facing = ?, display_type = ?, fake_sign = ?, barter_item = ?, timestamp = ?, item_type = ?, item_barter_type = ?, shop_world = ?, shop_x = ?, shop_y = ?, shop_z = ? WHERE shop_uuid = ?
+			UPDATE shops SET owner_uuid = ?, item = ?, price = ?, price_combo_sell = ?, amount = ?, last_known_stock_count = ?, shop_type = ?, sign_facing = ?, display_type = ?, fake_sign = ?, barter_item = ?, timestamp = ?, item_type = ?, item_barter_type = ?, shop_world = ?, shop_x = ?, shop_y = ?, shop_z = ? WHERE shop_uuid = ?
 			""";
 	
 	private final Shop plugin;
@@ -72,6 +72,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	public void addShop(AbstractShop shop) {
 		scheduler.runAsync(_ -> {
 			try(var ps = getConnection().prepareStatement(SHOP_INSERT_SQL)){
+				if(shop.getFacing() == null){
+					PluginLogger.error("Shop " + shop + "is missing a facing direction!");
+					return;
+				}
 				insertShopValues(shop, ps);
 				ps.executeUpdate();
 			} catch(SQLException e){
@@ -92,6 +96,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				
 				try{
 					for(AbstractShop shop : shops){
+						if(shop.getFacing() == null){
+							PluginLogger.error("Shop " + shop + "is missing a facing direction!");
+							continue;
+						}
 						insertShopValues(shop, ps);
 						ps.addBatch();
 					}
@@ -177,20 +185,22 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			ps.setDouble(4, shop.getType() == ShopType.COMBO ? ((ComboShop) shop).getPriceSell() : 0);
 			ps.setInt(5, shop.getAmount());
 			ps.setInt(6, shop.getStock());
-			ps.setInt(7, 1);
-			ps.setString(8, shop.getType().toString());
-			ps.setString(9, shop.getFacing().toString());
-			ps.setString(10, shop.getDisplay() != null ? shop.getDisplay().getType().toString() : DisplayType.NONE.toString());
-			ps.setInt(11, shop.isFakeSign() ? 1 : 0);
-			ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
-			ps.setLong(13, System.currentTimeMillis());
-			ps.setString(14, mainStack.getType().toString());
-			ps.setString(15, barterStack != null ? barterStack.getType().toString() : null);
-			ps.setString(16, signLocation.getWorld().getName());
-			ps.setInt(17, signLocation.getBlockX());
-			ps.setInt(18, signLocation.getBlockY());
-			ps.setInt(19, signLocation.getBlockZ()); // The shop UUID identifies the row to update.
-			ps.setString(20, shop.getId().toString());
+			ps.setString(7, shop.getType().toString());
+			ps.setString(8, shop.getFacing().toString());
+			ps.setString(9,
+					(shop.getDisplay() != null && shop.getDisplay().getType() != null)
+					? shop.getDisplay().getType().toString()
+					: DisplayType.NONE.toString());
+			ps.setInt(10, shop.isFakeSign() ? 1 : 0);
+			ps.setString(11, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+			ps.setLong(12, System.currentTimeMillis());
+			ps.setString(13, mainStack.getType().toString());
+			ps.setString(14, barterStack != null ? barterStack.getType().toString() : null);
+			ps.setString(15, signLocation.getWorld().getName());
+			ps.setInt(16, signLocation.getBlockX());
+			ps.setInt(17, signLocation.getBlockY());
+			ps.setInt(18, signLocation.getBlockZ()); // The shop UUID identifies the row to update.
+			ps.setString(19, shop.getId().toString());
 			ps.executeUpdate();
 		} catch(SQLException e){
 			PluginLogger.error("Error while updating shop " + shop.getId(), e);
@@ -272,19 +282,21 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setDouble(5, shop.getType() == ShopType.COMBO ? ((ComboShop) shop).getPriceSell() : 0);
 		ps.setInt(6, shop.getAmount());
 		ps.setInt(7, shop.getStock());
-		ps.setInt(8, 1);
-		ps.setString(9, shop.getType().toString());
-		ps.setString(10, shop.getFacing().toString());
-		ps.setString(11, shop.getDisplay().getType().toString());
-		ps.setInt(12, shop.isFakeSign() ? 1 : 0);
-		ps.setString(13, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
-		ps.setLong(14, System.currentTimeMillis());
-		ps.setString(15, mainStack.getType().toString());
-		ps.setString(16, barterStack != null ? barterStack.getType().toString() : null);
-		ps.setString(17, signLocation.getWorld().getName());
-		ps.setInt(18, signLocation.getBlockX());
-		ps.setInt(19, signLocation.getBlockY());
-		ps.setInt(20, signLocation.getBlockZ());
+		ps.setString(8, shop.getType().toString());
+		ps.setString(9, shop.getFacing().toString());
+		ps.setString(10,
+				(shop.getDisplay() != null && shop.getDisplay().getType() != null)
+				? shop.getDisplay().getType().toString()
+				: DisplayType.NONE.toString());
+		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
+		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+		ps.setLong(13, System.currentTimeMillis());
+		ps.setString(14, mainStack.getType().toString());
+		ps.setString(15, barterStack != null ? barterStack.getType().toString() : null);
+		ps.setString(16, signLocation.getWorld().getName());
+		ps.setInt(17, signLocation.getBlockX());
+		ps.setInt(18, signLocation.getBlockY());
+		ps.setInt(19, signLocation.getBlockZ());
 	}
 	
 	public void addPlayer(UUID uuid, String name) {
@@ -326,11 +338,12 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		scheduler.runAsync(_ -> {
 			try(var ps = getConnection().prepareStatement("""
 					UPDATE shops
-					SET active = 0
+					SET destroyed_time = ?
 					WHERE shop_uuid = ?
 					""")){
 				
-				ps.setString(1, shop.getId().toString());
+				ps.setLong(1, System.currentTimeMillis());
+				ps.setString(2, shop.getId().toString());
 				ps.execute();
 				
 			} catch(SQLException e){

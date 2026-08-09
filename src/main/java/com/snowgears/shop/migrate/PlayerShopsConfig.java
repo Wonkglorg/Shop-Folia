@@ -67,31 +67,12 @@ public class PlayerShopsConfig extends Config{
 				if(!path.toString().endsWith(".yml")){
 					return;
 				}
-				
-				UUID playerUUID = null;
 				String fileName = path.getFileName().toString().replace(".yml", "");
 				try{
-					//all files are saved as UUID.yml except for admin shops which are admin.yml
-					if(!fileName.equals("admin")){
-						playerUUID = UUID.fromString(fileName);
-					} else {
-						playerUUID = Constants.getAdminUUID();
-					}
 					PlayerShopsConfig config = new PlayerShopsConfig(SHOPS_DATA_FOLDER.resolve(fileName + ".yml"));
 					for(var shop : config.loadShops()){
 						numShopsLoaded.incrementAndGet();
-						Shop.getPlugin().getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
-							try{
-								boolean loadSuccess = shop.load();
-								if(loadSuccess){
-									shops.add(shop);
-								} else {
-									Shop.getPlugin().logger().warning("Unable to load shop " + shop.getId());
-								}
-							} catch(Exception e){
-								Shop.getPlugin().logger().severe("Unable to load shop " + shop + " in " + path.getFileName());
-							}
-						});
+						shops.add(shop);
 					}
 				} catch(IllegalArgumentException iae){
 					Shop.getPlugin().logger().severe("Unable to load file: '" + path + "' '" + path.getFileName() + "' is not a valid uuid!");

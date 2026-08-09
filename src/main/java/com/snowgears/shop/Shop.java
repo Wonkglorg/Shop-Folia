@@ -103,8 +103,6 @@ public class Shop extends JavaPlugin{
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
 		
-		initializeDatabase();
-		
 		shopCreationUtil = new ShopCreationUtil(this);
 		
 		transactionHandler = new TransactionHandler(this);
@@ -130,8 +128,11 @@ public class Shop extends JavaPlugin{
 		
 		getServer().getServicesManager().register(ShopService.class, shopServiceProvider, this, ServicePriority.Normal);
 		
-		guiHandler = new ShopGuiHandler();
 		shopHandler = new ShopHandler(plugin);
+		initializeDatabase();
+		shopHandler.loadShops();
+		
+		guiHandler = new ShopGuiHandler();
 		//guiHandler.loadIconsAndTitles();
 		
 		displayListener = new DisplayListener(this);

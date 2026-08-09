@@ -11,7 +11,6 @@ import java.util.Map;
 public final class ItemStackJsonCodec {
 
     private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
             .create();
 
     private ItemStackJsonCodec() {

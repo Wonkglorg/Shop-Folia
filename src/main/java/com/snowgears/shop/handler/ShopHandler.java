@@ -54,24 +54,24 @@ public class ShopHandler{
 	private final Shop plugin;
 	private final SettingsConfig settingsConfig;
 	
-	private ConcurrentHashMap<Location, AbstractShop> allShops = new ConcurrentHashMap<>();
-	private ConcurrentHashMap<UUID, List<Location>> playerShops = new ConcurrentHashMap<>();
-	private ConcurrentHashMap<String, List<Location>> chunkShops = new ConcurrentHashMap<>(); //String key = world_x_z
-	private ConcurrentHashMap<UUID, HashSet<Location>> playersWithActiveShopDisplays = new ConcurrentHashMap<>();
-	private HashSet<UUID> playersProcessingShopDisplays = new HashSet<>();
-	private HashMap<UUID, Location> playersActiveShopDisplayTag = new HashMap<>();
+	private final ConcurrentHashMap<Location, AbstractShop> allShops = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<UUID, List<Location>> playerShops = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, List<Location>> chunkShops = new ConcurrentHashMap<>(); //String key = world_x_z
+	private final ConcurrentHashMap<UUID, HashSet<Location>> playersWithActiveShopDisplays = new ConcurrentHashMap<>();
+	private final HashSet<UUID> playersProcessingShopDisplays = new HashSet<>();
+	private final HashMap<UUID, Location> playersActiveShopDisplayTag = new HashMap<>();
 	
 	//all loading of shops happens async at onEnable()
 	//shops that still need to calculate their facing direction based on sign are considered "unloaded"
 	//we will be loading these shops at time of chunkload and resaving them so they are saved with the 'facing' variable
-	private ConcurrentHashMap<String, List<Location>> unloadedShopsByChunk = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, List<Location>> unloadedShopsByChunk = new ConcurrentHashMap<>();
 	
-	private BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+	private final BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 	
-	private ArrayList<ItemStack> itemListItems = new ArrayList<>();
+	private final ArrayList<ItemStack> itemListItems = new ArrayList<>();
 	
 	// Map to track player last processed locations for movement-based display updates
-	private ConcurrentHashMap<UUID, Location> lastProcessedLocations = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<UUID, Location> lastProcessedLocations = new ConcurrentHashMap<>();
 	
 	// Cache for player connections to avoid expensive reflection calls
 	private ConcurrentHashMap<UUID, ServerPlayerConnection> playerConnectionCache = new ConcurrentHashMap<>();
@@ -84,7 +84,6 @@ public class ShopHandler{
 	public ShopHandler(Shop instance) {
 		plugin = instance;
 		settingsConfig = plugin.getSettingsConfig();
-		loadShops();
 	}
 	
 	public AbstractShop getShop(Location loc) {
