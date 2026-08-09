@@ -69,7 +69,7 @@ public class ShopTransactionsTest extends BaseMockBukkitTest {
         // Shop sign should also show out of stock color/text
         assertEquals("§4§4§l[sell shop]", shop.getSignLines().getFirst());
         // add stock to shop
-        shop.getChestLocation().getChunk().load(true); // chest location is null if chunk is not loaded for MockBukkit
+        shop.getContainerLocation().getChunk().load(true); // chest location is null if chunk is not loaded for MockBukkit
         shop.getInventory().addItem(new ItemStack(Material.DIRT, 8));
         shop.updateStock();
         // Shop sign should now show in stock color/text

@@ -95,7 +95,7 @@ public class ShopMissingBlocksTest extends BaseMockBukkitTest {
         AbstractShop shop = ShopCreationChestTest.createShop(server, getPlugin(), player, world, 12, 65, 12, new org.bukkit.inventory.ItemStack(Material.DIRT), "sell", 8, "1");
         assertNotNull(shop);
         Location signLoc = shop.getSignLocation();
-        assertNotNull(getPlugin().getShopHandler().getShop(signLoc), "Shop should be registered");
+        assertNotNull(getPlugin().getShopmanager().getShopBySign(signLoc), "Shop should be registered");
 
         // Corrupt the sign block so it is no longer a Sign
         world.getBlockAt(signLoc).setType(Material.DIRT);
@@ -105,7 +105,7 @@ public class ShopMissingBlocksTest extends BaseMockBukkitTest {
         shop.updateSign(true);
         server.getScheduler().waitAsyncTasksFinished();
 
-        assertNull(getPlugin().getShopHandler().getShop(signLoc), "Shop should be deleted when updateSign detects non-Sign block at sign location");
+        assertNull(getPlugin().getShopmanager().getShopBySign(signLoc), "Shop should be deleted when updateSign detects non-Sign block at sign location");
         assertTrue(world.getBlockAt(signLoc).getType() == Material.DIRT, "Sign block should remain dirt");
     }
 
@@ -119,7 +119,7 @@ public class ShopMissingBlocksTest extends BaseMockBukkitTest {
         AbstractShop realShop = ShopCreationChestTest.createShop(server, getPlugin(), player, world, 44, 65, 12, new org.bukkit.inventory.ItemStack(Material.DIRT), "sell", 8, "1");
         assertNotNull(realShop);
         Location originalSignLoc = realShop.getSignLocation();
-        assertNotNull(getPlugin().getShopHandler().getShop(originalSignLoc), "Shop should be registered prior to test");
+        assertNotNull(getPlugin().getShopmanager().getShopBySign(originalSignLoc), "Shop should be registered prior to test");
 
         // Spy the real shop and force an exception during the load cycle
         AbstractShop shop = Mockito.spy(realShop);
@@ -128,7 +128,7 @@ public class ShopMissingBlocksTest extends BaseMockBukkitTest {
 
         boolean loaded = shop.load();
         assertFalse(loaded, "Shop.load() should catch unexpected exceptions and return false");
-        assertNull(getPlugin().getShopHandler().getShop(originalSignLoc), "No shop should be registered at the sign location when creation fails");
+        assertNull(getPlugin().getShopmanager().getShopBySign(originalSignLoc), "No shop should be registered at the sign location when creation fails");
     }
 
     @Test
@@ -168,7 +168,7 @@ public class ShopMissingBlocksTest extends BaseMockBukkitTest {
         );
 
         assertNull(created, "ShopCreationUtil.createShop should return null when shop.load() fails due to invalid/mismatched blocks");
-        assertNull(plugin.getShopHandler().getShop(signLoc), "No shop should be registered at the sign location when creation fails");
+        assertNull(plugin.getShopmanager().getShopBySign(signLoc), "No shop should be registered at the sign location when creation fails");
     }
 }
 

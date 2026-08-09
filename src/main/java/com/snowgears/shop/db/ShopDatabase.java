@@ -214,9 +214,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		if(isFakeSign){
 			shop.setFakeSign(true);
 		}
-		
-		// Load the GUI Icon so that it appears when players perform a search, even if the chunks haven't loaded yet.
-		shop.refreshGuiIcon();
 		return shop;
 	}
 	
@@ -349,11 +346,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			                       shop.getType().name().toUpperCase() +
 			                       " shop at (" +
 			                       "x: " +
-			                       shop.getChestLocation().getBlockX() +
+			                       shop.getContainerLocation().getBlockX() +
 			                       " y: " +
-			                       shop.getChestLocation().getBlockY() +
+			                       shop.getContainerLocation().getBlockY() +
 			                       " z: " +
-			                       shop.getChestLocation().getBlockZ() +
+			                       shop.getContainerLocation().getBlockZ() +
 			                       ") item: " +
 			                       ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
 			                       (shop.getSecondaryItemStack() != null ? " barterItem: " +
@@ -365,11 +362,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			                       shop.getType().name().toUpperCase() +
 			                       " shop at (" +
 			                       "x: " +
-			                       shop.getChestLocation().getBlockX() +
+			                       shop.getContainerLocation().getBlockX() +
 			                       " y: " +
-			                       shop.getChestLocation().getBlockY() +
+			                       shop.getContainerLocation().getBlockY() +
 			                       " z: " +
-			                       shop.getChestLocation().getBlockZ() +
+			                       shop.getContainerLocation().getBlockZ() +
 			                       ") item: " +
 			                       ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
 			                       (shop.getSecondaryItemStack() != null ? " barterItem: " +

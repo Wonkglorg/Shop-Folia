@@ -139,7 +139,7 @@ public class PlayerData {
     }
 
     public AbstractShop getShop() {
-        return Shop.getPlugin().getShopHandler().getShop(shopSignLocation);
+        return Shop.getPlugin().getShopmanager().getShopBySign(shopSignLocation);
     }
 
     public GameMode getOldGameMode() {

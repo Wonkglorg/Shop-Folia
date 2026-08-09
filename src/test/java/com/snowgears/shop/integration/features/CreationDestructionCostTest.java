@@ -37,7 +37,7 @@ public class CreationDestructionCostTest extends BaseMockBukkitTest {
         // §cYou do not have the funds required to create this shop.
         assertEquals(2, EconomyUtils.getFunds(player, player.getInventory()), "Player should have 2 emeralds");
         assertEquals("§cYou do not have the funds required to destroy this shop.", waitForNextMessage(player), "Player should be sent dialog after failing to destroy shop");
-        assertNotNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should remain when player cannot afford destruction cost");
+        assertNotNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should remain when player cannot afford destruction cost");
     }
 
     @Test
@@ -57,7 +57,7 @@ public class CreationDestructionCostTest extends BaseMockBukkitTest {
         assertEquals(10, EconomyUtils.getFunds(player, player.getInventory()), "Player should have 10 emeralds");
         assertEquals("§7You have destroyed your selling shop.", waitForNextMessage(player), "Player should be sent dialog after destroying shop sign");
         assertEquals(Material.AIR, world.getBlockAt(shop.getSignLocation()).getType(), "Shop should be destroyed when player can afford destruction cost");
-        assertNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should be destroyed when player can afford destruction cost");
+        assertNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should be destroyed when player can afford destruction cost");
     }
 
     @Test

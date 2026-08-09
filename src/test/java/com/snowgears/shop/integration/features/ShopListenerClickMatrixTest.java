@@ -8,7 +8,6 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -24,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import static org.mockito.ArgumentMatchers.any;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -56,7 +54,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
     private AbstractShop spyAndReplace(AbstractShop real) {
         try {
             // Replace the registered shop in ShopHandler with a spy so we can verify executeClickAction invocations
-            var handler = getPlugin().getShopHandler();
+            var handler = getPlugin().getShopmanager();
             Field f = handler.getClass().getDeclaredField("allShops");
             f.setAccessible(true);
             @SuppressWarnings("unchecked")
@@ -151,7 +149,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         AbstractShop spy = spyAndReplace(shop);
         owner.setSneaking(true);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(owner, Action.RIGHT_CLICK_BLOCK, owner.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -165,7 +163,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         AbstractShop spy = spyAndReplace(shop);
         owner.setSneaking(false);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(owner, Action.LEFT_CLICK_BLOCK, owner.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -182,7 +180,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         PlayerMock stranger = server.addPlayer();
         stranger.setOp(false);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(stranger, Action.RIGHT_CLICK_BLOCK, stranger.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -201,7 +199,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         operator.setOp(false);
         operator.addAttachment(getPlugin(), "shop.operator", true);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(operator, Action.RIGHT_CLICK_BLOCK, operator.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -224,7 +222,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         operator.setOp(false);
         operator.addAttachment(getPlugin(), "shop.operator", true);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(operator, Action.RIGHT_CLICK_BLOCK, operator.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -249,7 +247,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         PlayerMock stranger = server.addPlayer();
         stranger.setOp(false);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(stranger, Action.RIGHT_CLICK_BLOCK, stranger.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -266,7 +264,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         AbstractShop spy = spyAndReplace(shop);
         owner.setSneaking(true);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(owner, Action.LEFT_CLICK_BLOCK, owner.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -282,7 +280,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         owner.setSneaking(true);
         owner.getInventory().setItemInMainHand(new ItemStack(Material.OAK_SIGN));
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(owner, Action.RIGHT_CLICK_BLOCK, owner.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -302,7 +300,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         operator.setOp(false);
         operator.addAttachment(getPlugin(), "shop.operator", true);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(operator, Action.RIGHT_CLICK_BLOCK, operator.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -315,7 +313,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         AbstractShop shop = createInitializedShopAt(new Location(world, 26, 65, 10));
         AbstractShop spy = spyAndReplace(shop);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(owner, Action.RIGHT_CLICK_BLOCK, owner.getInventory().getItemInOffHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.OFF_HAND);
         server.getPluginManager().callEvent(event);
 
@@ -335,7 +333,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         operator.setOp(false);
         operator.addAttachment(getPlugin(), "shop.operator", true);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(operator, Action.RIGHT_CLICK_BLOCK, operator.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -355,7 +353,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         PlayerMock stranger = server.addPlayer();
         stranger.setOp(false);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(stranger, Action.RIGHT_CLICK_BLOCK, stranger.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -373,7 +371,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         PlayerMock stranger = server.addPlayer();
         stranger.setOp(false);
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(stranger, Action.LEFT_CLICK_BLOCK, stranger.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 
@@ -452,7 +450,7 @@ public class ShopListenerClickMatrixTest extends BaseMockBukkitTest {
         // Use real method to trigger VIEW_DETAILS -> printSalesInfo
         when(spy.executeClickAction(any(PlayerInteractEvent.class), any(ShopClickType.class))).thenCallRealMethod();
 
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
         PlayerInteractEvent event = new PlayerInteractEvent(owner, Action.LEFT_CLICK_BLOCK, owner.getInventory().getItemInMainHand(), chestBlock, BlockFace.NORTH, EquipmentSlot.HAND);
         server.getPluginManager().callEvent(event);
 

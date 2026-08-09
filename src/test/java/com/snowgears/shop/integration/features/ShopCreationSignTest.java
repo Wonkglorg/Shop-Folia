@@ -4,7 +4,6 @@ import com.snowgears.shop.Shop;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.testsupport.BaseMockBukkitTest;
-import com.snowgears.shop.util.ShopMessage;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -74,7 +73,7 @@ public class ShopCreationSignTest extends BaseMockBukkitTest {
         assertNull(player.nextMessage());
 
         // Assert shop created and registered
-        AbstractShop shop = plugin.getShopHandler().getShop(signLoc);
+        AbstractShop shop = plugin.getShopmanager().getShopBySign(signLoc);
         assertNotNull(shop, "Shop should be created via sign event");
         assertFalse(shop.isInitialized(), "Shop should not be initialized yet");
 

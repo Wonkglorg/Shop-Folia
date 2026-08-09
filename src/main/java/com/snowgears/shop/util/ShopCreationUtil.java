@@ -78,7 +78,7 @@ public class ShopCreationUtil{
 		
 		}
 		
-		int numberOfShops = plugin.getShopHandler().getNumberOfShops(player);
+		int numberOfShops = plugin.getShopmanager().getNumberOfShops(player.getUniqueId());
 		int buildPermissionNumber = getShopBuildLimit(player);
 		if(numberOfShops >= buildPermissionNumber){
 			lang.request("permission.error.buildLimit").sendToAudience(player);
@@ -140,7 +140,7 @@ public class ShopCreationUtil{
 		}
 		
 		//prevent players (even if they are OP) from creating a shop on a double chest with another player
-		AbstractShop existingShop = plugin.getShopHandler().getShopByChest(chestBlock);
+		AbstractShop existingShop = plugin.getShopmanager().getShopByContainer(chestBlock);
 		if(existingShop != null && !existingShop.isAdmin()){
 			if(!existingShop.getOwnerUUID().equals(player.getUniqueId())){
 				playerMessage = ShopMessage.formatPlainTextSingle("interactionIssue.createOtherPlayer", new PlaceholderContext());
@@ -157,10 +157,10 @@ public class ShopCreationUtil{
 		//removed all the direction checking code. just make sure its a container
 		//make sure that the sign is in front of the chest, unless it is a shulker box
 		if(chestBlock.getState() instanceof Container){
-			existingShop = plugin.getShopHandler().getShopByChest(chestBlock);
+			existingShop = plugin.getShopmanager().getShopByContainer(chestBlock);
 			if(existingShop != null){
 				//if the block they are adding a sign to is already a shop, do not let them
-				if(chestBlock.getLocation().equals(existingShop.getChestLocation())){
+				if(chestBlock.getLocation().equals(existingShop.getContainerLocation())){
 					ShopMessage.request("interactionIssue.createOtherPlayer", player, shop).sendToAudience(player);
 					return null;
 				}
@@ -191,14 +191,14 @@ public class ShopCreationUtil{
 			PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, shop);
 			plugin.getServer().getPluginManager().callEvent(e);
 			
-			plugin.getDatabase().logAction(player, shop, ShopActionType.CREATE);
+			plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.CREATE);
 			
 			if(e.isCancelled()){
 				return null;
 			}
 			
 			if(plugin.getSettingsConfig().getDisplayLightLevel() > 0){
-				Block displayBlock = shop.getChestLocation().getBlock().getRelative(BlockFace.UP);
+				Block displayBlock = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
 				if(UtilMethods.materialIsNonIntrusive(displayBlock.getType())){
 					displayBlock.setType(Material.LIGHT);
 					Light data = (Light) displayBlock.getBlockData();
@@ -210,15 +210,15 @@ public class ShopCreationUtil{
 			if(type == ShopType.GAMBLE){
 				shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());
 				shop.setAmount(1);
-				plugin.getShopHandler().addShop(shop);
+				plugin.getShopmanager().registerShop(shop);
 				shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
 				
 				plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
-				plugin.getDatabase().logAction(player, shop, ShopActionType.INIT);
+				plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.INIT);
 				return null;
 			}
 			
-			plugin.getShopHandler().addShop(shop);
+			plugin.getShopmanager().registerShop(shop);
 			Shop.getPlugin().logger().trace("[ShopCreationUtil.createShop] updateSign");
 			shop.updateSign();
 		}
@@ -238,7 +238,7 @@ public class ShopCreationUtil{
 		// TODO: We should move this save trigger elsewhere, it doesn't belong in `sendCreationSuccess`,
 		//       it is currently non-intuitive that this is the method to save a shop when it is created.
 		//       We should move it elsewhere.
-		plugin.getDatabase().addShop(shop);
+		plugin.getShopmanager().getDatabase().addShop(shop);
 		// Cleanup the shop creation process
 		cleanupShopCreationProcess(player);
 	}
@@ -249,7 +249,7 @@ public class ShopCreationUtil{
 		//if the item is on the DENY LIST or the item is not on the ALLOW LIST, don't let player initialize with it
 		// Only perform this check for non admins
 		if(!isAdmin){
-			boolean passesItemList = plugin.getShopHandler().passesItemListCheck(itemStack);
+			boolean passesItemList = plugin.getShopmanager().passesItemListCheck(itemStack);
 			if(!passesItemList){
 				lang.request("interaction_issue.itemListDeny").sendToAudience(player);
 				return false;
@@ -280,7 +280,7 @@ public class ShopCreationUtil{
 		
 		if(plugin.getSettingsConfig().getDisplayTypeDefault() != DisplayType.NONE){
 			//make sure there is room above the shop for the display
-			Block aboveShop = shop.getChestLocation().getBlock().getRelative(BlockFace.UP);
+			Block aboveShop = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
 			if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
 				if(settingsConfig.isForceDisplayToNoneIfBlocked()){
 					shop.getDisplay().setType(DisplayType.NONE, false);
@@ -307,7 +307,7 @@ public class ShopCreationUtil{
 		
 		//stop the edge case of shulker boxes being able to be used in shulker chests
 		if(Tag.SHULKER_BOXES.isTagged(item.getType())){
-			if(shop.getChestLocation().getBlock().getState() instanceof ShulkerBox){
+			if(shop.getContainerLocation().getBlock().getState() instanceof ShulkerBox){
 				return false;
 			}
 		}

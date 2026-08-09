@@ -58,7 +58,7 @@ public class ShopCreationProcess{
 		this.step = ChatCreationStep.ITEM;
 		
 		// Displays instructions on top of the chest
-		this.display = Shop.getPlugin().getShopHandler().createDisplay(clickedChest.getLocation());
+		this.display = Shop.getPlugin().getShopmanager().createDisplay(clickedChest.getLocation());
 		// Setup placeholder context for ShopMessage
 		this.placeholderContext = new PlaceholderContext();
 		this.placeholderContext.setPlayer(player);

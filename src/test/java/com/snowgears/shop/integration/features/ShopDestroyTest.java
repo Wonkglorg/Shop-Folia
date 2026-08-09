@@ -83,7 +83,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         PlayerSimulation simulationTwo = new PlayerSimulation(playerTwo);
         simulationTwo.simulateBlockBreak(shop.getSignLocation().getBlock());
         assertEquals("§cYou are not authorized to destroy other players shops.", waitForNextMessage(playerTwo), "Player two should be sent dialog denying shop destruction");
-        assertNotNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should still exist when unauthorized player tries to break sign");
+        assertNotNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should still exist when unauthorized player tries to break sign");
         assertEquals(Material.OAK_WALL_SIGN, world.getBlockAt(shop.getSignLocation()).getType(), "Shop should still exist when unauthorized player tries to break sign");
     }
     @Test
@@ -100,7 +100,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         PlayerSimulation simulationTwo = new PlayerSimulation(playerTwo);
         simulationTwo.simulateBlockBreak(shop.getSignLocation().getBlock());
         assertEquals("§7You have destroyed a selling shop owned by Steve.", waitForNextMessage(playerTwo), "Player two should be sent dialog allowing shop destruction");
-        assertNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should be deleted by operator");
+        assertNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should be deleted by operator");
         assertEquals(Material.AIR, world.getBlockAt(shop.getSignLocation()).getType(), "Shop should be deleted by operator");
     }
 
@@ -121,7 +121,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         PlayerSimulation simulationTwo = new PlayerSimulation(playerTwo);
         simulationTwo.simulateBlockBreak(shop.getSignLocation().getBlock());
         assertEquals("§cYou are not authorized to destroy other players shops.", waitForNextMessage(playerTwo), "Player two should be sent dialog denying shop destruction");
-        assertNotNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should still exist when player lacks destroy.other permission");
+        assertNotNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should still exist when player lacks destroy.other permission");
         assertEquals(Material.OAK_WALL_SIGN, world.getBlockAt(shop.getSignLocation()).getType(), "Shop should still exist when player lacks destroy.other permission");
 
         PlayerMock playerThree = server.addPlayer();
@@ -130,7 +130,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         PlayerSimulation simulationThree = new PlayerSimulation(playerThree);
         simulationThree.simulateBlockBreak(shop.getSignLocation().getBlock());
         assertEquals("§7You have destroyed a selling shop owned by Toby.", waitForNextMessage(playerThree), "Player three should be sent dialog allowing shop destruction");
-        assertNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should be deleted when player has destroy.other permission");
+        assertNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should be deleted when player has destroy.other permission");
         assertEquals(Material.AIR, world.getBlockAt(shop.getSignLocation()).getType(), "Shop should be deleted when player has destroy.other permission");
     }
 
@@ -143,7 +143,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         // create the shop
         AbstractShop shop = ShopCreationChestTest.createShop(server, getPlugin(), player, world, 20, 65, 10, new ItemStack(Material.DIRT), "sell", 8, "1");
 
-        Block chest = shop.getChestLocation().getBlock();
+        Block chest = shop.getContainerLocation().getBlock();
         assertEquals(Material.CHEST, chest.getType());
 
         PlayerSimulation simulation = new PlayerSimulation(player);
@@ -163,7 +163,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         AbstractShop shop = ShopCreationChestTest.createShop(server, getPlugin(), player, world, 22, 65, 10, new ItemStack(Material.DIRT), "sell", 8, "1");
 
         // Place an adjacent chest to create a double chest (expansion chest)
-        Location primary = shop.getChestLocation();
+        Location primary = shop.getContainerLocation();
         Location expansionLoc = primary.clone().add(1, 0, 0);
         Block expansion = world.getBlockAt(expansionLoc);
         expansion.setType(Material.CHEST);
@@ -179,7 +179,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         assertEquals(Material.AIR, expansion.getType(), "Expansion chest half should break for authorized owner");
         // Primary chest should remain and shop should still exist
         assertEquals(Material.CHEST, primary.getBlock().getType(), "Primary chest should remain");
-        assertNotNull(getPlugin().getShopHandler().getShopByChest(primary.getBlock()), "Shop should still exist after breaking expansion chest");
+        assertNotNull(getPlugin().getShopmanager().getShopByContainer(primary.getBlock()), "Shop should still exist after breaking expansion chest");
     }
 
     @Test
@@ -192,7 +192,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         AbstractShop shop = ShopCreationChestTest.createShop(server, getPlugin(), owner, world, 42, 65, 10, new ItemStack(Material.DIRT), "sell", 8, "1");
 
         // Place an adjacent chest to create a double chest (expansion chest)
-        Location primary = shop.getChestLocation();
+        Location primary = shop.getContainerLocation();
         Location expansionLoc = primary.clone().add(1, 0, 0);
         Block expansion = world.getBlockAt(expansionLoc);
         expansion.setType(Material.CHEST);
@@ -214,7 +214,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         // It seems like MockBukkit can't properly link the chests together into a doublechest, which is causing asserting that
         // the block should stay to fail. MockBukkit can't tell it is a doublechest and just allows it to break the block since it thinks it is an unattached chest.
         // assertEquals(Material.CHEST, expansion.getType(), "Expansion chest should break for authorized non-owner");
-        assertNotNull(getPlugin().getShopHandler().getShopByChest(primary.getBlock()), "Shop should still exist after unauthorized attempt");
+        assertNotNull(getPlugin().getShopmanager().getShopByContainer(primary.getBlock()), "Shop should still exist after unauthorized attempt");
 
         // Grant destroy.other and allow breaking expansion chest
         other.addAttachment(getPlugin(), "shop.destroy.other", true);
@@ -222,7 +222,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         while (waitForNextMessage(other) != null) {}
         assertEquals(Material.AIR, expansion.getType(), "Expansion chest should break for authorized non-owner");
         // Shop should still exist
-        assertNotNull(getPlugin().getShopHandler().getShopByChest(primary.getBlock()), "Shop should still exist after expansion broken by authorized non-owner");
+        assertNotNull(getPlugin().getShopmanager().getShopByContainer(primary.getBlock()), "Shop should still exist after expansion broken by authorized non-owner");
     }
 
     @Test
@@ -235,7 +235,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         AbstractShop shop = ShopCreationChestTest.createShop(server, getPlugin(), owner, world, 24, 65, 10, new ItemStack(Material.DIRT), "sell", 8, "1");
 
         // Place a block under the chest
-        Location under = shop.getChestLocation().clone().add(0, -1, 0);
+        Location under = shop.getContainerLocation().clone().add(0, -1, 0);
         Block underBlock = world.getBlockAt(under);
         underBlock.setType(Material.STONE);
         assertEquals(Material.STONE, underBlock.getType());
@@ -268,12 +268,12 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         player.setSneaking(false);
         PlayerSimulation simulation = new PlayerSimulation(player);
         simulation.simulateBlockBreak(shop.getSignLocation().getBlock());
-        assertNotNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should remain when not sneaking with destroyShopRequiresSneak=true");
+        assertNotNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should remain when not sneaking with destroyShopRequiresSneak=true");
 
         // Sneaking: should destroy the shop
         player.setSneaking(true);
         simulation.simulateBlockBreak(shop.getSignLocation().getBlock());
-        assertNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should be destroyed when sneaking and destroyShopRequiresSneak=true");
+        assertNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should be destroyed when sneaking and destroyShopRequiresSneak=true");
     }
 
     // Cost-related tests moved to CreationDestructionCostTest
@@ -296,7 +296,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         Bukkit.getPluginManager().registerEvents(l, getPlugin());
 
         new PlayerSimulation(player).simulateBlockBreak(shop.getSignLocation().getBlock());
-        assertNotNull(getPlugin().getShopHandler().getShop(shop.getSignLocation()), "Shop should remain when PlayerDestroyShopEvent is cancelled");
+        assertNotNull(getPlugin().getShopmanager().getShopBySign(shop.getSignLocation()), "Shop should remain when PlayerDestroyShopEvent is cancelled");
     }
 
     @Test
@@ -308,7 +308,7 @@ public class ShopDestroyTest extends BaseMockBukkitTest {
         AbstractShop shop = ShopCreationChestTest.createShop(server, getPlugin(), player, world, 36, 65, 10, new ItemStack(Material.DIRT), "sell", 8, "1");
 
         Block signBlock = shop.getSignLocation().getBlock();
-        Block chestBlock = shop.getChestLocation().getBlock();
+        Block chestBlock = shop.getContainerLocation().getBlock();
 
         List<Block> toBlow = new ArrayList<>();
         toBlow.add(signBlock);

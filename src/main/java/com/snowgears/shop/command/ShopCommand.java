@@ -56,7 +56,7 @@ public class ShopCommand extends AbstractCommand{
 	}
 	
 	private int refreshDisplay(CommandContext<CommandSourceStack> ctx) {
-		plugin.getShopHandler().removeLegacyDisplays();
+		plugin.getShopmanager().getDisplayManager().removeAllDisplays();
 		lang.request("command.refresh-reload.success").sendToAudience(ctx.getSource().getSender());
 		return 0;
 	}
@@ -155,7 +155,7 @@ public class ShopCommand extends AbstractCommand{
 	
 	private int reload(CommandContext<CommandSourceStack> ctx) {
 		plugin.reload();
-		plugin.getShopHandler().removeLegacyDisplays();
+		plugin.getShopmanager().getDisplayManager().removeAllDisplays();
 		lang.request("command.reload.success").sendToAudience(ctx.getSource().getSender());
 		return 0;
 	}
@@ -180,13 +180,13 @@ public class ShopCommand extends AbstractCommand{
 		if(sender instanceof Player player){
 			//@formatter:off
 			lang.request("command.list.success-player")
-				.replace("%total-shops%", plugin.getShopHandler().getNumberOfShops())
-				.replace("%user-amount%", plugin.getShopHandler().getNumberOfShops(player))
+				.replace("%total-shops%", plugin.getShopmanager().getNumberOfShops())
+				.replace("%user-amount%", plugin.getShopmanager().getNumberOfShops(player.getUniqueId()))
 				.lazyReplace("%build-limit%",() -> String.valueOf(PlayerProfile.getShopBuildLimit(player)))
 				.sendToAudience(sender);
 			//@formatter:on
 		} else {
-			lang.request("command.list.success-console").replace("%total-shops%", plugin.getShopHandler().getNumberOfShops()).sendToAudience(sender);
+			lang.request("command.list.success-console").replace("%total-shops%", plugin.getShopmanager().getNumberOfShops()).sendToAudience(sender);
 		}
 		return 1;
 	}

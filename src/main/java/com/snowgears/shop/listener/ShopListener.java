@@ -76,7 +76,7 @@ public class ShopListener implements Listener{
 		//player clicked the sign of a shop
 		if(event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.LEFT_CLICK_BLOCK){
 			if(event.getClickedBlock().getBlockData() instanceof WallSign){
-				AbstractShop shop = plugin.getShopHandler().getShop(event.getClickedBlock().getLocation());
+				AbstractShop shop = plugin.getShopmanager().getShopBySign(event.getClickedBlock().getLocation());
 				if(shop == null || !shop.isInitialized()){
 					return;
 				}
@@ -105,7 +105,7 @@ public class ShopListener implements Listener{
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onShopChestClick(PlayerInteractEvent event) {
 		if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
-			if(plugin.getShopHandler().isAllowedContainer(event.getClickedBlock())){
+			if(plugin.getShopmanager().isAllowedContainer(event.getClickedBlock())){
 				try{
 					if(event.getHand() == EquipmentSlot.OFF_HAND){
 						return; // off hand version, ignore.
@@ -114,12 +114,12 @@ public class ShopListener implements Listener{
 				}
 				
 				Player player = event.getPlayer();
-				AbstractShop shop = plugin.getShopHandler().getShopByChest(event.getClickedBlock());
+				AbstractShop shop = plugin.getShopmanager().getShopByContainer(event.getClickedBlock());
 				if(shop == null){
 					return;
 				}
 				
-				if((!plugin.getShopHandler().isAllowedContainer(shop.getChestLocation().getBlock())) ||
+				if((!plugin.getShopmanager().isAllowedContainer(shop.getContainerLocation().getBlock())) ||
 				   !(shop.getSignLocation().getBlock().getBlockData() instanceof WallSign)){
 					plugin.logger().warning("Deleting Shop because chest does not exist, or sign is not exist! " + shop);
 					shop.delete();
@@ -180,7 +180,7 @@ public class ShopListener implements Listener{
 				}
 			}
 		} else if(event.getAction() == Action.LEFT_CLICK_BLOCK){
-			if(plugin.getShopHandler().isAllowedContainer(event.getClickedBlock())){
+			if(plugin.getShopmanager().isAllowedContainer(event.getClickedBlock())){
 				try{
 					if(event.getHand() == EquipmentSlot.OFF_HAND){
 						return; // off hand version, ignore.
@@ -189,7 +189,7 @@ public class ShopListener implements Listener{
 				}
 				
 				Player player = event.getPlayer();
-				AbstractShop shop = plugin.getShopHandler().getShopByChest(event.getClickedBlock());
+				AbstractShop shop = plugin.getShopmanager().getShopByContainer(event.getClickedBlock());
 				if(shop == null){
 					return;
 				}
@@ -216,9 +216,9 @@ public class ShopListener implements Listener{
 			
 			Block block = blockIterator.next();
 			if(Tag.WALL_SIGNS.isTagged(block.getType())){
-				shop = plugin.getShopHandler().getShop(block.getLocation());
-			} else if(plugin.getShopHandler().isAllowedContainer(block)){
-				shop = plugin.getShopHandler().getShopByChest(block);
+				shop = plugin.getShopmanager().getShopBySign(block.getLocation());
+			} else if(plugin.getShopmanager().isAllowedContainer(block)){
+				shop = plugin.getShopmanager().getShopByContainer(block);
 			}
 			
 			if(shop != null){
@@ -233,7 +233,7 @@ public class ShopListener implements Listener{
 		Player player = event.getPlayer();
 		
 		if(b.getType() == Material.HOPPER){
-			AbstractShop shop = plugin.getShopHandler().getShopByChest(b.getRelative(BlockFace.UP));
+			AbstractShop shop = plugin.getShopmanager().getShopByContainer(b.getRelative(BlockFace.UP));
 			if(shop != null){
 				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
 					event.setCancelled(true);
@@ -252,13 +252,13 @@ public class ShopListener implements Listener{
 		//delete all shops from players that have not played in X amount of hours (if configured)
 		int hoursOfflineToRemoveShops = plugin.getSettingsConfig().getHoursOfflineToRemoveShops();
 		if(hoursOfflineToRemoveShops != 0){
-			for(OfflinePlayer offlinePlayer : plugin.getShopHandler().getShopOwners()){
+			for(OfflinePlayer offlinePlayer : plugin.getShopmanager().getShopOwners()){
 				if(offlinePlayer.getName() != null){
 					long msSinceLastPlayed = System.currentTimeMillis() - offlinePlayer.getLastPlayed();
 					long hoursSinceLastPlayed = TimeUnit.MILLISECONDS.toHours(msSinceLastPlayed);
 					
 					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
-						for(AbstractShop shop : plugin.getShopHandler().getShops(offlinePlayer.getUniqueId())){
+						for(AbstractShop shop : plugin.getShopmanager().getShops(offlinePlayer.getUniqueId())){
 							plugin.logger().notice("Deleting Shop because player " +
 							                       offlinePlayer.getName() +
 							                       " has not logged in within the required " +
@@ -280,9 +280,9 @@ public class ShopListener implements Listener{
 					exp.apply();
 				}
 			}
-			plugin.getShopHandler().clearShopDisplaysNearPlayer(player);
+			plugin.getShopmanager().clearShopDisplaysNearPlayer(player);
 			// Force process shop displays on login - ignore movement threshold
-			plugin.getShopHandler().forceProcessShopDisplaysNearPlayer(player);
+			plugin.getShopmanager().forceProcessShopDisplaysNearPlayer(player);
 		}, 20);
 		
 		//setup a repeating task that checks if async sql calculations are still running, if they are done, send messages and cancel task
@@ -330,7 +330,7 @@ public class ShopListener implements Listener{
 		PlayerManager.removeProfile(player);
 		
 		// Clear shop displays and connection cache for this player
-		plugin.getShopHandler().clearShopDisplaysNearPlayer(player);
+		plugin.getShopmanager().clearShopDisplaysNearPlayer(player);
 		
 		if(plugin.getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
 			//this automatically saves to file
@@ -342,29 +342,33 @@ public class ShopListener implements Listener{
 	public void onChunkLoad(ChunkLoadEvent event) {
 		// Also rebuild shop displays for any players near this chunk
 		// This ensures displays reappear after chunk unload/load cycles
-		plugin.getShopHandler().processUnloadedShopsInChunk(event.getChunk());
-		plugin.getShopHandler().rebuildDisplaysInChunk(event.getChunk());
+		plugin.getShopmanager().processUnloadedShopsInChunk(event.getChunk());
+		plugin.getShopmanager().getDisplayManager().rebuildDisplaysInChunk(event.getChunk());
 	}
 	
-	@EventHandler
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void destroyShop(PlayerDestroyShopEvent event) {
-		plugin.getDatabase().removeShop(event.getShop());
+		plugin.getShopmanager().getDatabase().removeShop(event.getShop());
 	}
 	
-	@EventHandler
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void newShop(PlayerPostInitializeShopEvent event) {
-		plugin.getDatabase().addShop(event.getShop());
+		plugin.getShopmanager().getDatabase().addShop(event.getShop());
 	}
 	
-	@EventHandler
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void logShopPurchase(PlayerExchangeShopEvent event) {
 		AbstractShop shop = event.getShop();
-		plugin.getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), event.getPlayer().getUniqueId(), 1, null);
+		plugin.getShopmanager().getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), event.getPlayer().getUniqueId(), 1, null);
 	}
 	
-	@EventHandler
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void logShopGamble(PlayerGambleShopEvent event) {
 		AbstractShop shop = event.getShop();
-		plugin.getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), event.getPlayer().getUniqueId(), 1, event.getGambleItem());
+		plugin.getShopmanager().getDatabase().logTransaction(shop.getId(),
+				System.currentTimeMillis(),
+				event.getPlayer().getUniqueId(),
+				1,
+				event.getGambleItem());
 	}
 }

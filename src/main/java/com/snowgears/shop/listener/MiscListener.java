@@ -86,13 +86,13 @@ public class MiscListener implements Listener{
 		Block b = event.getBlockClicked();
 		
 		if(b.getBlockData() instanceof WallSign){
-			AbstractShop shop = plugin.getShopHandler().getShop(b.getLocation());
+			AbstractShop shop = plugin.getShopmanager().getShopBySign(b.getLocation());
 			if(shop != null){
 				event.setCancelled(true);
 			}
 		}
 		Block blockToFill = event.getBlockClicked().getRelative(event.getBlockFace());
-		AbstractShop shop = plugin.getShopHandler().getShopByChest(blockToFill.getRelative(BlockFace.DOWN));
+		AbstractShop shop = plugin.getShopmanager().getShopByContainer(blockToFill.getRelative(BlockFace.DOWN));
 		if(shop != null){
 			event.setCancelled(true);
 		}
@@ -131,7 +131,7 @@ public class MiscListener implements Listener{
 		int amount = 0;
 		ShopType type = null;
 		boolean isAdmin = false;
-		if(plugin.getShopHandler().isAllowedContainer(chest)){
+		if(plugin.getShopmanager().isAllowedContainer(chest)){
 			if(Components.toPlainText(event.line(0)).toLowerCase().contains(plugin.getSettingsConfig()
 			                                                                      .getCreationWord(CreationWord.SHOP)
 			                                                                      .toLowerCase())){
@@ -252,7 +252,7 @@ public class MiscListener implements Listener{
 				}
 				
 				// We only want to handle shops that exist but are not initialized.
-				AbstractShop shop = plugin.getShopHandler().getShop(clicked.getLocation());
+				AbstractShop shop = plugin.getShopmanager().getShopBySign(clicked.getLocation());
 				if(shop == null || shop.isInitialized()){
 					return;
 				}
@@ -274,7 +274,7 @@ public class MiscListener implements Listener{
 					plugin.getDatabase().logAction(player, shop, ShopActionType.INIT);
 				}
 				
-			} else if(plugin.getShopHandler().isAllowedContainer(clicked)){
+			} else if(plugin.getShopmanager().isAllowedContainer(clicked)){
 				
 				if(!settingsConfig.isAllowCreateMethodChest()){
 					return;
@@ -282,7 +282,7 @@ public class MiscListener implements Listener{
 				
 				//dont let players create shops via chest on shops that already exist
 				// This check is also required for chests to be destroyed properly without new shops getting created. This is because PlayerInteractEvent is called before BlockBreakEvent.
-				AbstractShop existingShop = plugin.getShopHandler().getShopByChest(clicked);
+				AbstractShop existingShop = plugin.getShopmanager().getShopByContainer(clicked);
 				if(existingShop != null){
 					return;
 				}
@@ -499,7 +499,7 @@ public class MiscListener implements Listener{
 		Player player = event.getPlayer();
 		
 		if(b.getBlockData() instanceof WallSign){
-			AbstractShop shop = plugin.getShopHandler().getShop(b.getLocation());
+			AbstractShop shop = plugin.getShopmanager().getShopBySign(b.getLocation());
 			if(shop == null){
 				return;
 			}
@@ -564,7 +564,7 @@ public class MiscListener implements Listener{
 					} else {
 						ItemStack currencyDrop = plugin.getItemConfig().getCurrencyItem().clone();
 						currencyDrop.setAmount((int) settingsConfig.getCreationCost());
-						shop.getChestLocation().getWorld().dropItemNaturally(shop.getChestLocation(), currencyDrop);
+						shop.getContainerLocation().getWorld().dropItemNaturally(shop.getContainerLocation(), currencyDrop);
 					}
 				}
 				ShopMessage.request("interaction." + shop.getType().toString() + ".destroy", player, shop).sendToAudience(player);
@@ -597,7 +597,7 @@ public class MiscListener implements Listener{
 				shop.delete();
 			}
 			
-		} else if(plugin.getShopHandler().isAllowedContainer(b)){
+		} else if(plugin.getShopmanager().isAllowedContainer(b)){
 			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
 			// protect shops that are in the middle of a shop creation process from being destroyed
 			if(this.isChestInShopCreationProcess(b.getLocation())){
@@ -606,7 +606,7 @@ public class MiscListener implements Listener{
 				return;
 			}
 			
-			AbstractShop shop = plugin.getShopHandler().getShopByChest(b);
+			AbstractShop shop = plugin.getShopmanager().getShopByContainer(b);
 			if(shop == null){
 				return;
 			}
@@ -621,7 +621,7 @@ public class MiscListener implements Listener{
 				if(shop.getOwnerUUID().equals(player.getUniqueId()) || isAllowedToDestroyShopOther(player)){
 					
 					// the broken block was the initial chest with the sign
-					if(shop.getChestLocation().equals(b.getLocation())){
+					if(shop.getContainerLocation().equals(b.getLocation())){
 						ShopMessage.request("interactionIssue.destroyChest", player, shop).sendToAudience(player);
 						// event.setCancelled(true);
 						shop.sendEffects(false, player);
@@ -658,7 +658,7 @@ public class MiscListener implements Listener{
 	public void onBreakBlockUnderShop(BlockBreakEvent event) {
 		//if the block under a chest has been broken, check that its a shop chest
 		if(DisplayUtil.isChest(event.getBlock().getRelative(BlockFace.UP).getType())){
-			AbstractShop shop = plugin.getShopHandler().getShopByChest(event.getBlock().getRelative(BlockFace.UP));
+			AbstractShop shop = plugin.getShopmanager().getShopByContainer(event.getBlock().getRelative(BlockFace.UP));
 			if(shop != null){
 				//if it is a shop chest, don't allow it to be broken unless its by the owner or someone with permission
 				Player player = event.getPlayer();
@@ -674,10 +674,10 @@ public class MiscListener implements Listener{
 		Block b = event.getBlockPlaced();
 		Player player = event.getPlayer();
 		
-		if(plugin.getShopHandler().isAllowedContainer(b)){
+		if(plugin.getShopmanager().isAllowedContainer(b)){
 			//find out if the player placed a chest next to an already active shop
-			AbstractShop shop = plugin.getShopHandler().getShopTouchingBlock(b);
-			if(shop == null || (b.getType() != shop.getChestLocation().getBlock().getType())){
+			AbstractShop shop = plugin.getShopmanager().getShopTouchingBlock(b);
+			if(shop == null || (b.getType() != shop.getContainerLocation().getBlock().getType())){
 				return;
 			}
 			

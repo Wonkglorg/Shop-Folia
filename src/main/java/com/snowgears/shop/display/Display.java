@@ -184,14 +184,14 @@ public class Display extends AbstractDisplay{
 		try{
 			if(player != null){
 				if(isSameWorld(player)){
-					ServerPlayerConnection connection = (ServerPlayerConnection) Shop.getPlugin().getShopHandler().getCachedPlayerConnection(player);
+					ServerPlayerConnection connection = (ServerPlayerConnection) Shop.getPlugin().getShopmanager().getCachedPlayerConnection(player);
 					if(connection != null){
 						connection.send(packet);
 					}
 				}
 			} else {
 				for(Player onlinePlayer : this.shopSignLocation.getWorld().getPlayers()){
-					ServerPlayerConnection connection = (ServerPlayerConnection) Shop.getPlugin().getShopHandler().getCachedPlayerConnection(
+					ServerPlayerConnection connection = (ServerPlayerConnection) Shop.getPlugin().getShopmanager().getCachedPlayerConnection(
 							onlinePlayer);
 					if(connection != null){
 						connection.send(packet);

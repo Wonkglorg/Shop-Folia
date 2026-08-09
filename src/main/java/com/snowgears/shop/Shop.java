@@ -6,13 +6,12 @@ import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.db.ShopDatabase;
 import com.snowgears.shop.display.DisplayTagOption;
 import com.snowgears.shop.gui.ShopGUIListener;
-import com.snowgears.shop.handler.ShopHandler;
 import com.snowgears.shop.handler.TransactionHandler;
 import com.snowgears.shop.listener.DisplayListener;
 import com.snowgears.shop.listener.MiscListener;
 import com.snowgears.shop.listener.ShopListener;
 import com.snowgears.shop.manager.PlayerManager;
-import com.snowgears.shop.migrate.PlayerShopsConfig;
+import com.snowgears.shop.manager.ShopManager;
 import com.snowgears.shop.service.ShopService;
 import com.snowgears.shop.service.ShopServiceProvider;
 import com.snowgears.shop.util.CurrencyType;
@@ -47,7 +46,7 @@ public class Shop extends JavaPlugin{
 	private TransactionHandler transactionHandler;
 	
 	@Getter
-	private ShopHandler shopHandler;
+	private ShopManager shopmanager;
 	@Getter
 	private ShopCreationUtil shopCreationUtil;
 	
@@ -69,8 +68,6 @@ public class Shop extends JavaPlugin{
 	private ItemConfig itemConfig;
 	@Getter
 	private LangManager langManager;
-	@Getter
-	private ShopDatabase database;
 	@Getter
 	private ShopServiceProvider shopServiceProvider;
 	
@@ -124,10 +121,15 @@ public class Shop extends JavaPlugin{
 		shopServiceProvider = new ShopServiceProvider(this);
 		
 		getServer().getServicesManager().register(ShopService.class, shopServiceProvider, this, ServicePriority.Normal);
+		try{
+			shopmanager = new ShopManager(plugin);
+		} catch(Exception e){
+			logger.severe("Unable to load shop database" + e.getMessage());
+			logger.debug("Unable to load shop database", e);
+			immediateShutdown();
+		}
 		
-		shopHandler = new ShopHandler(plugin);
-		initializeDatabase();
-		shopHandler.loadShops();
+		shopmanager.loadShops();
 		
 		displayListener = new DisplayListener(this);
 		getServer().getPluginManager().registerEvents(displayListener, this);
@@ -141,23 +143,6 @@ public class Shop extends JavaPlugin{
 		
 		if(!isMockBukkit){
 			this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
-		}
-	}
-	
-	private void initializeDatabase() {
-		try{
-			database = new ShopDatabase(plugin);
-			if(settingsConfig.isMigrateOldData()){
-				logger.info("Migrating Legacy files to database!");
-				database.addShops(PlayerShopsConfig.loadLegacyShops());
-				logger.info("Finished Migrating files to database!");
-				settingsConfig.setMigrateOldData(false);
-				settingsConfig.silentSave();
-			}
-		} catch(Exception e){
-			logger.severe("Unable to load shop database" + e.getMessage());
-			logger.debug("Unable to load shop database", e);
-			immediateShutdown();
 		}
 	}
 	
@@ -177,8 +162,8 @@ public class Shop extends JavaPlugin{
 		}
 		
 		//save any remaining shops (usually not required but just in case)
-		if(shopHandler != null){
-			shopHandler.saveAllShops();
+		if(shopmanager != null){
+			shopmanager.saveAllShops();
 		}
 		
 		this.logger().info("Disabled Shop " + this.getPluginMeta().getVersion());

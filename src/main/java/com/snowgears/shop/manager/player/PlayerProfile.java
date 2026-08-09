@@ -254,7 +254,7 @@ public abstract class PlayerProfile{
 	 * Get all shops this player owns
 	 */
 	public static List<AbstractShop> getShops(UUID uuid) {
-		return Shop.getPlugin().getShopHandler().getShops(uuid);
+		return Shop.getPlugin().getShopmanager().getShops(uuid);
 	}
 	
 	public static Duration getTeleportCooldownRemaining(UUID uuid) {

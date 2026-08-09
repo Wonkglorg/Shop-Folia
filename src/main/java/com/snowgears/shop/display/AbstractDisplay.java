@@ -65,17 +65,15 @@ public abstract class AbstractDisplay{
 	public abstract void removeDisplayEntities(Player player, boolean onlyDisplayTags);
 	
 	public void spawn(Player player) {
-		if(player != null){
-			//don't spawn the display if the player is in a different world
-			if(!player.getWorld().getUID().equals(this.shopSignLocation.getWorld().getUID())){
-				return;
-			}
+		if(player != null && !player.getWorld().getUID().equals(this.shopSignLocation.getWorld().getUID())){
+			return;
 		}
+		
 		remove(player);
 		
 		AbstractShop shop = this.getShop();
 		
-		if(shop == null || shop.getItemStack() == null || shop.getChestLocation() == null){
+		if(shop == null || shop.getItemStack() == null || shop.getContainerLocation() == null){
 			return;
 		}
 		
@@ -107,20 +105,20 @@ public abstract class AbstractDisplay{
 					break;
 				case LARGE_ITEM:
 					//put first large display down
-					Location leftLoc = shop.getChestLocation().clone().add(0, 1, 0);
+					Location leftLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 					leftLoc.add(getLargeItemBarterOffset(false));
 					ArmorStandData armorStandData = DisplayUtil.getArmorStandData(item, leftLoc, shop.getFacing(), false);
 					spawnArmorStandPacket(player, armorStandData, null);
 					
 					//put second large display down
-					Location rightLoc = shop.getChestLocation().clone().add(0, 1, 0);
+					Location rightLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 					rightLoc.add(getLargeItemBarterOffset(true));
 					ArmorStandData armorStandData2 = DisplayUtil.getArmorStandData(barterItem, rightLoc, shop.getFacing(), false);
 					spawnArmorStandPacket(player, armorStandData2, null);
 					break;
 				case GLASS_CASE:
 					//put the extra large glass casing down
-					Location caseLoc = shop.getChestLocation().clone().add(0, 1, 0);
+					Location caseLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 					ArmorStandData caseStandData = DisplayUtil.getArmorStandData(new ItemStack(Material.GLASS), caseLoc, shop.getFacing(), true);
 					spawnArmorStandPacket(player, caseStandData, null);
 					
@@ -143,14 +141,14 @@ public abstract class AbstractDisplay{
 					break;
 				case LARGE_ITEM:
 					ArmorStandData armorStandData = DisplayUtil.getArmorStandData(item,
-							shop.getChestLocation().clone().add(0, 1, 0),
+							shop.getContainerLocation().clone().add(0, 1, 0),
 							shop.getFacing(),
 							false);
 					spawnArmorStandPacket(player, armorStandData, null);
 					break;
 				case GLASS_CASE:
 					//put the extra large glass casing down
-					Location caseLoc = shop.getChestLocation().clone().add(0, 1, 0);
+					Location caseLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 					ArmorStandData caseStandData = DisplayUtil.getArmorStandData(new ItemStack(Material.GLASS), caseLoc, shop.getFacing(), true);
 					spawnArmorStandPacket(player, caseStandData, null);
 					
@@ -161,14 +159,14 @@ public abstract class AbstractDisplay{
 					Location frameLocation;
 					//only calculate the item frame location if the shop is in a loaded chunk (because Block is used)
 					if(this.isChunkLoaded()){
-						Block aboveShop = shop.getChestLocation().getBlock().getRelative(BlockFace.UP);
+						Block aboveShop = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
 						frameLocation = aboveShop.getLocation();
 						//if display is blocked, put item frame on front
 						if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
 							frameLocation = aboveShop.getRelative(shop.getFacing()).getLocation();
 						}
 					} else {
-						frameLocation = shop.getChestLocation().clone().add(0, 1, 0);
+						frameLocation = shop.getContainerLocation().clone().add(0, 1, 0);
 					}
 					
 					if(Shop.getPlugin().getSettingsConfig().isSetGlowingItemFrame()){
@@ -194,7 +192,7 @@ public abstract class AbstractDisplay{
 		try{
 			ArrayList<String> displayTags = ShopMessage.getDisplayTags(getShop(), getShop().getType());
 			
-			Location lowerTagLocation = getShop().getChestLocation().clone().add(0, 1, 0);
+			Location lowerTagLocation = getShop().getContainerLocation().clone().add(0, 1, 0);
 			lowerTagLocation = lowerTagLocation.add(0.5, 0.5, 0.5);
 			
 			//push the tag slightly closer to the front of the shop so it doesnt collide with the display and hide the text
@@ -207,7 +205,7 @@ public abstract class AbstractDisplay{
 				}
 				// If there is a block above our display, offset the tag location
 				// so that it doesn't become hidden inside the block. (most noticible with chests)
-				if(getShop().getChestLocation().clone().add(0, 2, 0).getBlock().getType() != Material.AIR){
+				if(getShop().getContainerLocation().clone().add(0, 2, 0).getBlock().getType() != Material.AIR){
 					// Adds 0.35 on top of the 0.2 added above (total of 0.55)
 					// 0.3 to get to edge of block, 0.05 to give a lil more wiggle room when the player isnt looking directly at the display
 					lowerTagLocation = UtilMethods.pushLocationInDirection(lowerTagLocation, this.getShop().getFacing(), 0.35);
@@ -251,7 +249,7 @@ public abstract class AbstractDisplay{
 				createTagEntity(player, Component.text(tagLine), asTagLocation);
 			}
 			
-			Shop.getPlugin().getShopHandler().addActiveShopDisplayTag(player, this.shopSignLocation);
+			Shop.getPlugin().getShopmanager().getDisplayManager().addActiveShopDisplayTag(player, this.shopSignLocation);
 			
 			//this handles getting rid of the display tags after a configured amount of time after the player looks away from the shop sign
 			removeDisplayTagsDelayedTask(player);
@@ -312,17 +310,17 @@ public abstract class AbstractDisplay{
 	}
 	
 	public AbstractShop getShop() {
-		return Shop.getPlugin().getShopHandler().getShop(this.shopSignLocation);
+		return Shop.getPlugin().getShopmanager().getShopBySign(this.shopSignLocation);
 	}
 	
 	public void setType(DisplayType type, boolean checkDisplayBlock) {
 		DisplayType oldType = this.type;
 		
-		if(checkDisplayBlock && getShop().getChestLocation() != null){
+		if(checkDisplayBlock && getShop().getContainerLocation() != null){
 			if((oldType == DisplayType.NONE && type != DisplayType.ITEM_FRAME) || (oldType == DisplayType.ITEM_FRAME && type != DisplayType.NONE)){
 				if(this.isChunkLoaded()){
 					//make sure there is room above the shop for the display
-					Block aboveShop = this.getShop().getChestLocation().getBlock().getRelative(BlockFace.UP);
+					Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
 					if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
 						return;
 					}
@@ -346,7 +344,7 @@ public abstract class AbstractDisplay{
 		int index = -1;
 		if(displayType == DisplayType.NONE){
 			//make sure there is room above the shop for the display
-			Block aboveShop = this.getShop().getChestLocation().getBlock().getRelative(BlockFace.UP);
+			Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
 			if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
 				//if the cycle contains the ITEM_FRAME display type
 				for(int i = 0; i < cycle.length; i++){
@@ -361,7 +359,7 @@ public abstract class AbstractDisplay{
 			}
 		} else if(displayType == DisplayType.ITEM_FRAME){
 			//make sure there is room above the shop for the display
-			Block aboveShop = this.getShop().getChestLocation().getBlock().getRelative(BlockFace.UP);
+			Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
 			if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
 				//if the cycle contains the NONE display type
 				for(int i = 0; i < cycle.length; i++){
@@ -397,7 +395,7 @@ public abstract class AbstractDisplay{
 				skip = true;
 			} else {
 				//calculate where ITEM_FRAME display may be
-				for(Entity e : this.getShop().getChestLocation().getWorld().getNearbyEntities(this.getItemDropLocation(false), 1, 1, 1)){
+				for(Entity e : this.getShop().getContainerLocation().getWorld().getNearbyEntities(this.getItemDropLocation(false), 1, 1, 1)){
 					if(e.getType() == EntityType.ITEM_FRAME){
 						ItemFrame i = (ItemFrame) e;
 						if(i.getAttachedFace() == getShop().getSign().getFacing().getOppositeFace()){
@@ -418,7 +416,7 @@ public abstract class AbstractDisplay{
 		
 		this.setType(cycle[index], true);
 		this.spawn(player);
-		Shop.getPlugin().getShopHandler().addActiveShopDisplay(player, this.shopSignLocation);
+		Shop.getPlugin().getShopmanager().addActiveShopDisplay(player, this.shopSignLocation);
 		getShop().setNeedsSave(true);
 	}
 	
@@ -438,7 +436,7 @@ public abstract class AbstractDisplay{
 		
 		//calculate which x,z to drop items at depending on direction of the shop sign
 		double dropY = 0.98; // 1 - 0.02 to account for dropped item shadow
-		Material blockType = shop.getChestLocation().getBlock().getType();
+		Material blockType = shop.getContainerLocation().getBlock().getType();
 		if(blockType == Material.CHEST || blockType == Material.TRAPPED_CHEST){
 			dropY = 0.9;
 		}
@@ -480,7 +478,7 @@ public abstract class AbstractDisplay{
 					break;
 			}
 		}
-		return shop.getChestLocation().clone().add(dropX, dropY, dropZ);
+		return shop.getContainerLocation().clone().add(dropX, dropY, dropZ);
 	}
 	
 	public Vector getShiftOffset(boolean isLeftShift, boolean isRightShift) {

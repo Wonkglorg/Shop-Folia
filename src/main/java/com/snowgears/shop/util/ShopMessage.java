@@ -138,7 +138,7 @@ public class ShopMessage{
 			   return null;
 		   })
 		   .replace("%shop types%", ShopMessage.getShopTypesPlaceholder(context))
-		   .replace("%total shops%",String.valueOf(plugin.getShopHandler().getNumberOfShops()))
+		   .replace("%total shops%",String.valueOf(plugin.getShopmanager().getNumberOfShops()))
 		   .replace("%owner%",()-> {
 			   if(context.getProcess() != null){
 				   return Component.text(Bukkit.getOfflinePlayer(context.getProcess().getPlayerUUID()).getName());
@@ -149,9 +149,9 @@ public class ShopMessage{
 		   })
 		   .lazyReplace("%user amount%",()-> {
 			   if(context.getPlayer() != null){
-				   return String.valueOf(plugin.getShopHandler().getNumberOfShops(context.getPlayer()));
+				   return String.valueOf(plugin.getShopmanager().getNumberOfShops(context.getPlayer().getUniqueId()));
 			   } else if(context.getShop().getOwner() != null){
-				   return String.valueOf(plugin.getShopHandler().getNumberOfShops(context.getShop().getOwner().getUniqueId()));
+				   return String.valueOf(plugin.getShopmanager().getNumberOfShops(context.getShop().getOwner().getUniqueId()));
 			   }
 			   return "0";
 		   })
@@ -277,7 +277,7 @@ public class ShopMessage{
 	
 	private static Component getShopsOutOfStockPlaceholder(PlaceholderContext context) {
 		Component shopsOutOfStock = Component.text("");
-		List<AbstractShop> playerShops = Shop.getPlugin().getShopHandler().getShops(context.getPlayer().getUniqueId());
+		List<AbstractShop> playerShops = Shop.getPlugin().getShopmanager().getShops(context.getPlayer().getUniqueId());
 		if(playerShops != null && !playerShops.isEmpty()){
 			// Collect all the out of stock shops
 			List<AbstractShop> outOfStock = new ArrayList<>();

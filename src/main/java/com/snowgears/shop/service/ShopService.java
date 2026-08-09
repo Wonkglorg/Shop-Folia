@@ -7,6 +7,7 @@ import com.snowgears.shop.shop.AbstractShop;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -21,7 +22,7 @@ public interface ShopService{
 	 *
 	 * @param consumer the action to run on a copy of available shops
 	 */
-	void onShopsLoaded(Consumer<List<AbstractShop>> consumer);
+	void onShopsLoaded(Consumer<Collection<AbstractShop>> consumer);
 	
 	OfflinePlayerProfile getProfile(OfflinePlayer player);
 	

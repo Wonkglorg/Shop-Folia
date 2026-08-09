@@ -5,6 +5,7 @@ import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.display.AbstractDisplay;
 import com.snowgears.shop.manager.PlayerManager;
+import com.snowgears.shop.manager.ShopManager.BlockKey;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import static com.snowgears.shop.shop.ShopState.OK;
 import com.snowgears.shop.util.InventoryUtils;
@@ -31,6 +32,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.block.sign.Side;
 import org.bukkit.block.sign.SignSide;
@@ -53,10 +55,33 @@ public abstract class AbstractShop{
 	@Setter
 	protected boolean needsSave = false;
 	protected boolean isLoaded = false;
+	/**
+	 * The location of the sign
+	 */
 	@Getter
 	protected Location signLocation;
+	/**
+	 * Represents a block key used for indexing and accessing references
+	 */
 	@Getter
-	protected Location chestLocation;
+	protected BlockKey signKey;
+	/**
+	 * The location of the container attached to the sign
+	 */
+	@Getter
+	protected Location containerLocation;
+	
+	/**
+	 * Filled when the shop container is a double chest
+	 */
+	@Getter
+	protected Location secondaryContainerLocation;
+	
+	/**
+	 * Represents a block key used for indexing and accessing references
+	 */
+	@Getter
+	protected BlockKey containerKey;
 	@Getter
 	protected BlockFace facing;
 	@Setter
@@ -82,7 +107,6 @@ public abstract class AbstractShop{
 	protected boolean signLinesRequireRefresh;
 	@Getter
 	protected boolean isPerformingTransaction;
-	protected ItemStack guiIcon;
 	@Setter
 	@Getter
 	protected boolean fakeSign;
@@ -98,6 +122,7 @@ public abstract class AbstractShop{
 	
 	protected AbstractShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
 		this.signLocation = signLoc;
+		this.signKey = BlockKey.of(signLoc);
 		this.owner = player;
 		this.price = pri;
 		this.amount = amt;
@@ -107,7 +132,13 @@ public abstract class AbstractShop{
 		this.creationDate = creationDate;
 		this.signLinesRequireRefresh = true; // Reload signs on load in case config changed!
 		
-		display = Shop.getPlugin().getShopHandler().createDisplay(this.signLocation);
+		//infer the container location where it should be
+		this.containerLocation = new Location(signLoc.getWorld(),
+				signLoc.getBlockX() - facing.getModX(),
+				signLoc.getBlockY() - facing.getModY(),
+				signLoc.getBlockZ() - facing.getModZ());
+		this.containerKey = BlockKey.of(containerLocation);
+		display = Shop.getPlugin().getShopmanager().getDisplayManager().createDisplay(this.signLocation);
 		fakeSign = false;
 		
 		if(isAdmin){
@@ -141,49 +172,98 @@ public abstract class AbstractShop{
 	}
 	
 	//this calls BlockData which loads the chunk the shop is in by doing so
+	
+	/**
+	 * Loads the shops chunk data and replaces it with the one currently cached
+	 *
+	 * @return if the shop fails to load due to no longer being valid or another issue returns false
+	 */
 	public boolean load() {
-		try{
-			Block signBlock = signLocation.getBlock();
-			if(signBlock.getType() == Material.AIR){
-				Shop.getPlugin().logger().warning("Error attempting to load shop! No sign found for Shop (detected: AIR), deleting shop: " + this);
-				this.delete();
-				return false;
-			}
-			if(!(signBlock.getBlockData() instanceof WallSign)){
-				Shop.getPlugin().logger().warning("Error attempting to load shop! Sign Block for Shop is not a WallSign (detected: " +
-				                                  signBlock.getType() +
-				                                  "), deleting shop: " +
-				                                  this);
-				this.delete();
-				return false;
-			}
-			facing = ((WallSign) signBlock.getBlockData()).getFacing();
-			Block chestBlock = signBlock.getRelative(facing.getOppositeFace());
-			chestLocation = chestBlock.getLocation();
-			
-			if(!Shop.getPlugin().getShopHandler().isAllowedContainer(chestBlock)){
-				Shop.getPlugin().logger().warning(
-						"Error attempting to load shop! Invalid block type detected when trying to load Shop Chest (detected: " +
-						chestBlock.getType() +
-						"), deleting shop: " +
-						this);
-				this.delete();
-				return false;
-			}
-			// Now that we are loaded, we can update the stock
-			// Force sign lines to refresh on load. This avoids stale sign text when the cached stock
-			// matches the newly calculated stock (updateStock() only forces sign updates on change).
-			this.signLinesRequireRefresh = true;
-			this.updateStock();
-			Shop.getPlugin().logger().debug("Loaded shop successfully: " + this);
-			isLoaded = true;
-			return true;
-		} catch(Error | Exception error){
-			//this shop has no sign on it. return false
-			Shop.getPlugin().logger().warning("Unknown error while attempting to load Shop sign and/or chest! Deleting shop: " + this);
-			this.delete();
+		Block signBlock = signLocation.getBlock();
+		if(signBlock.getType() == Material.AIR){
+			Shop.getPlugin().logger().warning("Error attempting to load shop! No sign found for Shop (detected: AIR), deleting shop: " + this);
 			return false;
 		}
+		
+		if(!(signBlock.getBlockData() instanceof WallSign wallSign)){
+			Shop.getPlugin().logger().warning("Error attempting to load shop! Sign Block for Shop is not a WallSign (detected: " +
+			                                  signBlock.getType() +
+			                                  "), deleting shop: " +
+			                                  this);
+			return false;
+		}
+		
+		// Refresh the sign direction from the actual world state.
+		facing = wallSign.getFacing();
+		
+		// The primary container is directly behind the sign.
+		Block containerBlock = signBlock.getRelative(facing.getOppositeFace());
+		
+		if(!Shop.getPlugin().getShopmanager().isAllowedContainer(containerBlock)){
+			Shop.getPlugin().logger().warning(
+					"Error attempting to load shop! Invalid block type detected when trying to load Shop Container (detected: " +
+					containerBlock.getType() +
+					"), deleting shop: " +
+					this);
+			return false;
+		}
+		
+		// Refresh the primary container references.
+		containerLocation = containerBlock.getLocation();
+		containerKey = BlockKey.of(containerBlock);
+		
+		// Always reset the secondary container first. This handles cases where
+		// a previously-double chest has since become a single chest or another container.
+		secondaryContainerLocation = null;
+		
+		// Cache the second half when the attached container is a double chest.
+		if(containerBlock.getBlockData() instanceof Chest chestData && chestData.getType() != Chest.Type.SINGLE){
+			
+			BlockFace otherChestDirection = getOtherChestDirection(chestData.getType(), chestData.getFacing());
+			
+			if(otherChestDirection != null){
+				secondaryContainerLocation = new Location(containerLocation.getWorld(),
+						containerKey.x() + otherChestDirection.getModX(),
+						containerKey.y() + otherChestDirection.getModY(),
+						containerKey.z() + otherChestDirection.getModZ());
+				//add the secondary location to the manager to handle
+				Shop.getPlugin().getShopmanager().addSecondaryShopLocation(secondaryContainerLocation, this);
+			}
+		}
+		
+		// Force sign lines to refresh on load.
+		signLinesRequireRefresh = true;
+		
+		// Now that the world/container data is valid, refresh stock and state.
+		updateStock();
+		
+		Shop.getPlugin().logger().debug("Loaded shop successfully: " + this);
+		
+		isLoaded = true;
+		return true;
+		
+	}
+	
+	private BlockFace getOtherChestDirection(Chest.Type chestType, BlockFace facing) {
+		return switch(chestType) {
+			case LEFT -> switch(facing) {
+				case NORTH -> BlockFace.EAST;
+				case EAST -> BlockFace.SOUTH;
+				case SOUTH -> BlockFace.WEST;
+				case WEST -> BlockFace.NORTH;
+				default -> null;
+			};
+			
+			case RIGHT -> switch(facing) {
+				case NORTH -> BlockFace.WEST;
+				case EAST -> BlockFace.NORTH;
+				case SOUTH -> BlockFace.EAST;
+				case WEST -> BlockFace.SOUTH;
+				default -> null;
+			};
+			
+			case SINGLE -> null;
+		};
 	}
 	
 	public boolean needsSave() {
@@ -264,10 +344,10 @@ public abstract class AbstractShop{
 	}
 	
 	public Inventory getInventory() {
-		if(chestLocation == null || signLocation == null || !this.isChunkLoaded()){
+		if(containerLocation == null || signLocation == null || !this.isChunkLoaded()){
 			return null;
 		}
-		Block chestBlock = chestLocation.getBlock();
+		Block chestBlock = containerLocation.getBlock();
 		if(chestBlock.getState() instanceof InventoryHolder){
 			return ((InventoryHolder) (chestBlock.getState())).getInventory();
 		}
@@ -275,11 +355,11 @@ public abstract class AbstractShop{
 	}
 	
 	public Material getContainerType() {
-		if(chestLocation == null || !this.isChunkLoaded()){
+		if(containerLocation == null || !this.isChunkLoaded()){
 			return null;
 		}
 		try{
-			return chestLocation.getBlock().getType();
+			return containerLocation.getBlock().getType();
 		} catch(Exception _){
 			return null;
 		}
@@ -354,16 +434,6 @@ public abstract class AbstractShop{
 		}
 	}
 	
-	public ItemStack getGuiIcon() {
-		// Load it when it is first called
-		if(guiIcon == null){
-			this.refreshGuiIcon();
-		}
-		return guiIcon;
-	}
-	
-	//setter methods
-	
 	public void setItemStack(ItemStack is) {
 		// If the item stack passed is null, go ahead and just skip it.
 		if(is == null){
@@ -382,49 +452,6 @@ public abstract class AbstractShop{
 		this.calculateStock();
 		shopState = ShopState.getShopState(this);
 		this.updateSign(true);
-	}
-	
-	public void refreshGuiIcon() {
-		/*
-		if(this.type != ShopType.GAMBLE){
-			if(this.getItemStack() == null){
-				return;
-			}
-			guiIcon = this.getItemStack().clone();
-			guiIcon.setAmount(1);
-		} else {
-			guiIcon = Shop.getPlugin().getItemConfig().getGambleDisplayItem().clone();
-			guiIcon.setAmount(1);
-		}
-		
-		//get the placeholder icon with all of the unformatted fields
-		ItemStack placeHolderIcon = Shop.getPlugin().getGuiHandler().getIcon(ShopGuiHandler.GuiIcon.ALL_SHOP_ICON, null, null);
-		
-		Component name = ShopMessage.formatMessage(placeHolderIcon.getItemMeta().getDisplayName(), this, null, false);
-		List<Component> lore = new ArrayList<>();
-		for(String loreLine : placeHolderIcon.getItemMeta().getLore()){
-			// Don't add barter line to non barter shops
-			if(loreLine.contains("[barter item]") && this.getType() != ShopType.BARTER){
-				continue;
-			}
-			// Add all lore lines
-			PlaceholderContext context = new PlaceholderContext();
-			context.setShop(this);
-			lore.add(ShopMessage.formatSingleMessage(loreLine, context));
-		}
-		
-		ItemMeta iconMeta = guiIcon.getItemMeta();
-		iconMeta.displayName(name);
-		iconMeta.lore(lore);
-		
-		PersistentDataContainer container = iconMeta.getPersistentDataContainer();
-		container.set(Shop.getPlugin().getSignLocationNameSpacedKey(),
-				PersistentDataType.STRING,
-				UtilMethods.getCleanLocation(this.getSignLocation(), true));
-		
-		guiIcon.setItemMeta(iconMeta);
-		
-		 */
 	}
 	
 	public int getItemDurabilityPercent() {
@@ -456,21 +483,15 @@ public abstract class AbstractShop{
 		// Use the sign's location to ensure the update runs in the correct region in Folia
 		Shop.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(signLocation, task -> {
 			// Update the GUI Icon since the sign needs an update.
-			refreshGuiIcon();
-			
-			Sign signBlock;
-			try{
-				signBlock = (Sign) signLocation.getBlock().getState(); // this will load the sign
-			} catch(ClassCastException e){
+			if(!(signLocation.getBlock().getState() instanceof Sign sign)){
 				Shop.getPlugin().logger().warning("Error attempting to update Shop sign! Sign Block for Shop is not a Sign (detected: " +
 				                                  signLocation.getBlock().getType() +
 				                                  "), deleting shop: " +
 				                                  this);
-				this.delete();
 				return;
 			}
 			
-			SignSide frontSideSign = signBlock.getSide(Side.FRONT);
+			SignSide frontSideSign = sign.getSide(Side.FRONT);
 			List<Component> oldLines = frontSideSign.lines();
 			boolean hasSignUpdate = false;
 			// If the sign lines are the same, don't update them!
@@ -503,7 +524,7 @@ public abstract class AbstractShop{
 			}
 			// Update the sign if it has changed
 			if(hasSignUpdate){
-				signBlock.update(true);
+				sign.update(true);
 			}
 			
 			// Update the floating holograms for anybody who currently has them open
@@ -513,53 +534,12 @@ public abstract class AbstractShop{
 		}, 2);
 	}
 	
-	public void delete() {this.delete(true);}
-	
-	public void delete(boolean forceSave) {
-		try{
-			// First, remove the shop from the shop handler in case of any errors with later methods.
-			Shop.getPlugin().getShopHandler().removeShop(this, forceSave);
-			
-			if(Shop.getPlugin().getSettingsConfig().getDisplayLightLevel() > 0 && this.getChestLocation() != null){
-				Block chestBlock = this.getChestLocation().getBlock();
-				if(chestBlock != null && Shop.getPlugin().getShopHandler().isAllowedContainer(chestBlock)){
-					Block displayBlock = chestBlock.getRelative(BlockFace.UP);
-					if(UtilMethods.materialIsNonIntrusive(displayBlock.getType())){
-						displayBlock.setType(Material.AIR);
-					}
-				}
-			}
-			
-			Block b = this.getSignLocation().getBlock();
-			if(b.getBlockData() instanceof WallSign){
-				Sign signBlock = (Sign) b.getState();
-				SignSide side = signBlock.getSide(Side.FRONT);
-				List<Component> deletedLines = ShopMessage.getSignLines("deleted", this);
-				side.line(0, deletedLines.get(0));
-				side.line(1, deletedLines.get(1));
-				side.line(2, deletedLines.get(2));
-				side.line(3, deletedLines.get(3));
-				signBlock.update(true);
-			}
-			
-			// Finally, remove any active displays
-			if(display != null){
-				display.remove(null);
-			}
-			Shop.getPlugin().logger().debug("Deleted Shop " + this);
-		} catch(Error | Exception e){
-			Shop.getPlugin().logger().severe("Unknown error attempting to delete shop, deletion might not have fully completed successfully: " +
-			                                 e.getMessage());
-			Shop.getPlugin().logger().debug("Full stack trace for shop deletion error: ", e);
-		}
-	}
-	
 	public void teleportPlayer(Player player) {
 		if(player == null){
 			return;
 		}
 		
-		if(chestLocation == null){
+		if(containerLocation == null){
 			this.load();
 			Location loc = this.getSignLocation().getBlock().getRelative(BlockFace.UP).getLocation().add(0.5, 0, 0.5);
 			player.teleport(loc);
@@ -666,14 +646,14 @@ public abstract class AbstractShop{
 					player.playSound(this.getSignLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
 				}
 				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(this.getChestLocation(), Effect.DESTROY_BLOCK, Material.EMERALD_BLOCK);
+					player.getWorld().playEffect(this.getContainerLocation(), Effect.DESTROY_BLOCK, Material.EMERALD_BLOCK);
 				}
 			} else {
 				if(settingsConfig.isPlaySounds()){
 					player.playSound(this.getSignLocation(), Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F);
 				}
 				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(this.getChestLocation(), Effect.DESTROY_BLOCK, Material.REDSTONE_BLOCK);
+					player.getWorld().playEffect(this.getContainerLocation(), Effect.DESTROY_BLOCK, Material.REDSTONE_BLOCK);
 				}
 			}
 		} catch(Error | Exception _){
@@ -696,13 +676,13 @@ public abstract class AbstractShop{
 		       ", owner=" +
 		       owner +
 		       ", chestLocation=" +
-		       ((chestLocation != null) ? chestLocation.getWorld().getName() +
-		                                  ":" +
-		                                  chestLocation.getBlockX() +
-		                                  "/" +
-		                                  chestLocation.getBlockY() +
-		                                  "/" +
-		                                  chestLocation.getBlockZ() : "null") +
+		       ((containerLocation != null) ? containerLocation.getWorld().getName() +
+		                                      ":" +
+		                                      containerLocation.getBlockX() +
+		                                      "/" +
+		                                      containerLocation.getBlockY() +
+		                                      "/" +
+		                                      containerLocation.getBlockZ() : "null") +
 		       '}';
 	}
 }

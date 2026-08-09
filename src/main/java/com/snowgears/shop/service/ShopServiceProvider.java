@@ -11,6 +11,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -18,7 +19,7 @@ public class ShopServiceProvider implements ShopService{
 	
 	private final Shop shop;
 	@Getter
-	private final List<Consumer<List<AbstractShop>>> shopLoadHooks = new ArrayList<>();
+	private final List<Consumer<Collection<AbstractShop>>> shopLoadHooks = new ArrayList<>();
 	
 	public ShopServiceProvider(Shop shop) {
 		this.shop = shop;
@@ -26,11 +27,11 @@ public class ShopServiceProvider implements ShopService{
 	
 	@Override
 	public ShopDatabase getDatabase() {
-		return shop.getDatabase();
+		return shop.getShopmanager().getDatabase();
 	}
 	
 	@Override
-	public void onShopsLoaded(Consumer<List<AbstractShop>> consumer) {
+	public void onShopsLoaded(Consumer<Collection<AbstractShop>> consumer) {
 		shopLoadHooks.add(consumer);
 	}
 	

@@ -45,9 +45,9 @@ public class TransactionHandler{
 		}
 		
 		//delete shop if it does not have a chest attached to it
-		if(!(plugin.getShopHandler().isAllowedContainer(shop.getChestLocation().getBlock()))){
+		if(!(plugin.getShopmanager().isAllowedContainer(shop.getContainerLocation().getBlock()))){
 			plugin.getLogger().warning("Deleting Shop because chest does not exist! " + shop);
-			shop.delete();
+			plugin.getShopmanager().unregisterShop(shop);
 			return;
 		}
 		
@@ -173,7 +173,7 @@ public class TransactionHandler{
 			}
 		}
 		//todo:mjd is that right or is the transaction already accumulated here? how about partial sales?
-		plugin.getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), player.getUniqueId(), 1, null);
+		plugin.getShopmanager().getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), player.getUniqueId(), 1, null);
 	}
 	
 	private boolean notifyOwner(final AbstractShop shop) {

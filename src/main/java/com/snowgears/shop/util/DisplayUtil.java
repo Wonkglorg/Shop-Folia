@@ -495,22 +495,7 @@ public class DisplayUtil{
 		return direction;
 	}
 	
-	public static boolean isDisplay(Entity entity) {
-		boolean foundLegacy = isDisplayLegacy(entity);
-		if(foundLegacy){
-			return true;
-		}
-		PersistentDataContainer persistentData = entity.getPersistentDataContainer();
-		if(persistentData != null){
-			try{
-				int dataDisplay = persistentData.get(new NamespacedKey(Shop.getPlugin(), "display"), PersistentDataType.INTEGER);
-				return (dataDisplay == 1);
-			} catch(NullPointerException e){
-				return false;
-			}
-		}
-		return false;
-	}
+
 	
 	private static boolean isDisplayLegacy(Entity entity) {
 		try{

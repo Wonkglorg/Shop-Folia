@@ -120,7 +120,7 @@ public class EfficientChunkLoadTest extends BaseMockBukkitTest {
         assertEquals("", lines[3]);
 
         // And the shop should be removed from the handler
-        assertNull(plugin.getShopHandler().getShop(signLoc), "Shop should be removed from handler after delete");
+        assertNull(plugin.getShopmanager().getShopBySign(signLoc), "Shop should be removed from handler after delete");
     }
 
     @Test

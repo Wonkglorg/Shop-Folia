@@ -2,8 +2,6 @@ package com.snowgears.shop.handler;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
-import com.snowgears.shop.display.AbstractDisplay;
-import com.snowgears.shop.display.Display;
 import com.snowgears.shop.display.DisplayType;
 import com.snowgears.shop.manager.PlayerManager;
 import static com.snowgears.shop.migrate.PlayerShopsConfig.SHOPS_DATA_FOLDER;
@@ -133,14 +131,14 @@ public class ShopHandler{
 						shop = this.getShop(leftChest.getBlock().getRelative(direction).getLocation());
 						if(shop != null){
 							//make sure the shop sign you found is actually attached to the correct shop
-							if(leftChest.getLocation().equals(shop.getChestLocation()) || rightChest.getLocation().equals(shop.getChestLocation())){
+							if(leftChest.getLocation().equals(shop.getContainerLocation()) || rightChest.getLocation().equals(shop.getContainerLocation())){
 								return shop;
 							}
 						}
 						shop = this.getShop(rightChest.getBlock().getRelative(direction).getLocation());
 						if(shop != null){
 							//make sure the shop sign you found is actually attached to the correct shop
-							if(shop.getChestLocation().equals(leftChest.getLocation()) || shop.getChestLocation().equals(rightChest.getLocation())){
+							if(shop.getContainerLocation().equals(leftChest.getLocation()) || shop.getContainerLocation().equals(rightChest.getLocation())){
 								return shop;
 							}
 						}
@@ -153,7 +151,7 @@ public class ShopHandler{
 				shop = this.getShop(shopChest.getRelative(direction).getLocation());
 				if(shop != null){
 					//make sure the shop sign you found is actually attached to the correct shop
-					if(shopChest.getLocation().equals(shop.getChestLocation())){
+					if(shopChest.getLocation().equals(shop.getContainerLocation())){
 						return shop;
 					}
 				}
@@ -608,7 +606,7 @@ public class ShopHandler{
 							addActiveShopDisplay(player, locationToShow);
 						}
 					}
-				}, batch * batchDelay); // Configurable delay between batches
+				}, (long) batch * batchDelay); // Configurable delay between batches
 			}
 		}, 2); // 2 tick delay after removals
 	}
@@ -748,9 +746,7 @@ public class ShopHandler{
 		return unloadedShopsInChunk;
 	}
 	
-	public int getNumberOfShops() {
-		return allShops.size();
-	}
+
 	
 	public int getNumberOfShops(Player player) {
 		return getShopLocations(player.getUniqueId()).size();
@@ -828,9 +824,9 @@ public class ShopHandler{
 				}
 			}
 		}
-		for(UUID shopOwnerUUID : plugin.getShopHandler().getShopOwnerUUIDs()){
-			for(AbstractShop shop : plugin.getShopHandler().getShops(shopOwnerUUID)){
-				if(UtilMethods.isChunkLoaded(shop.getChestLocation())){
+		for(UUID shopOwnerUUID : plugin.getShopmanager().getShopOwnerUUIDs()){
+			for(AbstractShop shop : plugin.getShopmanager().getShops(shopOwnerUUID)){
+				if(UtilMethods.isChunkLoaded(shop.getContainerLocation())){
 					plugin.logger().debug("[ShopHander.removeLegacyDisplays] updateSign");
 					shop.updateSign();
 				}
@@ -878,11 +874,6 @@ public class ShopHandler{
 	
 	public boolean isAllowedContainer(Block b) {
 		return settingsConfig.getEnabledContainers().contains(b.getType());
-	}
-	
-	public void saveAllShops() {
-		plugin.getDatabase().updateShops(allShops.values().stream().filter(AbstractShop::needsSave).toList());
-		plugin.getDatabase().cacheStockValues(allShops.values());
 	}
 	
 	public boolean passesItemListCheck(ItemStack is) {
@@ -1028,9 +1019,5 @@ public class ShopHandler{
 	 */
 	public void removeCachedPlayerConnection(UUID playerId) {
 		playerConnectionCache.remove(playerId);
-	}
-	
-	public AbstractDisplay createDisplay(Location signLocation) {
-		return new Display(signLocation);
 	}
 }

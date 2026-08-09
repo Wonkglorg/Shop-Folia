@@ -51,7 +51,7 @@ public class DisplayListener implements Listener{
 						try{
 							Block block = player.getTargetBlockExact(8);
 							if(block != null && block.getBlockData() instanceof WallSign){
-								AbstractShop shopObj = plugin.getShopHandler().getShop(block.getLocation());
+								AbstractShop shopObj = plugin.getShopmanager().getShopBySign(block.getLocation());
 								if(shopObj != null){
 									shopObj.getDisplay().showDisplayTags(player);
 								}
@@ -76,7 +76,7 @@ public class DisplayListener implements Listener{
 				}
 				plugin.getFoliaLib().getScheduler().runLater(() -> {
 					if(player.isOnline()){
-						plugin.getShopHandler().processShopDisplaysNearPlayer(player);
+						plugin.getShopmanager().getDisplayManager().processShopDisplaysNearPlayer(player);
 					}
 				}, playerOffset++); // Stagger by 1 tick per player
 				
@@ -117,7 +117,7 @@ public class DisplayListener implements Listener{
 	
 	@EventHandler
 	public void onWaterFlow(BlockFromToEvent event) {
-		AbstractShop shop = plugin.getShopHandler().getShopByChest(event.getToBlock().getRelative(BlockFace.DOWN));
+		AbstractShop shop = plugin.getShopmanager().getShopByContainer(event.getToBlock().getRelative(BlockFace.DOWN));
 		if(shop != null){
 			event.setCancelled(true);
 		}
@@ -125,24 +125,24 @@ public class DisplayListener implements Listener{
 	
 	@EventHandler
 	public void onPistonExtend(BlockPistonExtendEvent event) {
-		AbstractShop shop = plugin.getShopHandler().getShopByChest(event.getBlock().getRelative(event.getDirection()).getRelative(BlockFace.DOWN));
+		AbstractShop shop = plugin.getShopmanager().getShopByContainer(event.getBlock().getRelative(event.getDirection()).getRelative(BlockFace.DOWN));
 		if(shop != null && shop.getDisplay().getType() != DisplayType.NONE){
 			event.setCancelled(true);
 		}
 		
-		shop = plugin.getShopHandler().getShopByChest(event.getBlock().getRelative(event.getDirection()).getRelative(BlockFace.UP));
+		shop = plugin.getShopmanager().getShopByContainer(event.getBlock().getRelative(event.getDirection()).getRelative(BlockFace.UP));
 		if(shop != null){
 			event.setCancelled(true);
 		}
 		
 		for(Block pushedBlock : event.getBlocks()){
-			shop = plugin.getShopHandler().getShopByChest(pushedBlock.getRelative(event.getDirection()).getRelative(BlockFace.DOWN));
+			shop = plugin.getShopmanager().getShopByContainer(pushedBlock.getRelative(event.getDirection()).getRelative(BlockFace.DOWN));
 			if(shop != null && shop.getDisplay().getType() != DisplayType.NONE){
 				event.setCancelled(true);
 				return;
 			}
 			
-			shop = plugin.getShopHandler().getShopByChest(pushedBlock.getRelative(event.getDirection()).getRelative(BlockFace.UP));
+			shop = plugin.getShopmanager().getShopByContainer(pushedBlock.getRelative(event.getDirection()).getRelative(BlockFace.UP));
 			if(shop != null){
 				event.setCancelled(true);
 				return;
@@ -156,7 +156,7 @@ public class DisplayListener implements Listener{
 		                         .getRelative(event.getDirection().getOppositeFace())
 		                         .getRelative(event.getDirection().getOppositeFace())
 		                         .getRelative(BlockFace.UP);
-		AbstractShop shop = plugin.getShopHandler().getShopByChest(pulledBlock);
+		AbstractShop shop = plugin.getShopmanager().getShopByContainer(pulledBlock);
 		if(shop != null){
 			event.setCancelled(true);
 		}
@@ -164,7 +164,7 @@ public class DisplayListener implements Listener{
 	
 	@EventHandler(priority = EventPriority.HIGH)
 	public void onBlockPlace(BlockPlaceEvent event) {
-		AbstractShop shop = plugin.getShopHandler().getShopByChest(event.getBlock().getRelative(BlockFace.DOWN));
+		AbstractShop shop = plugin.getShopmanager().getShopByContainer(event.getBlock().getRelative(BlockFace.DOWN));
 		if(shop != null){
 			if(shop.getDisplay().getType() == null && plugin.getSettingsConfig().getDisplayTypeDefault() != DisplayType.NONE){
 				event.setCancelled(true);
@@ -177,7 +177,7 @@ public class DisplayListener implements Listener{
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onShopInventoryClose(InventoryCloseEvent event) {
 		if(event.getInventory().getHolder() instanceof Container container){
-			AbstractShop shop = plugin.getShopHandler().getShopByChest(container.getBlock());
+			AbstractShop shop = plugin.getShopmanager().getShopByContainer(container.getBlock());
 			
 			if(shop == null){
 				return;
@@ -192,7 +192,7 @@ public class DisplayListener implements Listener{
 		}
 		//for some reason, DoubleChest does not extend Container like Chest does
 		else if(event.getInventory().getHolder() instanceof DoubleChest doubleChest){
-			AbstractShop shop = plugin.getShopHandler().getShopByChest(doubleChest.getLocation().getBlock());
+			AbstractShop shop = plugin.getShopmanager().getShopByContainer(doubleChest.getLocation().getBlock());
 			
 			if(shop == null){
 				return;

@@ -97,7 +97,7 @@ public class ShopCreationChestTest extends BaseMockBukkitTest {
         assertTrue(msg.contains("§eYou have created a shop that sells §6"), "Player should be sent dialog for successfully setup shop");
 
         // Assert: shop created and initialized (attached to the chest)
-        AbstractShop created = plugin.getShopHandler().getShopByChest(chestBlock);
+        AbstractShop created = plugin.getShopmanager().getShopByContainer(chestBlock);
         assertNotNull(created, "Shop should be created via chest flow");
         assertTrue(created.isInitialized(), "Shop should be initialized after chat steps");
         assertNotNull(created.getItemStack(), "Shop item should be set");
@@ -126,7 +126,7 @@ public class ShopCreationChestTest extends BaseMockBukkitTest {
                 player,
                 Action.LEFT_CLICK_BLOCK,
                 item,
-                world.getBlockAt(existing.getChestLocation()),
+                world.getBlockAt(existing.getContainerLocation()),
                 BlockFace.NORTH,
                 EquipmentSlot.HAND
         );
@@ -177,7 +177,7 @@ public class ShopCreationChestTest extends BaseMockBukkitTest {
         assertEquals("§7The shop you started to create at (52, 65, 10) has timed out.", player.nextMessage(), "Player should be sent timeout message");
 
         // Ensure no shop was created/registered for chest
-        assertNull(getPlugin().getShopHandler().getShopByChest(chestBlock), "Shop should not be created when creation times out");
+        assertNull(getPlugin().getShopmanager().getShopByContainer(chestBlock), "Shop should not be created when creation times out");
     }
 }
 
