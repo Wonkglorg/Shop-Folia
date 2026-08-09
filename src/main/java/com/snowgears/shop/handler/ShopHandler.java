@@ -131,14 +131,16 @@ public class ShopHandler{
 						shop = this.getShop(leftChest.getBlock().getRelative(direction).getLocation());
 						if(shop != null){
 							//make sure the shop sign you found is actually attached to the correct shop
-							if(leftChest.getLocation().equals(shop.getContainerLocation()) || rightChest.getLocation().equals(shop.getContainerLocation())){
+							if(leftChest.getLocation().equals(shop.getContainerLocation()) ||
+							   rightChest.getLocation().equals(shop.getContainerLocation())){
 								return shop;
 							}
 						}
 						shop = this.getShop(rightChest.getBlock().getRelative(direction).getLocation());
 						if(shop != null){
 							//make sure the shop sign you found is actually attached to the correct shop
-							if(shop.getContainerLocation().equals(leftChest.getLocation()) || shop.getContainerLocation().equals(rightChest.getLocation())){
+							if(shop.getContainerLocation().equals(leftChest.getLocation()) ||
+							   shop.getContainerLocation().equals(rightChest.getLocation())){
 								return shop;
 							}
 						}
@@ -259,7 +261,7 @@ public class ShopHandler{
 			// we only hold off on doing this if we are bulk deleting shops for users to prevent repeated saves.
 			// The forceSave flag should rarely be `false`, and you should be careful when setting it to false.
 			if(forceSave){
-				plugin.getDatabase().removeShop(shop);
+				plugin.getShopmanager().getDatabase().removeShop(shop);
 			}
 		}
 	}
@@ -746,8 +748,6 @@ public class ShopHandler{
 		return unloadedShopsInChunk;
 	}
 	
-
-	
 	public int getNumberOfShops(Player player) {
 		return getShopLocations(player.getUniqueId()).size();
 	}
@@ -812,7 +812,7 @@ public class ShopHandler{
 	public void removeLegacyDisplays() {
 		for(World world : plugin.getServer().getWorlds()){
 			for(Entity entity : world.getEntities()){
-				if(DisplayUtil.isDisplay(entity)){
+				if(plugin.getShopmanager().getDisplayManager().isDisplay(entity)){
 					entity.remove();
 				}
 				//make to sure to clear items from old version of plugin too
@@ -824,7 +824,7 @@ public class ShopHandler{
 				}
 			}
 		}
-		for(UUID shopOwnerUUID : plugin.getShopmanager().getShopOwnerUUIDs()){
+		for(UUID shopOwnerUUID : plugin.getShopmanager().getShopOwners().keySet()){
 			for(AbstractShop shop : plugin.getShopmanager().getShops(shopOwnerUUID)){
 				if(UtilMethods.isChunkLoaded(shop.getContainerLocation())){
 					plugin.logger().debug("[ShopHander.removeLegacyDisplays] updateSign");
@@ -846,7 +846,7 @@ public class ShopHandler{
 				}
 			}
 			
-			plugin.getDatabase().getShops(false).thenAccept(shops -> {
+			plugin.getShopmanager().getDatabase().getShops(false).thenAccept(shops -> {
 				AtomicInteger loadedShops = new AtomicInteger();
 				for(var shop : shops){
 					loadedShops.getAndIncrement();

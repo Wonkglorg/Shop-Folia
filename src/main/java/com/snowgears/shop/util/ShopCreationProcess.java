@@ -58,7 +58,7 @@ public class ShopCreationProcess{
 		this.step = ChatCreationStep.ITEM;
 		
 		// Displays instructions on top of the chest
-		this.display = Shop.getPlugin().getShopmanager().createDisplay(clickedChest.getLocation());
+		this.display = Shop.getPlugin().getShopmanager().getDisplayManager().createDisplay(clickedChest.getLocation());
 		// Setup placeholder context for ShopMessage
 		this.placeholderContext = new PlaceholderContext();
 		this.placeholderContext.setPlayer(player);
@@ -155,7 +155,7 @@ public class ShopCreationProcess{
 			
 			if(initializedShop){
 				Shop.getPlugin().getShopCreationUtil().sendCreationSuccess(player, shop);
-				Shop.getPlugin().getDatabase().logAction(player, shop, ShopActionType.INIT);
+				Shop.getPlugin().getShopmanager().getDatabase().logAction(player, shop, ShopActionType.INIT);
 			}
 		});
 	}

@@ -185,9 +185,6 @@ public class PlayerShopsConfig extends Config{
 					shop.setFakeSign(true);
 				}
 				
-				// Load the GUI Icon so that it appears when players perform a search, even if the chunks haven't loaded yet.
-				shop.refreshGuiIcon();
-				
 				// If we just added an ID to a shop for the first time, then it will need to be saved/updated as well
 				if(idString == null || idString.isEmpty()){
 					shop.setNeedsSave(true);

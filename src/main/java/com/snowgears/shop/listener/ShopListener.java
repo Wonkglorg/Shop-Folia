@@ -103,14 +103,11 @@ public class ShopListener implements Listener{
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onShopChestClick(PlayerInteractEvent event) {
+	public void onShopContainerClick(PlayerInteractEvent event) {
 		if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
 			if(plugin.getShopmanager().isAllowedContainer(event.getClickedBlock())){
-				try{
-					if(event.getHand() == EquipmentSlot.OFF_HAND){
-						return; // off hand version, ignore.
-					}
-				} catch(NoSuchMethodError error){
+				if(event.getHand() == EquipmentSlot.OFF_HAND){
+					return; // off hand version, ignore.
 				}
 				
 				Player player = event.getPlayer();
@@ -122,7 +119,7 @@ public class ShopListener implements Listener{
 				if((!plugin.getShopmanager().isAllowedContainer(shop.getContainerLocation().getBlock())) ||
 				   !(shop.getSignLocation().getBlock().getBlockData() instanceof WallSign)){
 					plugin.logger().warning("Deleting Shop because chest does not exist, or sign is not exist! " + shop);
-					shop.delete();
+					plugin.getShopmanager().unregisterShop(shop);
 					return;
 				}
 				
@@ -252,9 +249,10 @@ public class ShopListener implements Listener{
 		//delete all shops from players that have not played in X amount of hours (if configured)
 		int hoursOfflineToRemoveShops = plugin.getSettingsConfig().getHoursOfflineToRemoveShops();
 		if(hoursOfflineToRemoveShops != 0){
-			for(OfflinePlayer offlinePlayer : plugin.getShopmanager().getShopOwners()){
+			for(var owner : plugin.getShopmanager().getShopOwners().entrySet()){
+				OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner.getKey());
 				if(offlinePlayer.getName() != null){
-					long msSinceLastPlayed = System.currentTimeMillis() - offlinePlayer.getLastPlayed();
+					long msSinceLastPlayed = System.currentTimeMillis() - offlinePlayer.getLastLogin();
 					long hoursSinceLastPlayed = TimeUnit.MILLISECONDS.toHours(msSinceLastPlayed);
 					
 					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
@@ -265,7 +263,7 @@ public class ShopListener implements Listener{
 							                       (int) hoursSinceLastPlayed +
 							                       " hours! " +
 							                       shop);
-							shop.delete();
+							plugin.getShopmanager().unregisterShop(shop);
 						}
 					}
 				}
@@ -280,9 +278,7 @@ public class ShopListener implements Listener{
 					exp.apply();
 				}
 			}
-			plugin.getShopmanager().clearShopDisplaysNearPlayer(player);
-			// Force process shop displays on login - ignore movement threshold
-			plugin.getShopmanager().forceProcessShopDisplaysNearPlayer(player);
+			plugin.getShopmanager().getDisplayManager().processShopDisplaysNearPlayer(player);
 		}, 20);
 		
 		//setup a repeating task that checks if async sql calculations are still running, if they are done, send messages and cancel task
@@ -291,7 +287,7 @@ public class ShopListener implements Listener{
 			BukkitRunnable runnable = new BukkitRunnable(){
 				public void run() {
 					if(transactionsWhileOffline.containsKey(player.getUniqueId())){
-						if(offlineTransactions != null && !offlineTransactions.isCalculating()){
+						if(!offlineTransactions.isCalculating()){
 							//only display the message if some transactions happened while they were offline
 							if(offlineTransactions.getNumTransactions() > 0){
 								//List<String> messageList = ShopMessage.getUnformattedMessageList("offline", "summary");
@@ -330,7 +326,7 @@ public class ShopListener implements Listener{
 		PlayerManager.removeProfile(player);
 		
 		// Clear shop displays and connection cache for this player
-		plugin.getShopmanager().clearShopDisplaysNearPlayer(player);
+		plugin.getShopmanager().getDisplayManager().clearDisplaysForPlayer(player);
 		
 		if(plugin.getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
 			//this automatically saves to file

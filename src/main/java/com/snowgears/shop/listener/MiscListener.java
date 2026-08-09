@@ -198,7 +198,7 @@ public class MiscListener implements Listener{
 				plugin.getFoliaLib().getScheduler().runLater(() -> {
 					//the shop has still not been initialized with an item from a player
 					if(!shop.isInitialized()){
-						shop.delete();
+						plugin.getShopmanager().unregisterShop(shop);
 						if(b.getBlockData() instanceof WallSign){
 							List<Component> lines = ShopMessage.getSignLines("timeout", shop);
 							SignSide side = sign.getSide(Side.FRONT);
@@ -271,7 +271,7 @@ public class MiscListener implements Listener{
 				
 				if(initializedShop){
 					plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
-					plugin.getDatabase().logAction(player, shop, ShopActionType.INIT);
+					plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.INIT);
 				}
 				
 			} else if(plugin.getShopmanager().isAllowedContainer(clicked)){
@@ -552,7 +552,7 @@ public class MiscListener implements Listener{
 					return;
 				}
 				
-				plugin.getDatabase().logAction(player, shop, ShopActionType.DESTROY);
+				plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.DESTROY);
 				
 				if(shop.isFakeSign()){
 					event.setDropItems(false);
@@ -569,7 +569,7 @@ public class MiscListener implements Listener{
 				}
 				ShopMessage.request("interaction." + shop.getType().toString() + ".destroy", player, shop).sendToAudience(player);
 				// We already log on ShopActionType.DESTROY in the Log Handler, so don't log the shop destroy reason
-				shop.delete();
+				plugin.getShopmanager().unregisterShop(shop);
 			}
 			//player trying to break other players shop
 			else {
@@ -587,14 +587,14 @@ public class MiscListener implements Listener{
 					return;
 				}
 				
-				plugin.getDatabase().logAction(player, shop, ShopActionType.DESTROY);
+				plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.DESTROY);
 				
 				if(shop.isFakeSign()){
 					event.setDropItems(false);
 				}
 				
 				ShopMessage.request("interaction." + shop.getType().toString() + ".opDestroy", player, shop).sendToAudience(player);
-				shop.delete();
+				plugin.getShopmanager().unregisterShop(shop);
 			}
 			
 		} else if(plugin.getShopmanager().isAllowedContainer(b)){
@@ -676,6 +676,7 @@ public class MiscListener implements Listener{
 		
 		if(plugin.getShopmanager().isAllowedContainer(b)){
 			//find out if the player placed a chest next to an already active shop
+			//todo:jmd make it a proper check for chest expansion rather than just any block
 			AbstractShop shop = plugin.getShopmanager().getShopTouchingBlock(b);
 			if(shop == null || (b.getType() != shop.getContainerLocation().getBlock().getType())){
 				return;

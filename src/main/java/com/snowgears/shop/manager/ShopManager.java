@@ -5,12 +5,15 @@ import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.db.ShopDatabase;
 import com.snowgears.shop.migrate.PlayerShopsConfig;
 import com.snowgears.shop.shop.AbstractShop;
+import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopLogger;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -58,6 +61,11 @@ public class ShopManager{
 	 * Shops that get processed once the chunk they are assigned to loads
 	 */
 	private final Map<ChunkKey, List<AbstractShop>> unloadedShopsByChunk = new ConcurrentHashMap<>();
+	/**
+	 * All current shop owners
+	 */
+	@Getter
+	private final Map<UUID, String> shopOwners = new ConcurrentHashMap<>();
 	
 	public ShopManager(Shop plugin) throws SQLException, IOException {
 		this.plugin = plugin;
@@ -153,6 +161,7 @@ public class ShopManager{
 		}
 		
 		playerShops.computeIfAbsent(shop.getOwnerUUID(), _ -> new ArrayList<>()).add(shop);
+		shopOwners.putIfAbsent(shop.getOwnerUUID(), PlayerNameCache.getName(shop.getOwnerUUID()));
 	}
 	
 	public void addSecondaryShopLocation(Location location, AbstractShop shop) {
@@ -178,6 +187,11 @@ public class ShopManager{
 		
 		if(playerShops.containsKey(shop.getOwnerUUID())){
 			playerShops.get(shop.getOwnerUUID()).remove(shop);
+			if(playerShops.get(shop.getOwnerUUID()).isEmpty()){
+				shopOwners.remove(shop.getOwnerUUID());
+			}
+		} else {
+			shopOwners.remove(shop.getOwnerUUID());
 		}
 	}
 	
@@ -269,6 +283,14 @@ public class ShopManager{
 				}
 			});
 		}
+	}
+	
+	public boolean passesItemListCheck(ItemStack itemStack) {
+		return plugin.getItemConfig().isValidItem(itemStack);
+	}
+	
+	public AbstractShop getShopTouchingBlock(Block b) {
+		return null;
 	}
 	
 	public record BlockKey(UUID worldId, int x, int y, int z){

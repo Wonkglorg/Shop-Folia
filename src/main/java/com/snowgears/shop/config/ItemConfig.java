@@ -72,6 +72,32 @@ public class ItemConfig extends Config{
 		}
 	}
 	
+	public boolean isValidItem(ItemStack itemStack) {
+		if(itemStack == null || itemStack.getType().isAir()){
+			return false;
+		}
+		
+		if(blacklistMaterials.contains(itemStack.getType())){
+			return false;
+		}
+		
+		if(blacklistItems.stream().anyMatch(item -> item.isSimilar(itemStack))){
+			return false;
+		}
+		
+		boolean hasMaterialWhitelist = !whitelistMaterials.isEmpty();
+		boolean hasItemWhitelist = !whitelistItems.isEmpty();
+		
+		// No whitelist means all non-blacklisted items are allowed.
+		if(!hasMaterialWhitelist && !hasItemWhitelist){
+			return true;
+		}
+		
+		// An item is valid if it matches either active whitelist.
+		return (hasMaterialWhitelist && whitelistMaterials.contains(itemStack.getType())) || (hasItemWhitelist && whitelistItems.stream().anyMatch(
+				item -> item.isSimilar(itemStack)));
+	}
+	
 	public List<ItemStack> getItemStackList(String path) {
 		List<?> list = getList(path);
 		if(list == null){

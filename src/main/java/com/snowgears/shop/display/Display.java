@@ -15,7 +15,6 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.GlowItemFrame;
 import net.minecraft.world.entity.decoration.ItemFrame;
@@ -25,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
@@ -182,23 +182,11 @@ public class Display extends AbstractDisplay{
 	
 	private void sendPacket(Player player, Packet packet) {
 		try{
-			if(player != null){
-				if(isSameWorld(player)){
-					ServerPlayerConnection connection = (ServerPlayerConnection) Shop.getPlugin().getShopmanager().getCachedPlayerConnection(player);
-					if(connection != null){
-						connection.send(packet);
-					}
-				}
-			} else {
-				for(Player onlinePlayer : this.shopSignLocation.getWorld().getPlayers()){
-					ServerPlayerConnection connection = (ServerPlayerConnection) Shop.getPlugin().getShopmanager().getCachedPlayerConnection(
-							onlinePlayer);
-					if(connection != null){
-						connection.send(packet);
-					}
-				}
+			if(isSameWorld(player)){
+				((CraftPlayer) player).getHandle().connection.send(packet);
 			}
-		} catch(Error | Exception e){
+			
+		} catch(Exception e){
 			Shop.getPlugin().getLogger().severe("Unknown error sending packet to player for Display (Item/Hologram text), error message: " +
 			                                    e.getMessage());
 		}

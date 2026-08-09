@@ -53,6 +53,15 @@ public class DisplayManager{
 		}
 	}
 	
+	public void clearDisplaysForPlayer(Player player) {
+		Set<AbstractShop> shops = visibleShopsByPlayer.get(player.getUniqueId());
+		if(shops != null && !shops.isEmpty()){
+			for(var shop : shops){
+				shop.getDisplay().remove(player);
+			}
+		}
+	}
+	
 	public void processShopDisplaysNearPlayer(Player player) {
 		UUID playerId = player.getUniqueId();
 		
@@ -133,7 +142,7 @@ public class DisplayManager{
 		}, 1);
 	}
 	
-	private boolean isDisplay(Entity entity) {
+	public boolean isDisplay(Entity entity) {
 		PersistentDataContainer persistentData = entity.getPersistentDataContainer();
 		Integer dataDisplay = persistentData.get(displayKey, PersistentDataType.INTEGER);
 		if(dataDisplay == null){

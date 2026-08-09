@@ -20,7 +20,7 @@ public class PlayerNameCache{
 	 * Initialize cache on startup - checks if cache file exists
 	 */
 	public static void initialize() {
-		cache.putAll(Shop.getPlugin().getDatabase().loadPlayerNames());
+		cache.putAll(Shop.getPlugin().getShopmanager().getDatabase().loadPlayerNames());
 	}
 	
 	/**
@@ -73,7 +73,7 @@ public class PlayerNameCache{
 	public static void cacheName(UUID uuid, String name) {
 		if(uuid != null && name != null && !name.trim().isEmpty()){
 			cache.put(uuid, name);
-			Shop.getPlugin().getDatabase().addPlayer(uuid, name);
+			Shop.getPlugin().getShopmanager().getDatabase().addPlayer(uuid, name);
 		}
 	}
 	
