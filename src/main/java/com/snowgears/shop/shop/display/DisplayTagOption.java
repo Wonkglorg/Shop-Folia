@@ -1,4 +1,4 @@
-package com.snowgears.shop.display;
+package com.snowgears.shop.shop.display;
 
 public enum DisplayTagOption{
 	NONE,

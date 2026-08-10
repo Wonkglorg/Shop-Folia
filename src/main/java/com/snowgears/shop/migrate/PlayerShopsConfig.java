@@ -2,7 +2,7 @@ package com.snowgears.shop.migrate;
 
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.display.DisplayType;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;

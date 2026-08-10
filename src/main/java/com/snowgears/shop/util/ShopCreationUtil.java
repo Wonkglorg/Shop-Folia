@@ -2,18 +2,16 @@ package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
-import com.snowgears.shop.display.DisplayType;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerInitializeShopEvent;
 import com.snowgears.shop.event.PlayerPostInitializeShopEvent;
 import static com.snowgears.shop.manager.PlayerManager.cleanupShopCreationProcess;
 import static com.snowgears.shop.manager.PlayerManager.getShopCreationProcess;
 import com.snowgears.shop.manager.player.PlayerProfile;
-import static com.snowgears.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
-import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.shop.ShopType;
 import com.wonkglorg.minecraft.config.LangManager;
 import org.bukkit.Bukkit;
@@ -61,29 +59,7 @@ public class ShopCreationUtil{
 		return null;
 	}
 	
-	public boolean shopCanBeCreated(Player player, Block chest) {
-		if(isOperator(player)){
-			return true;
-		}
-		//operators ignore world blacklist
-		if(settingsConfig.getWorldBlackList().contains(chest.getWorld().getName())){
-			lang.request("interaction_issue.worldBlacklist").sendToAudience(player);
-			return false;
-		}
-		
-		if(!isAllowedToCreateShop(player)){
-			return false;
-		}
-		
-		int numberOfShops = plugin.getShopmanager().getNumberOfShops(player.getUniqueId());
-		int buildPermissionNumber = getShopBuildLimit(player);
-		if(numberOfShops >= buildPermissionNumber){
-			lang.request("permission.error.buildLimit").sendToAudience(player);
-			return false;
-		}
-		
-		return true;
-	}
+
 	
 	public AbstractShop createShop(Player player,
 	                               Block chestBlock,
@@ -316,10 +292,10 @@ public class ShopCreationUtil{
 			
 			shop.setItemStack(item);
 			
-			ShopCreationProcess process = getShopCreationProcess(player.getUniqueId());
+			ShopCreationProcessOld process = getShopCreationProcess(player.getUniqueId());
 			if(shop.getType() == ShopType.BARTER && barterItem == null){
 				ShopMessage.request(shop.getType() + ".initializeInfo", player, shop).sendToAudience(player);
-				process.setStep(ShopCreationProcess.ChatCreationStep.SIGN_BARTER_ITEM);
+				process.setStep(ShopCreationProcessOld.ChatCreationStep.SIGN_BARTER_ITEM);
 				process.displayFloatingText(shop.getType() + ".initializeBarter");
 			} else if(shop.getType() != ShopType.BARTER){
 				Bukkit.getServer().getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
@@ -340,154 +316,5 @@ public class ShopCreationUtil{
 			return true;
 		}
 		return false;
-	}
-	
-	public ShopType getShopType(String input) {
-		ShopType type = null;
-		SettingsConfig config = Shop.getPlugin().getSettingsConfig();
-		input = input.toLowerCase();
-		if(input.contains(config.getCreationWord(CreationWord.BUY))){
-			type = ShopType.BUY;
-		} else if(input.contains(config.getCreationWord(CreationWord.BARTER))){
-			type = ShopType.BARTER;
-		} else if(input.contains(config.getCreationWord(CreationWord.GAMBLE))){
-			type = ShopType.GAMBLE;
-		} else if(input.contains(config.getCreationWord(CreationWord.COMBO))){
-			type = ShopType.COMBO;
-		} else if(input.contains(config.getCreationWord(CreationWord.SELL))){
-			type = ShopType.SELL;
-		}
-		return type;
-	}
-	
-	public double getShopPrice(Player player, String input, ShopType shopType) {
-		double price = 0;
-		if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
-			try{
-				double multiplyValue = UtilMethods.getMultiplyValue(input);
-				String line3 = UtilMethods.cleanNumberText(input);
-				
-				if(line3.contains(".")){
-					price = Double.parseDouble(line3);
-				} else {
-					price = Long.parseLong(line3);
-				}
-				
-				price *= multiplyValue;
-			} catch(NumberFormatException e){
-				lang.request("interaction_issue.line3").sendToAudience(player);
-				return -1;
-			}
-		} else {
-			try{
-				String line3 = UtilMethods.cleanNumberText(input);
-				price = Long.parseLong(line3);
-				
-			} catch(NumberFormatException e){
-				lang.request("interactionIssue.line3").sendToAudience(player);
-				return -1;
-			}
-		}
-		//only allow price to be zero if the type is selling
-		if(price < 0 || (price == 0 && shopType == ShopType.BARTER)){
-			lang.request("interactionIssue.line3").sendToAudience(player);
-			return -1;
-		}
-		return price;
-	}
-	
-	public double getShopPriceCombo(Player player, String input, ShopType shopType) {
-		double priceCombo = 0;
-		if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
-			try{
-				double multiplyValue = UtilMethods.getMultiplyValue(input);
-				String line3 = UtilMethods.cleanNumberText(input);
-				
-				if(line3.contains(".")){
-					priceCombo = Double.parseDouble(line3);
-				} else {
-					priceCombo = Long.parseLong(line3);
-				}
-				
-				priceCombo *= multiplyValue;
-				
-			} catch(NumberFormatException e){
-				lang.request("interactionIssue.line3").sendToAudience(player);
-				return -1;
-			}
-		} else {
-			try{
-				String line3 = UtilMethods.cleanNumberText(input);
-				priceCombo = Long.parseLong(line3);
-			} catch(NumberFormatException e){
-				lang.request("interactionIssue.line3").sendToAudience(player);
-				return -1;
-			}
-		}
-		return priceCombo;
-	}
-	
-	public PricePair getShopPricePair(Player player, String input, ShopType shopType) {
-		double price = 0;
-		double priceCombo = 0;
-		if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
-			try{
-				double multiplyValue = UtilMethods.getMultiplyValue(input);
-				String line3 = UtilMethods.cleanNumberText(input);
-				
-				String[] multiplePrices = line3.split(" ");
-				if(multiplePrices.length > 1){
-					if(multiplePrices[0].contains(".")){
-						price = Double.parseDouble(multiplePrices[0]);
-					} else {
-						price = Long.parseLong(multiplePrices[0]);
-					}
-					
-					if(multiplePrices[1].contains(".")){
-						priceCombo = Double.parseDouble(multiplePrices[1]);
-					} else {
-						priceCombo = Long.parseLong(multiplePrices[1]);
-					}
-				} else {
-					if(line3.contains(".")){
-						price = Double.parseDouble(line3);
-					} else {
-						price = Long.parseLong(line3);
-					}
-				}
-				
-				price *= multiplyValue;
-				priceCombo *= multiplyValue;
-				
-			} catch(NumberFormatException e){
-				lang.request("interactionIssue.line3").sendToAudience(player);
-				return null;
-			}
-		} else {
-			try{
-				String line3 = UtilMethods.cleanNumberText(input);
-				
-				String[] multiplePrices = line3.split(" ");
-				if(multiplePrices.length > 1){
-					price = Long.parseLong(multiplePrices[0]);
-					priceCombo = Long.parseLong(multiplePrices[1]);
-				} else {
-					price = Long.parseLong(line3);
-				}
-			} catch(NumberFormatException e){
-				lang.request("interactionIssue.line3").sendToAudience(player);
-				return null;
-			}
-		}
-		//only allow price to be zero if the type is selling
-		if(price < 0 || (price == 0 && shopType == ShopType.BARTER)){
-			lang.request("interactionIssue.line3").sendToAudience(player);
-			return null;
-		}
-		return new PricePair(price, priceCombo);
-	}
-	
-	public boolean getShopIsAdmin(String input) {
-		return input.toLowerCase().contains(Shop.getPlugin().getSettingsConfig().getCreationWord(CreationWord.ADMIN));
 	}
 }

@@ -2,12 +2,11 @@ package com.snowgears.shop.handler;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
-import com.snowgears.shop.display.DisplayType;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.manager.PlayerManager;
 import static com.snowgears.shop.migrate.PlayerShopsConfig.SHOPS_DATA_FOLDER;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
-import com.snowgears.shop.util.DisplayUtil;
 import com.snowgears.shop.util.ItemListType;
 import com.snowgears.shop.util.UtilMethods;
 import net.minecraft.server.network.ServerPlayerConnection;

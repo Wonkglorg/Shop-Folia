@@ -3,7 +3,7 @@ package com.snowgears.shop.shop;
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
-import com.snowgears.shop.display.AbstractDisplay;
+import com.snowgears.shop.shop.display.AbstractDisplay;
 import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.manager.ShopManager.BlockKey;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;

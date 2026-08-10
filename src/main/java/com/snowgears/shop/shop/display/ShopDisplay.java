@@ -1,4 +1,4 @@
-package com.snowgears.shop.display;
+package com.snowgears.shop.shop.display;
 
 import com.mojang.datafixers.util.Pair;
 import com.snowgears.shop.Shop;
@@ -35,9 +35,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class Display extends AbstractDisplay{
+public class ShopDisplay extends AbstractDisplay{
 	
-	public Display(Location shopSignLocation) {
+	public ShopDisplay(Location shopSignLocation) {
 		super(shopSignLocation);
 	}
 	

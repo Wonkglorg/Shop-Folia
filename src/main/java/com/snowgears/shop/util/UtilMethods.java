@@ -952,31 +952,7 @@ public class UtilMethods{
 		return null;
 	}
 	
-	//this takes a dirty (pre-cleaned) string and finds how much to multiply the final by
-	//this utility allows the input of numbers like 1.2k (1200)
-	public static double getMultiplyValue(String text) {
-		// Remove color formatting, whitespace, and make sure the string is lowercase for matching our suffixes below
-		String priceString = ChatColor.stripColor(text).replaceAll("\\s", "").toLowerCase();
-		// Get just the suffix from the price string, remove all numbers and decimals
-		String priceSuffix = priceString.replaceAll("[0-9.]", "");
-		
-		// Load the suffixes from the config values
-		NavigableMap<Double, String> configPriceSuffixes = Shop.getPlugin().getSettingsConfig().getPriceSuffixes();
-		
-		// Search for a suffix match
-		for(Map.Entry<Double, String> entry : configPriceSuffixes.entrySet()){
-			Double configPriceValue = entry.getKey();
-			String configSuffix = entry.getValue().toLowerCase();
-			
-			if(priceSuffix.equals(configSuffix)){
-				// Return the value for the suffix from the config
-				return configPriceValue;
-			}
-		}
-		
-		// No match so our multiplier is just 1
-		return 1;
-	}
+
 	
 	public static String cleanNumberText(String text) {
 		String cleaned = "";

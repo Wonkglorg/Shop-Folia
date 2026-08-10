@@ -1,7 +1,7 @@
 package com.snowgears.shop.shop;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.display.DisplayType;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.util.ShopMessage;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.UUID;
 
+//todo:mjd make gamble shops not admin only but also player ones with items inside that need to be refilled.
 public class GambleShop extends AbstractShop{
 	
 	private ItemStack gambleItem;

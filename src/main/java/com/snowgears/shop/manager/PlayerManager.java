@@ -5,17 +5,23 @@ import com.snowgears.shop.manager.player.OfflinePlayerProfile;
 import com.snowgears.shop.manager.player.OnlinePlayerProfile;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.util.CurrencyType;
-import com.snowgears.shop.util.ShopCreationProcess;
+import com.snowgears.shop.util.ShopCreationProcessOld;
+import com.snowgears.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.config.types.Config;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,11 +34,6 @@ public class PlayerManager{
 	 * timestamp when the player last teleported to a shop
 	 */
 	private static final Map<UUID, Long> PLAYER_LAST_SHOP_TP = new HashMap<>();
-	/**
-	 * What step in the creation process the player is currently at
-	 */
-	@Getter
-	private static final Map<UUID, ShopCreationProcess> PLAYER_SHOP_CREATION_STEP = new HashMap<>();
 	
 	private PlayerManager() {
 	}
@@ -154,41 +155,5 @@ public class PlayerManager{
 	
 	public static void addTeleportCooldown(UUID uuid) {
 		PLAYER_LAST_SHOP_TP.put(uuid, System.currentTimeMillis());
-	}
-	
-	public static void addShopCreationProcess(UUID uuid, ShopCreationProcess process) {
-		PLAYER_SHOP_CREATION_STEP.put(uuid, process);
-	}
-	
-	public static ShopCreationProcess getShopCreationProcess(UUID uuid) {
-		return PLAYER_SHOP_CREATION_STEP.get(uuid);
-	}
-	
-	/**
-	 * Cancels the shop creation process for the player
-	 */
-	public static void cancelShopCreationProcess(Player player) {
-		ShopCreationProcess process = getShopCreationProcess(player.getUniqueId());
-		if(process != null){
-			process.display.removeDisplayEntities(player, true);
-			removeShopCreationProcess(player.getUniqueId());
-			Shop.getPlugin().getLangManager().request("interaction_issue.createCancel").sendToAudience(player);
-		}
-	}
-	
-	public static void cleanupShopCreationProcess(Player player) {
-		ShopCreationProcess process = getShopCreationProcess(player.getUniqueId());
-		if(process != null){
-			process.cleanup();
-			removeShopCreationProcess(player.getUniqueId());
-		}
-	}
-	
-	private static void removeShopCreationProcess(UUID uuid) {
-		PLAYER_SHOP_CREATION_STEP.remove(uuid);
-	}
-	
-	public static boolean isInShopCreationProcess(UUID uuid) {
-		return PLAYER_SHOP_CREATION_STEP.containsKey(uuid);
 	}
 }

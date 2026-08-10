@@ -1,7 +1,7 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.display.DisplayType;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import static com.snowgears.shop.manager.player.PlayerProfile.getTeleportCooldownRemaining;
 import com.snowgears.shop.shop.AbstractShop;

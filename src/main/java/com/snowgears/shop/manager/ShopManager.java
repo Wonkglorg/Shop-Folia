@@ -5,16 +5,22 @@ import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.db.ShopDatabase;
 import com.snowgears.shop.migrate.PlayerShopsConfig;
 import com.snowgears.shop.shop.AbstractShop;
+import com.snowgears.shop.shop.creation.ShopCreationProcess;
 import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.ShopActionType;
-import com.snowgears.shop.util.ShopCreationProcess;
 import com.snowgears.shop.util.ShopLogger;
+import com.snowgears.shop.util.ShopMessage;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
+import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -174,20 +180,71 @@ public class ShopManager{
 		shopOwners.putIfAbsent(shop.getOwnerUUID(), PlayerNameCache.getName(shop.getOwnerUUID()));
 	}
 	
-	public void addCreateShopProcess(Player player, ShopCreationProcess process) {
+	public void addPlayerShopCreation(Player player, ShopCreationProcess process) {
 		playersInShopCreation.put(player.getUniqueId(), process);
+		
+		//give player a limited amount of time to finish creating the shop until it is deleted
+		plugin.getFoliaLib().getScheduler().runLater(() -> {
+			//already canceled by something else no need to od it again
+			if(process.isCancelled()){
+				return;
+			}
+			//the shop has still not been initialized with an item from a player
+			if(!process.isFinishedInitialisation()){
+				cancelShopCreationProcess(process.getPlayer());
+			}
+		}, 30 * 20); // 30 seconds * 20 ticks
 	}
 	
-	public boolean isUninitializedShopSign(Location location) {
-		return uninitialisedShops.containsKey(BlockKey.of(location));
+	public boolean isCreatingShop(Player player) {
+		return playersInShopCreation.containsKey(player.getUniqueId());
 	}
 	
-	public AbstractShop getUninitializedShopSign(Location location) {
-		return uninitialisedShops.get(BlockKey.of(location));
+	public ShopCreationProcess getShopCreationProcess(Player player) {
+		return playersInShopCreation.get(player.getUniqueId());
 	}
 	
-	public void removeUninitializedShop(Location location) {
-		uninitialisedShops.remove(BlockKey.of(location));
+	public void finishShopCreation(Player player, AbstractShop shop) {
+		ShopCreationProcess remove = playersInShopCreation.remove(player.getUniqueId());
+		if(remove != null){
+			remove.display.remove(player);
+		}
+		registerShop(shop);
+	}
+	
+	/**
+	 * If a shop container at this location is currently in creation process
+	 */
+	public boolean isContainerInShopCreationProcess(Location location) {
+		for(var process : playersInShopCreation.values()){
+			if(process.getContainer().getLocation().equals(location)){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Cancels the shop creation process for the player
+	 */
+	public void cancelShopCreationProcess(Player player) {
+		ShopCreationProcess process = playersInShopCreation.remove(player.getUniqueId());
+		if(process != null){
+			process.display.remove(player);
+			Shop.getPlugin().getLangManager().request("interaction_issue.createCancel").sendToAudience(player);
+			Sign sign = process.getSign();
+			plugin.getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
+				if(sign.getBlockData() instanceof WallSign){
+					List<Component> lines = ShopMessage.getSignLines("timeout");
+					SignSide side = sign.getSide(Side.FRONT);
+					side.line(0, lines.get(0));
+					side.line(1, lines.get(1));
+					side.line(2, lines.get(2));
+					side.line(3, lines.get(3));
+					sign.update(true);
+				}
+			});
+		}
 	}
 	
 	@Internal
@@ -349,18 +406,6 @@ public class ShopManager{
 				}
 			}
 		}
-	}
-	
-	/**
-	 * If a shop container at this location is currently in creation process
-	 */
-	public boolean isContainerInShopCreationProcess(Location location) {
-		for(ShopCreationProcess process : PlayerManager.getPLAYER_SHOP_CREATION_STEP().values()){
-			if(process.getClickedChest().getLocation().equals(location)){
-				return true;
-			}
-		}
-		return false;
 	}
 	
 	public record BlockKey(UUID worldId, int x, int y, int z){

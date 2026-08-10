@@ -1,4 +1,4 @@
-package com.snowgears.shop.display;
+package com.snowgears.shop.shop.display;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.shop.AbstractShop;

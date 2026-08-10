@@ -1,8 +1,8 @@
 package com.snowgears.shop.config;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.display.DisplayTagOption;
-import com.snowgears.shop.display.DisplayType;
+import com.snowgears.shop.shop.display.DisplayTagOption;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;

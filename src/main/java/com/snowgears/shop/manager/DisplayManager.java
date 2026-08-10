@@ -1,9 +1,9 @@
 package com.snowgears.shop.manager;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.display.AbstractDisplay;
-import com.snowgears.shop.display.Display;
-import com.snowgears.shop.display.DisplayType;
+import com.snowgears.shop.shop.display.AbstractDisplay;
+import com.snowgears.shop.shop.display.ShopDisplay;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.shop.AbstractShop;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -152,7 +152,7 @@ public class DisplayManager{
 	}
 	
 	public AbstractDisplay createDisplay(Location signLocation) {
-		return new Display(signLocation);
+		return new ShopDisplay(signLocation);
 	}
 	
 }

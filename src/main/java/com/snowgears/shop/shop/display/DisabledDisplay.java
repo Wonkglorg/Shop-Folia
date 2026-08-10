@@ -1,4 +1,4 @@
-package com.snowgears.shop.display;
+package com.snowgears.shop.shop.display;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.util.ArmorStandData;
@@ -8,9 +8,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-public class DisplayDisabled extends AbstractDisplay {
+public class DisabledDisplay extends AbstractDisplay {
 
-    public DisplayDisabled(Location shopSignLocation) {
+    public DisabledDisplay(Location shopSignLocation) {
         super(shopSignLocation);
         if (!Shop.loggedDisplayDisabledWarning) {
             Shop.getPlugin().logger().warning("[DisplayDisabled] Display is disabled! No display features will be used.");

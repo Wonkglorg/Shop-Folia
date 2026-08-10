@@ -1,19 +1,16 @@
 package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.display.AbstractDisplay;
-import com.snowgears.shop.shop.AbstractShop;
+import com.snowgears.shop.shop.display.AbstractDisplay;
+import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
 import com.snowgears.shop.shop.ShopType;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.Directional;
-import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -21,20 +18,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ShopCreationProcess{
+public class ShopCreationProcessOld{
 	
+	private static final Shop plugin = Shop.getPlugin();
 	@Setter
 	@Getter
 	private ChatCreationStep step;
-	
+	@Getter
 	private Player player;
-	private UUID processUUID;
 	@Getter
-	private UUID playerUUID;
+	private final UUID playerUUID;
 	@Getter
-	private Block clickedChest;
+	private Sign sign;
 	@Getter
-	private BlockFace clickedFace;
+	private Block container;
+	private BlockFace signDirection;
 	@Getter
 	private ItemStack itemStack;
 	@Getter
@@ -44,26 +42,29 @@ public class ShopCreationProcess{
 	@Setter
 	@Getter
 	boolean isAdmin;
+	
+	
+	@Getter
+	private int amount;
 	private PricePair pricePair;
 	
 	public AbstractDisplay display;
-	private PlaceholderContext placeholderContext;
 	
-	public ShopCreationProcess(Player player, Block clickedChest, BlockFace clickedFace) {
+	public ShopCreationProcessOld(Player player, Sign sign, Block container, BlockFace signDirection) {
 		this.player = player;
-		this.processUUID = UUID.randomUUID();
 		this.playerUUID = player.getUniqueId();
-		this.clickedChest = clickedChest;
-		this.clickedFace = clickedFace;
-		this.step = ChatCreationStep.ITEM;
+		this.sign = sign;
+		this.container = container;
+		this.signDirection = signDirection;
+		this.step = ChatCreationStep.SIGN_CREATION;
 		
 		// Displays instructions on top of the chest
-		this.display = Shop.getPlugin().getShopmanager().getDisplayManager().createDisplay(clickedChest.getLocation());
-		// Setup placeholder context for ShopMessage
-		this.placeholderContext = new PlaceholderContext();
-		this.placeholderContext.setPlayer(player);
-		this.placeholderContext.setProcess(this);
+		this.display = Shop.getPlugin().getShopmanager().getDisplayManager().createDisplay(container.getLocation());
 	}
+	
+
+	
+
 	
 	public void cleanup() {
 		if(this.display.isEnabled()){
@@ -202,7 +203,7 @@ public class ShopCreationProcess{
 		// Remove any existing text
 		this.display.removeDisplayEntities(player, true);
 		
-		Location loc = this.clickedChest.getLocation().clone().add(0.5, 0.625 + (0.248 * lines.size()), 0.5);
+		Location loc = this.container.getLocation().clone().add(0.5, 0.625 + (0.248 * lines.size()), 0.5);
 		int i = 0;
 		for(var line : lines){
 			this.display.createTagEntity(player, line, loc.clone().add(0, (i * -0.248), 0));
@@ -215,23 +216,6 @@ public class ShopCreationProcess{
 		SIGN_CREATION,
 		SIGN_ITEM,
 		SIGN_BARTER_ITEM,
-		
-		// Chat creation steps
-		ITEM,
-		
-		SHOP_TYPE,
-		
-		ITEM_AMOUNT,
-		
-		ITEM_PRICE,
-		
-		ITEM_PRICE_COMBO,
-		
-		BARTER_ITEM,
-		
-		BARTER_ITEM_AMOUNT,
-		
-		FINISHED
 	}
 	
 }
