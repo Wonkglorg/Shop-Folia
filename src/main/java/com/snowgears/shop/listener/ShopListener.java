@@ -21,6 +21,7 @@ import com.snowgears.shop.util.PlayerNameCache;
 import com.snowgears.shop.util.PricePair;
 import com.snowgears.shop.util.ShopActionType;
 import com.snowgears.shop.util.ShopClickType;
+import com.snowgears.shop.util.ShopCreationProcess;
 import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
 import com.wonkglorg.minecraft.config.LangManager;
@@ -157,7 +158,7 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
-		plugin.getShopmanager().addUninitializedShop(shop);
+		plugin.getShopmanager().addCreateShopProcess(new ShopCreationProcess(player,block,)shop);
 		
 		//give player a limited amount of time to finish creating the shop until it is deleted
 		plugin.getFoliaLib().getScheduler().runLater(() -> {

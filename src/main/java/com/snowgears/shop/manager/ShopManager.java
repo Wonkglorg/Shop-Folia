@@ -15,6 +15,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
@@ -62,9 +63,9 @@ public class ShopManager{
 	private final Map<UUID, List<AbstractShop>> playerShops = new ConcurrentHashMap<>();
 	
 	/**
-	 * Shops that are currently in creation process, happens when a new shop sign has been placed but no items have been specified yet
+	 * Players who are currently in shop creation
 	 */
-	private final Map<BlockKey, AbstractShop> uninitialisedShops = new ConcurrentHashMap<>();
+	private final Map<UUID, ShopCreationProcess> playersInShopCreation = new ConcurrentHashMap<>();
 	
 	/**
 	 * Shops that get processed once the chunk they are assigned to loads
@@ -173,8 +174,8 @@ public class ShopManager{
 		shopOwners.putIfAbsent(shop.getOwnerUUID(), PlayerNameCache.getName(shop.getOwnerUUID()));
 	}
 	
-	public void addUninitializedShop(AbstractShop shop) {
-		uninitialisedShops.put(BlockKey.of(shop.getSignLocation()), shop);
+	public void addCreateShopProcess(Player player, ShopCreationProcess process) {
+		playersInShopCreation.put(player.getUniqueId(), process);
 	}
 	
 	public boolean isUninitializedShopSign(Location location) {
