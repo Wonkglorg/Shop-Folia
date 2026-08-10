@@ -1,6 +1,10 @@
 package com.snowgears.shop.manager.player;
 
+import com.snowgears.shop.Shop;
+import static com.snowgears.shop.manager.PlayerManager.saveToFile;
 import com.snowgears.shop.shop.ShopType;
+import com.snowgears.shop.util.CurrencyType;
+import com.snowgears.shop.util.EconomyUtils;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
@@ -12,6 +16,10 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	public OnlinePlayerProfile(Player player) {
 		super(player);
 		this.player = player;
+		//if the currency is experience and a value was saved set it to the current players exp
+		if(Shop.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE && getExperience() != -1){
+			EconomyUtils.setTotalExperience(player, getExperience());
+		}
 	}
 	
 	public boolean isOperator() {
@@ -48,6 +56,18 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	
 	public int getShopBuildLimit() {
 		return getShopBuildLimit(player);
+	}
+	
+	public void removeExperienceAmount(int amount) {
+		EconomyUtils.setTotalExperience(player, EconomyUtils.getTotalExperience(player) - amount);
+		experience = EconomyUtils.getTotalExperience(player);
+		saveToFile(this);
+	}
+	
+	public void addExperienceAmount(int amount) {
+		EconomyUtils.setTotalExperience(player, EconomyUtils.getTotalExperience(player) + amount);
+		experience = EconomyUtils.getTotalExperience(player);
+		saveToFile(this);
 	}
 	
 	/**

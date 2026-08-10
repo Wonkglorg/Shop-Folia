@@ -205,7 +205,7 @@ public class Transaction{
 		}
 		
 		// Check if any other plugins want to cancel the transaction
-		PlayerExchangeShopEvent e = new PlayerExchangeShopEvent(player,shop);
+		PlayerExchangeShopEvent e = new PlayerExchangeShopEvent(player, shop);
 		Bukkit.getPluginManager().callEvent(e);
 		if(e.isCancelled()){
 			if(TX_DEBUG_LOGGING){
@@ -213,6 +213,8 @@ public class Transaction{
 			}
 			return this.setError(TransactionError.CANCELLED);
 		}
+		
+		Shop.getPlugin().getShopmanager().getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), player.getUniqueId(), 1, null);
 		
 		if(shop.getType() == ShopType.GAMBLE){
 			PlayerGambleShopEvent gambleEvent = new PlayerGambleShopEvent(player, shop, itemBeingSold);
@@ -223,6 +225,11 @@ public class Transaction{
 				}
 				return this.setError(TransactionError.CANCELLED);
 			}
+			Shop.getPlugin().getShopmanager().getDatabase().logTransaction(shop.getId(),
+					System.currentTimeMillis(),
+					player.getUniqueId(),
+					1,
+					itemBeingSold);
 		}
 		
 		// There were no errors, so we are good to proceed!

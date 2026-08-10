@@ -249,7 +249,8 @@ public abstract class AbstractDisplay{
 				createTagEntity(player, Component.text(tagLine), asTagLocation);
 			}
 			
-			Shop.getPlugin().getShopmanager().getDisplayManager().addActiveShopDisplayTag(player, this.shopSignLocation);
+			//todo:mjd check what this is exactly and what changes if its not present
+			//Shop.getPlugin().getShopmanager().getDisplayManager().addActiveShopDisplayTag(player, this.shopSignLocation);
 			
 			//this handles getting rid of the display tags after a configured amount of time after the player looks away from the shop sign
 			removeDisplayTagsDelayedTask(player);
@@ -416,7 +417,7 @@ public abstract class AbstractDisplay{
 		
 		this.setType(cycle[index], true);
 		this.spawn(player);
-		Shop.getPlugin().getShopmanager().addActiveShopDisplay(player, this.shopSignLocation);
+		//Shop.getPlugin().getShopmanager().addActiveShopDisplay(player, this.shopSignLocation);
 		getShop().setNeedsSave(true);
 	}
 	

@@ -6,14 +6,17 @@ import com.snowgears.shop.db.ShopDatabase;
 import com.snowgears.shop.migrate.PlayerShopsConfig;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.util.PlayerNameCache;
+import com.snowgears.shop.util.ShopActionType;
+import com.snowgears.shop.util.ShopCreationProcess;
 import com.snowgears.shop.util.ShopLogger;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -24,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class ShopManager{
@@ -56,6 +60,11 @@ public class ShopManager{
 	 * Shops linked to a player
 	 */
 	private final Map<UUID, List<AbstractShop>> playerShops = new ConcurrentHashMap<>();
+	
+	/**
+	 * Shops that are currently in creation process, happens when a new shop sign has been placed but no items have been specified yet
+	 */
+	private final Map<BlockKey, AbstractShop> uninitialisedShops = new ConcurrentHashMap<>();
 	
 	/**
 	 * Shops that get processed once the chunk they are assigned to loads
@@ -164,8 +173,30 @@ public class ShopManager{
 		shopOwners.putIfAbsent(shop.getOwnerUUID(), PlayerNameCache.getName(shop.getOwnerUUID()));
 	}
 	
+	public void addUninitializedShop(AbstractShop shop) {
+		uninitialisedShops.put(BlockKey.of(shop.getSignLocation()), shop);
+	}
+	
+	public boolean isUninitializedShopSign(Location location) {
+		return uninitialisedShops.containsKey(BlockKey.of(location));
+	}
+	
+	public AbstractShop getUninitializedShopSign(Location location) {
+		return uninitialisedShops.get(BlockKey.of(location));
+	}
+	
+	public void removeUninitializedShop(Location location) {
+		uninitialisedShops.remove(BlockKey.of(location));
+	}
+	
+	@Internal
 	public void addSecondaryShopLocation(Location location, AbstractShop shop) {
 		shopsByContainer.putIfAbsent(BlockKey.of(location), shop);
+	}
+	
+	@Internal
+	public void removeSecondaryChestLocation(Location location, AbstractShop shop) {
+		shopsByContainer.remove(BlockKey.of(location), shop);
 	}
 	
 	/**
@@ -214,6 +245,7 @@ public class ShopManager{
 	public void registerShop(AbstractShop shop) {
 		addShop(shop);
 		database.addShop(shop);
+		database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
 	}
 	
 	/**
@@ -289,8 +321,45 @@ public class ShopManager{
 		return plugin.getItemConfig().isValidItem(itemStack);
 	}
 	
-	public AbstractShop getShopTouchingBlock(Block b) {
-		return null;
+	/**
+	 * Checks for any outdated shops and removes them.
+	 */
+	public void removeOutdatedShops() {
+		//delete all shops from players that have not played in X amount of hours (if configured)
+		int hoursOfflineToRemoveShops = plugin.getSettingsConfig().getHoursOfflineToRemoveShops();
+		if(hoursOfflineToRemoveShops != 0){
+			for(var owner : plugin.getShopmanager().getShopOwners().entrySet()){
+				OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner.getKey());
+				if(offlinePlayer.getName() != null){
+					long msSinceLastPlayed = System.currentTimeMillis() - offlinePlayer.getLastLogin();
+					long hoursSinceLastPlayed = TimeUnit.MILLISECONDS.toHours(msSinceLastPlayed);
+					
+					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
+						for(AbstractShop shop : plugin.getShopmanager().getShops(offlinePlayer.getUniqueId())){
+							plugin.logger().notice("Deleting Shop because player " +
+							                       offlinePlayer.getName() +
+							                       " has not logged in within the required " +
+							                       (int) hoursSinceLastPlayed +
+							                       " hours! " +
+							                       shop);
+							plugin.getShopmanager().unregisterShop(shop);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * If a shop container at this location is currently in creation process
+	 */
+	public boolean isContainerInShopCreationProcess(Location location) {
+		for(ShopCreationProcess process : PlayerManager.getPLAYER_SHOP_CREATION_STEP().values()){
+			if(process.getClickedChest().getLocation().equals(location)){
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public record BlockKey(UUID worldId, int x, int y, int z){

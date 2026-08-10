@@ -8,6 +8,7 @@ import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.manager.ShopManager.BlockKey;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import static com.snowgears.shop.shop.ShopState.OK;
+import static com.snowgears.shop.util.ChestUtil.getOtherChestDirection;
 import com.snowgears.shop.util.InventoryUtils;
 import com.snowgears.shop.util.ItemNameUtil;
 import static com.snowgears.shop.util.ItemNameUtil.getItemHover;
@@ -245,27 +246,7 @@ public abstract class AbstractShop{
 		
 	}
 	
-	private BlockFace getOtherChestDirection(Chest.Type chestType, BlockFace facing) {
-		return switch(chestType) {
-			case LEFT -> switch(facing) {
-				case NORTH -> BlockFace.EAST;
-				case EAST -> BlockFace.SOUTH;
-				case SOUTH -> BlockFace.WEST;
-				case WEST -> BlockFace.NORTH;
-				default -> null;
-			};
-			
-			case RIGHT -> switch(facing) {
-				case NORTH -> BlockFace.WEST;
-				case EAST -> BlockFace.NORTH;
-				case SOUTH -> BlockFace.EAST;
-				case WEST -> BlockFace.SOUTH;
-				default -> null;
-			};
-			
-			case SINGLE -> null;
-		};
-	}
+
 	
 	public boolean needsSave() {
 		return needsSave;

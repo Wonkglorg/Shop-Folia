@@ -153,46 +153,78 @@ public class EconomyUtils{
 		return 0;
 	}
 	
-	public static int getTotalExperience(int level) {
-		int xp = 0;
-		
-		if(level >= 0 && level <= 15){
-			xp = (int) Math.round(Math.pow(level, 2) + 6 * level);
-		} else if(level > 15 && level <= 30){
-			xp = (int) Math.round((2.5 * Math.pow(level, 2) - 40.5 * level + 360));
-		} else if(level > 30){
-			xp = (int) Math.round(((4.5 * Math.pow(level, 2) - 162.5 * level + 2220)));
-		}
-		return xp;
-	}
-	
 	public static int getTotalExperience(Player player) {
-		return Math.round(player.getExp() * player.getExpToLevel()) + getTotalExperience(player.getLevel());
+		int level = player.getLevel();
+		
+		if(level <= 16){
+			return level * level + 6 * level + (int) (player.getExp() * getExperienceToNextLevel(level));
+		}
+		
+		if(level <= 31){
+			return (int) (2.5 * level * level - 40.5 * level + 360 + player.getExp() * getExperienceToNextLevel(level));
+		}
+		
+		return (int) (4.5 * level * level - 162.5 * level + 2220 + player.getExp() * getExperienceToNextLevel(level));
 	}
 	
-	public static void setTotalExperience(Player player, int amount) {
-		int level = 0;
-		int xp = 0;
-		float a = 0;
-		float b = 0;
-		float c = -amount;
+	public static void setTotalExperience(Player player, int totalExperience) {
+		totalExperience = Math.max(0, totalExperience);
 		
-		if(amount > getTotalExperience(0) && amount <= getTotalExperience(15)){
-			a = 1;
-			b = 6;
-		} else if(amount > getTotalExperience(15) && amount <= getTotalExperience(30)){
-			a = 2.5f;
-			b = -40.5f;
-			c += 360;
-		} else if(amount > getTotalExperience(30)){
-			a = 4.5f;
-			b = -162.5f;
-			c += 2220;
-		}
-		level = (int) Math.floor((-b + Math.sqrt(Math.pow(b, 2) - (4 * a * c))) / (2 * a));
-		xp = amount - getTotalExperience(level);
-		player.setLevel(level);
+		player.setLevel(0);
 		player.setExp(0);
-		player.giveExp(xp);
+		player.setTotalExperience(0);
+		
+		if(totalExperience == 0){
+			return;
+		}
+		
+		int level = getLevelForExperience(totalExperience);
+		int experienceAtLevel = getExperienceAtLevel(level);
+		int experienceIntoLevel = totalExperience - experienceAtLevel;
+		int experienceToNextLevel = getExperienceToNextLevel(level);
+		
+		player.setLevel(level);
+		player.setExp((float) experienceIntoLevel / experienceToNextLevel);
+		player.setTotalExperience(totalExperience);
+	}
+	
+	public static int getLevelForExperience(int experience) {
+		if(experience < 0){
+			return 0;
+		}
+		
+		if(experience < 352){
+			return (int) ((Math.sqrt(72 * experience + 81) - 9) / 2);
+		}
+		
+		if(experience < 1507){
+			return (int) ((Math.sqrt(40 * experience - 7839) + 81) / 10);
+		}
+		
+		return (int) ((Math.sqrt(72 * experience - 54215) + 325) / 18);
+	}
+	
+	public static int getExperienceAtLevel(int level) {
+		if(level <= 16){
+			return level * level + 6 * level;
+		}
+		
+		if(level <= 31){
+			return (int) (2.5 * level * level - 40.5 * level + 360);
+		}
+		
+		return (int) (4.5 * level * level - 162.5 * level + 2220);
+	}
+	
+	public static int getExperienceToNextLevel(int level) {
+		if(level >= 30){
+			return 9 * level - 158;
+		}
+		
+		if(level >= 15){
+			return 5 * level - 38;
+		}
+		
+		return 2 * level + 7;
 	}
 }

@@ -4,6 +4,7 @@ import com.snowgears.shop.Shop;
 import com.snowgears.shop.manager.player.OfflinePlayerProfile;
 import com.snowgears.shop.manager.player.OnlinePlayerProfile;
 import com.snowgears.shop.manager.player.PlayerProfile;
+import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ShopCreationProcess;
 import com.wonkglorg.minecraft.config.types.Config;
 import lombok.Getter;
@@ -48,6 +49,10 @@ public class PlayerManager{
 		return onlineProfiles.computeIfAbsent(uniqueId, uuid -> new OnlinePlayerProfile(player));
 	}
 	
+	/**
+	 * Loads an online players profile. <br>
+	 * When calle dif the economy is set to expirience sets the players exp to the amount stored in file
+	 */
 	public static void loadProfile(Player player) {
 		onlineProfiles.put(player.getUniqueId(), new OnlinePlayerProfile(player));
 	}
@@ -64,8 +69,14 @@ public class PlayerManager{
 		return offlineProfiles.computeIfAbsent(uniqueId, uuid -> new OfflinePlayerProfile(player));
 	}
 	
+	/**
+	 * Removes the cached profiles from the player, if an online profile existed saves it to file before removal
+	 */
 	public static void removeProfile(OfflinePlayer player) {
-		onlineProfiles.remove(player.getUniqueId());
+		OnlinePlayerProfile remove = onlineProfiles.remove(player.getUniqueId());
+		if(remove != null){
+			saveToFile(remove);
+		}
 		offlineProfiles.remove(player.getUniqueId());
 	}
 	
@@ -79,6 +90,11 @@ public class PlayerManager{
 		setOrRemove(basePath + ".notify-owner", profile.isNotifyOwner());
 		setOrRemove(basePath + ".notify-stock", profile.isNotifyStock());
 		setOrRemove(basePath + ".notify-user", profile.isNotifyUser());
+		if(Shop.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
+			PLAYER_DATA.set(basePath + ".experience", profile.getExperience());
+		} else {
+			PLAYER_DATA.set(basePath + ".experience", null);
+		}
 	}
 	
 	private static void setOrRemove(String path, boolean value) {
@@ -94,12 +110,13 @@ public class PlayerManager{
 	 *
 	 * @param profile the profile to save the loaded data into
 	 */
-	public static void loadfromFile(PlayerProfile profile) {
+	public static void loadFromFile(PlayerProfile profile) {
 		String basePath = "player." + profile.getUuid();
 		
 		profile.setNotifyOwner(PLAYER_DATA.getBoolean(basePath + ".notify-owner", false));
 		profile.setNotifyStock(PLAYER_DATA.getBoolean(basePath + ".notify-stock", false));
 		profile.setNotifyUser(PLAYER_DATA.getBoolean(basePath + ".notify-user", false));
+		profile.setExperience(PLAYER_DATA.getInt(basePath + ".experience", -1));
 	}
 	
 	public static void reload() {

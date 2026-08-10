@@ -18,6 +18,7 @@ import com.wonkglorg.database.datasources.FileDataSource;
 import com.wonkglorg.minecraft.util.PluginLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -339,7 +340,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		
 	}
 	
-	public void logAction(Player player, AbstractShop shop, ShopActionType actionType) {
+	public void logAction(OfflinePlayer player, AbstractShop shop, ShopActionType actionType) {
 		if(actionType == ShopActionType.INIT){
 			plugin.logger().notice(player.getName() +
 			                       " created a " +

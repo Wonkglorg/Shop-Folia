@@ -494,24 +494,4 @@ public class DisplayUtil{
 		}
 		return direction;
 	}
-	
-
-	
-	private static boolean isDisplayLegacy(Entity entity) {
-		try{
-			if(entity.getType() == EntityType.ITEM){
-				ItemMeta itemMeta = ((Item) entity).getItemStack().getItemMeta();
-				if(itemMeta != null && UtilMethods.containsLocation(itemMeta.getDisplayName())){
-					return true;
-				}
-			} else if(entity.getType() == EntityType.ARMOR_STAND){
-				if(UtilMethods.containsLocation(entity.getCustomName())){
-					return true;
-				}
-			}
-		} catch(NoSuchFieldError error){
-			//do nothing
-		}
-		return false;
-	}
 }

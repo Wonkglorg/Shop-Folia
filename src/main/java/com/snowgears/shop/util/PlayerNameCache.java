@@ -71,6 +71,9 @@ public class PlayerNameCache{
 	 * @param name Player name
 	 */
 	public static void cacheName(UUID uuid, String name) {
+		if(cache.containsKey(uuid)){
+			return;
+		}
 		if(uuid != null && name != null && !name.trim().isEmpty()){
 			cache.put(uuid, name);
 			Shop.getPlugin().getShopmanager().getDatabase().addPlayer(uuid, name);

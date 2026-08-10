@@ -62,20 +62,17 @@ public class ShopCreationUtil{
 	}
 	
 	public boolean shopCanBeCreated(Player player, Block chest) {
-		if(player.isOp()){
+		if(isOperator(player)){
 			return true;
 		}
-		
-		boolean isOperator = isOperator(player);
-		
 		//operators ignore world blacklist
-		if(!isOperator && settingsConfig.getWorldBlackList().contains(chest.getWorld().getName())){
+		if(settingsConfig.getWorldBlackList().contains(chest.getWorld().getName())){
 			lang.request("interaction_issue.worldBlacklist").sendToAudience(player);
 			return false;
 		}
 		
 		if(!isAllowedToCreateShop(player)){
-		
+			return false;
 		}
 		
 		int numberOfShops = plugin.getShopmanager().getNumberOfShops(player.getUniqueId());
@@ -210,15 +207,13 @@ public class ShopCreationUtil{
 			if(type == ShopType.GAMBLE){
 				shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());
 				shop.setAmount(1);
-				plugin.getShopmanager().registerShop(shop);
 				shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
 				
 				plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
-				plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.INIT);
+				plugin.getShopmanager().registerShop(shop);
 				return null;
 			}
 			
-			plugin.getShopmanager().registerShop(shop);
 			Shop.getPlugin().logger().trace("[ShopCreationUtil.createShop] updateSign");
 			shop.updateSign();
 		}
@@ -232,15 +227,8 @@ public class ShopCreationUtil{
 		Shop.getPlugin().logger().trace("[ShopCreationUtil.sendCreationSuccess] updateSign");
 		shop.updateSign(true);
 		shop.setNeedsSave(true);
-		ShopMessage.request(shop.getType() + ".create", player, shop).sendToAudience(player);
-		shop.sendEffects(true, player);
-		// Save the shop to disk
-		// TODO: We should move this save trigger elsewhere, it doesn't belong in `sendCreationSuccess`,
-		//       it is currently non-intuitive that this is the method to save a shop when it is created.
-		//       We should move it elsewhere.
-		plugin.getShopmanager().getDatabase().addShop(shop);
-		// Cleanup the shop creation process
 		cleanupShopCreationProcess(player);
+		ShopMessage.request(shop.getType() + ".create", player, shop).sendToAudience(player);
 	}
 	
 	public boolean itemsCanBeInitialized(Player player, ItemStack itemStack, ItemStack barterItemStack) {

@@ -3,7 +3,7 @@ package com.snowgears.shop.manager.player;
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.manager.PlayerManager;
-import static com.snowgears.shop.manager.PlayerManager.loadfromFile;
+import static com.snowgears.shop.manager.PlayerManager.loadFromFile;
 import static com.snowgears.shop.manager.PlayerManager.saveToFile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
@@ -40,6 +40,9 @@ public abstract class PlayerProfile{
 	@Getter
 	@Setter
 	private boolean notifyStock;
+	@Getter
+	@Setter
+	protected int experience;
 	
 	@Getter
 	private final Map<ShopType, List<AbstractShop>> ownedShops = new ConcurrentHashMap<>();
@@ -54,7 +57,7 @@ public abstract class PlayerProfile{
 		for(var shop : getShops(offlinePlayer.getUniqueId())){
 			ownedShops.get(shop.getType()).add(shop);
 		}
-		loadfromFile(this);
+		loadFromFile(this);
 	}
 	
 	/**
@@ -88,6 +91,16 @@ public abstract class PlayerProfile{
 		notifyStock = !notifyStock;
 		saveToFile(this);
 		return notifyStock;
+	}
+	
+	public void removeExperienceAmount(int amount) {
+		experience = Math.max(0, experience - amount);
+		saveToFile(this);
+	}
+	
+	public void addExperienceAmount(int amount) {
+		experience += amount;
+		saveToFile(this);
 	}
 	
 	/**
