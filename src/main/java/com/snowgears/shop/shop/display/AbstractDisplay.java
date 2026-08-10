@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+//todo:mjd split this into seperate display classes with one abstract ones for spawning and removal
 public abstract class AbstractDisplay{
 	
 	protected Location shopSignLocation;
