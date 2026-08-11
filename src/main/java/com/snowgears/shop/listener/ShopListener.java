@@ -118,7 +118,7 @@ public class ShopListener implements Listener{
 		if(!process.readSignLines(event.lines())){
 			return;
 		}
-		PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, process);
+		PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, process.toImmutableProgress());
 		Shop.getPlugin().getServer().getPluginManager().callEvent(e);
 		if(!event.isCancelled()){
 			e.setCancelled(true);

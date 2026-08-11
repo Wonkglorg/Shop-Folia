@@ -9,15 +9,12 @@ import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.shop.display.CreationDisplay;
 import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.util.EconomyUtils;
-import com.snowgears.shop.util.UtilMethods;
 import com.wonkglorg.minecraft.config.LangManager;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
-import org.bukkit.block.data.type.Light;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.SignChangeEvent;
@@ -106,6 +103,26 @@ public abstract class ShopCreationProcess{
 		shopManager = Shop.getPlugin().getShopmanager();
 	}
 	
+	public ImmutableShopCreationProcess toImmutableProgress() {
+		return new ImmutableShopCreationProcess(player,
+				playerIsOperator,
+				playerUUID,
+				shopId,
+				sign,
+				container,
+				signDirection,
+				type,
+				amount,
+				price,
+				priceCombo,
+				adminShop,
+				isFakeSign,
+				itemStack,
+				barterStack,
+				finishedInitialisation,
+				isCancelled);
+	}
+	
 	/**
 	 * Verifies to see if a player has all things needed to create a potential shop <br>!!NOTE!!<br> this does not replace the other checks needed to preverify if a shop is even valid to be placed there or if a shop is already being created by the user. refer to {@link com.snowgears.shop.listener.ShopListener#onShopCreation(SignChangeEvent)}
 	 */
@@ -187,9 +204,6 @@ public abstract class ShopCreationProcess{
 			shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());
 			shop.setAmount(1);
 			shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
-			
-			plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
-			plugin.getShopmanager().registerShop(shop);
 			return null;
 		}
 		
