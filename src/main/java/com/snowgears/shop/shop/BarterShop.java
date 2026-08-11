@@ -16,8 +16,8 @@ public class BarterShop extends AbstractShop{
 	private ItemStack originalItem;
 	private BarterType barterType;
 	
-	public BarterShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
-		super(signLoc, player, pri, amt, admin, facing,creationDate);
+	public BarterShop(UUID shopId, Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
+		super(shopId, signLoc, player, pri, amt, admin, facing, creationDate);
 		this.creationWord = CreationWord.BARTER;
 		this.type = ShopType.BARTER;
 		this.barterType = ITEM;

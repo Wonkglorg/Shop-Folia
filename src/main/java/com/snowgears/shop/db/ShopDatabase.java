@@ -2,11 +2,11 @@ package com.snowgears.shop.db;
 
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
 import com.snowgears.shop.shop.ShopState;
 import com.snowgears.shop.shop.ShopType;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemNameUtil;
 import com.snowgears.shop.util.OfflineTransactions;
@@ -339,6 +339,28 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		
 	}
 	
+	public void logAction(OfflinePlayer player, UUID shopOwner, UUID shopUuid, ShopActionType actionType) {
+		scheduler.runAsync(_ -> {
+			// Connect to datasource & create statement in "try" to handle automatically closing the connection!
+			try(Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(
+					"INSERT INTO shop_actions(timestamp, player_uuid, owner_uuid, shop_uuid, player_action) VALUES(?, ?, ?, ?, ?);");){
+				stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+				stmt.setString(2, player.getUniqueId().toString());
+				if(Constants.getAdminUUID().equals(shopOwner)){
+					stmt.setString(3, "admin");
+				} else {
+					stmt.setString(3, shopOwner.toString());
+				}
+				stmt.setString(4, shopUuid.toString());
+				stmt.setString(5, actionType.toString());
+				stmt.execute();
+			} catch(SQLException e){
+				plugin.logger().log(Level.WARNING, "SQL error occurred while trying to log player action.");
+				e.printStackTrace();
+			}
+		});
+	}
+	
 	public void logAction(OfflinePlayer player, AbstractShop shop, ShopActionType actionType) {
 		if(actionType == ShopActionType.INIT){
 			plugin.logger().notice(player.getName() +
@@ -372,25 +394,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			                       (shop.getSecondaryItemStack() != null ? " barterItem: " +
 			                                                               ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
 		}
-		scheduler.runAsync(_ -> {
-			// Connect to datasource & create statement in "try" to handle automatically closing the connection!
-			try(Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(
-					"INSERT INTO shop_actions(timestamp, player_uuid, owner_uuid, shop_uuid, player_action) VALUES(?, ?, ?, ?, ?);");){
-				stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
-				stmt.setString(2, player.getUniqueId().toString());
-				if(Constants.getAdminUUID().equals(shop.getOwnerUUID())){
-					stmt.setString(3, "admin");
-				} else {
-					stmt.setString(3, shop.getOwnerUUID().toString());
-				}
-				stmt.setString(4, shop.getId().toString());
-				stmt.setString(5, actionType.toString());
-				stmt.execute();
-			} catch(SQLException e){
-				plugin.logger().log(Level.WARNING, "SQL error occurred while trying to log player action.");
-				e.printStackTrace();
-			}
-		});
+		logAction(player, shop.getOwnerUUID(), shop.getId(), actionType);
 	}
 	
 	public void calculateOfflineTransactions(OfflineTransactions offlineTransactions) {

@@ -161,7 +161,7 @@ public class ShopCreationUtil{
 				return null;
 			}
 			
-			PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, shop);
+			PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, );
 			plugin.getServer().getPluginManager().callEvent(e);
 			
 			plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.CREATE);
@@ -170,15 +170,7 @@ public class ShopCreationUtil{
 				return null;
 			}
 			
-			if(plugin.getSettingsConfig().getDisplayLightLevel() > 0){
-				Block displayBlock = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
-				if(UtilMethods.materialIsNonIntrusive(displayBlock.getType())){
-					displayBlock.setType(Material.LIGHT);
-					Light data = (Light) displayBlock.getBlockData();
-					data.setLevel(plugin.getSettingsConfig().getDisplayLightLevel());
-					displayBlock.setBlockData(data);
-				}
-			}
+
 			
 			if(type == ShopType.GAMBLE){
 				shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());

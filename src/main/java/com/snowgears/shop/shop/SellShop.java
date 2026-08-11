@@ -8,8 +8,8 @@ import java.util.UUID;
 
 public class SellShop extends AbstractShop {
 
-    public SellShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
-        super(signLoc, player, pri, amt, admin, facing,creationDate);
+    public SellShop(UUID shopId,Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
+        super(shopId,signLoc, player, pri, amt, admin, facing,creationDate);
 
         this.creationWord = CreationWord.SELL;
         this.type = ShopType.SELL;

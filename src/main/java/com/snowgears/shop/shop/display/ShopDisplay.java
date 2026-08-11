@@ -3,6 +3,7 @@ package com.snowgears.shop.shop.display;
 import com.mojang.datafixers.util.Pair;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.util.ArmorStandData;
+import com.snowgears.shop.util.UtilMethods;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.BlockPos;
@@ -22,7 +23,10 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.type.Light;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -43,6 +47,17 @@ public class ShopDisplay extends AbstractDisplay{
 	
 	@Override
 	protected void spawnItemPacket(Player player, ItemStack is, Location location) {
+		//also spawn a light if need be. its related to the display afterall
+		if(plugin.getSettingsConfig().getDisplayLightLevel() > 0){
+			Block displayBlock = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
+			if(UtilMethods.materialIsNonIntrusive(displayBlock.getType())){
+				displayBlock.setType(Material.LIGHT);
+				Light data = (Light) displayBlock.getBlockData();
+				data.setLevel(plugin.getSettingsConfig().getDisplayLightLevel());
+				displayBlock.setBlockData(data);
+			}
+		}
+		
 		net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(is);
 		Level serverLevel = ((CraftWorld) location.getWorld()).getHandle();
 		

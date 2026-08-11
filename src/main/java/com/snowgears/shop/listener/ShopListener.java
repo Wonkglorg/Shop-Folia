@@ -2,7 +2,7 @@ package com.snowgears.shop.listener;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
-import com.snowgears.shop.shop.display.DisplayTagOption;
+import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerDestroyShopEvent;
 import com.snowgears.shop.event.PlayerResizeShopEvent;
 import com.snowgears.shop.manager.PlayerManager;
@@ -14,6 +14,7 @@ import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.shop.ShopType;
 import com.snowgears.shop.shop.creation.SignCreationProcess;
+import com.snowgears.shop.shop.display.DisplayTagOption;
 import static com.snowgears.shop.util.ChestUtil.getOtherChestDirection;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.EconomyUtils;
@@ -117,7 +118,13 @@ public class ShopListener implements Listener{
 		if(!process.readSignLines(event.lines())){
 			return;
 		}
-		
+		PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, process);
+		Shop.getPlugin().getServer().getPluginManager().callEvent(e);
+		if(!event.isCancelled()){
+			e.setCancelled(true);
+			return;
+		}
+		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
 		shopManager.addPlayerShopCreation(player, process);
 	}
 	

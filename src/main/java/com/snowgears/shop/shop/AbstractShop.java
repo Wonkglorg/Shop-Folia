@@ -3,11 +3,11 @@ package com.snowgears.shop.shop;
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
-import com.snowgears.shop.shop.display.AbstractDisplay;
 import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.manager.ShopManager.BlockKey;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import static com.snowgears.shop.shop.ShopState.OK;
+import com.snowgears.shop.shop.display.AbstractDisplay;
 import static com.snowgears.shop.util.ChestUtil.getOtherChestDirection;
 import com.snowgears.shop.util.InventoryUtils;
 import com.snowgears.shop.util.ItemNameUtil;
@@ -50,7 +50,7 @@ public abstract class AbstractShop{
 	
 	@Getter
 	@Setter
-	protected UUID id = UUID.randomUUID();
+	protected UUID id;
 	@Getter
 	protected long creationDate;
 	@Setter
@@ -122,7 +122,8 @@ public abstract class AbstractShop{
 	@Getter
 	protected ShopState shopState;
 	
-	protected AbstractShop(Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
+	protected AbstractShop(UUID id, Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
+		this.id = id;
 		this.signLocation = signLoc;
 		this.signKey = BlockKey.of(signLoc);
 		this.owner = player;
@@ -150,7 +151,7 @@ public abstract class AbstractShop{
 		}
 	}
 	
-	public static AbstractShop create(Location signLoc,
+	public static AbstractShop create(UUID id,Location signLoc,
 	                                  UUID player,
 	                                  double pri,
 	                                  double priCombo,
@@ -161,11 +162,11 @@ public abstract class AbstractShop{
 	                                  long creationDate) {
 		
 		return switch(shopType) {
-			case SELL -> new SellShop(signLoc, player, pri, amt, admin, facing, creationDate);
-			case BUY -> new BuyShop(signLoc, player, pri, amt, admin, facing, creationDate);
-			case BARTER -> new BarterShop(signLoc, player, pri, amt, admin, facing, creationDate);
-			case GAMBLE -> new GambleShop(signLoc, player, pri, amt, admin, facing, creationDate);
-			case COMBO -> new ComboShop(signLoc, player, pri, priCombo, amt, admin, facing, creationDate);
+			case SELL -> new SellShop(id,signLoc, player, pri, amt, admin, facing, creationDate);
+			case BUY -> new BuyShop(id,signLoc, player, pri, amt, admin, facing, creationDate);
+			case BARTER -> new BarterShop(id,signLoc, player, pri, amt, admin, facing, creationDate);
+			case GAMBLE -> new GambleShop(id,signLoc, player, pri, amt, admin, facing, creationDate);
+			case COMBO -> new ComboShop(id,signLoc, player, pri, priCombo, amt, admin, facing, creationDate);
 		};
 	}
 	
@@ -245,8 +246,6 @@ public abstract class AbstractShop{
 		return true;
 		
 	}
-	
-
 	
 	public boolean needsSave() {
 		return needsSave;

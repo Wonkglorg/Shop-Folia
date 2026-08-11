@@ -1,17 +1,14 @@
 package com.snowgears.shop.shop.creation;
 
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.shop.display.CreationDisplay;
-import com.snowgears.shop.shop.display.DisplayType;
-import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.manager.ShopManager;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import static com.snowgears.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
+import com.snowgears.shop.shop.display.CreationDisplay;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.util.EconomyUtils;
-import com.snowgears.shop.util.ShopActionType;
-import com.snowgears.shop.util.ShopMessage;
 import com.snowgears.shop.util.UtilMethods;
 import com.wonkglorg.minecraft.config.LangManager;
 import lombok.Getter;
@@ -19,9 +16,7 @@ import lombok.Setter;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Container;
 import org.bukkit.block.Sign;
-import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.type.Light;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
@@ -30,25 +25,57 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.UUID;
 
+/**
+ * A shop currently in creation process and not finished being setup yet
+ */
 public abstract class ShopCreationProcess{
 	protected final LangManager lang;
 	protected final ShopManager shopManager;
 	@Getter
 	protected final Player player;
+	/**
+	 * If the player creating the shop is an operator
+	 */
 	protected final boolean playerIsOperator;
 	@Getter
 	protected final UUID playerUUID;
+	/**
+	 * The id of the shop when created
+	 */
+	@Getter
+	protected final UUID shopId;
+	/**
+	 * The sign this shop is related to
+	 */
 	@Getter
 	protected Sign sign;
+	/**
+	 * The container this shop references
+	 */
 	@Getter
 	protected Block container;
 	protected BlockFace signDirection;
 	
 	protected ShopType type = ShopType.SELL;
+	/**
+	 * How much this shop sells
+	 */
 	protected int amount = 0;
+	/**
+	 * For what price
+	 */
 	protected double price = 0;
+	/**
+	 * If its a combo shop this is the sell price and {@link #price} the buy price
+	 */
 	protected double priceCombo = 0;
+	/**
+	 * The shop is an admin shop
+	 */
 	protected boolean adminShop = false;
+	/**
+	 * If the shop was created via a method that required no sign
+	 */
 	protected boolean isFakeSign = false;
 	@Setter
 	@Getter
@@ -70,6 +97,7 @@ public abstract class ShopCreationProcess{
 	protected ShopCreationProcess(Player player, Sign sign, Block container, BlockFace signDirection) {
 		this.player = player;
 		this.playerUUID = player.getUniqueId();
+		this.shopId = UUID.randomUUID();
 		this.sign = sign;
 		this.container = container;
 		this.signDirection = signDirection;
@@ -136,7 +164,8 @@ public abstract class ShopCreationProcess{
 	 */
 	public AbstractShop createShop() {
 		
-		final AbstractShop shop = AbstractShop.create(sign.getLocation(),
+		final AbstractShop shop = AbstractShop.create(shopId,
+				sign.getLocation(),
 				player.getUniqueId(),
 				price,
 				priceCombo,
@@ -146,75 +175,27 @@ public abstract class ShopCreationProcess{
 				signDirection,
 				System.currentTimeMillis());
 		shop.setFakeSign(isFakeSign);
-		
-		//removed all the direction checking code. just make sure its a container
-		//make sure that the sign is in front of the chest, unless it is a shulker box
-		if(chestBlock.getState() instanceof Container){
-			existingShop = plugin.getShopmanager().getShopByContainer(chestBlock);
-			if(existingShop != null){
-				//if the block they are adding a sign to is already a shop, do not let them
-				if(chestBlock.getLocation().equals(existingShop.getContainerLocation())){
-					ShopMessage.request("interactionIssue.createOtherPlayer", player, shop).sendToAudience(player);
-					return null;
-				}
-			}
-			
-			if(!(signBlock.getBlockData() instanceof WallSign)){
-				if(!signBlock.getType().toString().contains("_SIGN")){
-					return null;
-				}
-				String wallSignString = signBlock.getType().toString().replace("_SIGN", "_WALL_SIGN");
-				signBlock.setType(Material.valueOf(wallSignString));
-				
-				Directional wallSignData = (Directional) signBlock.getBlockData();
-				wallSignData.setFacing(signDirection);
-				signBlock.setBlockData(wallSignData);
-			}
-			Sign signBlockState = (Sign) signBlock.getState();
-			signBlockState.update();
-			
-			shop.setAdmin(isAdmin);
-			boolean loaded = shop.load();
-			if(!loaded){
-				plugin.getLogger()
-				      .warning("Shop creation failed, unable to load the shop. Aborting shop creation."); // only seen this happen in tests
-				return null;
-			}
-			
-			PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, shop);
-			plugin.getServer().getPluginManager().callEvent(e);
-			
-			plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.CREATE);
-			
-			if(e.isCancelled()){
-				return null;
-			}
-			
-			if(plugin.getSettingsConfig().getDisplayLightLevel() > 0){
-				Block displayBlock = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
-				if(UtilMethods.materialIsNonIntrusive(displayBlock.getType())){
-					displayBlock.setType(Material.LIGHT);
-					Light data = (Light) displayBlock.getBlockData();
-					data.setLevel(plugin.getSettingsConfig().getDisplayLightLevel());
-					displayBlock.setBlockData(data);
-				}
-			}
-			
-			if(type == ShopType.GAMBLE){
-				shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());
-				shop.setAmount(1);
-				shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
-				
-				plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
-				plugin.getShopmanager().registerShop(shop);
-				return null;
-			}
-			
-			Shop.getPlugin().logger().trace("[ShopCreationUtil.createShop] updateSign");
-			shop.updateSign();
+		boolean loaded = shop.load();
+		if(!loaded){
+			Shop.getPlugin()
+			    .getLogger()
+			    .warning("Shop creation failed, unable to load the shop. Aborting shop creation."); // only seen this happen in tests
+			return null;
 		}
-		return shop;
 		
+		if(type == ShopType.GAMBLE){
+			shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());
+			shop.setAmount(1);
+			shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
+			
+			plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
+			plugin.getShopmanager().registerShop(shop);
+			return null;
+		}
+		
+		Shop.getPlugin().logger().trace("[ShopCreationUtil.createShop] updateSign");
+		shop.updateSign();
+		return shop;
 	}
 	
 	protected boolean isAllowedToCreateShop() {
@@ -223,5 +204,4 @@ public abstract class ShopCreationProcess{
 			return false;
 		}
 	}
-	
 }
