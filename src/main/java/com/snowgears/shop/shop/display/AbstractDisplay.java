@@ -39,13 +39,26 @@ public abstract class AbstractDisplay{
 	protected Map<UUID, List<Integer>> entityIDs; //player UUID. display entities
 	protected Map<UUID, List<Integer>> displayTagEntityIDs; //player UUID. display tags
 	
+	public AbstractDisplay(Location shopSignLocation, DisplayType type) {
+		this.shopSignLocation = shopSignLocation;
+		this.type = type;
+	}
+	
 	protected AbstractDisplay(Location shopSignLocation) {
 		this.shopSignLocation = shopSignLocation;
 		entityIDs = new HashMap<>();
 		displayTagEntityIDs = new HashMap<>();
 	}
 	
-	public boolean isEnabled() {return true;}
+	/**
+	 * Spawns the display for the player
+	 */
+	public abstract void spawn(Player player);
+	
+	/**
+	 * Removes the display from the player
+	 */
+	public abstract void remove(Player player);
 	
 	public boolean isChunkLoaded() {
 		return UtilMethods.isChunkLoaded(this.shopSignLocation);
@@ -53,19 +66,19 @@ public abstract class AbstractDisplay{
 	
 	//spawns a floating item packet for a specific player
 	//if player is null, all online players will get the packet
-	protected abstract void spawnItemPacket(Player player, ItemStack is, Location location);
+	protected  void spawnItemPacket(Player player, ItemStack is, Location location);
 	
 	//spawns an armor stand packet for a specific player
 	//if player is null, all online players will get the packet
-	protected abstract void spawnArmorStandPacket(Player player, ArmorStandData armorStandData, Component text);
+	protected  void spawnArmorStandPacket(Player player, ArmorStandData armorStandData, Component text);
 	
 	//spawns an item frame packet for a specific player
 	//if player is null, all online players will get the packet
-	protected abstract void spawnItemFramePacket(Player player, ItemStack is, Location location, BlockFace facing, boolean isGlowing);
+	protected  void spawnItemFramePacket(Player player, ItemStack is, Location location, BlockFace facing, boolean isGlowing);
 	
-	public abstract void removeDisplayEntities(Player player, boolean onlyDisplayTags);
+	public  void removeDisplayEntities(Player player, boolean onlyDisplayTags);
 	
-	public void spawn(Player player) {
+	public void spawne(Player player) {
 		if(player != null && !player.getWorld().getUID().equals(this.shopSignLocation.getWorld().getUID())){
 			return;
 		}
@@ -422,7 +435,7 @@ public abstract class AbstractDisplay{
 		getShop().setNeedsSave(true);
 	}
 	
-	public void remove(Player player) {
+	public void removeee(Player player) {
 		try{
 			removeDisplayEntities(player, false);
 			removeDisplayEntities(player, true);
@@ -673,6 +686,4 @@ public abstract class AbstractDisplay{
 	protected boolean isSameWorld(Player player) {
 		return player.getWorld().getUID().equals(this.shopSignLocation.getWorld().getUID());
 	}
-	
-	public abstract String getItemNameNMS(ItemStack item);
 }

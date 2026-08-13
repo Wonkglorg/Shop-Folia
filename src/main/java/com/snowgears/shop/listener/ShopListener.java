@@ -4,6 +4,8 @@ import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
 import com.snowgears.shop.event.PlayerCreateShopEvent;
 import com.snowgears.shop.event.PlayerDestroyShopEvent;
+import com.snowgears.shop.event.PlayerPostInitializeShopEvent;
+import com.snowgears.shop.event.PlayerPreInitializeShopEvent;
 import com.snowgears.shop.event.PlayerResizeShopEvent;
 import com.snowgears.shop.manager.PlayerManager;
 import com.snowgears.shop.manager.ShopManager;
@@ -13,6 +15,7 @@ import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.CreationWord;
 import com.snowgears.shop.shop.ShopType;
+import com.snowgears.shop.shop.creation.ShopCreationProcess;
 import com.snowgears.shop.shop.creation.SignCreationProcess;
 import com.snowgears.shop.shop.display.DisplayTagOption;
 import static com.snowgears.shop.util.ChestUtil.getOtherChestDirection;
@@ -135,13 +138,12 @@ public class ShopListener implements Listener{
 			return; // off hand version, ignore.
 		}
 		
-		final Player player = event.getPlayer();
-		
 		if(event.getAction() != Action.LEFT_CLICK_BLOCK){
 			return;
 		}
-		if(shopManager.is){
 		
+		if(!settingsConfig.isAllowCreateMethodSign()){
+			return;
 		}
 		
 		final Block clicked = event.getClickedBlock();
@@ -150,37 +152,53 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
+		final Player player = event.getPlayer();
+		
+		if(!shopManager.isCreatingShop(player)){
+			return;
+		}
+		
 		if(!(clicked.getBlockData() instanceof WallSign)){
 			return;
 		}
 		
-		if(!settingsConfig.isAllowCreateMethodSign()){
-			return;
-		}
+		ShopCreationProcess process = shopManager.getShopCreationProcess(player);
 		
-		// We only want to handle shops that exist but are not initialized.
-		AbstractShop shop = shopManager.getShopCreationProcess(clicked.getLocation());
-		if(shop == null || shop.isInitialized()){
+		if(!process.getSign().getLocation().equals(event.getClickedBlock().getLocation())){
 			return;
 		}
 		
 		//creative selection listener will handle if item is null
-		if(event.getItem() == null || event.getItem().getType() == Material.AIR){
+		ItemStack item = event.getItem();
+		if(item == null || item.getType() == Material.AIR){
 			return;
 		}
 		
-		boolean initializedShop;
-		if(shop.getType() == ShopType.BARTER && shop.getItemStack() != null && shop.getSecondaryItemStack() == null){
-			initializedShop = plugin.getShopCreationUtil().initializeShop(shop, player, shop.getItemStack(), event.getItem());
-		} else {
-			initializedShop = plugin.getShopCreationUtil().initializeShop(shop, player, event.getItem(), null);
+		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
+		Bukkit.getPluginManager().callEvent(shopEvent);
+		if(shopEvent.isCancelled()){
+			return;
 		}
 		
-		if(initializedShop){
-			plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
-			shopManager.registerShop(shop);
-			shopManager.finishShopCreation(shop.getSignLocation());
+		//check if item is allowed to be sold
+		AbstractShop shop = null;
+		if(process.getType() != ShopType.BARTER){
+			process.setItemStack(item);
+			shop = process.createShop();
+		} else {
+			if(process.getItemStack() == null){
+				process.setItemStack(item);
+			} else {
+				process.setBarterStack(item);
+				shop = process.createShop();
+			}
 		}
+		
+		if(shop != null){
+			shopManager.finishShopCreation(player, shop);
+		}
+		
+		Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)

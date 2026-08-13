@@ -1,3 +1,3 @@
 package com.snowgears.shop.shop.display;
 
-public class CreationDisplay{}
+public class GlassCaseDisplay{}

@@ -2,29 +2,20 @@ package com.snowgears.shop.util;
 
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.config.SettingsConfig;
-import com.snowgears.shop.shop.display.DisplayType;
-import com.snowgears.shop.event.PlayerCreateShopEvent;
-import com.snowgears.shop.event.PlayerInitializeShopEvent;
+import com.snowgears.shop.event.PlayerPreInitializeShopEvent;
 import com.snowgears.shop.event.PlayerPostInitializeShopEvent;
-import static com.snowgears.shop.manager.PlayerManager.cleanupShopCreationProcess;
 import static com.snowgears.shop.manager.PlayerManager.getShopCreationProcess;
-import com.snowgears.shop.manager.player.PlayerProfile;
-import static com.snowgears.shop.manager.player.PlayerProfile.isAllowedToCreateShop;
 import static com.snowgears.shop.manager.player.PlayerProfile.isOperator;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.config.LangManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Container;
 import org.bukkit.block.ShulkerBox;
-import org.bukkit.block.Sign;
-import org.bukkit.block.data.Directional;
-import org.bukkit.block.data.type.Light;
-import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -39,164 +30,6 @@ public class ShopCreationUtil{
 		this.plugin = plugin;
 		settingsConfig = plugin.getSettingsConfig();
 		lang = plugin.getLangManager();
-	}
-	
-	public BlockFace calculateBlockFaceForSign(Player player, Block chest, BlockFace facePreference) {
-		if(facePreference == BlockFace.UP || facePreference == BlockFace.DOWN){
-			facePreference = BlockFace.NORTH;
-		}
-		Block futureSign = chest.getRelative(facePreference);
-		if(UtilMethods.materialIsNonIntrusive(futureSign.getType())){
-			return facePreference;
-		}
-		for(BlockFace face : wallFaces){
-			futureSign = chest.getRelative(face);
-			if(UtilMethods.materialIsNonIntrusive(futureSign.getType())){
-				return face;
-			}
-		}
-		lang.request("interaction_issue.signRoom").sendToAudience(player);
-		return null;
-	}
-	
-
-	
-	public AbstractShop createShop(Player player,
-	                               Block chestBlock,
-	                               Block signBlock,
-	                               PricePair pricePair,
-	                               int amount,
-	                               boolean isAdmin,
-	                               ShopType type,
-	                               BlockFace signDirection,
-	                               boolean isFakeSign) {
-		String playerMessage = null;
-		if(type == null){
-			type = ShopType.SELL;
-		}
-		
-		boolean hasOperatorPermission = isOperator(player);
-		
-		if(!PlayerProfile.isAllowedToCreateShop(player, type)){
-			lang.request("permission.error.create").replace("%shop-type%", type).sendToAudience(player);
-			return null;
-		}
-		
-		final AbstractShop shop = AbstractShop.create(signBlock.getLocation(),
-				player.getUniqueId(),
-				pricePair.getPrice(),
-				pricePair.getPriceCombo(),
-				amount,
-				isAdmin,
-				type,
-				signDirection,
-				System.currentTimeMillis());
-		shop.setFakeSign(isFakeSign);
-		
-		if(type == ShopType.GAMBLE){
-			isAdmin = true;
-			shop.setAdmin(true);
-			//todo:jmd why was this in the original? why is gamble always admin?
-			if(!hasOperatorPermission){
-				lang.request("permission.error.create").sendToAudience(player);
-				return null;
-			}
-		}
-		
-		//if players must pay to create shops, check that they have enough money first
-		if(!hasOperatorPermission){
-			double cost = settingsConfig.getCreationCost();
-			if(cost > 0 && !EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
-				lang.request("interaction_issue.createInsufficientFunds").sendToAudience(player);
-				return null;
-			}
-		}
-		
-		//prevent players (even if they are OP) from creating a shop on a double chest with another player
-		AbstractShop existingShop = plugin.getShopmanager().getShopByContainer(chestBlock);
-		if(existingShop != null && !existingShop.isAdmin()){
-			if(!existingShop.getOwnerUUID().equals(player.getUniqueId())){
-				playerMessage = ShopMessage.formatPlainTextSingle("interactionIssue.createOtherPlayer", new PlaceholderContext());
-			}
-		}
-		
-		if(playerMessage != null){
-			if(!playerMessage.isEmpty()){
-				ShopMessage.request(playerMessage, player, shop).sendToAudience(player);
-			}
-			return null;
-		}
-		
-		//removed all the direction checking code. just make sure its a container
-		//make sure that the sign is in front of the chest, unless it is a shulker box
-		if(chestBlock.getState() instanceof Container){
-			existingShop = plugin.getShopmanager().getShopByContainer(chestBlock);
-			if(existingShop != null){
-				//if the block they are adding a sign to is already a shop, do not let them
-				if(chestBlock.getLocation().equals(existingShop.getContainerLocation())){
-					ShopMessage.request("interactionIssue.createOtherPlayer", player, shop).sendToAudience(player);
-					return null;
-				}
-			}
-			
-			if(!(signBlock.getBlockData() instanceof WallSign)){
-				if(!signBlock.getType().toString().contains("_SIGN")){
-					return null;
-				}
-				String wallSignString = signBlock.getType().toString().replace("_SIGN", "_WALL_SIGN");
-				signBlock.setType(Material.valueOf(wallSignString));
-				
-				Directional wallSignData = (Directional) signBlock.getBlockData();
-				wallSignData.setFacing(signDirection);
-				signBlock.setBlockData(wallSignData);
-			}
-			Sign signBlockState = (Sign) signBlock.getState();
-			signBlockState.update();
-			
-			shop.setAdmin(isAdmin);
-			boolean loaded = shop.load();
-			if(!loaded){
-				plugin.getLogger()
-				      .warning("Shop creation failed, unable to load the shop. Aborting shop creation."); // only seen this happen in tests
-				return null;
-			}
-			
-			PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, );
-			plugin.getServer().getPluginManager().callEvent(e);
-			
-			plugin.getShopmanager().getDatabase().logAction(player, shop, ShopActionType.CREATE);
-			
-			if(e.isCancelled()){
-				return null;
-			}
-			
-
-			
-			if(type == ShopType.GAMBLE){
-				shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());
-				shop.setAmount(1);
-				shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
-				
-				plugin.getShopCreationUtil().sendCreationSuccess(player, shop);
-				plugin.getShopmanager().registerShop(shop);
-				return null;
-			}
-			
-			Shop.getPlugin().logger().trace("[ShopCreationUtil.createShop] updateSign");
-			shop.updateSign();
-		}
-		return shop;
-	}
-	
-	public void sendCreationSuccess(Player player, AbstractShop shop) {
-		if(shop.getDisplay() != null){
-			shop.getDisplay().spawn(player);
-		}
-		Shop.getPlugin().logger().trace("[ShopCreationUtil.sendCreationSuccess] updateSign");
-		shop.updateSign(true);
-		shop.setNeedsSave(true);
-		cleanupShopCreationProcess(player);
-		ShopMessage.request(shop.getType() + ".create", player, shop).sendToAudience(player);
 	}
 	
 	public boolean itemsCanBeInitialized(Player player, ItemStack itemStack, ItemStack barterItemStack) {
@@ -275,7 +108,7 @@ public class ShopCreationUtil{
 		
 		if(shop.getItemStack() == null){
 			
-			PlayerInitializeShopEvent e = new PlayerInitializeShopEvent(player, shop);
+			PlayerPreInitializeShopEvent e = new PlayerPreInitializeShopEvent(player, shop);
 			Bukkit.getServer().getPluginManager().callEvent(e);
 			
 			if(e.isCancelled()){
@@ -296,7 +129,7 @@ public class ShopCreationUtil{
 		}
 		if(shop.getSecondaryItemStack() == null && barterItem != null){
 			
-			PlayerInitializeShopEvent e = new PlayerInitializeShopEvent(player, shop);
+			PlayerPreInitializeShopEvent e = new PlayerPreInitializeShopEvent(player, shop);
 			Bukkit.getServer().getPluginManager().callEvent(e);
 			
 			if(e.isCancelled()){

@@ -11,7 +11,7 @@ import org.jspecify.annotations.NonNull;
  * Called after the shop has been initialized with the correct items
  * <br><br>====ORDER====<br>
  * Sign is Placed and creation word entered-> {@link PlayerCreateShopEvent} <br>
- * Item is defined for shop -> {@link PlayerInitializeShopEvent}<br>
+ * Item is defined for shop -> {@link PlayerPreInitializeShopEvent}<br>
  * Item was defined and shop is ready -> {@link PlayerPostInitializeShopEvent}<br>
  */
 public class PlayerPostInitializeShopEvent extends Event{

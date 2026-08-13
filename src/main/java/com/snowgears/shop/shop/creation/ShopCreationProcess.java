@@ -6,7 +6,7 @@ import com.snowgears.shop.manager.player.PlayerProfile;
 import static com.snowgears.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ShopType;
-import com.snowgears.shop.shop.display.CreationDisplay;
+import com.snowgears.shop.shop.display.CreationTextDisplay;
 import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.util.EconomyUtils;
 import com.wonkglorg.minecraft.config.LangManager;
@@ -53,6 +53,7 @@ public abstract class ShopCreationProcess{
 	protected Block container;
 	protected BlockFace signDirection;
 	
+	@Getter
 	protected ShopType type = ShopType.SELL;
 	/**
 	 * How much this shop sells
@@ -89,7 +90,8 @@ public abstract class ShopCreationProcess{
 	/**
 	 * Display that represents the text lines above the shop giving visual feedback
 	 */
-	protected CreationDisplay display;
+	@Getter
+	protected CreationTextDisplay display;
 	
 	protected ShopCreationProcess(Player player, Sign sign, Block container, BlockFace signDirection) {
 		this.player = player;
@@ -201,7 +203,7 @@ public abstract class ShopCreationProcess{
 		}
 		
 		if(type == ShopType.GAMBLE){
-			shop.setItemStack(plugin.getItemConfig().getGambleDisplayItem());
+			shop.setItemStack(Shop.getPlugin().getItemConfig().getGambleDisplayItem());
 			shop.setAmount(1);
 			shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
 			return null;
@@ -217,5 +219,6 @@ public abstract class ShopCreationProcess{
 			lang.request("permission.error.create").replace("%shop-type%", type).sendToAudience(player);
 			return false;
 		}
+		return true;
 	}
 }

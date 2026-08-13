@@ -32,7 +32,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 		String line3 = Components.toPlainText(lines.get(3));
 		type = getShopType(line3);
 		if(!isAllowedToCreateShop()){
-		
+			return false;
 		}
 		adminShop = readShopAdmin(line3);
 		

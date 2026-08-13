@@ -207,7 +207,7 @@ public class ShopManager{
 	public void finishShopCreation(Player player, AbstractShop shop) {
 		ShopCreationProcess remove = playersInShopCreation.remove(player.getUniqueId());
 		if(remove != null){
-			remove.display.remove(player);
+			remove.getDisplay().remove(player);
 		}
 		registerShop(shop);
 	}

@@ -5,5 +5,7 @@ public enum DisplayType{
 	ITEM,
 	LARGE_ITEM,
 	GLASS_CASE,
-	ITEM_FRAME;
+	ITEM_FRAME,
+	CREATION_TEXT //only used for shop creations
+	;
 }
