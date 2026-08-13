@@ -1,5 +1,6 @@
 package com.snowgears.shop.command;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import static com.snowgears.shop.Constants.SHOP_COMMAND;
@@ -13,6 +14,7 @@ import com.snowgears.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.command.AbstractCommand;
 import com.wonkglorg.minecraft.config.LangManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
@@ -35,6 +37,15 @@ public class ShopCommand extends AbstractCommand{
 		return literal(SHOP_COMMAND)
 				.requires(permissions(SHOP_PERMISSION_USER))
 				.executes(this::usageMessage)
+				//todo:mjd implement create shop
+				.then(literal("create")
+						.then(literal("BUY")
+								.then(argument("amount",IntegerArgumentType.integer(1))
+										.then(argument("price",IntegerArgumentType.integer(0))
+												.then(argument("item"))))) //todo:mjd generate all possible items that work take inspiration from marketmanager
+						.then(literal("SELL"))
+						.then(literal("BARTER"))
+						.then(literal("GAMBLE")))
 				.then(literal("list").executes(this::list))
 				.then(literal("currency").executes(this::currency))
 				.then(literal("notify")

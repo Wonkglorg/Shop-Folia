@@ -135,7 +135,7 @@ public class ShopListener implements Listener{
 	public void onShopInitialisation(PlayerInteractEvent event) {
 		
 		if(event.getHand() != EquipmentSlot.HAND){
-			return; // off hand version, ignore.
+			return; //only check main hand.
 		}
 		
 		if(event.getAction() != Action.LEFT_CLICK_BLOCK){
@@ -174,13 +174,17 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
+		if(!shopManager.passesItemListCheck(item)){
+			lang.request("interaction_issue.blacklisted-item").sendToAudience(player);
+			return;
+		}
+		
 		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
 		Bukkit.getPluginManager().callEvent(shopEvent);
 		if(shopEvent.isCancelled()){
 			return;
 		}
 		
-		//check if item is allowed to be sold
 		AbstractShop shop = null;
 		if(process.getType() != ShopType.BARTER){
 			process.setItemStack(item);
@@ -188,6 +192,7 @@ public class ShopListener implements Listener{
 		} else {
 			if(process.getItemStack() == null){
 				process.setItemStack(item);
+				return; //do not finish shop because barter needs 2 items
 			} else {
 				process.setBarterStack(item);
 				shop = process.createShop();
@@ -196,9 +201,8 @@ public class ShopListener implements Listener{
 		
 		if(shop != null){
 			shopManager.finishShopCreation(player, shop);
+			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
 		}
-		
-		Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
@@ -222,7 +226,7 @@ public class ShopListener implements Listener{
 		}
 		
 		AbstractShop shop = shopManager.getShopBySign(block.getLocation());
-		if(shop == null || !shop.isInitialized()){
+		if(shop == null){
 			return;
 		}
 		
