@@ -15,7 +15,6 @@ import com.snowgears.shop.service.ShopService;
 import com.snowgears.shop.service.ShopServiceProvider;
 import com.snowgears.shop.util.CurrencyType;
 import com.snowgears.shop.util.ItemListType;
-import com.snowgears.shop.util.ShopCreationUtil;
 import com.snowgears.shop.util.ShopLogger;
 import com.snowgears.shop.util.UtilMethods;
 import com.tcoded.folialib.FoliaLib;
@@ -46,9 +45,6 @@ public class Shop extends JavaPlugin{
 	
 	@Getter
 	private ShopManager shopmanager;
-	@Getter
-	private ShopCreationUtil shopCreationUtil;
-	
 	@Getter
 	private String commandAlias;
 	@Getter
@@ -95,8 +91,6 @@ public class Shop extends JavaPlugin{
 		
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
-		
-		shopCreationUtil = new ShopCreationUtil(this);
 		
 		transactionHandler = new TransactionHandler(this);
 		if(itemConfig.getGambleDisplayItem() == null){

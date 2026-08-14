@@ -42,10 +42,10 @@ public class ShopCommand extends AbstractCommand{
 						.then(literal("BUY")
 								.then(argument("amount",IntegerArgumentType.integer(1))
 										.then(argument("price",IntegerArgumentType.integer(0))
-												.then(argument("item"))))) //todo:mjd generate all possible items that work take inspiration from marketmanager
+												//.then(argument("item"))))) //todo:mjd generate all possible items that work take inspiration from marketmanager
 						.then(literal("SELL"))
 						.then(literal("BARTER"))
-						.then(literal("GAMBLE")))
+						.then(literal("GAMBLE"))))))
 				.then(literal("list").executes(this::list))
 				.then(literal("currency").executes(this::currency))
 				.then(literal("notify")
@@ -59,7 +59,6 @@ public class ShopCommand extends AbstractCommand{
 				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble))
 				.then(literal("display").requires(permissions(SHOP_PERMISSION_OPERATOR))
 									 .then(literal("refresh").executes(this::refreshDisplay)))
-
 				
 				
 				;

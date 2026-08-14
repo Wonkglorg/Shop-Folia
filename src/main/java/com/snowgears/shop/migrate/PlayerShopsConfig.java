@@ -2,12 +2,12 @@ package com.snowgears.shop.migrate;
 
 import com.snowgears.shop.Constants;
 import com.snowgears.shop.Shop;
-import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.manager.player.PlayerProfile;
 import com.snowgears.shop.shop.AbstractShop;
 import com.snowgears.shop.shop.ComboShop;
 import com.snowgears.shop.shop.ShopType;
 import static com.snowgears.shop.shop.ShopType.typeFromString;
+import com.snowgears.shop.shop.display.DisplayType;
 import com.snowgears.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.config.types.Config;
 import org.bukkit.Location;
@@ -146,8 +146,8 @@ public class PlayerShopsConfig extends Config{
 					continue;
 				}
 				
-				// This inits a new shop but won't have a chestLocation until load().
-				AbstractShop shop = AbstractShop.create(signLoc,
+				AbstractShop shop = AbstractShop.create(id == null ? UUID.randomUUID() : id,
+						signLoc,
 						owner,
 						price,
 						priceSell,
@@ -156,9 +156,6 @@ public class PlayerShopsConfig extends Config{
 						shopType,
 						facing,
 						System.currentTimeMillis());
-				if(id != null){
-					shop.setId(id);
-				}
 				
 				// Important: apply saved stock BEFORE setting item stacks, since setItemStack()
 				// may calculate stock (inventory may be null pre-load) and may also render sign text.

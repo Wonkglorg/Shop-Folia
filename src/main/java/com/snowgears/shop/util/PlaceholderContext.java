@@ -13,7 +13,6 @@ public class PlaceholderContext{
 	private boolean forSign = false;
 	private ItemStack item = null;
 	private ItemStack barterItem = null;
-	private ShopCreationProcessOld process;
 	private OfflineTransactions offlineTransactions;
 	private Location location;
 	
@@ -66,15 +65,6 @@ public class PlaceholderContext{
 	}
 	
 	public ItemStack getBarterItem() {return barterItem;}
-	
-	public PlaceholderContext setProcess(ShopCreationProcessOld process) {
-		this.process = process;
-		return this;
-	}
-	
-	public ShopCreationProcessOld getProcess() {
-		return process;
-	}
 	
 	public PlaceholderContext setOfflineTransactions(OfflineTransactions offlineTransactions) {
 		this.offlineTransactions = offlineTransactions;

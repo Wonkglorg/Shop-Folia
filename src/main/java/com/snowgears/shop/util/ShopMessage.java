@@ -129,7 +129,7 @@ public class ShopMessage{
 					return"Unknown Player";
 		   })
 		   .lazyReplace("%shop type%",()-> {
-			   if(context.getProcess() != null && context.getProcess().getShopType() != null){
+			   if(context.getpro() != null && context.getProcess().getShopType() != null){
 				   return context.getProcess().getShopType().toString();
 			   }
 			   if(context.getShop() != null){

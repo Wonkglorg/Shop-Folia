@@ -192,8 +192,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		}
 		BlockFace facing = BlockFace.valueOf(set.getString("sign_facing"));
 		// This inits a new shop but won't have a chestLocation until load().
-		AbstractShop shop = AbstractShop.create(signLocation, ownerId, price, priceSell, amount, isAdmin, shopType, facing, creationTime);
-		shop.setId(id);
+		AbstractShop shop = AbstractShop.create(id, signLocation, ownerId, price, priceSell, amount, isAdmin, shopType, facing, creationTime);
 		ItemStack stack = ItemStackJsonCodec.deserialize(set.getString("item"));
 		
 		int stock = set.getInt("last_known_stock_count");
