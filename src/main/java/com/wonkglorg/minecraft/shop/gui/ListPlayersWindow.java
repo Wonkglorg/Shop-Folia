@@ -1,0 +1,48 @@
+package com.wonkglorg.minecraft.shop.gui;
+
+public class ListPlayersWindow extends ShopGuiWindow {
+/*
+    public ListPlayersWindow(UUID player){
+        super(player);
+        this.title = Shop.getPlugin().getGuiHandler().getTitle(ShopGuiHandler.GuiTitle.LIST_PLAYERS);
+        this.page = Bukkit.createInventory(null, INV_SIZE, title);
+        initInvContents();
+    }
+
+    @Override
+    protected void initInvContents(){
+        super.initInvContents();
+        this.clearInvBody();
+
+        makeMenuBarUpper();
+        makeMenuBarLower();
+
+        //TODO make a more efficient method to sort players by name
+        //this current method is way too resource intensive on large servers
+        ArrayList<ItemStack> shopOwnerHeads = Shop.getPlugin().getGuiHandler().getShopOwnerHeads();
+        shopOwnerHeads.sort(new ComparatorItemstackName());
+
+        int startIndex = pageIndex * 36; //36 items is a full page in the inventory
+        ItemStack icon;
+        boolean added = true;
+
+        for (int i=startIndex; i< shopOwnerHeads.size(); i++) {
+            icon = shopOwnerHeads.get(i);
+
+            if(!this.addIcon(icon)){
+                added = false;
+                break;
+            }
+        }
+
+        if(added){
+            page.setItem(53, null);
+        }
+        else{
+            page.setItem(53, this.getNextPageIcon());
+        }
+    }
+    
+ */
+}
+

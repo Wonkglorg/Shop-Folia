@@ -1,4 +1,4 @@
-main: com.snowgears.shop.Shop
+main: com.wonkglorg.minecraft.shop.Shop
 name: ${name}
 description: ${description}
 author: ${author}
