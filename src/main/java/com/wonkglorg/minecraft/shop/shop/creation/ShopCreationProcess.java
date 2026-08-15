@@ -79,7 +79,7 @@ public abstract class ShopCreationProcess{
 	protected ItemStack itemStack = null;
 	@Setter
 	@Getter
-	protected ItemStack barterStack = null;
+	protected ItemStack secondaryStack = null;
 	
 	@Getter
 	protected boolean finishedInitialisation;
@@ -112,8 +112,7 @@ public abstract class ShopCreationProcess{
 				priceCombo,
 				adminShop,
 				isFakeSign,
-				itemStack,
-				barterStack,
+				itemStack, secondaryStack,
 				finishedInitialisation,
 				isCancelled);
 	}
@@ -206,9 +205,12 @@ public abstract class ShopCreationProcess{
 			shop.setAmount(1);
 			shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
 			return null;
+		}else{
+			shop.setItemStack(itemStack);
+			if(secondaryStack != null){
+				shop.setSecondaryItemStack(secondaryStack);
+			}
 		}
-		
-		Main.getPlugin().logger().debug("[ShopCreationUtil.createShop] updateSign");
 		shop.updateSign();
 		return shop;
 	}

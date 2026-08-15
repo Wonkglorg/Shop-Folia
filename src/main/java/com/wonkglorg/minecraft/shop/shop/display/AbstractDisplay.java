@@ -39,6 +39,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -51,7 +52,7 @@ public abstract class AbstractDisplay{
 	@Getter
 	protected AbstractShop shop;
 	
-	protected Map<UUID, List<Integer>> entityIDs; //player UUID. display entities
+	protected Map<UUID, List<Integer>> entityIDs = new HashMap<>(); //player UUID. display entities
 	
 	protected AbstractDisplay(AbstractShop shop, DisplayType type) {
 		this.plugin = Main.getPlugin();
@@ -233,7 +234,7 @@ public abstract class AbstractDisplay{
 				if(this.isChunkLoaded()){
 					//make sure there is room above the shop for the display
 					Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
-					if(!(aboveShop.getType() == Material.AIR)) {
+					if(!(aboveShop.getType() == Material.AIR)){
 						return;
 					}
 				}
@@ -509,5 +510,10 @@ public abstract class AbstractDisplay{
 		sendPacket(player, entitySpawnPacket);
 		sendPacket(player, entityVelocityPacket);
 		sendPacket(player, entityMetadataPacket);
+	}
+	
+	@Override
+	public String toString() {
+		return "AbstractDisplay{type=" + type + ", shop=" + shop + '}';
 	}
 }

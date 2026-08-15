@@ -128,7 +128,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 				return false;
 			}
 		} else {
-			Main.getPlugin().logger().debug("Reading non fractional currency ITEM OR EXP");
+			Main.getPlugin().logger().debug("Reading non fractional currency " + Main.getPlugin().getSettingsConfig().getCurrencyType());
 			try{
 				String line3 = UtilMethods.cleanNumberText(input);
 				
@@ -200,4 +200,43 @@ public class SignCreationProcess extends ShopCreationProcess{
 		return 1;
 	}
 	
+	@Override
+	public String toString() {
+		return "SignCreationProcess{" +
+		       "player=" +
+		       player +
+		       ", playerIsOperator=" +
+		       playerIsOperator +
+		       ", playerUUID=" +
+		       playerUUID +
+		       ", shopId=" +
+		       shopId +
+		       ", sign=" +
+		       sign +
+		       ", container=" +
+		       container +
+		       ", signDirection=" +
+		       signDirection +
+		       ", type=" +
+		       type +
+		       ", amount=" +
+		       amount +
+		       ", price=" +
+		       price +
+		       ", priceCombo=" +
+		       priceCombo +
+		       ", adminShop=" +
+		       adminShop +
+		       ", isFakeSign=" +
+		       isFakeSign +
+		       ", itemStack=" +
+		       itemStack +
+		       ", secondaryStack=" +
+		       secondaryStack +
+		       ", finishedInitialisation=" +
+		       finishedInitialisation +
+		       ", isCancelled=" +
+		       isCancelled +
+		       '}';
+	}
 }

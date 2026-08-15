@@ -191,6 +191,7 @@ public class ShopManager{
 			}
 			//the shop has still not been initialized with an item from a player
 			if(!process.isFinishedInitialisation()){
+				plugin.logger().debug("Shop Creation timed out for player: " + player.getName());
 				cancelShopCreationProcess(process.getPlayer());
 			}
 		}, 30 * 20); // 30 seconds * 20 ticks
@@ -205,7 +206,9 @@ public class ShopManager{
 	}
 	
 	public void finishShopCreation(Player player, AbstractShop shop) {
+		plugin.logger().debug("Removing player " + player.getName() + "from shop creation list");
 		playersInShopCreation.remove(player.getUniqueId());
+		plugin.logger().debug("Registering shop: " + shop);
 		registerShop(shop);
 	}
 	
@@ -226,6 +229,7 @@ public class ShopManager{
 	 */
 	public void cancelShopCreationProcess(Player player) {
 		ShopCreationProcess process = playersInShopCreation.remove(player.getUniqueId());
+		plugin.logger().debug("Removing player " + player.getName() + "from shop creation list");
 		if(process != null){
 			Main.getPlugin().getLangManager().request("interaction_issue.createCancel").sendToAudience(player);
 			Sign sign = process.getSign();
@@ -391,11 +395,11 @@ public class ShopManager{
 					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
 						for(AbstractShop shop : plugin.getShopmanager().getShops(offlinePlayer.getUniqueId())){
 							plugin.logger().info("Deleting Shop because player " +
-							                       offlinePlayer.getName() +
-							                       " has not logged in within the required " +
-							                       (int) hoursSinceLastPlayed +
-							                       " hours! " +
-							                       shop);
+							                     offlinePlayer.getName() +
+							                     " has not logged in within the required " +
+							                     (int) hoursSinceLastPlayed +
+							                     " hours! " +
+							                     shop);
 							plugin.getShopmanager().unregisterShop(shop);
 						}
 					}

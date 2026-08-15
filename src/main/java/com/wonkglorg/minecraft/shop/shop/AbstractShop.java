@@ -251,8 +251,6 @@ public abstract class AbstractShop{
 		// Now that the world/container data is valid, refresh stock and state.
 		updateStock();
 		
-		Main.getPlugin().logger().debug("Loaded shop successfully: " + this);
-		
 		isLoaded = true;
 		return true;
 		
@@ -432,8 +430,8 @@ public abstract class AbstractShop{
 			return;
 		}
 		
-		// Remove "0 Damage" from item meta (old config bug)
 		this.item = is.clone();
+		this.item.setAmount(1);
 		this.calculateStock();
 		shopState = ShopState.getShopState(this);
 		this.updateSign(true);
@@ -441,6 +439,7 @@ public abstract class AbstractShop{
 	
 	public void setSecondaryItemStack(ItemStack is) {
 		this.secondaryItem = is.clone();
+		this.secondaryItem.setAmount(1);
 		this.calculateStock();
 		shopState = ShopState.getShopState(this);
 		this.updateSign(true);

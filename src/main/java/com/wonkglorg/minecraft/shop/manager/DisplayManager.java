@@ -9,7 +9,6 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -73,6 +72,8 @@ public class DisplayManager{
 					return;
 				}
 				
+				plugin.logger().debug("Running shop display task for player " + player);
+				
 				Location playerLocation = player.getLocation();
 				
 				double maxDistance = plugin.getSettingsConfig().getMaxShopDisplayDistance();
@@ -85,22 +86,25 @@ public class DisplayManager{
 				
 				for(AbstractShop shop : shopManager.getShopsNearLocation(playerLocation, chunkRadius)){
 					if(!shop.isLoaded()){
+						plugin.logger().debug("Shop is not loaded skipping " + shop);
 						continue;
 					}
 					
 					AbstractDisplay display = shop.getDisplay();
 					
-					if(display == null || display.getType() == DisplayType.NONE){
+					if(display.getType() == DisplayType.NONE){
+						plugin.logger().debug("No Display selected skipping");
 						continue;
 					}
 					
 					Location containerLocation = shop.getContainerLocation();
 					
-					if(containerLocation == null || !containerLocation.getWorld().equals(playerLocation.getWorld())){
+					if(containerLocation == null || !containerLocation.getWorld().getUID().equals(playerLocation.getWorld().getUID())){
 						continue;
 					}
 					
 					if(containerLocation.distanceSquared(playerLocation) <= maxDistanceSquared){
+						plugin.logger().debug("Shop " + shop + " is in radius of player " + player.getName());
 						nowVisible.add(shop);
 					}
 				}
@@ -126,10 +130,7 @@ public class DisplayManager{
 					}
 				}
 				
-				if(previouslyVisible.isEmpty()){
-					visibleShopsByPlayer.remove(playerId, previouslyVisible);
-				}
-				
+				visibleShopsByPlayer.put(playerId, nowVisible);
 			} catch(Exception e){
 				plugin.logger().warning("Error processing shop displays for player " + player.getName());
 				e.printStackTrace();

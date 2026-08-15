@@ -78,17 +78,18 @@ public class ShopListener implements Listener{
 		plugin.logger().debug("Player " + player.getName() + " writing on sign");
 		
 		if(!settingsConfig.isAllowCreateMethodSign()){
-			plugin.logger().debug("CANCEL: Shop Create Method Sign not allowed");
+			plugin.logger().debug("Shop Create Method Sign not allowed");
+			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
-		if(!(block.getState() instanceof WallSign wallSign)){
+		if(!(block.getBlockData() instanceof WallSign wallSign)){
 			plugin.logger().debug("Sign is not a wall sign");
 			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
-		Sign sign = (Sign) block.getBlockData();
+		Sign sign = (Sign) block.getState();
 		
 		BlockFace signDirection = wallSign.getFacing();
 		Block chest = block.getRelative(signDirection.getOppositeFace());
@@ -137,9 +138,10 @@ public class ShopListener implements Listener{
 			plugin.logger().debug("====SHOP CREATION CANCEL====");
 			return;
 		}
+		plugin.logger().debug("Sending Shop Creation Event");
 		PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, process.toImmutableProgress());
 		Main.getPlugin().getServer().getPluginManager().callEvent(e);
-		if(!event.isCancelled()){
+		if(event.isCancelled()){
 			plugin.logger().debug("Event was cancelled by third party plugin");
 			plugin.logger().debug("====SHOP CREATION CANCEL====");
 			e.setCancelled(true);
@@ -160,67 +162,93 @@ public class ShopListener implements Listener{
 		if(event.getAction() != Action.LEFT_CLICK_BLOCK){
 			return;
 		}
-		
 		if(!settingsConfig.isAllowCreateMethodSign()){
+			plugin.logger().debug("Sign Create Method not allowed for initialisation");
 			return;
 		}
 		
 		final Block clicked = event.getClickedBlock();
 		
 		if(clicked == null){
+			plugin.logger().debug("Click was not a block");
 			return;
 		}
 		
 		final Player player = event.getPlayer();
 		
 		if(!shopManager.isCreatingShop(player)){
+			plugin.logger().debug("Player is not in active shop creation");
 			return;
 		}
 		
+		plugin.logger().debug("====SHOP INITIALISATION START====");
 		if(!(clicked.getBlockData() instanceof WallSign)){
+			plugin.logger().debug("Sign is not a wall sign");
+			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
 		
 		ShopCreationProcess process = shopManager.getShopCreationProcess(player);
 		
+		plugin.logger().debug("Current player process data: " + process);
+		
 		if(!process.getSign().getLocation().equals(event.getClickedBlock().getLocation())){
+			plugin.logger().debug("Click was not on the shop creations sign");
+			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
 		
 		//creative selection listener will handle if item is null
 		ItemStack item = event.getItem();
 		if(item == null || item.getType() == Material.AIR){
+			plugin.logger().debug("Air is not an allowed item");
+			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
 		
+		plugin.logger().debug("Clicked using " + item);
+		
 		if(!shopManager.passesItemListCheck(item)){
+			plugin.logger().debug("Item is not allowed to be set as a shop");
+			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
 			lang.request("interaction_issue.blacklisted-item").sendToAudience(player);
 			return;
 		}
 		
+		plugin.logger().debug("Is allowed item");
+		
+		plugin.logger().debug("Sending shop pre init event");
 		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
 		Bukkit.getPluginManager().callEvent(shopEvent);
 		if(shopEvent.isCancelled()){
+			plugin.logger().debug("Event was cancelled by third party plugin");
+			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
 		
 		AbstractShop shop = null;
+		event.setCancelled(true); //cancel event otherwise 1 tick breaking and creative mode destroy the shop sign while clicking on it
 		if(process.getType() != ShopType.BARTER){
 			process.setItemStack(item);
 			shop = process.createShop();
+			plugin.logger().debug("Setting item for shop: " + item);
 		} else {
 			if(process.getItemStack() == null){
 				process.setItemStack(item);
+				plugin.logger().debug("Setting first item for barter shop: " + item);
 				return; //do not finish shop because barter needs 2 items
 			} else {
-				process.setBarterStack(item);
+				process.setSecondaryStack(item);
 				shop = process.createShop();
+				plugin.logger().debug("Setting second iem for barter shop " + item);
 			}
 		}
 		
 		if(shop != null){
 			shopManager.finishShopCreation(player, shop);
+			plugin.logger().debug("Sending Post init shop event");
 			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
+			plugin.logger().debug("====SHOP INITIALISATION DONE====");
 		}
 	}
 	
