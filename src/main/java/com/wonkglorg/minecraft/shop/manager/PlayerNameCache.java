@@ -1,4 +1,4 @@
-package com.wonkglorg.minecraft.shop.util;
+package com.wonkglorg.minecraft.shop.manager;
 
 import com.wonkglorg.minecraft.shop.Main;
 import org.bukkit.Bukkit;

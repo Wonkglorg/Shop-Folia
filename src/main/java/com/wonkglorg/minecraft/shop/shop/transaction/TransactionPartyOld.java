@@ -1,11 +1,13 @@
-package com.wonkglorg.minecraft.shop.util;
+package com.wonkglorg.minecraft.shop.shop.transaction;
 
+import com.wonkglorg.minecraft.shop.util.EconomyUtils;
+import com.wonkglorg.minecraft.shop.util.InventoryUtils;
 import lombok.Getter;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-public class TransactionParty{
+public class TransactionPartyOld{
 	// Party - The player that is a party in the transaction, could be the shop owner, or the player clicking the sign
 	private OfflinePlayer party;
 	
@@ -25,7 +27,7 @@ public class TransactionParty{
 	// Are we an admin shop
 	private boolean isAdmin;
 	
-	public TransactionParty(boolean isPlayer, boolean isAdmin, OfflinePlayer party, Inventory inventory) {
+	public TransactionPartyOld(boolean isPlayer, boolean isAdmin, OfflinePlayer party, Inventory inventory) {
 		this.isPlayer = isPlayer;
 		this.isAdmin = isAdmin;
 		this.party = party;
@@ -33,7 +35,7 @@ public class TransactionParty{
 	}
 	
 	// Allow creating a party that uses an item for it's currency/available funds.
-	public TransactionParty(boolean isPlayer, boolean isAdmin, OfflinePlayer party, Inventory inventory, ItemStack currencyItem) {
+	public TransactionPartyOld(boolean isPlayer, boolean isAdmin, OfflinePlayer party, Inventory inventory, ItemStack currencyItem) {
 		this.isPlayer = isPlayer;
 		this.isAdmin = isAdmin;
 		this.party = party;
@@ -41,33 +43,10 @@ public class TransactionParty{
 		this.currencyItem = currencyItem;
 	}
 	
-	public int getInventoryQuantity(ItemStack item) {
-		// If we are an admin, don't check the shop for inventory
-		if(this.isAdmin){
-			return Integer.MAX_VALUE;
-		}
-		
-		return InventoryUtils.getAmount(this.inventory, item);
-	}
+
 	
 	// Update the amount of currency the player has available (vault/currency item) and return it.
-	public double getAvailableFunds() {
-		// If we are an admin, don't check for funds
-		if(this.isAdmin){
-			return Double.MAX_VALUE;
-		}
-		
-		// Check if we are using an item for our funds, this will happen if we are a seller in the transaction and we are selling an item
-		if(this.currencyItem != null){
-			// We are using an item for our currency, so use that amount!
-			this.availableFunds = InventoryUtils.getAmount(this.inventory, this.currencyItem);
-		} else {
-			// We are using the regular Shop currency for this transaction
-			this.availableFunds = EconomyUtils.getFunds(party, this.inventory);
-		}
-		
-		return this.availableFunds;
-	}
+
 	
 	// Check if we have enough space to receive a payment, we might not have the inventory space for it!
 	public boolean canAcceptPayment(double paymentAmount) {

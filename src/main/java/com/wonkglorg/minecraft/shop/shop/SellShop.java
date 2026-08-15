@@ -4,6 +4,7 @@ import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
@@ -17,5 +18,4 @@ public class SellShop extends AbstractShop {
         this.type = ShopType.SELL;
         this.signLines = ShopMessage.getSignLines(this);
     }
-
 }

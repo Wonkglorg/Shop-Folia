@@ -8,8 +8,8 @@ import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.PlaceholderContext;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import static com.wonkglorg.minecraft.shop.util.ShopMessage.request;
-import com.wonkglorg.minecraft.shop.util.Transaction;
-import com.wonkglorg.minecraft.shop.util.TransactionError;
+import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.TransactionError;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
@@ -41,13 +41,6 @@ public class TransactionHandler{
 			AbstractShop.shopPlaceholders(request, shop);
 			request.sendToAudience(player);
 			event.setCancelled(true);
-			return;
-		}
-		
-		//delete shop if it does not have a chest attached to it
-		if(!(plugin.getShopmanager().isAllowedContainer(shop.getContainerLocation().getBlock()))){
-			plugin.getLogger().warning("Deleting Shop because chest does not exist! " + shop);
-			plugin.getShopmanager().unregisterShop(shop);
 			return;
 		}
 		

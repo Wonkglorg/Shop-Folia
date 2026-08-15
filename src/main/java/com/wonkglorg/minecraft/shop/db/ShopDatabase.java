@@ -14,7 +14,7 @@ import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.shop.util.OfflineTransactions;
-import com.wonkglorg.minecraft.shop.util.ShopActionType;
+import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.util.PluginLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

@@ -1,4 +1,4 @@
-package com.wonkglorg.minecraft.shop.util;
+package com.wonkglorg.minecraft.shop.shop.transaction;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

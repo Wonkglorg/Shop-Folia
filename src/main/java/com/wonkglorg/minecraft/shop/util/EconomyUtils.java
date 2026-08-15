@@ -29,22 +29,7 @@ public class EconomyUtils{
 		}
 	}
 	
-	//check to see if the player has enough space to accept the funds to deposit [amount]
-	//return false if they do not
-	public static boolean canAcceptFunds(Inventory inventory, double amount) {
-		switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
-			case VAULT:
-			case EXPERIENCE:
-				return true;
-			case ITEM:
-				ItemStack currency = Main.getPlugin().getItemConfig().getCurrencyItem().clone();
-				currency.setAmount((int) amount);
-				
-				return InventoryUtils.hasRoom(inventory, currency);
-			default:
-				return false;
-		}
-	}
+
 	
 	//gets the current funds of the player
 	public static double getFunds(OfflinePlayer player, Inventory inventory) {

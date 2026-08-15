@@ -1,7 +1,6 @@
 package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.util.TransactionParty;
 import lombok.Getter;
 import org.bukkit.Location;
 
@@ -21,7 +20,7 @@ public enum ShopState{
 	/**
 	 * Shop has no empty spaces left to accept exchange
 	 */
-	OVERFILLED(1, s -> !new TransactionParty(false, false, s.getOwner(), s.getInventory()).canAcceptPayment(s.getPrice()));
+	OVERFILLED(1, s -> !s.canAcceptTransaction());
 	
 	/**
 	 * The Weight of each state (the lower the higher it is ranked in the result order)

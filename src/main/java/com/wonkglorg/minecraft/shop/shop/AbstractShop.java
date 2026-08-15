@@ -5,18 +5,17 @@ import com.wonkglorg.minecraft.shop.Constants;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
+import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.ShopManager.BlockKey;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import com.wonkglorg.minecraft.shop.shop.transaction.ShopTransactionParty;
+import com.wonkglorg.minecraft.shop.shop.transaction.TransactionParty;
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
-import com.wonkglorg.minecraft.shop.util.InventoryUtils;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import static com.wonkglorg.minecraft.shop.util.ItemNameUtil.getItemHover;
-import com.wonkglorg.minecraft.shop.util.PlayerNameCache;
-import com.wonkglorg.minecraft.shop.util.ShopAction;
-import com.wonkglorg.minecraft.shop.util.ShopClickType;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
@@ -189,6 +188,13 @@ public abstract class AbstractShop{
 		return signLocation.isChunkLoaded();
 	}
 	
+	public abstract boolean canAcceptTransaction();
+	
+	/**
+	 * Transact with this shop
+	 */
+	public abstract ShopTransactionParty transaction(Player player);
+	
 	//this calls BlockData which loads the chunk the shop is in by doing so
 	
 	/**
@@ -277,16 +283,8 @@ public abstract class AbstractShop{
 			//leave the cached value as it was
 			return;
 		}
-		int itemsInShop = InventoryUtils.getAmount(this.getInventory(), this.getItemStack());
+		int itemsInShop = TransactionParty.getAmount(this.getInventory(), this.getItemStack());
 		stock = itemsInShop / this.getAmount();
-		if(stock == 0 && Main.getPlugin().getSettingsConfig().isAllowPartialSales()){
-			// Calculate the minimum items required to show as in stock
-			int minItemAmountRequired = (int) Math.ceil(1 / this.getPricePerItem());
-			
-			if(itemsInShop >= minItemAmountRequired){
-				stock = 1;
-			}
-		}
 	}
 	
 	public void updateStock() {
@@ -596,10 +594,10 @@ public abstract class AbstractShop{
 		
 		switch(action) {
 			case TRANSACT:
-				Main.getPlugin().getTransactionHelper().executeTransactionFromEvent(event, this, false);
+				Main.getPlugin().getTransactionManager().executeTransactionFromEvent(event, this, false);
 				break;
 			case TRANSACT_FULLSTACK:
-				Main.getPlugin().getTransactionHelper().executeTransactionFromEvent(event, this, true);
+				Main.getPlugin().getTransactionManager().executeTransactionFromEvent(event, this, true);
 				break;
 			case VIEW_DETAILS:
 				this.printSalesInfo(player);

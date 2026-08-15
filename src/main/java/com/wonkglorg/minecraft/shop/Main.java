@@ -11,10 +11,10 @@ import com.wonkglorg.minecraft.shop.listener.DisplayListener;
 import com.wonkglorg.minecraft.shop.listener.ShopListener;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
+import com.wonkglorg.minecraft.shop.manager.TransactionManager;
 import com.wonkglorg.minecraft.shop.service.ShopService;
 import com.wonkglorg.minecraft.shop.service.ShopServiceProvider;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.ItemListType;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -170,7 +170,7 @@ public class Main extends JavaPlugin{
 		return econ != null;
 	}
 	
-	public TransactionHandler getTransactionHelper() {
+	public TransactionManager getTransactionManager() {
 		return transactionHandler;
 	}
 	

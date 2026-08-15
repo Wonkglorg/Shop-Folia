@@ -1,4 +1,4 @@
-package com.wonkglorg.minecraft.shop.util;
+package com.wonkglorg.minecraft.shop.shop.transaction;
 
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.event.PlayerExchangeShopEvent;
@@ -24,9 +24,9 @@ public class Transaction{
 	private TransactionError error;
 	
 	// The buyer in the transaction
-	private TransactionParty buyer;
+	private TransactionPartyOld buyer;
 	// The seller in the transaction
-	private TransactionParty seller;
+	private TransactionPartyOld seller;
 	
 	// The original price of the transaction in currency (single qty)
 	private double originalPrice;
@@ -57,21 +57,21 @@ public class Transaction{
 		if(shop instanceof ComboShop){
 			// From players perspective, they are selling to the shop
 			if(transactionType == ShopType.BUY){
-				this.buyer = new TransactionParty(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
-				this.seller = new TransactionParty(true, false, player, player.getInventory());
+				this.buyer = new TransactionPartyOld(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
+				this.seller = new TransactionPartyOld(true, false, player, player.getInventory());
 				// Player is selling to shop, so shop pays the buy price
 				this.price = ((ComboShop) shop).getPriceBuy();
 			}
 			// From players perspective, they are buying from the shop
 			else if(transactionType == ShopType.SELL){
-				this.buyer = new TransactionParty(true, false, player, player.getInventory());
-				this.seller = new TransactionParty(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
+				this.buyer = new TransactionPartyOld(true, false, player, player.getInventory());
+				this.seller = new TransactionPartyOld(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
 				// Player is buying from shop, so player pays the sell price
 				this.price = ((ComboShop) shop).getPriceSell();
 			}
 		} else if(transactionType == ShopType.GAMBLE){
-			this.buyer = new TransactionParty(true, false, player, player.getInventory());
-			this.seller = new TransactionParty(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
+			this.buyer = new TransactionPartyOld(true, false, player, player.getInventory());
+			this.seller = new TransactionPartyOld(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
 			
 			((GambleShop) shop).setGambleItem();
 			this.itemBeingSold = ((GambleShop) shop).getGambleItem();
@@ -79,16 +79,16 @@ public class Transaction{
 		} else if(shop.getType() == ShopType.BARTER){
 			// Player is buying from the shop!
 			// The buyer is going to use an item for their currency/payment
-			this.buyer = new TransactionParty(true, false, player, player.getInventory(), shop.getSecondaryItemStack());
-			this.seller = new TransactionParty(false, shop.isAdmin(), shop.getOwner(), shop.getInventory(), shop.getSecondaryItemStack());
+			this.buyer = new TransactionPartyOld(true, false, player, player.getInventory(), shop.getSecondaryItemStack());
+			this.seller = new TransactionPartyOld(false, shop.isAdmin(), shop.getOwner(), shop.getInventory(), shop.getSecondaryItemStack());
 		} else if(transactionType == ShopType.BUY){
 			// Shop is buying from the player
-			this.buyer = new TransactionParty(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
-			this.seller = new TransactionParty(true, false, player, player.getInventory());
+			this.buyer = new TransactionPartyOld(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
+			this.seller = new TransactionPartyOld(true, false, player, player.getInventory());
 		} else if(transactionType == ShopType.SELL){
 			// Shop is selling to the player
-			this.buyer = new TransactionParty(true, false, player, player.getInventory());
-			this.seller = new TransactionParty(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
+			this.buyer = new TransactionPartyOld(true, false, player, player.getInventory());
+			this.seller = new TransactionPartyOld(false, shop.isAdmin(), shop.getOwner(), shop.getInventory());
 		}
 		
 		// Store the original values for the price/amount that comes from the shop directly

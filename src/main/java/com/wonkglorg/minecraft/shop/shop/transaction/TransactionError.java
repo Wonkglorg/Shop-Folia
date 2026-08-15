@@ -1,4 +1,4 @@
-package com.wonkglorg.minecraft.shop.util;
+package com.wonkglorg.minecraft.shop.shop.transaction;
 
 public enum TransactionError {
 
