@@ -1,20 +1,32 @@
 package com.wonkglorg.minecraft.shop.util;
 
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
+import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
+import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public class PlaceholderContext{
+	@Getter
 	private AbstractShop shop;
+	@Getter
 	private Player player;
+	@Getter
 	private OfflinePlayer offlinePlayer;
+	@Getter
 	private boolean forSign = false;
+	@Getter
 	private ItemStack item = null;
+	@Getter
 	private ItemStack barterItem = null;
+	@Getter
 	private OfflineTransactions offlineTransactions;
+	@Getter
 	private Location location;
+	@Getter
+	private ShopCreationProcess process;
 	
 	// Create empty Placeholder Context
 	public PlaceholderContext() {}
@@ -28,10 +40,6 @@ public class PlaceholderContext{
 		return this;
 	}
 	
-	public AbstractShop getShop() {
-		return shop;
-	}
-	
 	public PlaceholderContext setPlayer(Player player) {
 		this.player = player;
 		return this;
@@ -42,21 +50,9 @@ public class PlaceholderContext{
 		return this;
 	}
 	
-	public Player getPlayer() {
-		return player;
-	}
-	
-	public OfflinePlayer getOfflinePlayer() {
-		return offlinePlayer;
-	}
-	
 	public PlaceholderContext setItem(ItemStack item) {
 		this.item = item;
 		return this;
-	}
-	
-	public ItemStack getItem() {
-		return item;
 	}
 	
 	public PlaceholderContext setBarterItem(ItemStack barterItem) {
@@ -64,18 +60,10 @@ public class PlaceholderContext{
 		return this;
 	}
 	
-	public ItemStack getBarterItem() {return barterItem;}
-	
 	public PlaceholderContext setOfflineTransactions(OfflineTransactions offlineTransactions) {
 		this.offlineTransactions = offlineTransactions;
 		return this;
 	}
-	
-	public OfflineTransactions getOfflineTransactions() {
-		return offlineTransactions;
-	}
-	
-	public Location getLocation() {return location;}
 	
 	public PlaceholderContext setLocation(Location location) {
 		this.location = location;
@@ -87,8 +75,9 @@ public class PlaceholderContext{
 		return this;
 	}
 	
-	public boolean isForSign() {
-		return forSign;
+	public PlaceholderContext setProcess(ShopCreationProcess process) {
+		this.process = process;
+		return this;
 	}
 }
 

@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.ShulkerBox;
@@ -155,7 +155,7 @@ public class InventoryUtils{
 		ItemStack itemStack2 = i2.clone();
 		
 		// Check if we are ignoring item durability, if so, reset the durability of both items and continue with later checks
-		if(!Shop.getPlugin().getSettingsConfig().isCheckItemDurability()){
+		if(!Main.getPlugin().getSettingsConfig().isCheckItemDurability()){
 			Damageable is1Damagable = (Damageable) itemStack1.getItemMeta();
 			is1Damagable.setDamage(0);
 			
@@ -167,7 +167,7 @@ public class InventoryUtils{
 		}
 		
 		// Check if we are ignoring item durability, if so, reset the durability of both items and continue with later checks
-		if(Shop.getPlugin().getSettingsConfig().isIgnoreItemRepairCost()){
+		if(Main.getPlugin().getSettingsConfig().isIgnoreItemRepairCost()){
 			Repairable item1Cost = (Repairable) itemStack1.getItemMeta();
 			item1Cost.setRepairCost(0);
 			

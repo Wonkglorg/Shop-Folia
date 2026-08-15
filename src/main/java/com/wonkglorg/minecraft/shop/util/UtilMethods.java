@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import io.papermc.paper.registry.RegistryAccess;
@@ -162,8 +162,8 @@ public class UtilMethods{
 			return "-" + formatLongToKString(-value, formatZeros);
 		}
 		
-		Map.Entry<Double, String> e = Shop.getPlugin().getSettingsConfig().getPriceSuffixes().floorEntry(value);
-		Double minimumValue = Shop.getPlugin().getSettingsConfig().getPriceSuffixMinimumValue();
+		Map.Entry<Double, String> e = Main.getPlugin().getSettingsConfig().getPriceSuffixes().floorEntry(value);
+		Double minimumValue = Main.getPlugin().getSettingsConfig().getPriceSuffixMinimumValue();
 		
 		if(value < 1000 || e == null || value < minimumValue){
 			if(isDecimal(value)){
@@ -813,7 +813,7 @@ public class UtilMethods{
 	 * @return Formatted color name
 	 */
 	private static String formatFireworkColor(Color color) {
-		Shop.getPlugin().logger().debug("[formatFireworkColor]     color: " + color.toString());
+		Main.getPlugin().logger().debug("[formatFireworkColor]     color: " + color.toString());
 		
 		// Map common RGB values to color names
 		if(color.equals(Color.WHITE)){
@@ -1007,8 +1007,8 @@ public class UtilMethods{
 		boolean isUnderlined = false;
 		boolean isObfuscated = false;
 		for(String word : words){
-			if(Shop.getPlugin() != null){
-				Shop.getPlugin().logger().hyper("[ShopMessage.format]     word: " + word);
+			if(Main.getPlugin() != null){
+				Main.getPlugin().logger().debug("[ShopMessage.format]     word: " + word);
 			}
 			
 			boolean isStandardColor = word.matches(COLOR_CODE_REGEX);
@@ -1027,8 +1027,8 @@ public class UtilMethods{
 					} else if(newColor == ChatColor.MAGIC){
 						isObfuscated = true;
 					} else if(newColor == ChatColor.RESET){
-						if(Shop.getPlugin() != null){
-							Shop.getPlugin().logger().hyper("[ShopMessage.format]     matched RESET color code: " + word);
+						if(Main.getPlugin() != null){
+							Main.getPlugin().logger().debug("[ShopMessage.format]     matched RESET color code: " + word);
 						}
 						latestColor = ChatColor.WHITE;
 						latestHexColor = ""; // Reset hex color when RESET code is found
@@ -1098,13 +1098,13 @@ public class UtilMethods{
 			int currentLineLength = ChatColor.stripColor(currentLine.toString()).length();
 			int nextWordLength = ChatColor.stripColor(word).length();
 			int potentialLength = currentLineLength + nextWordLength;
-			if(Shop.getPlugin() != null){
-				Shop.getPlugin().logger().spam("[ShopMessage.format]     potentialLength: " + potentialLength + " maxLineLength: " + maxLineLength);
+			if(Main.getPlugin() != null){
+				Main.getPlugin().logger().debug("[ShopMessage.format]     potentialLength: " + potentialLength + " maxLineLength: " + maxLineLength);
 			}
 			
 			if(word.matches(" ") && potentialLength > maxLineLength){
-				if(Shop.getPlugin() != null){
-					Shop.getPlugin().logger().spam("[ShopMessage.format]     adding line: " + currentLine.toString().trim());
+				if(Main.getPlugin() != null){
+					Main.getPlugin().logger().debug("[ShopMessage.format]     adding line: " + currentLine.toString().trim());
 				}
 				linesByColor.add(currentLine.toString());
 				currentLine = new StringBuilder(latestColors);
@@ -1115,8 +1115,8 @@ public class UtilMethods{
 		
 		// Append the last line if there's any content left
 		if(currentLine.length() > 0){
-			if(Shop.getPlugin() != null){
-				Shop.getPlugin().logger().spam("[ShopMessage.format]     adding line: " + currentLine.toString().trim());
+			if(Main.getPlugin() != null){
+				Main.getPlugin().logger().debug("[ShopMessage.format]     adding line: " + currentLine.toString().trim());
 			}
 			linesByColor.add(currentLine.toString());
 		}

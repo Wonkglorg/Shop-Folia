@@ -1,7 +1,7 @@
 package com.wonkglorg.minecraft.shop.util;
 
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -44,7 +44,7 @@ public class PlayerData {
 
     private void saveToFile(){
         try {
-            File fileDirectory = new File(Shop.getPlugin().getDataFolder(), "Data");
+            File fileDirectory = new File(Main.getPlugin().getDataFolder(), "Data");
 
             File creativeDirectory = new File(fileDirectory, "LimitedCreative");
             if (!creativeDirectory.exists())
@@ -71,7 +71,7 @@ public class PlayerData {
     public static PlayerData loadFromFile(Player player){
         if(player == null)
             return null;
-        File fileDirectory = new File(Shop.getPlugin().getDataFolder(), "Data");
+        File fileDirectory = new File(Main.getPlugin().getDataFolder(), "Data");
 
         File creativeDirectory = new File(fileDirectory, "LimitedCreative");
         if (!creativeDirectory.exists())
@@ -108,7 +108,7 @@ public class PlayerData {
     }
 
     private boolean removeFile(){
-        File fileDirectory = new File(Shop.getPlugin().getDataFolder(), "Data");
+        File fileDirectory = new File(Main.getPlugin().getDataFolder(), "Data");
         File creativeDirectory = new File(fileDirectory, "LimitedCreative");
         File playerDataFile = new File(creativeDirectory, this.playerUUID.toString() + ".yml");
 
@@ -139,7 +139,7 @@ public class PlayerData {
     }
 
     public AbstractShop getShop() {
-        return Shop.getPlugin().getShopmanager().getShopBySign(shopSignLocation);
+        return Main.getPlugin().getShopmanager().getShopBySign(shopSignLocation);
     }
 
     public GameMode getOldGameMode() {

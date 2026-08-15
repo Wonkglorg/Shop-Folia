@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -23,11 +23,11 @@ import org.bukkit.inventory.ItemStack;
 
 public class ShopCommand extends AbstractCommand{
 	
-	private final Shop plugin;
+	private final Main plugin;
 	private final LangManager lang;
 	
 	public ShopCommand() {
-		this.plugin = Shop.getPlugin();
+		this.plugin = Main.getPlugin();
 		this.lang = plugin.getLangManager();
 	}
 	
@@ -56,19 +56,8 @@ public class ShopCommand extends AbstractCommand{
 					 )
 				.then(literal("reload").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::reload))
 				.then(literal("setcurrency").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setCurrency))
-				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble))
-				.then(literal("display").requires(permissions(SHOP_PERMISSION_OPERATOR))
-									 .then(literal("refresh").executes(this::refreshDisplay)))
-				
-				
-				;
+				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble));
 		//@formatter:on
-	}
-	
-	private int refreshDisplay(CommandContext<CommandSourceStack> ctx) {
-		plugin.getShopmanager().getDisplayManager().removeAllDisplays();
-		lang.request("command.refresh-reload.success").sendToAudience(ctx.getSource().getSender());
-		return 0;
 	}
 	
 	private int usageNotify(CommandContext<CommandSourceStack> ctx) {
@@ -165,7 +154,6 @@ public class ShopCommand extends AbstractCommand{
 	
 	private int reload(CommandContext<CommandSourceStack> ctx) {
 		plugin.reload();
-		plugin.getShopmanager().getDisplayManager().removeAllDisplays();
 		lang.request("command.reload.success").sendToAudience(ctx.getSource().getSender());
 		return 0;
 	}

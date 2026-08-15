@@ -10,13 +10,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-public class LagreItemDisplay extends AbstractDisplay{
-	protected LagreItemDisplay(AbstractShop shop) {
+public class LargeItemDisplay extends AbstractDisplay{
+	protected LargeItemDisplay(AbstractShop shop) {
 		super(shop, DisplayType.LARGE_ITEM);
 	}
 	
 	@Override
-	public void spawn(@NotNull Player player) {
+	public void onSpawn(@NotNull Player player) {
 		Location leftLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 		leftLoc.add(getLargeItemBarterOffset(false));
 		ItemStack itemStack = shop.getItemStack().clone();

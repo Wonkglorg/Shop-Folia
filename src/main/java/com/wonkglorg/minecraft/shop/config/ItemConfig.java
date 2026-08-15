@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.config;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.config.types.Config;
 import lombok.Getter;
 import org.bukkit.Material;
@@ -43,7 +43,7 @@ public class ItemConfig extends Config{
 	private List<Material> whitelistMaterials = new ArrayList<>();
 	
 	public ItemConfig() {
-		super(Shop.getPlugin().getDataPath().resolve("item-config.yml"));
+		super(Main.getPlugin().getDataPath().resolve("item-config.yml"));
 		reload();
 	}
 	

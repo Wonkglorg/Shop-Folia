@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.listener;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.config.LangManager;
 import org.bukkit.block.Block;
@@ -13,11 +13,11 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent;
 
 public class MiscListener implements Listener{
 	
-	private final Shop plugin;
+	private final Main plugin;
 	
 	private final LangManager lang;
 	
-	public MiscListener(Shop instance) {
+	public MiscListener(Main instance) {
 		plugin = instance;
 		this.lang = instance.getLangManager();
 	}

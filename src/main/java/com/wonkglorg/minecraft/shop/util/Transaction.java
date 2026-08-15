@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.event.PlayerExchangeShopEvent;
 import com.wonkglorg.minecraft.shop.event.PlayerGambleShopEvent;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -43,7 +43,7 @@ public class Transaction{
 	public Transaction(Player player, AbstractShop shop, ShopType transactionType) {
 		this.error = null;
 		if(!TX_DEBUG_LOGGING){
-			TX_DEBUG_LOGGING = Shop.getPlugin().getSettingsConfig().isDebugTransactionDebugLogs();
+			TX_DEBUG_LOGGING = Main.getPlugin().getSettingsConfig().isDebugTransactionDebugLogs();
 		}
 		
 		this.player = player;
@@ -118,9 +118,9 @@ public class Transaction{
 		PriceNegotiator negotiator = new PriceNegotiator(TX_DEBUG_LOGGING,
 				this.originalPrice,
 				this.originalAmountBeingSold,
-				Shop.getPlugin().getSettingsConfig().isAllowFractionalCurrency());
+				Main.getPlugin().getSettingsConfig().isAllowFractionalCurrency());
 		
-		negotiator.negotiatePurchase(Shop.getPlugin().getSettingsConfig().isAllowPartialSales(),
+		negotiator.negotiatePurchase(Main.getPlugin().getSettingsConfig().isAllowPartialSales(),
 				this.buyer.getAvailableFunds(),
 				this.seller.getInventoryQuantity(this.itemBeingSold),
 				desiredAmount);
@@ -214,7 +214,7 @@ public class Transaction{
 			return this.setError(TransactionError.CANCELLED);
 		}
 		
-		Shop.getPlugin().getShopmanager().getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), player.getUniqueId(), 1, null);
+		Main.getPlugin().getShopmanager().getDatabase().logTransaction(shop.getId(), System.currentTimeMillis(), player.getUniqueId(), 1, null);
 		
 		if(shop.getType() == ShopType.GAMBLE){
 			PlayerGambleShopEvent gambleEvent = new PlayerGambleShopEvent(player, shop, itemBeingSold);
@@ -225,7 +225,7 @@ public class Transaction{
 				}
 				return this.setError(TransactionError.CANCELLED);
 			}
-			Shop.getPlugin().getShopmanager().getDatabase().logTransaction(shop.getId(),
+			Main.getPlugin().getShopmanager().getDatabase().logTransaction(shop.getId(),
 					System.currentTimeMillis(),
 					player.getUniqueId(),
 					1,

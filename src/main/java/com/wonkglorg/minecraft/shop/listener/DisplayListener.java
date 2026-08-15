@@ -1,19 +1,16 @@
 package com.wonkglorg.minecraft.shop.listener;
 
-import com.wonkglorg.minecraft.shop.Shop;
-import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.GambleShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
+import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.InventoryUtils;
-import com.tcoded.folialib.wrapper.task.WrappedTask;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
 import org.bukkit.block.DoubleChest;
-import org.bukkit.block.data.type.WallSign;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -35,55 +32,11 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class DisplayListener implements Listener{
 	
-	public final Shop plugin;
+	public final Main plugin;
 	private static final Random RANDOM = ThreadLocalRandom.current();
 	private final List<ItemStack> allServerRecipeResults = new ArrayList<>();
-	private WrappedTask repeatingViewTask;
-	private WrappedTask repeatingDisplayTask;
 	
-	public void startRepeatingDisplayViewTask() {
-		if(plugin.getDisplayTagOption() == DisplayTagOption.VIEW_SIGN){
-			//run task every 15 ticks
-			repeatingViewTask = plugin.getFoliaLib().getScheduler().runTimer(() -> {
-				for(Player player : plugin.getServer().getOnlinePlayers()){
-					if(player != null){
-						try{
-							Block block = player.getTargetBlockExact(8);
-							if(block != null && block.getBlockData() instanceof WallSign){
-								AbstractShop shopObj = plugin.getShopmanager().getShopBySign(block.getLocation());
-								if(shopObj != null){
-									shopObj.getDisplay().showDisplayTags(player);
-								}
-							}
-						} catch(Exception _){
-							//do nothing, the block iterator missed a block for a player
-						}
-					}
-				}
-			}, 1, 15);
-		}
-		
-		// Run shop displays processing using configurable interval from config
-		repeatingDisplayTask = plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
-			// Process players in a staggered fashion to avoid overwhelming the server or client
-			var onlinePlayers = plugin.getServer().getOnlinePlayers();
-			
-			int playerOffset = 0;
-			for(var player : onlinePlayers){
-				if(player == null || !player.isOnline()){
-					continue;
-				}
-				plugin.getFoliaLib().getScheduler().runLater(() -> {
-					if(player.isOnline()){
-						plugin.getShopmanager().getDisplayManager().processShopDisplaysNearPlayer(player);
-					}
-				}, playerOffset++); // Stagger by 1 tick per player
-				
-			}
-		}, 1, (long) ((plugin.getSettingsConfig().getDisplayProcessInterval() + 1) * 20)); // Convert seconds to ticks
-	}
-	
-	public DisplayListener(Shop instance) {
+	public DisplayListener(Main instance) {
 		plugin = instance;
 		
 		// Load all recipes on server once all other plugins are loaded
@@ -124,7 +77,9 @@ public class DisplayListener implements Listener{
 	
 	@EventHandler
 	public void onPistonExtend(BlockPistonExtendEvent event) {
-		AbstractShop shop = plugin.getShopmanager().getShopByContainer(event.getBlock().getRelative(event.getDirection()).getRelative(BlockFace.DOWN));
+		AbstractShop shop = plugin.getShopmanager().getShopByContainer(event.getBlock()
+		                                                                    .getRelative(event.getDirection())
+		                                                                    .getRelative(BlockFace.DOWN));
 		if(shop != null && shop.getDisplay().getType() != DisplayType.NONE){
 			event.setCancelled(true);
 		}
@@ -203,15 +158,6 @@ public class DisplayListener implements Listener{
 			if(shop.getType() == ShopType.GAMBLE){
 				((GambleShop) shop).setGambleItem();
 			}
-		}
-	}
-	
-	public void cancelRepeatingViewTask() {
-		if(repeatingViewTask != null){
-			plugin.getFoliaLib().getScheduler().cancelTask(repeatingViewTask);
-		}
-		if(repeatingDisplayTask != null){
-			plugin.getFoliaLib().getScheduler().cancelTask(repeatingDisplayTask);
 		}
 	}
 }

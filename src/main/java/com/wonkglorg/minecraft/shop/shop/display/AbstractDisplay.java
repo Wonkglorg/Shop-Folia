@@ -1,12 +1,10 @@
 package com.wonkglorg.minecraft.shop.shop.display;
 
 import com.mojang.datafixers.util.Pair;
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.ArmorStandData;
-import com.wonkglorg.minecraft.shop.util.ShopMessage;
-import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import io.papermc.paper.adventure.PaperAdventure;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
@@ -15,9 +13,13 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,21 +33,19 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public abstract class AbstractDisplay{
 	
-	protected Shop plugin;
+	protected Main plugin;
 	@Getter
 	protected DisplayType type;
 	@Getter
@@ -54,9 +54,19 @@ public abstract class AbstractDisplay{
 	protected Map<UUID, List<Integer>> entityIDs; //player UUID. display entities
 	
 	protected AbstractDisplay(AbstractShop shop, DisplayType type) {
-		this.plugin = Shop.getPlugin();
+		this.plugin = Main.getPlugin();
 		this.shop = shop;
 		this.type = type;
+	}
+	
+	public static AbstractDisplay createDisplay(DisplayType type, AbstractShop shop) {
+		return switch(type) {
+			case NONE -> new NonDisplay(shop);
+			case ITEM -> new ItemDisplay(shop);
+			case LARGE_ITEM -> new LargeItemDisplay(shop);
+			case GLASS_CASE -> new GlassCaseDisplay(shop);
+			case ITEM_FRAME -> new ItemFrameDisplay(shop);
+		};
 	}
 	
 	/**
@@ -71,7 +81,16 @@ public abstract class AbstractDisplay{
 	/**
 	 * Spawns the display for the player
 	 */
-	public abstract void spawn(@NotNull Player player);
+	public void spawn(@NotNull Player player) {
+		remove();//if anything exists already remove the old stuff first
+		spawnLight();
+		onSpawn(player);
+	}
+	
+	/**
+	 * When display spawning is called
+	 */
+	protected abstract void onSpawn(Player player);
 	
 	/**
 	 * Removes the display from all players
@@ -96,11 +115,34 @@ public abstract class AbstractDisplay{
 		}
 	}
 	
-	/**
-	 * Adds an entity id to be tracked
-	 */
-	protected void addEntityId(Player player, int entityId) {
-		entityIDs.computeIfAbsent(player.getUniqueId(), _ -> new ArrayList<>()).add(entityId);
+	protected ClientboundAddEntityPacket createEntity(Player player, net.minecraft.world.entity.Entity entity, int data) {
+		entityIDs.computeIfAbsent(player.getUniqueId(), _ -> new ArrayList<>()).add(entity.getId());
+		return new ClientboundAddEntityPacket(entity.getId(),
+				entity.getUUID(),
+				entity.getX(),
+				entity.getY(),
+				entity.getZ(),
+				entity.getXRot(),
+				entity.getYRot(),
+				entity.getType(),
+				data,
+				entity.getDeltaMovement(),
+				entity.getYHeadRot());
+	}
+	
+	protected ClientboundAddEntityPacket createEntity(Player player, net.minecraft.world.entity.Entity entity, Location location, int data) {
+		entityIDs.computeIfAbsent(player.getUniqueId(), _ -> new ArrayList<>()).add(entity.getId());
+		return new ClientboundAddEntityPacket(entity.getId(),
+				entity.getUUID(),
+				location.getX(),
+				location.getY(),
+				location.getZ(),
+				entity.getXRot(),
+				entity.getYRot(),
+				entity.getType(),
+				data,
+				entity.getDeltaMovement(),
+				entity.getYHeadRot());
 	}
 	
 	/**
@@ -113,7 +155,7 @@ public abstract class AbstractDisplay{
 			}
 			
 		} catch(Exception e){
-			Shop.getPlugin().getLogger().severe("Unknown error sending packet to player for Display (Item/Hologram text), error message: " +
+			Main.getPlugin().getLogger().severe("Unknown error sending packet to player for Display (Item/Hologram text), error message: " +
 			                                    e.getMessage());
 		}
 	}
@@ -131,7 +173,6 @@ public abstract class AbstractDisplay{
 		
 		armorStand.setCustomName(PaperAdventure.asVanilla(text));
 		armorStand.setCustomNameVisible(true);
-		this.addDisplayTag(player, armorStand.getId());
 		
 		if(armorStandData.getRightArmPose() != null){
 			EulerAngle angle = armorStandData.getRightArmPose(); //EulerAngles are in radians
@@ -151,7 +192,7 @@ public abstract class AbstractDisplay{
 			armorStand.setSmall(true);
 		}
 		
-		Shop.getPlugin().getLogger().log(java.util.logging.Level.FINE, "Floating Tag Label Location: " + location);
+		Main.getPlugin().getLogger().log(java.util.logging.Level.FINE, "Floating Tag Label Location: " + location);
 		
 		ClientboundAddEntityPacket spawnEntityLivingPacket = new ClientboundAddEntityPacket(armorStand.getId(),
 				armorStand.getUUID(),
@@ -184,133 +225,6 @@ public abstract class AbstractDisplay{
 		}
 	}
 	
-	//DISPLAY TAGS
-	
-	public void showDisplayTags(Player player) {
-		if(displayTagsVisible(player) ||
-		   !getShop().isInitialized() ||
-		   Shop.getPlugin().getDisplayTagOption() == DisplayTagOption.NONE ||
-		   getShop().getFacing() == null){
-			return;
-		}
-		
-		try{
-			ArrayList<String> displayTags = ShopMessage.getDisplayTags(getShop(), getShop().getType());
-			
-			Location lowerTagLocation = getShop().getContainerLocation().clone().add(0, 1, 0);
-			lowerTagLocation = lowerTagLocation.add(0.5, 0.5, 0.5);
-			
-			//push the tag slightly closer to the front of the shop so it doesnt collide with the display and hide the text
-			lowerTagLocation = UtilMethods.pushLocationInDirection(lowerTagLocation, this.getShop().getFacing(), 0.2);
-			
-			Block displayBlock = lowerTagLocation.getBlock();
-			if(this.isChunkLoaded()){
-				if(displayBlock.getType() == Material.BARREL || displayBlock.getRelative(BlockFace.DOWN).getType() == Material.BARREL){
-					lowerTagLocation = lowerTagLocation.add(0, .25, 0);
-				}
-				// If there is a block above our display, offset the tag location
-				// so that it doesn't become hidden inside the block. (most noticible with chests)
-				if(getShop().getContainerLocation().clone().add(0, 2, 0).getBlock().getType() != Material.AIR){
-					// Adds 0.35 on top of the 0.2 added above (total of 0.55)
-					// 0.3 to get to edge of block, 0.05 to give a lil more wiggle room when the player isnt looking directly at the display
-					lowerTagLocation = UtilMethods.pushLocationInDirection(lowerTagLocation, this.getShop().getFacing(), 0.35);
-				}
-			}
-			
-			// Create a list to store tag data
-			List<Map.Entry<String, Location>> tagData = new ArrayList<>();
-			
-			double verticalAddition = 0;
-			//iterate through list backwards to build from bottom -> up
-			for(int i = displayTags.size() - 1; i >= 0; i--){
-				Location asTagLocation = lowerTagLocation.clone();
-				
-				String tagLine = displayTags.get(i);
-				if(tagLine.contains("[lshift]")){
-					asTagLocation = asTagLocation.add(getShiftOffset(true, false));
-					tagLine = tagLine.replace("[lshift]", "");
-				}
-				if(tagLine.contains("[rshift]")){
-					asTagLocation = asTagLocation.add(getShiftOffset(false, true));
-					tagLine = tagLine.replace("[rshift]", "");
-				}
-				
-				asTagLocation = asTagLocation.add(0, verticalAddition, 0);
-				
-				// Store the tag data instead of creating it immediately
-				tagData.add(new AbstractMap.SimpleEntry<>(tagLine, asTagLocation));
-				
-				verticalAddition += 0.3;
-			}
-			
-			// Now create the tags in reverse order (top to bottom)
-			for(int i = tagData.size() - 1; i >= 0; i--){
-				Map.Entry<String, Location> entry = tagData.get(i);
-				String tagLine = entry.getKey();
-				Location asTagLocation = entry.getValue();
-				
-				Shop.getPlugin().logger().spam("[Display] Adding tag line: " + tagLine);
-				//todo:jmd implement proper tag line
-				createTagEntity(player, Component.text(tagLine), asTagLocation);
-			}
-			
-			//todo:mjd check what this is exactly and what changes if its not present
-			//Shop.getPlugin().getShopmanager().getDisplayManager().addActiveShopDisplayTag(player, this.shopSignLocation);
-			
-			//this handles getting rid of the display tags after a configured amount of time after the player looks away from the shop sign
-			removeDisplayTagsDelayedTask(player);
-			
-		} catch(NullPointerException e){
-			e.printStackTrace();
-		}
-	}
-	
-	public void updateDisplayTags() {
-		// Update any players display tags who currently have them open
-		if(displayTagEntityIDs == null || displayTagEntityIDs.isEmpty()){
-			return;
-		}
-		
-		// Get a copy of the keys to avoid concurrent modification issues
-		Set<UUID> playerUUIDs = new HashSet<>(displayTagEntityIDs.keySet());
-		
-		for(UUID playerUUID : playerUUIDs){
-			Player player = Shop.getPlugin().getServer().getPlayer(playerUUID);
-			
-			// Skip if player is offline or in a different world
-			if(player == null || !player.isOnline() || !isSameWorld(player)){
-				continue;
-			}
-			
-			// Check if player has display tags visible
-			if(displayTagsVisible(player)){
-				// Remove the current display tags
-				removeDisplayEntities(player, true);
-				
-				// Show updated display tags
-				showDisplayTags(player);
-			}
-		}
-	}
-	
-	public void createTagEntity(Player player, Component text, Location location) {
-		Shop.getPlugin().logger().debug("Spawning hologram for player " +
-		                                player.getName() +
-		                                " at " +
-		                                location.getBlockX() +
-		                                "/" +
-		                                location.getBlockY() +
-		                                "/" +
-		                                location.getBlockZ() +
-		                                ": " +
-		                                text);
-		ArmorStandData caseStandData = new ArmorStandData();
-		caseStandData.setSmall(false);
-		caseStandData.setLocation(location);
-		
-		spawnArmorStandPacket(player, caseStandData, text);
-	}
-	
 	public void setType(DisplayType type, boolean checkDisplayBlock) {
 		DisplayType oldType = this.type;
 		
@@ -319,7 +233,7 @@ public abstract class AbstractDisplay{
 				if(this.isChunkLoaded()){
 					//make sure there is room above the shop for the display
 					Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
-					if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
+					if(!(aboveShop.getType() == Material.AIR)) {
 						return;
 					}
 				}
@@ -333,17 +247,17 @@ public abstract class AbstractDisplay{
 		if(getShop().getFacing() == null){
 			return;
 		}
-		DisplayType[] cycle = Shop.getPlugin().getSettingsConfig().getDisplayCycle();
+		DisplayType[] cycle = Main.getPlugin().getSettingsConfig().getDisplayCycle();
 		DisplayType displayType = this.type;
 		if(displayType == null){
-			displayType = Shop.getPlugin().getSettingsConfig().getDisplayTypeDefault();
+			displayType = Main.getPlugin().getSettingsConfig().getDisplayTypeDefault();
 		}
 		
 		int index = -1;
 		if(displayType == DisplayType.NONE){
 			//make sure there is room above the shop for the display
 			Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
-			if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
+			if(aboveShop.getType() == Material.AIR){
 				//if the cycle contains the ITEM_FRAME display type
 				for(int i = 0; i < cycle.length; i++){
 					if(cycle[i] == DisplayType.ITEM_FRAME){
@@ -358,7 +272,7 @@ public abstract class AbstractDisplay{
 		} else if(displayType == DisplayType.ITEM_FRAME){
 			//make sure there is room above the shop for the display
 			Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
-			if(!UtilMethods.materialIsNonIntrusive(aboveShop.getType())){
+			if(aboveShop.getType() == Material.AIR){
 				//if the cycle contains the NONE display type
 				for(int i = 0; i < cycle.length; i++){
 					if(cycle[i] == DisplayType.NONE){
@@ -393,7 +307,7 @@ public abstract class AbstractDisplay{
 				skip = true;
 			} else {
 				//calculate where ITEM_FRAME display may be
-				for(Entity e : this.getShop().getContainerLocation().getWorld().getNearbyEntities(this.getItemDropLocation(false), 1, 1, 1)){
+				for(Entity e : this.getShop().getContainerLocation().getWorld().getNearbyEntities(this.getBarterLocation(), 1, 1, 1)){
 					if(e.getType() == EntityType.ITEM_FRAME){
 						ItemFrame i = (ItemFrame) e;
 						if(i.getAttachedFace() == getShop().getSign().getFacing().getOppositeFace()){
@@ -418,6 +332,23 @@ public abstract class AbstractDisplay{
 		getShop().setNeedsSave(true);
 	}
 	
+	private EquipmentSlot getMojangEquipmentSlot(org.bukkit.inventory.EquipmentSlot equipmentSlot) {
+		switch(equipmentSlot) {
+			case HAND:
+				return EquipmentSlot.MAINHAND;
+			case OFF_HAND:
+				return EquipmentSlot.OFFHAND;
+			case FEET:
+				return EquipmentSlot.FEET;
+			case LEGS:
+				return EquipmentSlot.LEGS;
+			case CHEST:
+				return EquipmentSlot.CHEST;
+			default:
+				return EquipmentSlot.HEAD;
+		}
+	}
+	
 	/**
 	 * Gets the primary location of the display
 	 */
@@ -435,7 +366,7 @@ public abstract class AbstractDisplay{
 	/**
 	 * Spawns a light above the shop if enabled in the config
 	 */
-	protected void spawnLight() {
+	private void spawnLight() {
 		if(plugin.getSettingsConfig().getDisplayLightLevel() == 0){
 			return;
 		}
@@ -444,7 +375,7 @@ public abstract class AbstractDisplay{
 		if(displayBlock.getType() == Material.AIR){
 			displayBlock.setType(Material.LIGHT);
 			Light data = (Light) displayBlock.getBlockData();
-			data.setLevel(Shop.getPlugin().getSettingsConfig().getDisplayLightLevel());
+			data.setLevel(Main.getPlugin().getSettingsConfig().getDisplayLightLevel());
 			displayBlock.setBlockData(data);
 		}
 	}
@@ -452,7 +383,7 @@ public abstract class AbstractDisplay{
 	/**
 	 * Removes a spawned light
 	 */
-	protected void removeLight() {
+	private void removeLight() {
 		Block displayBlock = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
 		if(displayBlock.getType() == Material.LIGHT){
 			displayBlock.setType(Material.AIR);
@@ -550,58 +481,33 @@ public abstract class AbstractDisplay{
 		return offset;
 	}
 	
-	protected boolean playerIsLookingTowardShop(Player player) {
-		try{
-			if(player.getLocation().distanceSquared(this.shopSignLocation) > 64){ //player is more than 8 blocks away
-				return false;
-			}
-		} catch(IllegalArgumentException _){
-			return false;
-		}
-		Vector lookDirection = player.getEyeLocation().getDirection();
-		Location displayLocation = this.getItemDropLocation(false);
-		if(displayLocation == null){
-			return false;
-		}
-		Vector blockDirection = displayLocation.subtract(player.getEyeLocation()).toVector().normalize();
-		double angle = blockDirection.angle(lookDirection);
-		//return true if angle (in radians) is less than 1
-		return angle < 1;
-	}
-	
-	protected void removeDisplayTagsDelayedTask(Player player) {
-		//remove all armor stand name tag entities after x seconds
-		Shop.getPlugin().getFoliaLib().getScheduler().runAtEntityLater(player, () -> {
-			if(!displayTagsVisible(player)){
-				removeDisplayEntities(player, true);
-				return;
-			}
-			if(playerIsLookingTowardShop(player)){
-				removeDisplayTagsDelayedTask(player);
-			} else {
-				removeDisplayEntities(player, true);
-			}
-		}, 20);
-	}
-	
 	protected boolean isSameWorld(Player player) {
 		return player.getWorld().getUID().equals(this.shop.getSignLocation().getWorld().getUID());
 	}
 	
 	/**
-	 * Checks if a chunk is loaded
-	 *
-	 * @param location The location to check
-	 * @return True if the chunk is loaded, false otherwise
-	 *
-	 * Note: This method should be used instead of `location.getChunk().isChunkLoaded()`
-	 * because calling `location.getChunk()` will force a chunk load, which defeats
-	 * the purpose of checking if the chunk is already loaded.
+	 * spawns a floating item packet for a specific player
 	 */
-	protected boolean isChunkLoaded(Location location) {
-		if(location == null || location.getWorld() == null){
-			return false;
-		}
-		return location.getWorld().isChunkLoaded(UtilMethods.floor(location.getBlockX()) >> 4, UtilMethods.floor(location.getBlockZ()) >> 4);
+	protected void spawnItemPacket(Player player, ItemStack is, Location location) {
+		net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(is);
+		Level serverLevel = ((CraftWorld) location.getWorld()).getHandle();
+		
+		ItemEntity entityItem = new ItemEntity(serverLevel, location.getX(), location.getY(), location.getZ(), itemStack);
+		int entityID = entityItem.getId();
+		entityItem.setInvulnerable(true);
+		entityItem.setRemainingFireTicks(-1);
+		entityItem.setNoGravity(true);
+		entityItem.persist = true;
+		entityItem.setDeltaMovement(new Vec3(0.0D, 0.0D, 0.0D)); //not sure if this is the same as setMot() that was there first
+		entityItem.setPickUpDelay(32767);
+		entityItem.setTicksFrozen(2147483647);
+		
+		ClientboundAddEntityPacket entitySpawnPacket = createEntity(player, entityItem, location, 0);
+		ClientboundSetEntityMotionPacket entityVelocityPacket = new ClientboundSetEntityMotionPacket(entityItem);
+		ClientboundSetEntityDataPacket entityMetadataPacket = new ClientboundSetEntityDataPacket(entityID, entityItem.getEntityData().packDirty());
+		
+		sendPacket(player, entitySpawnPacket);
+		sendPacket(player, entityVelocityPacket);
+		sendPacket(player, entityMetadataPacket);
 	}
 }

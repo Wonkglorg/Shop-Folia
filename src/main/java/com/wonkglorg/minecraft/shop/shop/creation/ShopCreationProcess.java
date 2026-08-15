@@ -1,15 +1,14 @@
 package com.wonkglorg.minecraft.shop.shop.creation;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.config.LangManager;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
-import com.wonkglorg.minecraft.shop.shop.display.CreationTextDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.EconomyUtils;
-import com.wonkglorg.minecraft.config.LangManager;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.block.Block;
@@ -87,12 +86,6 @@ public abstract class ShopCreationProcess{
 	@Getter
 	protected boolean isCancelled;
 	
-	/**
-	 * Display that represents the text lines above the shop giving visual feedback
-	 */
-	@Getter
-	protected CreationTextDisplay display;
-	
 	protected ShopCreationProcess(Player player, Sign sign, Block container, BlockFace signDirection) {
 		this.player = player;
 		this.playerUUID = player.getUniqueId();
@@ -101,8 +94,8 @@ public abstract class ShopCreationProcess{
 		this.container = container;
 		this.signDirection = signDirection;
 		this.playerIsOperator = PlayerProfile.isOperator(player);
-		lang = Shop.getPlugin().getLangManager();
-		shopManager = Shop.getPlugin().getShopmanager();
+		lang = Main.getPlugin().getLangManager();
+		shopManager = Main.getPlugin().getShopmanager();
 	}
 	
 	public ImmutableShopCreationProcess toImmutableProgress() {
@@ -130,24 +123,28 @@ public abstract class ShopCreationProcess{
 	 */
 	public boolean canPlayerFulfillsCreationRequirements() {
 		if(playerIsOperator){
+			Main.getPlugin().logger().debug("Player is op, skipping creation check");
 			return true;
 		}
 		//can't build shop in this dimension
-		Shop plugin = Shop.getPlugin();
+		Main plugin = Main.getPlugin();
 		if(!isAllowedInDimension()){
+			plugin.logger().debug("Dimension check failed");
 			plugin.getLangManager().request("interaction_issue.worldBlacklist").sendToAudience(player);
 			return false;
 		}
 		
 		//no create permissions for any shop
 		if(!PlayerProfile.isAllowedToCreateShop(player)){
+			plugin.logger().debug("Player lacks permission to create shop of this type");
 			plugin.getLangManager().request("permission.error.create").sendToAudience(player);
 			return false;
 		}
 		
 		//if players must pay to create shops, check that they have enough money first
-		double cost = Shop.getPlugin().getSettingsConfig().getCreationCost();
+		double cost = Main.getPlugin().getSettingsConfig().getCreationCost();
 		if(cost > 0 && !EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
+			plugin.logger().debug("Player lacks funds to cover create shop costs");
 			lang.request("interaction_issue.createInsufficientFunds").sendToAudience(player);
 			return false;
 		}
@@ -155,6 +152,7 @@ public abstract class ShopCreationProcess{
 		int numberOfShops = plugin.getShopmanager().getNumberOfShops(player.getUniqueId());
 		int buildPermissionNumber = getShopBuildLimit(player);
 		if(numberOfShops >= buildPermissionNumber){
+			plugin.logger().debug("Player exceeds shop build limit");
 			plugin.getLangManager().request("permission.error.buildLimit").sendToAudience(player);
 			return false;
 		}
@@ -175,7 +173,7 @@ public abstract class ShopCreationProcess{
 	 * @return If the shop can be created in this world
 	 */
 	protected boolean isAllowedInDimension() {
-		return !Shop.getPlugin().getSettingsConfig().getWorldBlackList().contains(container.getWorld().getName());
+		return !Main.getPlugin().getSettingsConfig().getWorldBlackList().contains(container.getWorld().getName());
 	}
 	
 	/**
@@ -192,24 +190,25 @@ public abstract class ShopCreationProcess{
 				adminShop,
 				type,
 				signDirection,
-				System.currentTimeMillis());
+				System.currentTimeMillis(),
+				Main.getPlugin().getSettingsConfig().getDisplayTypeDefault());
 		shop.setFakeSign(isFakeSign);
 		boolean loaded = shop.load();
 		if(!loaded){
-			Shop.getPlugin()
+			Main.getPlugin()
 			    .getLogger()
 			    .warning("Shop creation failed, unable to load the shop. Aborting shop creation."); // only seen this happen in tests
 			return null;
 		}
 		
 		if(type == ShopType.GAMBLE){
-			shop.setItemStack(Shop.getPlugin().getItemConfig().getGambleDisplayItem());
+			shop.setItemStack(Main.getPlugin().getItemConfig().getGambleDisplayItem());
 			shop.setAmount(1);
 			shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
 			return null;
 		}
 		
-		Shop.getPlugin().logger().trace("[ShopCreationUtil.createShop] updateSign");
+		Main.getPlugin().logger().debug("[ShopCreationUtil.createShop] updateSign");
 		shop.updateSign();
 		return shop;
 	}

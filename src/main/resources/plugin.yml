@@ -1,4 +1,4 @@
-main: com.wonkglorg.minecraft.shop.Shop
+main: com.wonkglorg.minecraft.shop.Main
 name: ${name}
 description: ${description}
 author: ${author}

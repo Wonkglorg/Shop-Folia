@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import org.bukkit.Location;
@@ -15,8 +15,9 @@ public class GambleShop extends AbstractShop{
 	
 	private ItemStack gambleItem;
 	
-	public GambleShop(UUID shopId,Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
-		super(shopId,signLoc, player, pri, amt, admin, facing,creationDate);
+	public GambleShop(UUID shopId, Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate,
+	                  DisplayType type) {
+		super(shopId,signLoc, player, pri, amt, admin, facing,creationDate,type);
 		
 		this.isAdmin = true;
 		this.creationWord = CreationWord.GAMBLE;
@@ -41,10 +42,10 @@ public class GambleShop extends AbstractShop{
 		setGambleItem();
 		this.getDisplay().spawn(player);
 		
-		Shop.getPlugin().getFoliaLib().getScheduler().runLater(() -> {
-			setItemStack(Shop.getPlugin().getItemConfig().getGambleDisplayItem());
+		Main.getPlugin().getFoliaLib().getScheduler().runLater(() -> {
+			setItemStack(Main.getPlugin().getItemConfig().getGambleDisplayItem());
 			if(initialDisplayType == null){
-				display.setType(Shop.getPlugin().getSettingsConfig().getDisplayTypeDefault(), false);
+				display.setType(Main.getPlugin().getSettingsConfig().getDisplayTypeDefault(), false);
 				getDisplay().spawn(player);
 			} else {
 				display.setType(initialDisplayType, false);
@@ -55,7 +56,7 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	public void setGambleItem() {
-		this.gambleItem = Shop.getPlugin().getDisplayListener().getRandomItem(this);
+		this.gambleItem = Main.getPlugin().getDisplayListener().getRandomItem(this);
 	}
 	
 	public ItemStack getGambleItem() {

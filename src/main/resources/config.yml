@@ -312,14 +312,10 @@ displayBatchDelay: 2
 
 # To get more visibility into Shop actions, you can increase the log level to see more!
 # Available Log Levels:
+# * WARN   : Logs warnings and errors
 # * INFO   : Standard logging, only logs on startup, warnings, and errors
-# * NOTICE : Logs significant events like shop creation/deletion
-# * HELPFUL: Logs important in-game events such as transactions (RECOMMENDED)
-# * DEBUG  : Logs detailed information useful for debugging features
-# * TRACE  : Logs step-by-step execution details
-# * SPAM   : Logs extremely verbose information for deep diagnostics
-# * HYPER  : Logs at hyper speed, the deepest level of diagnostics
-logLevel: HELPFUL
+# * DEBUG  : Logs detailed information useful for debugging issues
+logLevel: INFO
 
 debug:
   # (default: false) Should owners be able to buy/sell from their own shop

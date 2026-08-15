@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.manager;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.migrate.PlayerShopsConfig;
@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class ShopManager{
-	private final Shop plugin;
+	private final Main plugin;
 	private final ShopLogger logger;
 	@Getter
 	private final ShopDatabase database;
@@ -83,7 +83,7 @@ public class ShopManager{
 	@Getter
 	private final Map<UUID, String> shopOwners = new ConcurrentHashMap<>();
 	
-	public ShopManager(Shop plugin) throws SQLException, IOException {
+	public ShopManager(Main plugin) throws SQLException, IOException {
 		this.plugin = plugin;
 		this.settingsConfig = new SettingsConfig();
 		this.logger = plugin.logger();
@@ -205,10 +205,7 @@ public class ShopManager{
 	}
 	
 	public void finishShopCreation(Player player, AbstractShop shop) {
-		ShopCreationProcess remove = playersInShopCreation.remove(player.getUniqueId());
-		if(remove != null){
-			remove.getDisplay().remove(player);
-		}
+		playersInShopCreation.remove(player.getUniqueId());
 		registerShop(shop);
 	}
 	
@@ -230,12 +227,11 @@ public class ShopManager{
 	public void cancelShopCreationProcess(Player player) {
 		ShopCreationProcess process = playersInShopCreation.remove(player.getUniqueId());
 		if(process != null){
-			process.getDisplay().remove(player);
-			Shop.getPlugin().getLangManager().request("interaction_issue.createCancel").sendToAudience(player);
+			Main.getPlugin().getLangManager().request("interaction_issue.createCancel").sendToAudience(player);
 			Sign sign = process.getSign();
 			plugin.getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
 				if(sign.getBlockData() instanceof WallSign){
-					List<Component> lines = ShopMessage.getSignLines("timeout");
+					List<Component> lines = ShopMessage.getSignLinesTimeout();
 					SignSide side = sign.getSide(Side.FRONT);
 					side.line(0, lines.get(0));
 					side.line(1, lines.get(1));
@@ -394,7 +390,7 @@ public class ShopManager{
 					
 					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
 						for(AbstractShop shop : plugin.getShopmanager().getShops(offlinePlayer.getUniqueId())){
-							plugin.logger().notice("Deleting Shop because player " +
+							plugin.logger().info("Deleting Shop because player " +
 							                       offlinePlayer.getName() +
 							                       " has not logged in within the required " +
 							                       (int) hoursSinceLastPlayed +

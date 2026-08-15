@@ -1,5 +1,7 @@
 package com.wonkglorg.minecraft.shop;
 
+import com.tcoded.folialib.FoliaLib;
+import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.shop.command.ShopCommand;
 import com.wonkglorg.minecraft.shop.config.ItemConfig;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
@@ -16,8 +18,6 @@ import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemListType;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
-import com.tcoded.folialib.FoliaLib;
-import com.wonkglorg.minecraft.config.LangManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
@@ -29,10 +29,10 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class Shop extends JavaPlugin{
+public class Main extends JavaPlugin{
 	
 	@Getter
-	private static Shop plugin;
+	private static Main plugin;
 	private ShopLogger logger = new ShopLogger(this);
 	// Getter for FoliaLib
 	@Getter
@@ -46,8 +46,6 @@ public class Shop extends JavaPlugin{
 	private ShopManager shopmanager;
 	@Getter
 	private String commandAlias;
-	@Getter
-	private DisplayTagOption displayTagOption;
 	private Economy econ = null;
 	@Getter
 	private ItemListType itemListType;
@@ -64,8 +62,6 @@ public class Shop extends JavaPlugin{
 	private LangManager langManager;
 	@Getter
 	private ShopServiceProvider shopServiceProvider;
-	
-	public static boolean loggedDisplayDisabledWarning = false;
 	
 	private boolean isMockBukkit = false;
 	
@@ -123,13 +119,10 @@ public class Shop extends JavaPlugin{
 		
 		shopmanager.loadShops();
 		
-		displayListener = new DisplayListener(this);
-		getServer().getPluginManager().registerEvents(displayListener, this);
+		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
 		getServer().getPluginManager().registerEvents(new MiscListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopGUIListener(), this);
-		
-		displayListener.startRepeatingDisplayViewTask();
 		
 		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
 		
@@ -170,7 +163,7 @@ public class Shop extends JavaPlugin{
 		if(getServer().getPluginManager().getPlugin("Vault") == null){
 			return false;
 		}
-		this.logger().notice("Vault is installed, creating Vault integration for Economy support");
+		this.logger().info("Vault is installed, creating Vault integration for Economy support");
 		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
 		if(rsp == null){
 			return false;

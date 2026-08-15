@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 
@@ -20,7 +20,7 @@ public class PlayerNameCache{
 	 * Initialize cache on startup - checks if cache file exists
 	 */
 	public static void initialize() {
-		cache.putAll(Shop.getPlugin().getShopmanager().getDatabase().loadPlayerNames());
+		cache.putAll(Main.getPlugin().getShopmanager().getDatabase().loadPlayerNames());
 	}
 	
 	/**
@@ -52,12 +52,12 @@ public class PlayerNameCache{
 					return name;
 				}
 			} else {
-				Shop.getPlugin().getLogger().warning("Player " +
+				Main.getPlugin().getLogger().warning("Player " +
 				                                     uuid +
 				                                     " has not played on this server and/or their player data file does not exist! Unable to load the player name from OfflinePlayer!");
 			}
 		} catch(Exception e){
-			Shop.getPlugin().getLogger().warning("Error while getting player name for " + uuid + " from OfflinePlayer.getName()! " + e.getMessage());
+			Main.getPlugin().getLogger().warning("Error while getting player name for " + uuid + " from OfflinePlayer.getName()! " + e.getMessage());
 		}
 		
 		// Return placeholder name as fallback
@@ -76,7 +76,7 @@ public class PlayerNameCache{
 		}
 		if(uuid != null && name != null && !name.trim().isEmpty()){
 			cache.put(uuid, name);
-			Shop.getPlugin().getShopmanager().getDatabase().addPlayer(uuid, name);
+			Main.getPlugin().getShopmanager().getDatabase().addPlayer(uuid, name);
 		}
 	}
 	

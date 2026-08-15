@@ -2,13 +2,14 @@ package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.Constants;
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager.BlockKey;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
+import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
 import com.wonkglorg.minecraft.shop.util.InventoryUtils;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
@@ -122,7 +123,15 @@ public abstract class AbstractShop{
 	@Getter
 	protected ShopState shopState;
 	
-	protected AbstractShop(UUID id, Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate) {
+	protected AbstractShop(UUID id,
+	                       Location signLoc,
+	                       UUID player,
+	                       double pri,
+	                       int amt,
+	                       Boolean admin,
+	                       BlockFace facing,
+	                       long creationDate,
+	                       DisplayType type) {
 		this.id = id;
 		this.signLocation = signLoc;
 		this.signKey = BlockKey.of(signLoc);
@@ -141,7 +150,7 @@ public abstract class AbstractShop{
 				signLoc.getBlockY() - facing.getModY(),
 				signLoc.getBlockZ() - facing.getModZ());
 		this.containerKey = BlockKey.of(containerLocation);
-		display = Shop.getPlugin().getShopmanager().getDisplayManager().createDisplay(this.signLocation);
+		display = AbstractDisplay.createDisplay(type, this);
 		fakeSign = false;
 		
 		if(isAdmin){
@@ -160,14 +169,15 @@ public abstract class AbstractShop{
 	                                  Boolean admin,
 	                                  ShopType shopType,
 	                                  BlockFace facing,
-	                                  long creationDate) {
+	                                  long creationDate,
+	                                  DisplayType type) {
 		
 		return switch(shopType) {
-			case SELL -> new SellShop(id, signLoc, player, pri, amt, admin, facing, creationDate);
-			case BUY -> new BuyShop(id, signLoc, player, pri, amt, admin, facing, creationDate);
-			case BARTER -> new BarterShop(id, signLoc, player, pri, amt, admin, facing, creationDate);
-			case GAMBLE -> new GambleShop(id, signLoc, player, pri, amt, admin, facing, creationDate);
-			case COMBO -> new ComboShop(id, signLoc, player, pri, priCombo, amt, admin, facing, creationDate);
+			case SELL -> new SellShop(id, signLoc, player, pri, amt, admin, facing, creationDate, type);
+			case BUY -> new BuyShop(id, signLoc, player, pri, amt, admin, facing, creationDate, type);
+			case BARTER -> new BarterShop(id, signLoc, player, pri, amt, admin, facing, creationDate, type);
+			case GAMBLE -> new GambleShop(id, signLoc, player, pri, amt, admin, facing, creationDate, type);
+			case COMBO -> new ComboShop(id, signLoc, player, pri, priCombo, amt, admin, facing, creationDate, type);
 		};
 	}
 	
@@ -185,12 +195,12 @@ public abstract class AbstractShop{
 	public boolean load() {
 		Block signBlock = signLocation.getBlock();
 		if(signBlock.getType() == Material.AIR){
-			Shop.getPlugin().logger().warning("Error attempting to load shop! No sign found for Shop (detected: AIR), deleting shop: " + this);
+			Main.getPlugin().logger().warning("Error attempting to load shop! No sign found for Shop (detected: AIR), deleting shop: " + this);
 			return false;
 		}
 		
 		if(!(signBlock.getBlockData() instanceof WallSign wallSign)){
-			Shop.getPlugin().logger().warning("Error attempting to load shop! Sign Block for Shop is not a WallSign (detected: " +
+			Main.getPlugin().logger().warning("Error attempting to load shop! Sign Block for Shop is not a WallSign (detected: " +
 			                                  signBlock.getType() +
 			                                  "), deleting shop: " +
 			                                  this);
@@ -203,8 +213,8 @@ public abstract class AbstractShop{
 		// The primary container is directly behind the sign.
 		Block containerBlock = signBlock.getRelative(facing.getOppositeFace());
 		
-		if(!Shop.getPlugin().getShopmanager().isAllowedContainer(containerBlock)){
-			Shop.getPlugin().logger().warning(
+		if(!Main.getPlugin().getShopmanager().isAllowedContainer(containerBlock)){
+			Main.getPlugin().logger().warning(
 					"Error attempting to load shop! Invalid block type detected when trying to load Shop Container (detected: " +
 					containerBlock.getType() +
 					"), deleting shop: " +
@@ -231,7 +241,7 @@ public abstract class AbstractShop{
 						containerKey.y() + otherChestDirection.getModY(),
 						containerKey.z() + otherChestDirection.getModZ());
 				//add the secondary location to the manager to handle
-				Shop.getPlugin().getShopmanager().addSecondaryShopLocation(secondaryContainerLocation, this);
+				Main.getPlugin().getShopmanager().addSecondaryShopLocation(secondaryContainerLocation, this);
 			}
 		}
 		
@@ -241,7 +251,7 @@ public abstract class AbstractShop{
 		// Now that the world/container data is valid, refresh stock and state.
 		updateStock();
 		
-		Shop.getPlugin().logger().debug("Loaded shop successfully: " + this);
+		Main.getPlugin().logger().debug("Loaded shop successfully: " + this);
 		
 		isLoaded = true;
 		return true;
@@ -269,7 +279,7 @@ public abstract class AbstractShop{
 		}
 		int itemsInShop = InventoryUtils.getAmount(this.getInventory(), this.getItemStack());
 		stock = itemsInShop / this.getAmount();
-		if(stock == 0 && Shop.getPlugin().getSettingsConfig().isAllowPartialSales()){
+		if(stock == 0 && Main.getPlugin().getSettingsConfig().isAllowPartialSales()){
 			// Calculate the minimum items required to show as in stock
 			int minItemAmountRequired = (int) Math.ceil(1 / this.getPricePerItem());
 			
@@ -289,7 +299,7 @@ public abstract class AbstractShop{
 		// Update sign if needed
 		boolean hasStockChange = stock != oldStock;
 		if(hasStockChange){
-			Shop.getPlugin().logger().trace("[AbstractShop.updateStock] updateSign, new stock != oldStock! newStock: " +
+			Main.getPlugin().logger().debug("[AbstractShop.updateStock] updateSign, new stock != oldStock! newStock: " +
 			                                stock +
 			                                " old stock: " +
 			                                oldStock +
@@ -400,12 +410,12 @@ public abstract class AbstractShop{
 		if(this.type == ShopType.BARTER && this.isInitialized()){
 			return (int) this.getPrice() + " " + toPlainText(ItemNameUtil.getName(this.getSecondaryItemStack()));
 		}
-		return Shop.getPlugin().getPriceString(this.price, false);
+		return Main.getPlugin().getPriceString(this.price, false);
 	}
 	
 	public String getPricePerItemString() {
 		double pricePer = this.getPricePerItem();
-		return Shop.getPlugin().getPriceString(pricePer, true);
+		return Main.getPlugin().getPriceString(pricePer, true);
 	}
 	
 	//only use this method if the shop has not been added to the main handler maps yet
@@ -463,10 +473,10 @@ public abstract class AbstractShop{
 		signLines = ShopMessage.getSignLines(this);
 		
 		// Use the sign's location to ensure the update runs in the correct region in Folia
-		Shop.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(signLocation, task -> {
+		Main.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(signLocation, task -> {
 			// Update the GUI Icon since the sign needs an update.
 			if(!(signLocation.getBlock().getState() instanceof Sign sign)){
-				Shop.getPlugin().logger().warning("Error attempting to update Shop sign! Sign Block for Shop is not a Sign (detected: " +
+				Main.getPlugin().logger().warning("Error attempting to update Shop sign! Sign Block for Shop is not a Sign (detected: " +
 				                                  signLocation.getBlock().getType() +
 				                                  "), deleting shop: " +
 				                                  this);
@@ -499,7 +509,7 @@ public abstract class AbstractShop{
 			}
 			//@formatter:on
 			// If the sign is glowing, update it if the setting has changed
-			boolean shouldGlow = Shop.getPlugin().getSettingsConfig().isSetGlowingSignText();
+			boolean shouldGlow = Main.getPlugin().getSettingsConfig().isSetGlowingSignText();
 			if(shouldGlow != frontSideSign.isGlowingText()){
 				hasSignUpdate = true;
 				frontSideSign.setGlowingText(shouldGlow);
@@ -507,11 +517,6 @@ public abstract class AbstractShop{
 			// Update the sign if it has changed
 			if(hasSignUpdate){
 				sign.update(true);
-			}
-			
-			// Update the floating holograms for anybody who currently has them open
-			if(display != null){
-				display.updateDisplayTags();
 			}
 		}, 2);
 	}
@@ -536,7 +541,7 @@ public abstract class AbstractShop{
 	}
 	
 	public void printSalesInfo(Player player) {
-		LangRequest request = Shop.getPlugin().getLangManager().request("description." + this.getType().toString());
+		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType().toString());
 		shopPlaceholders(request, this);
 		request.sendToAudience(player);
 	}
@@ -560,7 +565,7 @@ public abstract class AbstractShop{
 		
 		if(shop.getType() == ShopType.GAMBLE){
 			GambleShop gambleShop = (GambleShop) shop;
-			ItemStack displayItem = Shop.getPlugin().getItemConfig().getGambleDisplayItem();
+			ItemStack displayItem = Main.getPlugin().getItemConfig().getGambleDisplayItem();
 			ItemStack gambleItem = gambleShop.getGambleItem();
 			request.replace("%gamble-item%", ItemNameUtil.getName(displayItem).hoverEvent(getItemHover(displayItem)))
 			       .replace("%gamble-item-type%", gambleItem.getType())
@@ -582,7 +587,7 @@ public abstract class AbstractShop{
 	}
 	
 	public boolean executeClickAction(PlayerInteractEvent event, ShopClickType clickType) {
-		ShopAction action = Shop.getPlugin().getSettingsConfig().getShopAction(clickType);
+		ShopAction action = Main.getPlugin().getSettingsConfig().getShopAction(clickType);
 		if(action == null){
 			return false; //there is no action mapped to this click type
 		}
@@ -590,10 +595,10 @@ public abstract class AbstractShop{
 		
 		switch(action) {
 			case TRANSACT:
-				Shop.getPlugin().getTransactionHelper().executeTransactionFromEvent(event, this, false);
+				Main.getPlugin().getTransactionHelper().executeTransactionFromEvent(event, this, false);
 				break;
 			case TRANSACT_FULLSTACK:
-				Shop.getPlugin().getTransactionHelper().executeTransactionFromEvent(event, this, true);
+				Main.getPlugin().getTransactionHelper().executeTransactionFromEvent(event, this, true);
 				break;
 			case VIEW_DETAILS:
 				this.printSalesInfo(player);
@@ -622,7 +627,7 @@ public abstract class AbstractShop{
 	
 	public void sendEffects(boolean success, Player player) {
 		try{
-			SettingsConfig settingsConfig = Shop.getPlugin().getSettingsConfig();
+			SettingsConfig settingsConfig = Main.getPlugin().getSettingsConfig();
 			if(success){
 				if(settingsConfig.isPlaySounds()){
 					player.playSound(this.getSignLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);

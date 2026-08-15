@@ -1,7 +1,11 @@
 package com.wonkglorg.minecraft.shop.db;
 
+import com.tcoded.folialib.impl.PlatformScheduler;
+import com.wonkglorg.database.DatabaseType;
+import com.wonkglorg.database.databases.SqliteDatabase;
+import com.wonkglorg.database.datasources.FileDataSource;
 import com.wonkglorg.minecraft.shop.Constants;
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ComboShop;
 import com.wonkglorg.minecraft.shop.shop.ShopState;
@@ -11,10 +15,6 @@ import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.shop.util.OfflineTransactions;
 import com.wonkglorg.minecraft.shop.util.ShopActionType;
-import com.tcoded.folialib.impl.PlatformScheduler;
-import com.wonkglorg.database.DatabaseType;
-import com.wonkglorg.database.databases.SqliteDatabase;
-import com.wonkglorg.database.datasources.FileDataSource;
 import com.wonkglorg.minecraft.util.PluginLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -59,10 +59,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			UPDATE shops SET owner_uuid = ?, item = ?, price = ?, price_combo_sell = ?, amount = ?, last_known_stock_count = ?, shop_type = ?, sign_facing = ?, display_type = ?, fake_sign = ?, barter_item = ?, item_type = ?, item_barter_type = ?, shop_world = ?, shop_x = ?, shop_y = ?, shop_z = ? WHERE shop_uuid = ?
 			""";
 	
-	private final Shop plugin;
+	private final Main plugin;
 	private final PlatformScheduler scheduler;
 	
-	public ShopDatabase(Shop plugin) throws SQLException, IOException {
+	public ShopDatabase(Main plugin) throws SQLException, IOException {
 		super(new FileDataSource(DatabaseType.SQLITE, plugin.getDataPath().resolve("data", "shop.db")));
 		this.plugin = plugin;
 		this.scheduler = plugin.getFoliaLib().getScheduler();
@@ -191,8 +191,19 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			throw new IllegalArgumentException("Shoptype is invalid provided: " + set.getString("shop_type"));
 		}
 		BlockFace facing = BlockFace.valueOf(set.getString("sign_facing"));
+		DisplayType displayType = DisplayType.valueOf(set.getString("display_type"));
 		// This inits a new shop but won't have a chestLocation until load().
-		AbstractShop shop = AbstractShop.create(id, signLocation, ownerId, price, priceSell, amount, isAdmin, shopType, facing, creationTime);
+		AbstractShop shop = AbstractShop.create(id,
+				signLocation,
+				ownerId,
+				price,
+				priceSell,
+				amount,
+				isAdmin,
+				shopType,
+				facing,
+				creationTime,
+				displayType);
 		ItemStack stack = ItemStackJsonCodec.deserialize(set.getString("item"));
 		
 		int stock = set.getInt("last_known_stock_count");
@@ -203,10 +214,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		if(shop.getType() == ShopType.BARTER){
 			ItemStack barterItem = ItemStackJsonCodec.deserialize(set.getString("barter_item"));
 			shop.setSecondaryItemStack(barterItem);
-		}
-		String displayType = set.getString("display_type");
-		if(displayType != null){
-			shop.getDisplay().setType(DisplayType.valueOf(displayType), false);
 		}
 		
 		boolean isFakeSign = set.getBoolean("fake_sign");
@@ -362,7 +369,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	public void logAction(OfflinePlayer player, AbstractShop shop, ShopActionType actionType) {
 		if(actionType == ShopActionType.INIT){
-			plugin.logger().notice(player.getName() +
+			plugin.logger().debug(player.getName() +
 			                       " created a " +
 			                       shop.getType().name().toUpperCase() +
 			                       " shop at (" +
@@ -378,7 +385,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			                                                               ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
 		}
 		if(actionType == ShopActionType.DESTROY){
-			plugin.logger().notice(player.getName() +
+			plugin.logger().debug(player.getName() +
 			                       " destroyed a " +
 			                       shop.getType().name().toUpperCase() +
 			                       " shop at (" +

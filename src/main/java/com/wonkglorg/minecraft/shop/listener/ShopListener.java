@@ -1,6 +1,8 @@
 package com.wonkglorg.minecraft.shop.listener;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.config.LangManager;
+import com.wonkglorg.minecraft.config.lang.LangRequest;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.PlayerCreateShopEvent;
 import com.wonkglorg.minecraft.shop.event.PlayerDestroyShopEvent;
@@ -24,8 +26,6 @@ import com.wonkglorg.minecraft.shop.util.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.util.ShopActionType;
 import com.wonkglorg.minecraft.shop.util.ShopClickType;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
-import com.wonkglorg.minecraft.config.LangManager;
-import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.util.Components;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -58,12 +58,12 @@ import java.util.Iterator;
 
 public class ShopListener implements Listener{
 	
-	private final Shop plugin;
+	private final Main plugin;
 	private final LangManager lang;
 	private final SettingsConfig settingsConfig;
 	private final ShopManager shopManager;
 	
-	public ShopListener(Shop instance) {
+	public ShopListener(Main instance) {
 		plugin = instance;
 		lang = plugin.getLangManager();
 		settingsConfig = plugin.getSettingsConfig();
@@ -74,12 +74,17 @@ public class ShopListener implements Listener{
 	public void onShopCreation(SignChangeEvent event) {
 		final Block block = event.getBlock();
 		final Player player = event.getPlayer();
+		plugin.logger().debug("====POTENTIAL SHOP CREATION START====");
+		plugin.logger().debug("Player " + player.getName() + " writing on sign");
 		
 		if(!settingsConfig.isAllowCreateMethodSign()){
+			plugin.logger().debug("CANCEL: Shop Create Method Sign not allowed");
 			return;
 		}
 		
 		if(!(block.getState() instanceof WallSign wallSign)){
+			plugin.logger().debug("Sign is not a wall sign");
+			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
@@ -89,23 +94,31 @@ public class ShopListener implements Listener{
 		Block chest = block.getRelative(signDirection.getOppositeFace());
 		
 		if(!shopManager.isAllowedContainer(chest)){
+			plugin.logger().debug("Container is not allowed shop");
+			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
 		if(shopManager.isCreatingShop(player)){
+			plugin.logger().debug("CANCEL: Player already creating shop");
+			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
 			//player is already creating another shop do nothing here
 			return;
 		}
 		
 		//no creation word is present not a shop creation.
-		if(!Components.toPlainText(event.line(0)).toLowerCase().contains(plugin.getSettingsConfig()
-		                                                                       .getCreationWord(CreationWord.SHOP)
-		                                                                       .toLowerCase())){
+		String firstLine = Components.toPlainText(event.line(0)).toLowerCase();
+		String creationWord = plugin.getSettingsConfig().getCreationWord(CreationWord.SHOP).toLowerCase();
+		if(!firstLine.contains(creationWord)){
+			plugin.logger().debug("Creation " + creationWord + " word is not present in '" + firstLine + "'");
+			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
 		if(shopManager.getShopByContainer(chest.getLocation()) != null){
-			Shop.getPlugin().getLangManager().request("interaction_issue.createOtherShop").sendToAudience(player);
+			plugin.logger().debug("Container is already a registered shop");
+			plugin.logger().debug("====SHOP CREATION CANCEL====");
+			Main.getPlugin().getLangManager().request("interaction_issue.createOtherShop").sendToAudience(player);
 			event.setCancelled(true);
 			return;
 		}
@@ -114,20 +127,27 @@ public class ShopListener implements Listener{
 		
 		//do some checks with the provided data to verify the player has all required things to create a shop here
 		if(!process.canPlayerFulfillsCreationRequirements()){
+			plugin.logger().debug("Player can't fulfill creation requirements");
+			plugin.logger().debug("====SHOP CREATION CANCEL====");
 			return;
 		}
 		
 		if(!process.readSignLines(event.lines())){
+			plugin.logger().debug("Error reading sign lines");
+			plugin.logger().debug("====SHOP CREATION CANCEL====");
 			return;
 		}
 		PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, process.toImmutableProgress());
-		Shop.getPlugin().getServer().getPluginManager().callEvent(e);
+		Main.getPlugin().getServer().getPluginManager().callEvent(e);
 		if(!event.isCancelled()){
+			plugin.logger().debug("Event was cancelled by third party plugin");
+			plugin.logger().debug("====SHOP CREATION CANCEL====");
 			e.setCancelled(true);
 			return;
 		}
 		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
 		shopManager.addPlayerShopCreation(player, process);
+		plugin.logger().debug("=====SHOP CREATION SUCCESS====");
 	}
 	
 	@EventHandler
@@ -314,10 +334,6 @@ public class ShopListener implements Listener{
 			
 			boolean actionPerformed = shop.executeClickAction(event, ShopClickType.SHIFT_RIGHT_CLICK_CHEST);
 			
-			if(plugin.getDisplayTagOption() == DisplayTagOption.RIGHT_CLICK_CHEST){
-				shop.getDisplay().showDisplayTags(player);
-			}
-			
 			if(actionPerformed){
 				event.setCancelled(true);
 				// Stop processing since we cancelled the event, if no action was performed, continue with logic below
@@ -352,10 +368,6 @@ public class ShopListener implements Listener{
 					LangRequest request = lang.request("permission.error.openOther");
 					AbstractShop.shopPlaceholders(request, shop);
 					request.sendToAudience(player);
-				}
-				
-				if(plugin.getDisplayTagOption() == DisplayTagOption.RIGHT_CLICK_CHEST){
-					shop.getDisplay().showDisplayTags(player);
 				}
 			}
 		}
@@ -446,7 +458,7 @@ public class ShopListener implements Listener{
 		if(shopManager.isAllowedContainer(b)){
 			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
 			// protect shops that are in the middle of a shop creation process from being destroyed
-			if(Shop.getPlugin().getShopmanager().isContainerInShopCreationProcess(b.getLocation())){
+			if(Main.getPlugin().getShopmanager().isContainerInShopCreationProcess(b.getLocation())){
 				lang.request("interaction_issue.destroyUninitializedChest").sendToAudience(player);
 				event.setCancelled(true); // don't break chest
 				return;
@@ -526,7 +538,7 @@ public class ShopListener implements Listener{
 		
 		if(settingsConfig.isDestroyShopRequiresSneak() && !player.isSneaking()){
 			event.setCancelled(true);
-			Shop.getPlugin().logger().trace("[MiscListener.shopDestroy : getDestroyShopRequiresSneak] updateSign");
+			Main.getPlugin().logger().debug("[MiscListener.shopDestroy : getDestroyShopRequiresSneak] updateSign");
 			shop.updateSign();
 			return;
 		}
@@ -620,7 +632,7 @@ public class ShopListener implements Listener{
 			// Explicitly allow the chest to be broken since it is the "Expansion" chest
 			// we need to uncancel the event so that the chest can be broken.
 			event.setCancelled(false);
-			Shop.getPlugin().getShopmanager().removeSecondaryChestLocation(shop.getSecondaryContainerLocation(), shop);
+			Main.getPlugin().getShopmanager().removeSecondaryChestLocation(shop.getSecondaryContainerLocation(), shop);
 		}
 	}
 }

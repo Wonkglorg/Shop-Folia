@@ -1,7 +1,7 @@
 package com.wonkglorg.minecraft.shop.manager.player;
 
 import com.wonkglorg.minecraft.shop.Constants;
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.loadFromFile;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
@@ -267,7 +267,7 @@ public abstract class PlayerProfile{
 	 * Get all shops this player owns
 	 */
 	public static List<AbstractShop> getShops(UUID uuid) {
-		return Shop.getPlugin().getShopmanager().getShops(uuid);
+		return Main.getPlugin().getShopmanager().getShops(uuid);
 	}
 	
 	public static Duration getTeleportCooldownRemaining(UUID uuid) {

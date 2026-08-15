@@ -15,6 +15,11 @@ public class NonDisplay extends AbstractDisplay{
 	}
 	
 	@Override
+	protected void onSpawn(Player player) {
+		//nothing
+	}
+	
+	@Override
 	public void spawn() {
 		//nothing
 	}

@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.util.TransactionParty;
 import lombok.Getter;
 import org.bukkit.Location;
@@ -66,7 +66,7 @@ public enum ShopState{
 		
 		Location loc = shop.getSignLocation();
 		
-		Shop.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(loc, () -> {
+		Main.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(loc, () -> {
 			try{
 				future.complete(getShopState(shop));
 			} catch(Exception t){

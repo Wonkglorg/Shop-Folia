@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.handler;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -24,11 +24,11 @@ import java.util.UUID;
 
 public class TransactionHandler{
 	
-	private final Shop plugin;
+	private final Main plugin;
 	private final LangManager lang;
 	private HashMap<Location, UUID> shopMessageCooldown = new HashMap<>(); //shop location, shop owner
 	
-	public TransactionHandler(Shop instance) {
+	public TransactionHandler(Main instance) {
 		plugin = instance;
 		lang = plugin.getLangManager();
 	}
@@ -57,7 +57,7 @@ public class TransactionHandler{
 		}
 		
 		//player did not click their own shop
-		if(!shop.getOwnerUUID().equals(player.getUniqueId()) || Shop.getPlugin().getSettingsConfig().isDebugAllowUseOwnShop()){
+		if(!shop.getOwnerUUID().equals(player.getUniqueId()) || Main.getPlugin().getSettingsConfig().isDebugAllowUseOwnShop()){
 			if(!PlayerProfile.isAllowedToUseShop(player, shop.getType())){
 				LangRequest request = lang.request("permission.error.use");
 				AbstractShop.shopPlaceholders(request, shop);

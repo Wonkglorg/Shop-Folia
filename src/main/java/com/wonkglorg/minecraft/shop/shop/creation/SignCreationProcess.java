@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.shop.creation;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.shop.CreationWord;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
@@ -32,12 +32,15 @@ public class SignCreationProcess extends ShopCreationProcess{
 		String line3 = Components.toPlainText(lines.get(3));
 		type = getShopType(line3);
 		if(!isAllowedToCreateShop()){
+			Main.getPlugin().logger().debug("Player is not allowed to build shop of type " + type);
 			return false;
 		}
 		adminShop = readShopAdmin(line3);
+		Main.getPlugin().logger().debug("Is Admin shop: " + adminShop);
 		
 		Integer amountRead = readAmount(lines.get(1));
 		if(amountRead == null){
+			Main.getPlugin().logger().debug("Malformed shop line 2");
 			lang.request("interaction_issue.createLine2").sendToAudience(player);
 			lang.request("interaction_issue.createCancel").sendToAudience(player);
 			return false;
@@ -46,12 +49,16 @@ public class SignCreationProcess extends ShopCreationProcess{
 		}
 		
 		if(!readPrice(Components.toPlainText(lines.get(2)), type)){
+			Main.getPlugin().logger().debug("Malformed shop line 3");
 			lang.request("interaction_issue.createLine3").sendToAudience(player);
 			return false;
 		}
 		
 		if(type == null){
 			type = ShopType.SELL;
+			Main.getPlugin().logger().debug("No Type specified defaulting to " + type);
+		} else {
+			Main.getPlugin().logger().debug("Shop type: " + type);
 		}
 		
 		finishedInitialisation = true;
@@ -63,16 +70,19 @@ public class SignCreationProcess extends ShopCreationProcess{
 			String line2 = UtilMethods.cleanNumberText(Components.toPlainText(component));
 			amount = Integer.parseInt(line2);
 			if(amount < 1){
+				Main.getPlugin().logger().debug("Amount can't be 0");
 				return null;
 			}
+			Main.getPlugin().logger().debug("Amount:" + amount);
 			return amount;
 		} catch(NumberFormatException _){
+			Main.getPlugin().logger().debug("Not a valid integer");
 			return null;
 		}
 	}
 	
 	private boolean readShopAdmin(String input) {
-		return input.toLowerCase().contains(Shop.getPlugin().getSettingsConfig().getCreationWord(CreationWord.ADMIN));
+		return input.toLowerCase().contains(Main.getPlugin().getSettingsConfig().getCreationWord(CreationWord.ADMIN));
 	}
 	
 	/**
@@ -81,9 +91,11 @@ public class SignCreationProcess extends ShopCreationProcess{
 	public boolean readPrice(String input, ShopType shopType) {
 		double price = 0;
 		double priceCombo = 0;
-		if(Shop.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.VAULT){
+		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.VAULT){
+			Main.getPlugin().logger().debug("Reading Vault currency");
 			try{
 				double multiplyValue = getMultiplyValue(input);
+				Main.getPlugin().logger().debug("Multiplier: " + multiplyValue);
 				String line3 = UtilMethods.cleanNumberText(input);
 				
 				String[] multiplePrices = line3.split(" ");
@@ -109,11 +121,14 @@ public class SignCreationProcess extends ShopCreationProcess{
 				
 				price *= multiplyValue;
 				priceCombo *= multiplyValue;
+				Main.getPlugin().logger().debug("Price: " + price);
+				Main.getPlugin().logger().debug("Price Combo: " + priceCombo);
 				
 			} catch(NumberFormatException _){
 				return false;
 			}
 		} else {
+			Main.getPlugin().logger().debug("Reading non fractional currency ITEM OR EXP");
 			try{
 				String line3 = UtilMethods.cleanNumberText(input);
 				
@@ -121,10 +136,14 @@ public class SignCreationProcess extends ShopCreationProcess{
 				if(multiplePrices.length > 1){
 					price = Long.parseLong(multiplePrices[0]);
 					priceCombo = Long.parseLong(multiplePrices[1]);
+					Main.getPlugin().logger().debug("Price: " + price);
+					Main.getPlugin().logger().debug("Price Combo: " + priceCombo);
 				} else {
 					price = Long.parseLong(line3);
+					Main.getPlugin().logger().debug("Price: " + price);
 				}
 			} catch(NumberFormatException _){
+				Main.getPlugin().logger().debug("Malformed Price Number");
 				return false;
 			}
 		}
@@ -139,7 +158,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 	
 	private ShopType getShopType(String input) {
 		ShopType type = null;
-		SettingsConfig config = Shop.getPlugin().getSettingsConfig();
+		SettingsConfig config = Main.getPlugin().getSettingsConfig();
 		input = input.toLowerCase();
 		if(input.contains(config.getCreationWord(CreationWord.BUY))){
 			type = ShopType.BUY;
@@ -164,7 +183,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 		String priceSuffix = priceString.replaceAll("[0-9.]", "");
 		
 		// Load the suffixes from the config values
-		NavigableMap<Double, String> configPriceSuffixes = Shop.getPlugin().getSettingsConfig().getPriceSuffixes();
+		NavigableMap<Double, String> configPriceSuffixes = Main.getPlugin().getSettingsConfig().getPriceSuffixes();
 		
 		// Search for a suffix match
 		for(Map.Entry<Double, String> entry : configPriceSuffixes.entrySet()){

@@ -1,10 +1,12 @@
 package com.wonkglorg.minecraft.shop.manager;
 
-import com.wonkglorg.minecraft.shop.Shop;
-import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
-import com.wonkglorg.minecraft.shop.shop.display.ShopDisplay;
-import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
+import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
+import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -22,8 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DisplayManager{
 	private final NamespacedKey displayKey;
-	private final Shop plugin;
+	private final Main plugin;
 	private final ShopManager shopManager;
+	@Getter
+	private WrappedTask displayTask;
 	/**
 	 * Players currently having their display visibility processed.
 	 */
@@ -34,23 +38,16 @@ public class DisplayManager{
 	 */
 	private final Map<UUID, Set<AbstractShop>> visibleShopsByPlayer = new ConcurrentHashMap<>();
 	
-	public DisplayManager(Shop plugin, ShopManager shopManager) {
+	public DisplayManager(Main plugin, ShopManager shopManager) {
 		this.plugin = plugin;
 		this.shopManager = shopManager;
-		displayKey = new NamespacedKey(Shop.getPlugin(), "display");
-	}
-	
-	/**
-	 * Removes all shop displays currently active
-	 */
-	public void removeAllDisplays() {
-		for(World world : plugin.getServer().getWorlds()){
-			for(Entity entity : world.getEntities()){
-				if(isDisplay(entity)){
-					entity.remove();
-				}
+		displayKey = new NamespacedKey(Main.getPlugin(), "display");
+		
+		displayTask = plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
+			for(var player : Bukkit.getOnlinePlayers()){
+				processShopDisplaysNearPlayer(player);
 			}
-		}
+		}, 60, 200);
 	}
 	
 	public void clearDisplaysForPlayer(Player player) {
@@ -150,9 +147,4 @@ public class DisplayManager{
 		}
 		return (dataDisplay == 1);
 	}
-	
-	public AbstractDisplay createDisplay(Location signLocation) {
-		return new ShopDisplay(signLocation);
-	}
-	
 }

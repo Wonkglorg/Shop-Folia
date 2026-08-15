@@ -1,14 +1,14 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Shop;
-import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import com.wonkglorg.minecraft.config.LangManager;
+import com.wonkglorg.minecraft.config.lang.LangRequest;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getTeleportCooldownRemaining;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ComboShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
-import com.wonkglorg.minecraft.config.LangManager;
-import com.wonkglorg.minecraft.config.lang.LangRequest;
+import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.util.Components;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
 import com.wonkglorg.minecraft.util.date.DateType;
@@ -19,6 +19,7 @@ import static net.kyori.adventure.text.event.HoverEvent.showText;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +29,7 @@ import java.util.Map;
 
 public class ShopMessage{
 	
-	private static final Shop plugin = Shop.getPlugin();
+	private static final Main plugin = Main.getPlugin();
 	
 	private static final LangManager lang = plugin.getLangManager();
 	
@@ -78,7 +79,7 @@ public class ShopMessage{
 			return LangRequest.literal("null-value");
 		}
 		
-		LangRequest request = Shop.getPlugin().getLangManager().request(messageKey);
+		LangRequest request = Main.getPlugin().getLangManager().request(messageKey);
 		fillRequest(request, context);
 		return request;
 	}
@@ -109,16 +110,17 @@ public class ShopMessage{
 	 * Loads all available placeholders into the map.
 	 * This method should be called during the plugin's initialization phase.
 	 */
-	public static void fillRequest(LangRequest request, PlaceholderContext context) {
+	public static void fillRequest(LangRequest request, @NotNull PlaceholderContext context) {
 		//@formatter:off
-	Shop plugin = Shop.getPlugin();
+	Main plugin = Main.getPlugin();
 	request.replace("%player%", context.getPlayer() != null ? context.getPlayer().getName() : "");
+	
 	if(context.getShop() != null){
 		AbstractShop.shopPlaceholders(request,context.getShop());
 	}
 	
 	
-	request.replace("%player%", context.getPlayer() != null ? context.getPlayer().getName() : "")
+	request
 		   .lazyReplace("%user%", ()-> {
 					if(context.getPlayer() != null){
 						return context.getPlayer().getName();
@@ -129,11 +131,11 @@ public class ShopMessage{
 					return"Unknown Player";
 		   })
 		   .lazyReplace("%shop type%",()-> {
-			   if(context.getpro() != null && context.getProcess().getShopType() != null){
-				   return context.getProcess().getShopType().toString();
+			   if(context.getProcess() != null && context.getProcess().getType() != null){
+				   return context.getProcess().getType().toString();
 			   }
 			   if(context.getShop() != null){
-				   return Shop.getPlugin().getSettingsConfig().getCreationWord(context.getShop().getCreationWord());
+				   return Main.getPlugin().getSettingsConfig().getCreationWord(context.getShop().getCreationWord());
 			   }
 			   return null;
 		   })
@@ -277,7 +279,7 @@ public class ShopMessage{
 	
 	private static Component getShopsOutOfStockPlaceholder(PlaceholderContext context) {
 		Component shopsOutOfStock = Component.text("");
-		List<AbstractShop> playerShops = Shop.getPlugin().getShopmanager().getShops(context.getPlayer().getUniqueId());
+		List<AbstractShop> playerShops = Main.getPlugin().getShopmanager().getShops(context.getPlayer().getUniqueId());
 		if(playerShops != null && !playerShops.isEmpty()){
 			// Collect all the out of stock shops
 			List<AbstractShop> outOfStock = new ArrayList<>();
@@ -332,7 +334,7 @@ public class ShopMessage{
 	public static String getMessageFromOrders(ShopType transactionType, String subKey, double price, int amount) {
 		//todo
 		String message = "";//ShopMessage.getUnformattedMessage(transactionType.toString(), subKey);
-		String priceStr = Shop.getPlugin().getPriceString(price, false);
+		String priceStr = Main.getPlugin().getPriceString(price, false);
 		message = message.replace("%price%", priceStr);
 		message = message.replace("%item amount%", "" + amount);
 		if(transactionType == ShopType.BARTER){
@@ -351,7 +353,7 @@ public class ShopMessage{
 			displayType = shop.getDisplay().getType();
 		}
 		if(displayType == null){
-			displayType = Shop.getPlugin().getSettingsConfig().getDisplayTypeDefault();
+			displayType = Main.getPlugin().getSettingsConfig().getDisplayTypeDefault();
 		}
 		
 		String shopFormat;
@@ -390,29 +392,17 @@ public class ShopMessage{
 		return lines;
 	}
 	
-	public static ArrayList<String> getDisplayTags(AbstractShop shop, ShopType shopType) {
-		//todo
-		ArrayList<String> formattedLines = new ArrayList<>();
-		/*
-		List<String> lines = displayTextMap.get(shopType.toString().toUpperCase() + "_normal");
+	/**
+	 * The shop lines defined in the lang config
+	 *
+	 * @return a list with a capacity of 4
+	 */
+	public static List<Component> getSignLinesTimeout() {
+		List<Component> lines = new ArrayList<>(4);
 		
-		String formattedLine;
-		for(String line : lines){
-			formattedLine = formatMessage(line, shop, null, false);
-			
-			Boolean splitLine = formattedLine.contains("%split%");
-			formattedLine = formattedLine.replace("%split%", "");
-			if(formattedLine != null && !formattedLine.isEmpty() && !ChatColor.stripColor(formattedLine).trim().isEmpty()){
-				if(splitLine){
-					List<String> splitLines = UtilMethods.splitStringIntoLines(formattedLine, targetMaxLength);
-					formattedLines.addAll(splitLines);
-				} else {
-					formattedLines.add(formattedLine);
-				}
-			}
+		for(var i = 0; i < 4; i++){
+			lines.add(lang.request("sign.text.timeout" + i).toSingleComponent());
 		}
-		
-		 */
-		return formattedLines;
+		return lines;
 	}
 }

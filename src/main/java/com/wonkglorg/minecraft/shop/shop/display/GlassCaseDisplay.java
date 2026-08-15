@@ -10,22 +10,26 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public class GlassCaseDisplay extends AbstractDisplay{
-	protected GlassCaseDisplay(AbstractShop shop, DisplayType type) {
-		super(shop, type);
+	protected GlassCaseDisplay(AbstractShop shop) {
+		super(shop, DisplayType.GLASS_CASE);
 	}
 	
 	@Override
-	public void spawn(@NotNull Player player) {
+	public void onSpawn(@NotNull Player player) {
 		//put the extra large glass casing down
 		Location caseLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 		ArmorStandData caseStandData = DisplayUtil.getArmorStandData(new ItemStack(Material.GLASS), caseLoc, shop.getFacing(), true);
 		spawnArmorStandPacket(player, caseStandData, null);
 		
 		//Drop initial display item
-		spawnItemPacket(player, item, this.getItemDropLocation(false));
+		var stack = shop.getItemStack().clone();
+		stack.setAmount(1);
+		spawnItemPacket(player, stack, this.getPrimaryLocation());
 		
-		//Drop the barter display item
-		spawnItemPacket(player, barterItem, this.getItemDropLocation(true));
-		break;
+		if(shop.getSecondaryItemStack() != null){
+			var barterStack = shop.getSecondaryItemStack().clone();
+			barterStack.setAmount(1);
+			spawnItemPacket(player, barterStack, this.getBarterLocation());
+		}
 	}
 }

@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.manager.player;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -17,7 +17,7 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 		super(player);
 		this.player = player;
 		//if the currency is experience and a value was saved set it to the current players exp
-		if(Shop.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE && getExperience() != -1){
+		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE && getExperience() != -1){
 			EconomyUtils.setTotalExperience(player, getExperience());
 		}
 	}

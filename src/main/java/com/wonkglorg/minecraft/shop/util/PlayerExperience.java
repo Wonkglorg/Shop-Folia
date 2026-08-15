@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -27,7 +27,7 @@ public class PlayerExperience {
 
     private void saveToFile(){
         try {
-            File fileDirectory = new File(Shop.getPlugin().getDataFolder(), "Data");
+            File fileDirectory = new File(Main.getPlugin().getDataFolder(), "Data");
 
             File experienceDirectory = new File(fileDirectory, "OfflineExperience");
             if (!experienceDirectory.exists())
@@ -51,7 +51,7 @@ public class PlayerExperience {
     public static PlayerExperience loadFromFile(OfflinePlayer player){
         if(player == null)
             return null;
-        File fileDirectory = new File(Shop.getPlugin().getDataFolder(), "Data");
+        File fileDirectory = new File(Main.getPlugin().getDataFolder(), "Data");
 
         File creativeDirectory = new File(fileDirectory, "OfflineExperience");
         if (!creativeDirectory.exists())
@@ -82,7 +82,7 @@ public class PlayerExperience {
     }
 
     private boolean removeFile(){
-        File fileDirectory = new File(Shop.getPlugin().getDataFolder(), "Data");
+        File fileDirectory = new File(Main.getPlugin().getDataFolder(), "Data");
         File creativeDirectory = new File(fileDirectory, "OfflineExperience");
         File playerDataFile = new File(creativeDirectory, this.playerUUID.toString() + ".yml");
 

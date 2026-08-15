@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 
 public enum ShopType{
@@ -33,7 +33,7 @@ public enum ShopType{
 	}
 	
 	public String toCreationWord() {
-		SettingsConfig settingsConfig = Shop.getPlugin().getSettingsConfig();
+		SettingsConfig settingsConfig = Main.getPlugin().getSettingsConfig();
 		return switch(this) {
 			case SELL -> settingsConfig.getCreationWord(CreationWord.SELL);
 			case BUY -> settingsConfig.getCreationWord(CreationWord.BUY);

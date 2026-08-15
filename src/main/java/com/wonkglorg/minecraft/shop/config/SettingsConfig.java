@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.config;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.CreationWord;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -30,8 +30,6 @@ public class SettingsConfig extends Config{
 	private @Nullable String logLevel;
 	@Getter
 	private DisplayType displayTypeDefault;
-	@Getter
-	private DisplayTagOption displayTagOption;
 	@Getter
 	private DisplayType[] displayCycle;
 	@Getter
@@ -149,7 +147,7 @@ public class SettingsConfig extends Config{
 	private boolean migrateOldData;
 	
 	public SettingsConfig() {
-		super(Shop.getPlugin(), Path.of("config.yml"));
+		super(Main.getPlugin(), Path.of("config.yml"));
 		reload();
 	}
 	
@@ -160,12 +158,6 @@ public class SettingsConfig extends Config{
 			displayTypeDefault = DisplayType.valueOf(getString("displayType"));
 		} catch(Exception _){
 			displayTypeDefault = DisplayType.ITEM;
-		}
-		
-		try{
-			displayTagOption = DisplayTagOption.valueOf(getString("displayNameTags"));
-		} catch(Exception e){
-			displayTagOption = DisplayTagOption.NONE;
 		}
 		
 		try{
@@ -226,9 +218,9 @@ public class SettingsConfig extends Config{
 		offlinePurchaseNotificationsEnabled = getBoolean("offlinePurchaseNotifications.enabled");
 		
 		if(offlinePurchaseNotificationsEnabled && getString("logging.type").toUpperCase().equals("OFF")){
-			Shop.getPlugin().logger().warning(
+			Main.getPlugin().logger().warning(
 					"Offline purchase notifications are enabled in `config.yml` but DB logging is set to `OFF`. Offline purchase notifications will be disabled.");
-			Shop.getPlugin().logger().warning(
+			Main.getPlugin().logger().warning(
 					"Please set `logging.type` to `FILE` or setup a database in `config.yml` to enable offline purchase notifications.");
 			offlinePurchaseNotificationsEnabled = false;
 		}
@@ -241,7 +233,7 @@ public class SettingsConfig extends Config{
 			try{
 				enabledContainers.add(Material.valueOf(materialString));
 			} catch(IllegalArgumentException e){
-				Shop.getPlugin().logger().warning("Invalid container material config definition " + materialString);
+				Main.getPlugin().logger().warning("Invalid container material config definition " + materialString);
 			}
 		}
 		

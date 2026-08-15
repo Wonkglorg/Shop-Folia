@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.manager;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.player.OfflinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlayerManager{
 	private static final Map<UUID, OnlinePlayerProfile> onlineProfiles = new ConcurrentHashMap<>();
 	private static final Map<UUID, OfflinePlayerProfile> offlineProfiles = new ConcurrentHashMap<>();
-	private static final Config PLAYER_DATA = new Config(Shop.getPlugin(), Path.of("data", "player-settings.yml"));
+	private static final Config PLAYER_DATA = new Config(Main.getPlugin(), Path.of("data", "player-settings.yml"));
 	/**
 	 * timestamp when the player last teleported to a shop
 	 */
@@ -83,7 +83,7 @@ public class PlayerManager{
 		setOrRemove(basePath + ".notify-owner", profile.isNotifyOwner());
 		setOrRemove(basePath + ".notify-stock", profile.isNotifyStock());
 		setOrRemove(basePath + ".notify-user", profile.isNotifyUser());
-		if(Shop.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
+		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
 			PLAYER_DATA.set(basePath + ".experience", profile.getExperience());
 		} else {
 			PLAYER_DATA.set(basePath + ".experience", null);
@@ -122,7 +122,7 @@ public class PlayerManager{
 	}
 	
 	public static Duration getTeleportCooldownRemaining(UUID uuid) {
-		double cooldownSeconds = Shop.getPlugin().getSettingsConfig().getTeleportCooldown();
+		double cooldownSeconds = Main.getPlugin().getSettingsConfig().getTeleportCooldown();
 		
 		if(cooldownSeconds <= 0){
 			return Duration.ZERO;

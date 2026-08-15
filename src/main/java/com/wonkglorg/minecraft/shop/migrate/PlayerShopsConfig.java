@@ -1,7 +1,8 @@
 package com.wonkglorg.minecraft.shop.migrate;
 
+import com.wonkglorg.minecraft.config.types.Config;
 import com.wonkglorg.minecraft.shop.Constants;
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ComboShop;
@@ -9,7 +10,6 @@ import com.wonkglorg.minecraft.shop.shop.ShopType;
 import static com.wonkglorg.minecraft.shop.shop.ShopType.typeFromString;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
-import com.wonkglorg.minecraft.config.types.Config;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -33,11 +33,11 @@ import java.util.stream.Stream;
  * Represents a players shops in form of a yml config.
  */
 public class PlayerShopsConfig extends Config{
-	private static final ShopLogger logger = Shop.getPlugin().logger();
+	private static final ShopLogger logger = Main.getPlugin().logger();
 	/**
 	 * The folder player shops get saved to
 	 */
-	public static final Path SHOPS_DATA_FOLDER = Shop.getPlugin().getDataPath().resolve("data", "shops");
+	public static final Path SHOPS_DATA_FOLDER = Main.getPlugin().getDataPath().resolve("data", "shops");
 	
 	/**
 	 * The shop file name
@@ -52,7 +52,7 @@ public class PlayerShopsConfig extends Config{
 			try{
 				Files.createDirectories(SHOPS_DATA_FOLDER);
 			} catch(IOException e){
-				Shop.getPlugin().logger().severe("Unable to create shop directory." + e.getMessage());
+				Main.getPlugin().logger().severe("Unable to create shop directory." + e.getMessage());
 				return shops;
 			}
 		}
@@ -75,13 +75,13 @@ public class PlayerShopsConfig extends Config{
 						shops.add(shop);
 					}
 				} catch(IllegalArgumentException iae){
-					Shop.getPlugin().logger().severe("Unable to load file: '" + path + "' '" + path.getFileName() + "' is not a valid uuid!");
+					Main.getPlugin().logger().severe("Unable to load file: '" + path + "' '" + path.getFileName() + "' is not a valid uuid!");
 				}
 			});
 		} catch(IOException e){
 			throw new RuntimeException(e);
 		}
-		Shop.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " Shops!");
+		Main.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " Shops!");
 		return shops;
 	}
 	
@@ -137,14 +137,17 @@ public class PlayerShopsConfig extends Config{
 				
 				ItemStack itemStack = section.getItemStack("item");
 				if(shopType == ShopType.GAMBLE){
-					itemStack = Shop.getPlugin().getItemConfig().getGambleDisplayItem();
+					itemStack = Main.getPlugin().getItemConfig().getGambleDisplayItem();
 				}
 				
 				if(itemStack == null){
-					Shop.getPlugin().logger().log(Level.WARNING,
+					Main.getPlugin().logger().log(Level.WARNING,
 							"Unable to load Shop #" + shopNumber + " for owner '" + shopOwner + "'! no valid item Skipping!");
 					continue;
 				}
+				
+				DisplayType displayType = DisplayType.valueOf(section.getString("displayType",
+						Main.getPlugin().getSettingsConfig().getDisplayTypeDefault().name()));
 				
 				AbstractShop shop = AbstractShop.create(id == null ? UUID.randomUUID() : id,
 						signLoc,
@@ -155,7 +158,8 @@ public class PlayerShopsConfig extends Config{
 						isAdmin,
 						shopType,
 						facing,
-						System.currentTimeMillis());
+						System.currentTimeMillis(),
+						displayType);
 				
 				// Important: apply saved stock BEFORE setting item stacks, since setItemStack()
 				// may calculate stock (inventory may be null pre-load) and may also render sign text.
@@ -166,15 +170,11 @@ public class PlayerShopsConfig extends Config{
 				if(shop.getType() == ShopType.BARTER){
 					ItemStack barterItemStack = section.getItemStack("itemBarter");
 					if(barterItemStack == null){
-						Shop.getPlugin().logger().log(Level.WARNING,
+						Main.getPlugin().logger().log(Level.WARNING,
 								"Unable to load Shop #" + shopNumber + " for owner '" + shopOwner + "'! no valid barter item Skipping!");
 						continue;
 					}
 					shop.setSecondaryItemStack(barterItemStack);
-				}
-				String displayType = section.getString("displayType");
-				if(displayType != null){
-					shop.getDisplay().setType(DisplayType.valueOf(displayType), false);
 				}
 				
 				boolean isFakeSign = section.getBoolean("fakeSign");
@@ -191,8 +191,8 @@ public class PlayerShopsConfig extends Config{
 			}
 			String ownerName = shopOwner.equals("admin")
 			                   ? "admin"
-			                   : Shop.getPlugin().getServer().getOfflinePlayer(UUID.fromString(shopOwner)).getName();
-			logger.helpful("Loaded (" + playerLoadedShops + ") shops for Player " + ownerName + " from: " + shopOwner + ".yml");
+			                   : Main.getPlugin().getServer().getOfflinePlayer(UUID.fromString(shopOwner)).getName();
+			logger.debug("Loaded (" + playerLoadedShops + ") shops for Player " + ownerName + " from: " + shopOwner + ".yml");
 		}
 		return shops;
 	}
@@ -201,7 +201,7 @@ public class PlayerShopsConfig extends Config{
 	
 	public int saveShops(final UUID uuid, boolean force) {
 		// Check if any of the players shops want to be saved
-		Shop plugin = Shop.getPlugin();
+		Main plugin = Main.getPlugin();
 		if(plugin.isImmediateShutdown()){
 			return 0;
 		}
@@ -217,7 +217,7 @@ public class PlayerShopsConfig extends Config{
 		}
 		
 		if(!force && needToBeSaved == 0 && !shops.isEmpty()){
-			logger.trace("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + uuid);
+			logger.debug("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + uuid);
 			return 0;
 		}
 		
@@ -361,7 +361,7 @@ public class PlayerShopsConfig extends Config{
 							"Do not startup the plugin again until you have traced and fixed the issue! You may delete a new player file with each startup if the issue is not fixed!");
 					// Immediate shutdown of server. Something is very wrong.
 					logger.severe("Shutting down plugin immediately to prevent Shop save data loss...");
-					com.wonkglorg.minecraft.shop.Shop.getPlugin().immediateShutdown();
+					Main.getPlugin().immediateShutdown();
 				}
 			}
 		}
@@ -375,7 +375,7 @@ public class PlayerShopsConfig extends Config{
 	
 	private Location locationFromString(String locString) {
 		String[] parts = locString.split(",");
-		return new Location(Shop.getPlugin().getServer().getWorld(parts[0]),
+		return new Location(Main.getPlugin().getServer().getWorld(parts[0]),
 				Double.parseDouble(parts[1]),
 				Double.parseDouble(parts[2]),
 				Double.parseDouble(parts[3]));

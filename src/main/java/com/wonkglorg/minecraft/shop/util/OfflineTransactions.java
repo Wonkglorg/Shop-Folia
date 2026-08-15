@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import lombok.Getter;
 import lombok.Setter;
@@ -70,7 +70,7 @@ public class OfflineTransactions{
 	
 	private void calculate() {
 		isCalculating = true;
-		Shop.getPlugin().getShopmanager().getDatabase().calculateOfflineTransactions(this);
+		Main.getPlugin().getShopmanager().getDatabase().calculateOfflineTransactions(this);
 	}
 	
 	public void setIsCalculating(boolean isCalculating) {

@@ -1,6 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.EconomyUtils;
 import com.wonkglorg.minecraft.shop.util.InventoryUtils;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
@@ -16,8 +17,9 @@ public class ComboShop extends AbstractShop{
 	private final double priceBuy;
 	private final double priceSell;
 	
-	public ComboShop(UUID shopId,Location signLoc, UUID player, double pri, double priSell, int amt, Boolean admin, BlockFace facing, long creationDate) {
-		super(shopId,signLoc, player, pri, amt, admin, facing, creationDate);
+	public ComboShop(UUID shopId, Location signLoc, UUID player, double pri, double priSell, int amt, Boolean admin, BlockFace facing, long creationDate,
+	                 DisplayType type) {
+		super(shopId,signLoc, player, pri, amt, admin, facing, creationDate,type);
 		this.creationWord = CreationWord.COMBO;
 		this.type = ShopType.COMBO;
 		this.signLines = ShopMessage.getSignLines(this);
@@ -26,16 +28,16 @@ public class ComboShop extends AbstractShop{
 	}
 	
 	public String getPriceSellString() {
-		return Shop.getPlugin().getPriceString(this.priceSell, false);
+		return Main.getPlugin().getPriceString(this.priceSell, false);
 	}
 	
 	public String getPriceSellPerItemString() {
 		double pricePer = this.getPriceSell() / this.getAmount();
-		return Shop.getPlugin().getPriceString(pricePer, true);
+		return Main.getPlugin().getPriceString(pricePer, true);
 	}
 	
 	public String getPriceComboString() {
-		return Shop.getPlugin().getPriceComboString(this.price, this.priceSell, false);
+		return Main.getPlugin().getPriceComboString(this.price, this.priceSell, false);
 	}
 	
 	@Override
@@ -50,7 +52,7 @@ public class ComboShop extends AbstractShop{
 			} else {
 				stock = (int) Math.floor(funds / this.getPrice());
 				// Check if we should show partial stock
-				if(stock == 0 && Shop.getPlugin().getSettingsConfig().isAllowPartialSales()){
+				if(stock == 0 && Main.getPlugin().getSettingsConfig().isAllowPartialSales()){
 					if(funds >= this.getPricePerItem()){
 						stock = 1;
 						return;
@@ -63,7 +65,7 @@ public class ComboShop extends AbstractShop{
 				int itemsToSell = InventoryUtils.getAmount(this.getInventory(), this.getItemStack());
 				stock = itemsToSell / this.getAmount();
 				// Check if we should show partial stock
-				if(stock == 0 && Shop.getPlugin().getSettingsConfig().isAllowPartialSales()){
+				if(stock == 0 && Main.getPlugin().getSettingsConfig().isAllowPartialSales()){
 					// Calculate the minimum items required to show as in stock
 					int minItemAmountRequired = (int) Math.ceil(1 / this.getPricePerItem());
 					int itemsInShop = InventoryUtils.getAmount(this.getInventory(), this.getItemStack());

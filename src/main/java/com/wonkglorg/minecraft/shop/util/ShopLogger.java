@@ -101,15 +101,9 @@ import java.util.logging.Logger;
 
 public class ShopLogger extends Logger{
 	
-	Plugin plugin;
+	private final Plugin plugin;
 	
-	// Custom log levels - Note: must be greater than INFO (800) to show up!
-	public static final Level NOTICE = new Level("NOTICE", 700){};
-	public static final Level HELPFUL = new Level("HELPFUL", 600){};
 	public static final Level DEBUG = new Level("DEBUG", 500){};
-	public static final Level TRACE = new Level("TRACE", 400){};
-	public static final Level SPAM = new Level("SPAM", 300){};
-	public static final Level HYPER = new Level("HYPER", 100){};
 	
 	public ShopLogger(@NotNull Plugin plugin) {
 		super(plugin.getPluginMeta().getName(), null);
@@ -135,18 +129,8 @@ public class ShopLogger extends Logger{
 			super.log(Level.WARNING, message);
 		} else if(level == Level.INFO){
 			super.log(Level.INFO, message);
-		} else if(level == NOTICE){
-			super.log(Level.INFO, "[Notice] {}", message);
-		} else if(level == HELPFUL){
-			super.log(Level.INFO, "[Helpful] {}", message);
 		} else if(level == DEBUG){
 			super.log(Level.INFO, "[Debug] {}", message);
-		} else if(level == TRACE){
-			super.log(Level.INFO, "[Trace] {}", message);
-		} else if(level == SPAM){
-			super.log(Level.INFO, "[Spam] {}", message);
-		} else if(level == HYPER){
-			super.log(Level.INFO, "[Hyper] {}", message);
 		} else {
 			super.log(level, message);
 		}
@@ -159,22 +143,11 @@ public class ShopLogger extends Logger{
 		super.log(Level.INFO, message);
 	}
 	
-	// Additional Log Levels
-	public void notice(String message) {logFilterLevel(NOTICE, "[Notice] " + message);}
-	
-	public void helpful(String message) {logFilterLevel(HELPFUL, "[Helpful] " + message);}
-	
 	public void debug(String message) {logFilterLevel(DEBUG, "[Debug] " + message);}
 	
 	public void debug(String message, Throwable t) {
 		debug(message + " " + getStackTrace(t));
 	}
-	
-	public void trace(String message) {logFilterLevel(TRACE, "[Trace] " + message);}
-	
-	public void spam(String message) {logFilterLevel(SPAM, "[Spam] " + message);}
-	
-	public void hyper(String message) {logFilterLevel(SPAM, "[Hyper] " + message);}
 	
 	public void setLogLevel(String level) {
 		if(level == null){
@@ -183,18 +156,8 @@ public class ShopLogger extends Logger{
 		}
 		if(level.equalsIgnoreCase("info") || level.equalsIgnoreCase("normal")){
 			setLevel(Level.INFO);
-		} else if(level.equalsIgnoreCase("notice")){
-			setLevel(NOTICE);
-		} else if(level.equalsIgnoreCase("helpful")){
-			setLevel(HELPFUL);
 		} else if(level.equalsIgnoreCase("debug")){
 			setLevel(DEBUG);
-		} else if(level.equalsIgnoreCase("trace")){
-			setLevel(TRACE);
-		} else if(level.equalsIgnoreCase("spam")){
-			setLevel(SPAM);
-		} else if(level.equalsIgnoreCase("hyper")){
-			setLevel(HYPER);
 		}
 	}
 	

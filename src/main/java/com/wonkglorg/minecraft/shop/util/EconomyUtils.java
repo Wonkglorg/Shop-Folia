@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Shop;
+import com.wonkglorg.minecraft.shop.Main;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -12,12 +12,12 @@ public class EconomyUtils{
 	//check to see if the player has enough funds to take out [amount]
 	//return false if they do not
 	public static boolean hasSufficientFunds(OfflinePlayer player, Inventory inventory, double amount) {
-		switch(Shop.getPlugin().getSettingsConfig().getCurrencyType()) {
+		switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT:
-				double balance = Shop.getPlugin().getEconomy().getBalance(player);
+				double balance = Main.getPlugin().getEconomy().getBalance(player);
 				return (balance >= amount);
 			case ITEM:
-				ItemStack currency = Shop.getPlugin().getItemConfig().getCurrencyItem().clone();
+				ItemStack currency = Main.getPlugin().getItemConfig().getCurrencyItem().clone();
 				currency.setAmount(1);
 				int stock = InventoryUtils.getAmount(inventory, currency);
 				return (stock >= amount);
@@ -32,12 +32,12 @@ public class EconomyUtils{
 	//check to see if the player has enough space to accept the funds to deposit [amount]
 	//return false if they do not
 	public static boolean canAcceptFunds(Inventory inventory, double amount) {
-		switch(Shop.getPlugin().getSettingsConfig().getCurrencyType()) {
+		switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT:
 			case EXPERIENCE:
 				return true;
 			case ITEM:
-				ItemStack currency = Shop.getPlugin().getItemConfig().getCurrencyItem().clone();
+				ItemStack currency = Main.getPlugin().getItemConfig().getCurrencyItem().clone();
 				currency.setAmount((int) amount);
 				
 				return InventoryUtils.hasRoom(inventory, currency);
@@ -48,14 +48,14 @@ public class EconomyUtils{
 	
 	//gets the current funds of the player
 	public static double getFunds(OfflinePlayer player, Inventory inventory) {
-		switch(Shop.getPlugin().getSettingsConfig().getCurrencyType()) {
+		switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT:
-				double balance = Shop.getPlugin().getEconomy().getBalance(player);
+				double balance = Main.getPlugin().getEconomy().getBalance(player);
 				return balance;
 			case EXPERIENCE:
 				return getExperience(player);
 			case ITEM:
-				ItemStack currency = Shop.getPlugin().getItemConfig().getCurrencyItem().clone();
+				ItemStack currency = Main.getPlugin().getItemConfig().getCurrencyItem().clone();
 				currency.setAmount(1);
 				int balanceInt = InventoryUtils.getAmount(inventory, currency);
 				return balanceInt;
@@ -67,9 +67,9 @@ public class EconomyUtils{
 	//removes [amount] of funds from the player
 	//return false if the player did not have sufficient funds or if something went wrong
 	public static boolean removeFunds(OfflinePlayer player, Inventory inventory, double amount) {
-		switch(Shop.getPlugin().getSettingsConfig().getCurrencyType()) {
+		switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT:
-				EconomyResponse response = Shop.getPlugin().getEconomy().withdrawPlayer(player, amount);
+				EconomyResponse response = Main.getPlugin().getEconomy().withdrawPlayer(player, amount);
 				if(response.transactionSuccess()){
 					return true;
 				}
@@ -89,7 +89,7 @@ public class EconomyUtils{
 					}
 				}
 			case ITEM:
-				ItemStack currency = Shop.getPlugin().getItemConfig().getCurrencyItem().clone();
+				ItemStack currency = Main.getPlugin().getItemConfig().getCurrencyItem().clone();
 				currency.setAmount((int) amount);
 				int unremoved = InventoryUtils.removeItem(inventory, currency);
 				if(unremoved > 0){
@@ -106,9 +106,9 @@ public class EconomyUtils{
 	//adds [amount] of funds to the player
 	//return false if the player did not have enough room for items or if something went wrong
 	public static boolean addFunds(OfflinePlayer player, Inventory inventory, double amount) {
-		switch(Shop.getPlugin().getSettingsConfig().getCurrencyType()) {
+		switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT:
-				EconomyResponse response = Shop.getPlugin().getEconomy().depositPlayer(player, amount);
+				EconomyResponse response = Main.getPlugin().getEconomy().depositPlayer(player, amount);
 				if(response.transactionSuccess()){
 					return true;
 				}
@@ -127,7 +127,7 @@ public class EconomyUtils{
 					}
 				}
 			case ITEM:
-				ItemStack currency = Shop.getPlugin().getItemConfig().getCurrencyItem().clone();
+				ItemStack currency = Main.getPlugin().getItemConfig().getCurrencyItem().clone();
 				currency.setAmount((int) amount);
 				int unadded = InventoryUtils.addItem(inventory, currency);
 				if(unadded > 0){
