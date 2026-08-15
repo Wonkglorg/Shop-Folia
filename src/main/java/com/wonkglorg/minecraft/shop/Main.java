@@ -8,7 +8,6 @@ import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.gui.ShopGUIListener;
 import com.wonkglorg.minecraft.shop.handler.TransactionHandler;
 import com.wonkglorg.minecraft.shop.listener.DisplayListener;
-import com.wonkglorg.minecraft.shop.listener.MiscListener;
 import com.wonkglorg.minecraft.shop.listener.ShopListener;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
@@ -121,7 +120,6 @@ public class Main extends JavaPlugin{
 		
 		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
-		getServer().getPluginManager().registerEvents(new MiscListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopGUIListener(), this);
 		
 		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());

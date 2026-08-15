@@ -127,37 +127,4 @@ public class DisplayListener implements Listener{
 			}
 		}
 	}
-	
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onShopInventoryClose(InventoryCloseEvent event) {
-		if(event.getInventory().getHolder() instanceof Container container){
-			AbstractShop shop = plugin.getShopmanager().getShopByContainer(container.getBlock());
-			
-			if(shop == null){
-				return;
-			}
-			
-			shop.updateStock();
-			
-			//make sure to set gamble item again if player set it to new custom items
-			if(shop.getType() == ShopType.GAMBLE){
-				((GambleShop) shop).setGambleItem();
-			}
-		}
-		//for some reason, DoubleChest does not extend Container like Chest does
-		else if(event.getInventory().getHolder() instanceof DoubleChest doubleChest){
-			AbstractShop shop = plugin.getShopmanager().getShopByContainer(doubleChest.getLocation().getBlock());
-			
-			if(shop == null){
-				return;
-			}
-			
-			shop.updateStock();
-			
-			//make sure to set gamble item again if player set it to new custom items
-			if(shop.getType() == ShopType.GAMBLE){
-				((GambleShop) shop).setGambleItem();
-			}
-		}
-	}
 }

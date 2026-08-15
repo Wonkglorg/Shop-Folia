@@ -3,6 +3,7 @@ package com.wonkglorg.minecraft.shop.service;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
+import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.manager.player.OfflinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -33,6 +34,11 @@ public class ShopServiceProvider implements ShopService{
 	@Override
 	public void onShopsLoaded(Consumer<Collection<AbstractShop>> consumer) {
 		shopLoadHooks.add(consumer);
+	}
+	
+	@Override
+	public ShopManager getShopManager() {
+		return main.getShopmanager();
 	}
 	
 	@Override

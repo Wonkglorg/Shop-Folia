@@ -225,6 +225,18 @@ public class ShopManager{
 	}
 	
 	/**
+	 * If a shop container at this location is currently in creation process
+	 */
+	public ShopCreationProcess getShopCreationProcessForSign(Location location) {
+		for(var process : playersInShopCreation.values()){
+			if(process.getSign().getLocation().equals(location)){
+				return process;
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * Cancels the shop creation process for the player
 	 */
 	public void cancelShopCreationProcess(Player player) {

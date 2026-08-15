@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class ItemFrameDisplay extends AbstractDisplay{
 	protected ItemFrameDisplay(AbstractShop shop) {
-		super(shop, DisplayType.ITEM);
+		super(shop, DisplayType.ITEM_FRAME);
 	}
 	
 	@Override

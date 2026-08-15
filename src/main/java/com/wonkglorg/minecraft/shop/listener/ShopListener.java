@@ -16,6 +16,7 @@ import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowe
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.CreationWord;
+import com.wonkglorg.minecraft.shop.shop.GambleShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
@@ -25,14 +26,18 @@ import com.wonkglorg.minecraft.shop.util.EconomyUtils;
 import com.wonkglorg.minecraft.shop.util.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.util.ShopActionType;
 import com.wonkglorg.minecraft.shop.util.ShopClickType;
+import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.util.Components;
+import lombok.extern.slf4j.Slf4j;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Container;
+import org.bukkit.block.DoubleChest;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Chest.Type;
@@ -46,6 +51,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -56,36 +63,39 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
 
+@Slf4j
 public class ShopListener implements Listener{
 	
 	private final Main plugin;
 	private final LangManager lang;
 	private final SettingsConfig settingsConfig;
 	private final ShopManager shopManager;
+	private final ShopLogger logger;
 	
 	public ShopListener(Main instance) {
 		plugin = instance;
 		lang = plugin.getLangManager();
 		settingsConfig = plugin.getSettingsConfig();
 		shopManager = plugin.getShopmanager();
+		logger = plugin.logger();
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onShopCreation(SignChangeEvent event) {
 		final Block block = event.getBlock();
 		final Player player = event.getPlayer();
-		plugin.logger().debug("====POTENTIAL SHOP CREATION START====");
-		plugin.logger().debug("Player " + player.getName() + " writing on sign");
+		logger.debug("====POTENTIAL SHOP CREATION START====");
+		logger.debug("Player " + player.getName() + " writing on sign");
 		
 		if(!settingsConfig.isAllowCreateMethodSign()){
-			plugin.logger().debug("Shop Create Method Sign not allowed");
-			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
+			logger.debug("Shop Create Method Sign not allowed");
+			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
 		if(!(block.getBlockData() instanceof WallSign wallSign)){
-			plugin.logger().debug("Sign is not a wall sign");
-			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
+			logger.debug("Sign is not a wall sign");
+			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
@@ -95,14 +105,14 @@ public class ShopListener implements Listener{
 		Block chest = block.getRelative(signDirection.getOppositeFace());
 		
 		if(!shopManager.isAllowedContainer(chest)){
-			plugin.logger().debug("Container is not allowed shop");
-			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
+			logger.debug("Container is not allowed shop");
+			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
 		if(shopManager.isCreatingShop(player)){
-			plugin.logger().debug("CANCEL: Player already creating shop");
-			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
+			logger.debug("CANCEL: Player already creating shop");
+			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
 			//player is already creating another shop do nothing here
 			return;
 		}
@@ -111,14 +121,14 @@ public class ShopListener implements Listener{
 		String firstLine = Components.toPlainText(event.line(0)).toLowerCase();
 		String creationWord = plugin.getSettingsConfig().getCreationWord(CreationWord.SHOP).toLowerCase();
 		if(!firstLine.contains(creationWord)){
-			plugin.logger().debug("Creation " + creationWord + " word is not present in '" + firstLine + "'");
-			plugin.logger().debug("====POTENTIAL SHOP CREATION CANCEL====");
+			logger.debug("Creation " + creationWord + " word is not present in '" + firstLine + "'");
+			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
 		
 		if(shopManager.getShopByContainer(chest.getLocation()) != null){
-			plugin.logger().debug("Container is already a registered shop");
-			plugin.logger().debug("====SHOP CREATION CANCEL====");
+			logger.debug("Container is already a registered shop");
+			logger.debug("====SHOP CREATION CANCEL====");
 			Main.getPlugin().getLangManager().request("interaction_issue.createOtherShop").sendToAudience(player);
 			event.setCancelled(true);
 			return;
@@ -128,28 +138,28 @@ public class ShopListener implements Listener{
 		
 		//do some checks with the provided data to verify the player has all required things to create a shop here
 		if(!process.canPlayerFulfillsCreationRequirements()){
-			plugin.logger().debug("Player can't fulfill creation requirements");
-			plugin.logger().debug("====SHOP CREATION CANCEL====");
+			logger.debug("Player can't fulfill creation requirements");
+			logger.debug("====SHOP CREATION CANCEL====");
 			return;
 		}
 		
 		if(!process.readSignLines(event.lines())){
-			plugin.logger().debug("Error reading sign lines");
-			plugin.logger().debug("====SHOP CREATION CANCEL====");
+			logger.debug("Error reading sign lines");
+			logger.debug("====SHOP CREATION CANCEL====");
 			return;
 		}
-		plugin.logger().debug("Sending Shop Creation Event");
+		logger.debug("Sending Shop Creation Event");
 		PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, process.toImmutableProgress());
 		Main.getPlugin().getServer().getPluginManager().callEvent(e);
 		if(event.isCancelled()){
-			plugin.logger().debug("Event was cancelled by third party plugin");
-			plugin.logger().debug("====SHOP CREATION CANCEL====");
+			logger.debug("Event was cancelled by third party plugin");
+			logger.debug("====SHOP CREATION CANCEL====");
 			e.setCancelled(true);
 			return;
 		}
 		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
 		shopManager.addPlayerShopCreation(player, process);
-		plugin.logger().debug("=====SHOP CREATION SUCCESS====");
+		logger.debug("=====SHOP CREATION SUCCESS====");
 	}
 	
 	@EventHandler
@@ -163,66 +173,66 @@ public class ShopListener implements Listener{
 			return;
 		}
 		if(!settingsConfig.isAllowCreateMethodSign()){
-			plugin.logger().debug("Sign Create Method not allowed for initialisation");
+			logger.debug("Sign Create Method not allowed for initialisation");
 			return;
 		}
 		
 		final Block clicked = event.getClickedBlock();
 		
 		if(clicked == null){
-			plugin.logger().debug("Click was not a block");
+			logger.debug("Click was not a block");
 			return;
 		}
 		
 		final Player player = event.getPlayer();
 		
 		if(!shopManager.isCreatingShop(player)){
-			plugin.logger().debug("Player is not in active shop creation");
+			logger.debug("Player is not in active shop creation");
 			return;
 		}
 		
-		plugin.logger().debug("====SHOP INITIALISATION START====");
+		logger.debug("====SHOP INITIALISATION START====");
 		if(!(clicked.getBlockData() instanceof WallSign)){
-			plugin.logger().debug("Sign is not a wall sign");
-			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
+			logger.debug("Sign is not a wall sign");
+			logger.debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
 		
 		ShopCreationProcess process = shopManager.getShopCreationProcess(player);
 		
-		plugin.logger().debug("Current player process data: " + process);
+		logger.debug("Current player process data: " + process);
 		
 		if(!process.getSign().getLocation().equals(event.getClickedBlock().getLocation())){
-			plugin.logger().debug("Click was not on the shop creations sign");
-			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
+			logger.debug("Click was not on the shop creations sign");
+			logger.debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
 		
 		//creative selection listener will handle if item is null
 		ItemStack item = event.getItem();
 		if(item == null || item.getType() == Material.AIR){
-			plugin.logger().debug("Air is not an allowed item");
-			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
+			logger.debug("Air is not an allowed item");
+			logger.debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
 		
-		plugin.logger().debug("Clicked using " + item);
+		logger.debug("Clicked using " + item);
 		
 		if(!shopManager.passesItemListCheck(item)){
-			plugin.logger().debug("Item is not allowed to be set as a shop");
-			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
+			logger.debug("Item is not allowed to be set as a shop");
+			logger.debug("====SHOP INITIALISATION CANCEL====");
 			lang.request("interaction_issue.blacklisted-item").sendToAudience(player);
 			return;
 		}
 		
-		plugin.logger().debug("Is allowed item");
+		logger.debug("Is allowed item");
 		
-		plugin.logger().debug("Sending shop pre init event");
+		logger.debug("Sending shop pre init event");
 		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
 		Bukkit.getPluginManager().callEvent(shopEvent);
 		if(shopEvent.isCancelled()){
-			plugin.logger().debug("Event was cancelled by third party plugin");
-			plugin.logger().debug("====SHOP INITIALISATION CANCEL====");
+			logger.debug("Event was cancelled by third party plugin");
+			logger.debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
 		
@@ -231,24 +241,24 @@ public class ShopListener implements Listener{
 		if(process.getType() != ShopType.BARTER){
 			process.setItemStack(item);
 			shop = process.createShop();
-			plugin.logger().debug("Setting item for shop: " + item);
+			logger.debug("Setting item for shop: " + item);
 		} else {
 			if(process.getItemStack() == null){
 				process.setItemStack(item);
-				plugin.logger().debug("Setting first item for barter shop: " + item);
+				logger.debug("Setting first item for barter shop: " + item);
 				return; //do not finish shop because barter needs 2 items
 			} else {
 				process.setSecondaryStack(item);
 				shop = process.createShop();
-				plugin.logger().debug("Setting second iem for barter shop " + item);
+				logger.debug("Setting second iem for barter shop " + item);
 			}
 		}
 		
 		if(shop != null){
 			shopManager.finishShopCreation(player, shop);
-			plugin.logger().debug("Sending Post init shop event");
+			logger.debug("Sending Post init shop event");
 			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
-			plugin.logger().debug("====SHOP INITIALISATION DONE====");
+			logger.debug("====SHOP INITIALISATION DONE====");
 		}
 	}
 	
@@ -259,7 +269,7 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
-		if(event.getAction() != Action.LEFT_CLICK_BLOCK || event.getAction() != Action.RIGHT_CLICK_BLOCK){
+		if(event.getAction() != Action.LEFT_CLICK_BLOCK && event.getAction() != Action.RIGHT_CLICK_BLOCK){
 			return;
 		}
 		
@@ -276,6 +286,8 @@ public class ShopListener implements Listener{
 		if(shop == null){
 			return;
 		}
+		
+		logger.debug("Player " + event.getPlayer() + " clicking shop sign " + shop);
 		
 		Player player = event.getPlayer();
 		
@@ -325,7 +337,8 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
-		plugin.logger().debug("Clicking shop container " + event.getAction());
+		logger.debug("Player " + event.getPlayer() + " clicking shop container " + shop);
+		logger.debug("Clicking shop container " + event.getAction());
 		
 		final Player player = event.getPlayer();
 		switch(event.getAction()) {
@@ -350,7 +363,7 @@ public class ShopListener implements Listener{
 	private void rightClickShopContainer(PlayerInteractEvent event, AbstractShop shop, Player player) {
 		if((!shopManager.isAllowedContainer(shop.getContainerLocation().getBlock())) ||
 		   !(shop.getSignLocation().getBlock().getBlockData() instanceof WallSign)){
-			plugin.logger().warning("Deleting Shop because chest does not exist, or sign is not exist! " + shop);
+			logger.warning("Deleting Shop because chest does not exist, or sign is not exist! " + shop);
 			shopManager.unregisterShop(shop);
 			return;
 		}
@@ -358,7 +371,7 @@ public class ShopListener implements Listener{
 		//player is sneaking and clicks a chest of a shop
 		if(player.isSneaking()){
 			if(Tag.SIGNS.isTagged(player.getInventory().getItemInMainHand().getType())){
-				plugin.logger().debug("Player trying to place sign on shop chest");
+				logger.debug("Player trying to place sign on shop chest");
 				return;
 			}
 			
@@ -424,12 +437,19 @@ public class ShopListener implements Listener{
 	}
 	
 	@EventHandler
-	public void onHopperPlacementBelowShop(BlockPlaceEvent event) {
+	public void onHopperPlacementShop(BlockPlaceEvent event) {
 		Block b = event.getBlockPlaced();
 		Player player = event.getPlayer();
 		
 		if(b.getType() == Material.HOPPER){
+			//if below or above is a shop cancel event if not owner.
 			AbstractShop shop = shopManager.getShopByContainer(b.getRelative(BlockFace.UP));
+			if(shop != null){
+				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
+					event.setCancelled(true);
+				}
+			}
+			shop = shopManager.getShopByContainer(b.getRelative(BlockFace.DOWN));
 			if(shop != null){
 				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
 					event.setCancelled(true);
@@ -481,6 +501,16 @@ public class ShopListener implements Listener{
 		if(b.getBlockData() instanceof WallSign){
 			AbstractShop shop = shopManager.getShopBySign(b.getLocation());
 			if(shop == null){
+				logger.debug("Broken sign is not a shop");
+				var process = shopManager.getShopCreationProcessForSign(b.getLocation());
+				if(process == null){
+					logger.debug("Broken sign is not a shop in creation process");
+					return;
+				}
+				if(!process.getPlayerUUID().equals(event.getPlayer().getUniqueId())){
+					logger.debug("Broken sign was in shop creation process by another player, cancelling");
+					event.setCancelled(true);
+				}
 				return;
 			}
 			breakShopSign(event, shop);
@@ -490,7 +520,7 @@ public class ShopListener implements Listener{
 		if(shopManager.isAllowedContainer(b)){
 			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
 			// protect shops that are in the middle of a shop creation process from being destroyed
-			if(Main.getPlugin().getShopmanager().isContainerInShopCreationProcess(b.getLocation())){
+			if(shopManager.isContainerInShopCreationProcess(b.getLocation())){
 				lang.request("interaction_issue.destroyUninitializedChest").sendToAudience(player);
 				event.setCancelled(true); // don't break chest
 				return;
@@ -519,13 +549,17 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
+		logger.debug("Player " + player.getName() + "placing chest");
+		
 		//its a single chest after placement, no need to further check
 		if(placedChest.getType() == Type.SINGLE){
+			logger.debug("Chest is single chest no expansion check");
 			return;
 		}
 		
 		//calculate the other half of the chest if its a double chest
 		BlockFace otherChestDirection = getOtherChestDirection(placedChest.getType(), placedChest.getFacing());
+		logger.debug("Other chest direction");
 		
 		if(otherChestDirection == null){
 			return;
@@ -537,20 +571,80 @@ public class ShopListener implements Listener{
 		
 		//check if a shop is there and if its the same chest type (should not be the case but just in case)
 		if(shop == null || (b.getType() != shop.getContainerLocation().getBlock().getType())){
+			logger.debug("Other chest half is not a container");
 			return;
 		}
 		
 		// if placer is not owner and not op they are not allowed to place it
 		if(!shop.getOwnerUUID().equals(player.getUniqueId()) && !isOperator(player)){
+			logger.debug("Shop owner is not same as placing player, cancel");
 			event.setCancelled(true);
 			return;
 		}
 		
-		PlayerResizeShopEvent resizeEvent = new PlayerResizeShopEvent(player, shop, b.getLocation(), true);
+		logger.debug("Call resize event");
+		Location location = b.getLocation();
+		PlayerResizeShopEvent resizeEvent = new PlayerResizeShopEvent(player, shop, location, true);
 		Bukkit.getPluginManager().callEvent(resizeEvent);
 		
 		if(resizeEvent.isCancelled()){
+			logger.debug("Resize was cancelled by external plugin");
 			event.setCancelled(true);
+		}
+		shop.addSecondaryContainerLocation(location);
+	}
+	
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onBucketEmpty(PlayerBucketEmptyEvent event) {
+		if(event.isCancelled()){
+			return;
+		}
+		
+		Block b = event.getBlockClicked();
+		
+		if(b.getBlockData() instanceof WallSign){
+			AbstractShop shop = plugin.getShopmanager().getShopBySign(b.getLocation());
+			if(shop != null){
+				event.setCancelled(true);
+			}
+		}
+		Block blockToFill = event.getBlockClicked().getRelative(event.getBlockFace());
+		AbstractShop shop = plugin.getShopmanager().getShopByContainer(blockToFill.getRelative(BlockFace.DOWN));
+		if(shop != null){
+			event.setCancelled(true);
+		}
+	}
+	
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onShopInventoryClose(InventoryCloseEvent event) {
+		if(event.getInventory().getHolder() instanceof Container container){
+			AbstractShop shop = plugin.getShopmanager().getShopByContainer(container.getBlock());
+			
+			if(shop == null){
+				return;
+			}
+			
+			shop.updateStock();
+			
+			//make sure to set gamble item again if player set it to new custom items
+			if(shop.getType() == ShopType.GAMBLE){
+				((GambleShop) shop).setGambleItem();
+			}
+		}
+		//for some reason, DoubleChest does not extend Container like Chest does
+		else if(event.getInventory().getHolder() instanceof DoubleChest doubleChest){
+			AbstractShop shop = plugin.getShopmanager().getShopByContainer(doubleChest.getLocation().getBlock());
+			
+			if(shop == null){
+				return;
+			}
+			
+			shop.updateStock();
+			
+			//make sure to set gamble item again if player set it to new custom items
+			if(shop.getType() == ShopType.GAMBLE){
+				((GambleShop) shop).setGambleItem();
+			}
 		}
 	}
 	
@@ -653,18 +747,21 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
+		logger.debug("Trying to downsize shop");
 		if(shop.getOwnerUUID().equals(player.getUniqueId()) || isAllowedToDestroyShopOther(player)){
+			logger.debug("Sending resize event");
 			PlayerResizeShopEvent e = new PlayerResizeShopEvent(player, shop, blockLocation, false);
 			Bukkit.getPluginManager().callEvent(e);
 			
 			if(e.isCancelled()){
+				logger.debug("Resize event was cancelled by third party plugin");
 				event.setCancelled(true);
 				return;
 			}
 			// Explicitly allow the chest to be broken since it is the "Expansion" chest
 			// we need to uncancel the event so that the chest can be broken.
 			event.setCancelled(false);
-			Main.getPlugin().getShopmanager().removeSecondaryChestLocation(shop.getSecondaryContainerLocation(), shop);
+			shop.removeSecondaryContainerLocation();
 		}
 	}
 }

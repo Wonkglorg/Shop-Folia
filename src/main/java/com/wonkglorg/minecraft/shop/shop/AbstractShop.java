@@ -17,6 +17,7 @@ import static com.wonkglorg.minecraft.shop.util.ItemNameUtil.getItemHover;
 import com.wonkglorg.minecraft.shop.util.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.util.ShopAction;
 import com.wonkglorg.minecraft.shop.util.ShopClickType;
+import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
@@ -43,6 +44,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -230,7 +232,7 @@ public abstract class AbstractShop{
 		
 		// Always reset the secondary container first. This handles cases where
 		// a previously-double chest has since become a single chest or another container.
-		secondaryContainerLocation = null;
+		removeSecondaryContainerLocation();
 		
 		// Cache the second half when the attached container is a double chest.
 		if(containerBlock.getBlockData() instanceof Chest chestData && chestData.getType() != Chest.Type.SINGLE){
@@ -238,12 +240,10 @@ public abstract class AbstractShop{
 			BlockFace otherChestDirection = getOtherChestDirection(chestData.getType(), chestData.getFacing());
 			
 			if(otherChestDirection != null){
-				secondaryContainerLocation = new Location(containerLocation.getWorld(),
+				addSecondaryContainerLocation(new Location(containerLocation.getWorld(),
 						containerKey.x() + otherChestDirection.getModX(),
 						containerKey.y() + otherChestDirection.getModY(),
-						containerKey.z() + otherChestDirection.getModZ());
-				//add the secondary location to the manager to handle
-				Main.getPlugin().getShopmanager().addSecondaryShopLocation(secondaryContainerLocation, this);
+						containerKey.z() + otherChestDirection.getModZ()));
 			}
 		}
 		
@@ -542,7 +542,7 @@ public abstract class AbstractShop{
 	}
 	
 	public void printSalesInfo(Player player) {
-		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType().toString());
+		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType().toString().toUpperCase());
 		shopPlaceholders(request, this);
 		request.sendToAudience(player);
 	}
@@ -609,7 +609,7 @@ public abstract class AbstractShop{
 				if(!this.getOwnerUUID().equals(player.getUniqueId())){
 					//player has permission to change another player's shop display
 					if((isOperator(player))){
-						this.cycleDisplay(player);
+						this.cycleDisplay();
 					}
 					//player clicked own shop sign
 				} else {
@@ -617,7 +617,7 @@ public abstract class AbstractShop{
 						return false;
 					}
 					
-					this.cycleDisplay(player);
+					this.cycleDisplay();
 				}
 				break;
 			default:
@@ -626,24 +626,25 @@ public abstract class AbstractShop{
 		return true;
 	}
 	
-	public void cycleDisplay(Player player) {
+	public void cycleDisplay() {
 		if(facing == null){
 			return;
 		}
-		Main.getPlugin().logger().debug("===STARTING DISPLAY CYCLE===");
+		ShopLogger logger = Main.getPlugin().logger();
+		logger.debug("===STARTING DISPLAY CYCLE===");
 		DisplayType[] cycle = Main.getPlugin().getSettingsConfig().getDisplayCycle();
 		
 		if(cycle.length == 0){
-			Main.getPlugin().logger().debug("Cycle list is empty cannot cycle");
-			Main.getPlugin().logger().debug("===CANCEL DISPLAY CYCLE===");
+			logger.debug("Cycle list is empty cannot cycle");
+			logger.debug("===CANCEL DISPLAY CYCLE===");
 			return;
 		}
-		Main.getPlugin().logger().debug("Cycling display");
+		logger.debug("Cycling display");
 		
 		DisplayType currentType = getDisplay().getType();
 		
-		Main.getPlugin().logger().debug("Current display " + currentType);
-		Main.getPlugin().logger().debug("Cycle: " + Arrays.toString(cycle));
+		logger.debug("Current display " + currentType);
+		logger.debug("Cycle: " + Arrays.toString(cycle));
 		
 		int currentIndex = -1;
 		
@@ -655,22 +656,23 @@ public abstract class AbstractShop{
 		}
 		
 		int startIndex = currentIndex == -1 ? 0 : (currentIndex + 1) % cycle.length;
-		Main.getPlugin().logger().debug("Current index " + currentIndex);
+		logger.debug("Current index " + currentIndex);
 		DisplayType nextType = DisplayType.NONE;
 		
 		for(int offset = 0; offset < cycle.length; offset++){
 			int index = (startIndex + offset) % cycle.length;
 			
 			DisplayType candidate = cycle[index];
-			
+			logger.debug("Check spawn requirements " + candidate);
 			if(candidate.canSpawn(this)){
+				logger.debug("Meets spawn requirements " + candidate);
 				nextType = candidate;
 				break;
 			}
 		}
 		
-		Main.getPlugin().logger().debug("Next Display " + nextType);
-		Main.getPlugin().logger().debug("Removing old displays");
+		logger.debug("Next Display " + nextType);
+		logger.debug("Removing old displays");
 		Collection<Player> nearbyPlayers = this.getSignLocation().getNearbyPlayers(Main.getPlugin().getSettingsConfig().getMaxShopDisplayDistance());
 		
 		//remove display from all players nearby
@@ -678,14 +680,14 @@ public abstract class AbstractShop{
 			this.display.remove(nearbyPlayer);
 		}
 		this.display = AbstractDisplay.createDisplay(nextType, this);
-		Main.getPlugin().logger().debug("Sending shop display update to nearby players");
+		logger.debug("Sending shop display update to nearby players");
 		
 		//refresh the shop display for all players within range of the shop
 		for(var nearbyPlayer : nearbyPlayers){
 			Main.getPlugin().getShopmanager().getDisplayManager().processShopDisplaysNearPlayer(nearbyPlayer, true);
 		}
 		setNeedsSave(true);
-		Main.getPlugin().logger().debug("===FINISHED DISPLAY CYCLE===");
+		logger.debug("===FINISHED DISPLAY CYCLE===");
 	}
 	
 	public void sendEffects(boolean success, Player player) {
@@ -708,6 +710,21 @@ public abstract class AbstractShop{
 			}
 		} catch(Error | Exception _){
 		}
+	}
+	
+	public void addSecondaryContainerLocation(@NotNull Location location) {
+		if(secondaryContainerLocation != null){
+			removeSecondaryContainerLocation();
+		}
+		secondaryContainerLocation = location;
+		Main.getPlugin().getShopmanager().addSecondaryShopLocation(location, this);
+	}
+	
+	public void removeSecondaryContainerLocation() {
+		if(secondaryContainerLocation != null){
+			Main.getPlugin().getShopmanager().removeSecondaryChestLocation(secondaryContainerLocation, this);
+		}
+		secondaryContainerLocation = null;
 	}
 	
 	public Location getAboveSign() {
