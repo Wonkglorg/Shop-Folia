@@ -22,7 +22,7 @@ public class LargeItemDisplay extends AbstractDisplay{
 		ItemStack itemStack = shop.getItemStack().clone();
 		itemStack.setAmount(1);
 		ArmorStandData armorStandData = DisplayUtil.getArmorStandData(itemStack, leftLoc, shop.getFacing(), false);
-		spawnArmorStandPacket(player, armorStandData, null);
+		spawnArmorStandPacket(player, armorStandData);
 		
 		if(shop.getSecondaryItemStack() != null){
 			ItemStack barterItem = shop.getSecondaryItemStack().clone();
@@ -30,7 +30,7 @@ public class LargeItemDisplay extends AbstractDisplay{
 			Location rightLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 			rightLoc.add(getLargeItemBarterOffset(true));
 			ArmorStandData armorStandData2 = DisplayUtil.getArmorStandData(barterItem, rightLoc, shop.getFacing(), false);
-			spawnArmorStandPacket(player, armorStandData2, null);
+			spawnArmorStandPacket(player, armorStandData2);
 		}
 	}
 	

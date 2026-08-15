@@ -325,6 +325,8 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
+		plugin.logger().debug("Clicking shop container " + event.getAction());
+		
 		final Player player = event.getPlayer();
 		switch(event.getAction()) {
 			case LEFT_CLICK_BLOCK -> leftClickShopContainer(event, shop, player);
@@ -355,8 +357,8 @@ public class ShopListener implements Listener{
 		
 		//player is sneaking and clicks a chest of a shop
 		if(player.isSneaking()){
-			//don't execute the action and cancel event if player is holding a sign (may be trying to place directly onto chest)
 			if(Tag.SIGNS.isTagged(player.getInventory().getItemInMainHand().getType())){
+				plugin.logger().debug("Player trying to place sign on shop chest");
 				return;
 			}
 			
@@ -447,6 +449,8 @@ public class ShopListener implements Listener{
 		if(!player.hasPlayedBefore()){
 			return;
 		}
+		
+		shopManager.getDisplayManager().processShopDisplaysNearPlayer(player, false);
 		
 		//todo:mjd properly implement offline handling.
 		//if(plugin.getSettingsConfig().isOfflinePurchaseNotificationsEnabled()){

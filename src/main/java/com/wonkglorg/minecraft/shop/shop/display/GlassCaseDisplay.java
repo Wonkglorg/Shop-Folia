@@ -19,7 +19,7 @@ public class GlassCaseDisplay extends AbstractDisplay{
 		//put the extra large glass casing down
 		Location caseLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 		ArmorStandData caseStandData = DisplayUtil.getArmorStandData(new ItemStack(Material.GLASS), caseLoc, shop.getFacing(), true);
-		spawnArmorStandPacket(player, caseStandData, null);
+		spawnArmorStandPacket(player, caseStandData);
 		
 		//Drop initial display item
 		var stack = shop.getItemStack().clone();

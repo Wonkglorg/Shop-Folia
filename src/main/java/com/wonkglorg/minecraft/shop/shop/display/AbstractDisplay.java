@@ -5,10 +5,9 @@ import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.ArmorStandData;
-import io.papermc.paper.adventure.PaperAdventure;
 import lombok.Getter;
-import net.kyori.adventure.text.Component;
 import net.minecraft.core.Rotations;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
@@ -29,9 +28,6 @@ import org.bukkit.block.data.type.Light;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.EulerAngle;
@@ -117,7 +113,7 @@ public abstract class AbstractDisplay{
 	}
 	
 	protected ClientboundAddEntityPacket createEntity(Player player, net.minecraft.world.entity.Entity entity, int data) {
-		entityIDs.computeIfAbsent(player.getUniqueId(), _ -> new ArrayList<>()).add(entity.getId());
+		addEntityId(player, entity.getId());
 		return new ClientboundAddEntityPacket(entity.getId(),
 				entity.getUUID(),
 				entity.getX(),
@@ -132,7 +128,7 @@ public abstract class AbstractDisplay{
 	}
 	
 	protected ClientboundAddEntityPacket createEntity(Player player, net.minecraft.world.entity.Entity entity, Location location, int data) {
-		entityIDs.computeIfAbsent(player.getUniqueId(), _ -> new ArrayList<>()).add(entity.getId());
+		addEntityId(player, entity.getId());
 		return new ClientboundAddEntityPacket(entity.getId(),
 				entity.getUUID(),
 				location.getX(),
@@ -165,15 +161,13 @@ public abstract class AbstractDisplay{
 		return this.getShop().getSignLocation().isChunkLoaded();
 	}
 	
-	//spawns an armor stand packet for a specific player
-	//if player is null, all online players will get the packet
-	protected void spawnArmorStandPacket(Player player, ArmorStandData armorStandData, Component text) {
+	protected void spawnArmorStandPacket(Player player, ArmorStandData armorStandData) {
 		Location location = armorStandData.getLocation();
 		ArmorStand armorStand = new ArmorStand(((CraftWorld) location.getWorld()).getHandle(), location.getX(), location.getY(), location.getZ());
 		armorStand.setYRot((float) armorStandData.getYaw());
 		
-		armorStand.setCustomName(PaperAdventure.asVanilla(text));
-		armorStand.setCustomNameVisible(true);
+		armorStand.setCustomName(Component.empty());
+		armorStand.setCustomNameVisible(false);
 		
 		if(armorStandData.getRightArmPose() != null){
 			EulerAngle angle = armorStandData.getRightArmPose(); //EulerAngles are in radians
@@ -193,7 +187,7 @@ public abstract class AbstractDisplay{
 			armorStand.setSmall(true);
 		}
 		
-		Main.getPlugin().getLogger().log(java.util.logging.Level.FINE, "Floating Tag Label Location: " + location);
+		addEntityId(player, armorStand.getId());
 		
 		ClientboundAddEntityPacket spawnEntityLivingPacket = new ClientboundAddEntityPacket(armorStand.getId(),
 				armorStand.getUUID(),
@@ -210,20 +204,22 @@ public abstract class AbstractDisplay{
 				armorStand.getEntityData().packDirty());
 		ClientboundSetEquipmentPacket spawnEntityEquipmentPacket = null;
 		
-		//armor stand only going to have equipment if text is not populated
-		if(text == null){
-			List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList = new ArrayList();
-			var itemStack = CraftItemStack.asNMSCopy(armorStandData.getEquipment());
-			equipmentList.add(new Pair<>(getMojangEquipmentSlot(armorStandData.getEquipmentSlot()), itemStack));
-			
-			spawnEntityEquipmentPacket = new ClientboundSetEquipmentPacket(armorStand.getId(), equipmentList);
-		}
+		List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList = new ArrayList();
+		var itemStack = CraftItemStack.asNMSCopy(armorStandData.getEquipment());
+		equipmentList.add(new Pair<>(getMojangEquipmentSlot(armorStandData.getEquipmentSlot()), itemStack));
+		
+		spawnEntityEquipmentPacket = new ClientboundSetEquipmentPacket(armorStand.getId(), equipmentList);
 		
 		sendPacket(player, spawnEntityLivingPacket);
 		sendPacket(player, spawnEntityMetadataPacket);
-		if(spawnEntityEquipmentPacket != null){
-			sendPacket(player, spawnEntityEquipmentPacket);
-		}
+		sendPacket(player, spawnEntityEquipmentPacket);
+	}
+	
+	/**
+	 * Adds the entity id to this displays tracker
+	 */
+	private void addEntityId(Player player, int armorStand) {
+		entityIDs.computeIfAbsent(player.getUniqueId(), _ -> new ArrayList<>()).add(armorStand);
 	}
 	
 	public void setType(DisplayType type, boolean checkDisplayBlock) {
@@ -242,95 +238,6 @@ public abstract class AbstractDisplay{
 		}
 		
 		this.type = type;
-	}
-	
-	public void cycleType(Player player) {
-		if(getShop().getFacing() == null){
-			return;
-		}
-		DisplayType[] cycle = Main.getPlugin().getSettingsConfig().getDisplayCycle();
-		DisplayType displayType = this.type;
-		if(displayType == null){
-			displayType = Main.getPlugin().getSettingsConfig().getDisplayTypeDefault();
-		}
-		
-		int index = -1;
-		if(displayType == DisplayType.NONE){
-			//make sure there is room above the shop for the display
-			Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
-			if(aboveShop.getType() == Material.AIR){
-				//if the cycle contains the ITEM_FRAME display type
-				for(int i = 0; i < cycle.length; i++){
-					if(cycle[i] == DisplayType.ITEM_FRAME){
-						index = i;
-					}
-				}
-				//there is no ITEM_FRAME in cycle, return because display is blocked
-				if(index == -1){
-					return;
-				}
-			}
-		} else if(displayType == DisplayType.ITEM_FRAME){
-			//make sure there is room above the shop for the display
-			Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
-			if(aboveShop.getType() == Material.AIR){
-				//if the cycle contains the NONE display type
-				for(int i = 0; i < cycle.length; i++){
-					if(cycle[i] == DisplayType.NONE){
-						index = i;
-					}
-				}
-				//there is no NONE in cycle, return because display is blocked
-				if(index == -1){
-					return;
-				}
-			}
-		}
-		
-		//index is still not set, continue and cycle index to next display type
-		if(index == -1){
-			index = 0;
-			for(int i = 0; i < cycle.length; i++){
-				if(cycle[i] == displayType){
-					index = i + 1;
-				}
-			}
-			if(index >= cycle.length){
-				index = 0;
-			}
-		}
-		
-		//don't allow barter shops to have ITEM_FRAME display types (for NOW)
-		if(cycle[index] == DisplayType.ITEM_FRAME){
-			
-			boolean skip = false;
-			if(getShop().getType() == ShopType.BARTER){
-				skip = true;
-			} else {
-				//calculate where ITEM_FRAME display may be
-				for(Entity e : this.getShop().getContainerLocation().getWorld().getNearbyEntities(this.getBarterLocation(), 1, 1, 1)){
-					if(e.getType() == EntityType.ITEM_FRAME){
-						ItemFrame i = (ItemFrame) e;
-						if(i.getAttachedFace() == getShop().getSign().getFacing().getOppositeFace()){
-							skip = true;
-							break;
-						}
-					}
-				}
-			}
-			
-			if(skip){
-				index++;
-				if(index >= cycle.length){
-					index = 0;
-				}
-			}
-		}
-		
-		this.setType(cycle[index], true);
-		this.spawn(player);
-		//Shop.getPlugin().getShopmanager().addActiveShopDisplay(player, this.shopSignLocation);
-		getShop().setNeedsSave(true);
 	}
 	
 	private EquipmentSlot getMojangEquipmentSlot(org.bukkit.inventory.EquipmentSlot equipmentSlot) {

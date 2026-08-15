@@ -25,24 +25,34 @@ public class ItemFrameDisplay extends AbstractDisplay{
 	
 	@Override
 	public void onSpawn(@NotNull Player player) {
-		Location frameLocation;
-		//only calculate the item frame location if the shop is in a loaded chunk (because Block is used)
-		if(this.isChunkLoaded()){
-			Block aboveShop = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
-			frameLocation = aboveShop.getLocation();
-			//if display is blocked, put item frame on front
-			if((aboveShop.getType() == Material.AIR)){
-				frameLocation = aboveShop.getRelative(shop.getFacing()).getLocation();
-			}
-		} else {
-			frameLocation = shop.getContainerLocation().clone().add(0, 1, 0);
+		Location validLocation = shop.getAboveContainer();
+		if(validLocation.getBlock().getType() != Material.AIR){
+			validLocation = shop.getAboveSign();
 		}
 		
 		spawnItemFramePacket(player,
 				shop.getItemStack(),
-				frameLocation,
+				validLocation,
 				shop.getFacing(),
 				Main.getPlugin().getSettingsConfig().isSetGlowingItemFrame());
+		
+		if(shop.getSecondaryItemStack() != null){
+			Location secondaryValidLocation = shop.getAboveContainer();
+			if(secondaryValidLocation.getBlock().getType() != Material.AIR){
+				Block relative = shop.getAboveSecondaryContainer().getBlock().getRelative(shop.getFacing());
+				if(relative.getType() != Material.AIR){
+					return; //no valid location for secondary display
+				}
+				secondaryValidLocation = relative.getLocation();
+			}
+			
+			spawnItemFramePacket(player,
+					shop.getItemStack(),
+					secondaryValidLocation,
+					shop.getFacing(),
+					Main.getPlugin().getSettingsConfig().isSetGlowingItemFrame());
+		}
+		
 	}
 	
 	//spawns an item frame packet for a specific player

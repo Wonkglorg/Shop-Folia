@@ -44,6 +44,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -182,7 +184,7 @@ public abstract class AbstractShop{
 	}
 	
 	public boolean isChunkLoaded() {
-		return this.getSignLocation().isChunkLoaded();
+		return signLocation.isChunkLoaded();
 	}
 	
 	//this calls BlockData which loads the chunk the shop is in by doing so
@@ -326,7 +328,7 @@ public abstract class AbstractShop{
 		if(!this.isChunkLoaded()){
 			return null;
 		}
-		BlockData signBlockData = this.getSignLocation().getBlock().getBlockData();
+		BlockData signBlockData = signLocation.getBlock().getBlockData();
 		if(signBlockData instanceof WallSign wallSign){
 			return wallSign;
 		}
@@ -527,10 +529,10 @@ public abstract class AbstractShop{
 		
 		if(containerLocation == null){
 			this.load();
-			Location loc = this.getSignLocation().getBlock().getRelative(BlockFace.UP).getLocation().add(0.5, 0, 0.5);
+			Location loc = signLocation.getBlock().getRelative(BlockFace.UP).getLocation().add(0.5, 0, 0.5);
 			player.teleport(loc);
 		} else {
-			Location loc = this.getSignLocation().getBlock().getRelative(facing).getLocation().add(0.5, 0, 0.5);
+			Location loc = signLocation.getBlock().getRelative(facing).getLocation().add(0.5, 0, 0.5);
 			loc.setYaw(UtilMethods.faceToYaw(facing.getOppositeFace()));
 			loc.setPitch(25.0f);
 			
@@ -604,10 +606,10 @@ public abstract class AbstractShop{
 				break;
 			case CYCLE_DISPLAY:
 				//player clicked another player's shop sign
-				if(!this.getOwnerName().equals(player.getName())){
+				if(!this.getOwnerUUID().equals(player.getUniqueId())){
 					//player has permission to change another player's shop display
 					if((isOperator(player))){
-						this.getDisplay().cycleType(player);
+						this.cycleDisplay(player);
 					}
 					//player clicked own shop sign
 				} else {
@@ -615,7 +617,7 @@ public abstract class AbstractShop{
 						return false;
 					}
 					
-					this.getDisplay().cycleType(player);
+					this.cycleDisplay(player);
 				}
 				break;
 			default:
@@ -624,26 +626,103 @@ public abstract class AbstractShop{
 		return true;
 	}
 	
+	public void cycleDisplay(Player player) {
+		if(facing == null){
+			return;
+		}
+		Main.getPlugin().logger().debug("===STARTING DISPLAY CYCLE===");
+		DisplayType[] cycle = Main.getPlugin().getSettingsConfig().getDisplayCycle();
+		
+		if(cycle.length == 0){
+			Main.getPlugin().logger().debug("Cycle list is empty cannot cycle");
+			Main.getPlugin().logger().debug("===CANCEL DISPLAY CYCLE===");
+			return;
+		}
+		Main.getPlugin().logger().debug("Cycling display");
+		
+		DisplayType currentType = getDisplay().getType();
+		
+		Main.getPlugin().logger().debug("Current display " + currentType);
+		Main.getPlugin().logger().debug("Cycle: " + Arrays.toString(cycle));
+		
+		int currentIndex = -1;
+		
+		for(int i = 0; i < cycle.length; i++){
+			if(cycle[i] == currentType){
+				currentIndex = i;
+				break;
+			}
+		}
+		
+		int startIndex = currentIndex == -1 ? 0 : (currentIndex + 1) % cycle.length;
+		Main.getPlugin().logger().debug("Current index " + currentIndex);
+		DisplayType nextType = DisplayType.NONE;
+		
+		for(int offset = 0; offset < cycle.length; offset++){
+			int index = (startIndex + offset) % cycle.length;
+			
+			DisplayType candidate = cycle[index];
+			
+			if(candidate.canSpawn(this)){
+				nextType = candidate;
+				break;
+			}
+		}
+		
+		Main.getPlugin().logger().debug("Next Display " + nextType);
+		Main.getPlugin().logger().debug("Removing old displays");
+		Collection<Player> nearbyPlayers = this.getSignLocation().getNearbyPlayers(Main.getPlugin().getSettingsConfig().getMaxShopDisplayDistance());
+		
+		//remove display from all players nearby
+		for(var nearbyPlayer : nearbyPlayers){
+			this.display.remove(nearbyPlayer);
+		}
+		this.display = AbstractDisplay.createDisplay(nextType, this);
+		Main.getPlugin().logger().debug("Sending shop display update to nearby players");
+		
+		//refresh the shop display for all players within range of the shop
+		for(var nearbyPlayer : nearbyPlayers){
+			Main.getPlugin().getShopmanager().getDisplayManager().processShopDisplaysNearPlayer(nearbyPlayer, true);
+		}
+		setNeedsSave(true);
+		Main.getPlugin().logger().debug("===FINISHED DISPLAY CYCLE===");
+	}
+	
 	public void sendEffects(boolean success, Player player) {
 		try{
 			SettingsConfig settingsConfig = Main.getPlugin().getSettingsConfig();
 			if(success){
 				if(settingsConfig.isPlaySounds()){
-					player.playSound(this.getSignLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
+					player.playSound(signLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
 				}
 				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(this.getContainerLocation(), Effect.DESTROY_BLOCK, Material.EMERALD_BLOCK);
+					player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, Material.EMERALD_BLOCK);
 				}
 			} else {
 				if(settingsConfig.isPlaySounds()){
-					player.playSound(this.getSignLocation(), Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F);
+					player.playSound(signLocation, Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F);
 				}
 				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(this.getContainerLocation(), Effect.DESTROY_BLOCK, Material.REDSTONE_BLOCK);
+					player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, Material.REDSTONE_BLOCK);
 				}
 			}
 		} catch(Error | Exception _){
 		}
+	}
+	
+	public Location getAboveSign() {
+		return signLocation.clone().add(0, 1, 0);
+	}
+	
+	public Location getAboveContainer() {
+		return containerLocation.clone().add(0, 1, 0);
+	}
+	
+	public Location getAboveSecondaryContainer() {
+		if(secondaryContainerLocation != null){
+			return secondaryContainerLocation.clone().add(0, 1, 0);
+		}
+		return null;
 	}
 	
 	@Override

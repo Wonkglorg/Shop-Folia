@@ -14,54 +14,83 @@ import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DisplayManager{
+	
 	private final NamespacedKey displayKey;
 	private final Main plugin;
 	private final ShopManager shopManager;
+	
 	@Getter
-	private WrappedTask displayTask;
+	private final WrappedTask displayTask;
+	
 	/**
-	 * Players currently having their display visibility processed.
+	 * Players currently queued/being processed.
 	 */
+	@Getter
 	private final Set<UUID> playersBeingProcessed = ConcurrentHashMap.newKeySet();
 	
 	/**
-	 * Shops whose display packets have currently been sent to each player.
+	 * Last processed position for each player.
+	 */
+	private final Map<UUID, PlayerPosition> lastProcessedPosition = new ConcurrentHashMap<>();
+	
+	/**
+	 * Shops whose displays are currently visible to each player.
+	 *
+	 * Access to the Set should occur on the player's entity/region thread.
 	 */
 	private final Map<UUID, Set<AbstractShop>> visibleShopsByPlayer = new ConcurrentHashMap<>();
 	
 	public DisplayManager(Main plugin, ShopManager shopManager) {
 		this.plugin = plugin;
 		this.shopManager = shopManager;
-		displayKey = new NamespacedKey(Main.getPlugin(), "display");
+		
+		this.displayKey = new NamespacedKey(plugin, "display");
 		
 		displayTask = plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
-			for(var player : Bukkit.getOnlinePlayers()){
-				processShopDisplaysNearPlayer(player);
+			for(Player player : Bukkit.getOnlinePlayers()){
+				processShopDisplaysNearPlayer(player, false);
 			}
-		}, 60, 200);
+		}, 20, 200);
 	}
 	
+	/**
+	 * Clears all display state for a player.
+	 */
 	public void clearDisplaysForPlayer(Player player) {
-		Set<AbstractShop> shops = visibleShopsByPlayer.get(player.getUniqueId());
-		if(shops != null && !shops.isEmpty()){
-			for(var shop : shops){
-				shop.getDisplay().remove(player);
-			}
-		}
-	}
-	
-	public void processShopDisplaysNearPlayer(Player player) {
 		UUID playerId = player.getUniqueId();
 		
-		// Prevent multiple overlapping processing tasks for the same player.
+		Set<AbstractShop> visible = visibleShopsByPlayer.remove(playerId);
+		
+		if(visible != null){
+			for(AbstractShop shop : visible){
+				try{
+					shop.getDisplay().remove(player);
+				} catch(Exception e){
+					plugin.logger().warning("Failed to remove display for " + player.getName());
+				}
+			}
+		}
+		
+		lastProcessedPosition.remove(playerId);
+		playersBeingProcessed.remove(playerId);
+	}
+	
+	/**
+	 * Processes displays around a player.
+	 *
+	 * @param force if true forces the player to process regardless if they have moved enough or not
+	 */
+	public void processShopDisplaysNearPlayer(Player player, boolean force) {
+		UUID playerId = player.getUniqueId();
+		
 		if(!playersBeingProcessed.add(playerId)){
 			return;
 		}
@@ -69,68 +98,21 @@ public class DisplayManager{
 		plugin.getFoliaLib().getScheduler().runAtEntityLater(player, () -> {
 			try{
 				if(!player.isOnline()){
+					clearPlayerState(playerId);
 					return;
 				}
 				
-				plugin.logger().debug("Running shop display task for player " + player);
+				Location location = player.getLocation();
 				
-				Location playerLocation = player.getLocation();
-				
-				double maxDistance = plugin.getSettingsConfig().getMaxShopDisplayDistance();
-				double maxDistanceSquared = maxDistance * maxDistance;
-				
-				// Use the display distance to determine how many chunks must be searched.
-				int chunkRadius = (int) Math.ceil(maxDistance / 16.0);
-				
-				Set<AbstractShop> nowVisible = new HashSet<>();
-				
-				for(AbstractShop shop : shopManager.getShopsNearLocation(playerLocation, chunkRadius)){
-					if(!shop.isLoaded()){
-						plugin.logger().debug("Shop is not loaded skipping " + shop);
-						continue;
-					}
-					
-					AbstractDisplay display = shop.getDisplay();
-					
-					if(display.getType() == DisplayType.NONE){
-						plugin.logger().debug("No Display selected skipping");
-						continue;
-					}
-					
-					Location containerLocation = shop.getContainerLocation();
-					
-					if(containerLocation == null || !containerLocation.getWorld().getUID().equals(playerLocation.getWorld().getUID())){
-						continue;
-					}
-					
-					if(containerLocation.distanceSquared(playerLocation) <= maxDistanceSquared){
-						plugin.logger().debug("Shop " + shop + " is in radius of player " + player.getName());
-						nowVisible.add(shop);
-					}
+				if(!hasMovedEnough(playerId, location) && !force){
+					return;
 				}
 				
-				Set<AbstractShop> previouslyVisible = visibleShopsByPlayer.computeIfAbsent(playerId, _ -> new HashSet<>());
+				lastProcessedPosition.put(playerId,
+						new PlayerPosition(location.getWorld().getUID(), location.getX(), location.getY(), location.getZ()));
 				
-				// Send packets for shops entering range.
-				for(AbstractShop shop : nowVisible){
-					if(previouslyVisible.add(shop)){
-						shop.getDisplay().spawn(player);
-					}
-				}
+				updateVisibleDisplays(player, location, force);
 				
-				// Remove packets for shops leaving range.
-				Iterator<AbstractShop> iterator = previouslyVisible.iterator();
-				
-				while(iterator.hasNext()){
-					AbstractShop shop = iterator.next();
-					
-					if(!nowVisible.contains(shop)){
-						shop.getDisplay().remove(player);
-						iterator.remove();
-					}
-				}
-				
-				visibleShopsByPlayer.put(playerId, nowVisible);
 			} catch(Exception e){
 				plugin.logger().warning("Error processing shop displays for player " + player.getName());
 				e.printStackTrace();
@@ -140,12 +122,119 @@ public class DisplayManager{
 		}, 1);
 	}
 	
-	public boolean isDisplay(Entity entity) {
-		PersistentDataContainer persistentData = entity.getPersistentDataContainer();
-		Integer dataDisplay = persistentData.get(displayKey, PersistentDataType.INTEGER);
-		if(dataDisplay == null){
+	private void updateVisibleDisplays(Player player, Location playerLocation, boolean force) {
+		UUID playerId = player.getUniqueId();
+		
+		double maxDistance = plugin.getSettingsConfig().getMaxShopDisplayDistance();
+		
+		double maxDistanceSquared = maxDisplayDistanceSquared();
+		
+		int chunkRadius = (int) Math.ceil(maxDistance / 16.0);
+		
+		Set<AbstractShop> nowVisible = new HashSet<>();
+		
+		UUID playerWorldId = playerLocation.getWorld().getUID();
+		
+		for(AbstractShop shop : shopManager.getShopsNearLocation(playerLocation, chunkRadius)){
+			if(!isDisplayVisible(shop, playerWorldId, playerLocation, maxDistanceSquared)){
+				continue;
+			}
+			
+			nowVisible.add(shop);
+		}
+		
+		Set<AbstractShop> previouslyVisible = visibleShopsByPlayer.get(playerId);
+		
+		if(previouslyVisible == null){
+			previouslyVisible = Collections.emptySet();
+		}
+		for(AbstractShop shop : previouslyVisible){
+			if(!nowVisible.contains(shop) || force){
+				shop.getDisplay().remove(player);
+			}
+		}
+		
+		for(AbstractShop shop : nowVisible){
+			if(!previouslyVisible.contains(shop) || force){
+				shop.getDisplay().spawn(player);
+			}
+		}
+		
+		if(nowVisible.isEmpty()){
+			visibleShopsByPlayer.remove(playerId);
+		} else {
+			visibleShopsByPlayer.put(playerId, nowVisible);
+		}
+	}
+	
+	public double maxDisplayDistanceSquared() {
+		double maxDistance = plugin.getSettingsConfig().getMaxShopDisplayDistance();
+		
+		return maxDistance * maxDistance;
+	}
+	
+	public boolean isDisplayVisible(AbstractShop shop, UUID playerWorldId, Location playerLocation, double maxDistanceSquared) {
+		if(!shop.isLoaded()){
 			return false;
 		}
-		return (dataDisplay == 1);
+		
+		AbstractDisplay display = shop.getDisplay();
+		
+		if(display == null || display.getType() == DisplayType.NONE){
+			return false;
+		}
+		
+		Location containerLocation = shop.getContainerLocation();
+		
+		if(containerLocation == null || containerLocation.getWorld() == null){
+			return false;
+		}
+		
+		if(!containerLocation.getWorld().getUID().equals(playerWorldId)){
+			return false;
+		}
+		
+		if(!display.isChunkLoaded()){
+			return false;
+		}
+		
+		return containerLocation.distanceSquared(playerLocation) <= maxDistanceSquared;
+	}
+	
+	private boolean hasMovedEnough(UUID playerId, Location current) {
+		PlayerPosition previous = lastProcessedPosition.get(playerId);
+		
+		if(previous == null){
+			return true;
+		}
+		
+		if(!previous.worldId().equals(current.getWorld().getUID())){
+			return true;
+		}
+		
+		return previous.distanceSquared(current) >= 4.0;
+	}
+	
+	private void clearPlayerState(UUID playerId) {
+		visibleShopsByPlayer.remove(playerId);
+		lastProcessedPosition.remove(playerId);
+	}
+	
+	public boolean isDisplay(Entity entity) {
+		PersistentDataContainer persistentData = entity.getPersistentDataContainer();
+		
+		Integer dataDisplay = persistentData.get(displayKey, PersistentDataType.INTEGER);
+		
+		return dataDisplay != null && dataDisplay == 1;
+	}
+	
+	private record PlayerPosition(UUID worldId, double x, double y, double z){
+		double distanceSquared(Location location) {
+			double dx = x - location.getX();
+			double dy = y - location.getY();
+			double dz = z - location.getZ();
+			
+			return dx * dx + dy * dy + dz * dz;
+		}
 	}
 }

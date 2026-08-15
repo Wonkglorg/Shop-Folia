@@ -291,7 +291,7 @@ public class ShopManager{
 	 */
 	private void loadShop(AbstractShop shop) {
 		plugin.getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
-			if(shop.load()){
+			if(!shop.load()){
 				unregisterShop(shop);
 			}
 		});
@@ -304,6 +304,10 @@ public class ShopManager{
 		addShop(shop);
 		database.addShop(shop);
 		database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
+		for(var player : Bukkit.getOnlinePlayers()){
+			//force reloads all displays for players to make sure the newly added shop exists
+			displayManager.processShopDisplaysNearPlayer(player, true);
+		}
 	}
 	
 	/**
