@@ -11,6 +11,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 public record ImmutableShopCreationProcess(Player player, boolean playerIsOperator, UUID playerUUID, UUID shopId, Sign sign, Block container,
-                                           BlockFace signDirection, ShopType type, int amount, double price, double priceCombo, boolean adminShop,
-                                           boolean isFakeSign, @Nullable ItemStack itemStack, @Nullable ItemStack barterStack,
-                                           boolean finishedInitialisation, boolean isCancelled){}
+                                           BlockFace signDirection, ShopType type, int amount, double price, boolean adminShop, boolean isFakeSign,
+                                           @Nullable ItemStack itemStack, @Nullable ItemStack barterStack, boolean finishedInitialisation,
+                                           boolean isCancelled){}

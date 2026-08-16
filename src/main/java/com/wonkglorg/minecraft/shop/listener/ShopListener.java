@@ -373,8 +373,14 @@ public class ShopListener implements Listener{
 				return;
 			}
 			
-			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.SHIFT_RIGHT_CLICK_CHEST);
+			if(player.getInventory().getItemInMainHand().getType() == Material.HOPPER){
+				if((isOperator(player) || player.getUniqueId().equals(shop.getOwnerUUID()))){
+					logger.debug("Player trying to place hopper on shop chest");
+					return;
+				}
+			}
 			
+			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.SHIFT_RIGHT_CLICK_CHEST);
 			if(actionPerformed){
 				event.setCancelled(true);
 				// Stop processing since we cancelled the event, if no action was performed, continue with logic below
@@ -383,33 +389,33 @@ public class ShopListener implements Listener{
 			
 		}
 		//non-owner is trying to open shop
-		if(!shop.getOwnerUUID().equals(player.getUniqueId())){
-			if(isOperator(player)){
-				if(shop.isAdmin()){
-					if(shop.getType() == ShopType.GAMBLE){
-						//allow gamble shops to be opened by operators
-						return;
-					}
-					event.setCancelled(true);
-					
-					shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
-					//we are cancelling this event regardless so no need to check if the action was performed
-					
-				} else {
-					LangRequest request = lang.request("interaction." + shop.getType().toString() + ".opOpen");
-					AbstractShop.shopPlaceholders(request, shop);
-					request.sendToAudience(player);
+		if(shop.getOwnerUUID().equals(player.getUniqueId())){
+			return;
+		}
+		if(isOperator(player)){
+			if(shop.isAdmin()){
+				if(shop.getType() == ShopType.GAMBLE){
+					//allow gamble shops to be opened by operators
+					return;
 				}
-			} else {
-				// Cancel event to prevent other players from opening the chest
 				event.setCancelled(true);
 				
-				boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
-				if(!actionPerformed){
-					LangRequest request = lang.request("permission.error.openOther");
-					AbstractShop.shopPlaceholders(request, shop);
-					request.sendToAudience(player);
-				}
+				shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
+				//we are cancelling this event regardless so no need to check if the action was performed
+			} else {
+				LangRequest request = lang.request("interaction." + shop.getType().toString() + ".opOpen");
+				AbstractShop.shopPlaceholders(request, shop);
+				request.sendToAudience(player);
+			}
+		} else {
+			// Cancel event to prevent other players from opening the chest
+			event.setCancelled(true);
+			
+			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
+			if(!actionPerformed){
+				LangRequest request = lang.request("permission.error.openOther");
+				AbstractShop.shopPlaceholders(request, shop);
+				request.sendToAudience(player);
 			}
 		}
 	}

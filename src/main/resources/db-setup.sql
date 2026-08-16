@@ -10,8 +10,6 @@ CREATE TABLE IF NOT EXISTS shops
     owner_uuid              TEXT    NOT NULL,
     item                    TEXT    NOT NULL,
     price                   REAL    NOT NULL,
-    --if the shop is a combo shop this is the sell price part of the shop
-    price_combo_sell        REAL    NULL     DEFAULT NULL,
     amount                  INTEGER NOT NULL,
     last_known_stock_count  INTEGER NOT NULL,
     last_known_stock_status TEXT    NOT NULL,

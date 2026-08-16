@@ -6,13 +6,11 @@ import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -24,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DisplayManager{
 	
 	private final NamespacedKey displayKey;
+	@Setter
+	private boolean isLoadingShops = true;
 	private final Main plugin;
 	private final ShopManager shopManager;
 	
@@ -55,10 +55,13 @@ public class DisplayManager{
 		this.displayKey = new NamespacedKey(plugin, "display");
 		
 		displayTask = plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
+			if(isLoadingShops){
+				return;
+			}
 			for(Player player : Bukkit.getOnlinePlayers()){
 				processShopDisplaysNearPlayer(player, false);
 			}
-		}, 20, 200);
+		}, 30, 200);
 	}
 	
 	/**
@@ -220,12 +223,10 @@ public class DisplayManager{
 		lastProcessedPosition.remove(playerId);
 	}
 	
-	public boolean isDisplay(Entity entity) {
-		PersistentDataContainer persistentData = entity.getPersistentDataContainer();
-		
-		Integer dataDisplay = persistentData.get(displayKey, PersistentDataType.INTEGER);
-		
-		return dataDisplay != null && dataDisplay == 1;
+	public void reload() {
+		for(var player : Bukkit.getOnlinePlayers()){
+			clearDisplaysForPlayer(player);
+		}
 	}
 	
 	private record PlayerPosition(UUID worldId, double x, double y, double z){

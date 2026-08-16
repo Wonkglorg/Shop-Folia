@@ -69,7 +69,7 @@ public abstract class TransactionParty{
 	public int getAvailableItemFunds(ItemStack itemStack) {
 		int amount = 0;
 		for(var item : inventory){
-			if(itemStack.isSimilar(itemStack)){
+			if(itemStack.isSimilar(item)){
 				amount += item.getAmount();
 			}
 		}

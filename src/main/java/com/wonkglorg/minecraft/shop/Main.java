@@ -110,7 +110,7 @@ public class Main extends JavaPlugin{
 			immediateShutdown();
 		}
 		
-		shopmanager.loadShops();
+		reload();
 		
 		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
@@ -149,6 +149,11 @@ public class Main extends JavaPlugin{
 	public void reload() {
 		this.logger().info("Loading Shop " + this.getPluginMeta().getVersion());
 		PlayerManager.reload();
+		settingsConfig.silentLoad();
+		itemConfig.silentLoad();
+		logger.setLogLevel(settingsConfig.getLogLevel());
+		langManager.silentLoad();
+		shopmanager.reload();
 	}
 	
 	private boolean setupEconomy() {
@@ -181,30 +186,6 @@ public class Main extends JavaPlugin{
 				return format.replace("[price]", UtilMethods.formatLongToKString(price, false));
 			} else {
 				return format.replace("[price]", "" + (int) price);
-			}
-		}
-		return format;
-	}
-	
-	public String getPriceComboString(double price, double priceSell, boolean pricePer) {
-		if(price == 0){
-			return "free";
-		}
-		
-		String format = settingsConfig.getCurrencyFormat();
-		
-		if(format.contains("[name]")){
-			format = format.replace("[name]", settingsConfig.getCurrencyName());
-		}
-		if(format.contains("[price]")){
-			if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
-				return format.replace("[price]",
-						UtilMethods.formatLongToKString(price, true) + "/" + UtilMethods.formatLongToKString(priceSell, true));
-			} else if(pricePer){
-				return format.replace("[price]",
-						UtilMethods.formatLongToKString(price, false) + "/" + UtilMethods.formatLongToKString(priceSell, true));
-			} else {
-				return format.replace("[price]", "" + (int) price + "/" + (int) priceSell);
 			}
 		}
 		return format;

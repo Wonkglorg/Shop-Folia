@@ -20,6 +20,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -319,26 +320,20 @@ public class ShopMessage{
 	//      # %owner% : The name of the shop owner #
 	public static List<Component> getSignLines(AbstractShop shop) {
 		
-		DisplayType displayType = null;
-		if(shop.getDisplay() != null){
-			displayType = shop.getDisplay().getType();
-		}
-		if(displayType == null){
-			displayType = Main.getPlugin().getSettingsConfig().getDisplayTypeDefault();
-		}
+		DisplayType displayType = shop.getDisplay().getType();
 		
 		String shopFormat;
 		if(shop.isAdmin()){
-			shopFormat = "admin";
+			shopFormat = ".admin";
 		} else {
-			shopFormat = "normal";
+			shopFormat = ".normal";
 		}
 		
 		if(displayType == DisplayType.NONE){
 			shopFormat += "_no_display";
 		}
 		
-		return getSignLines(displayType + "." + shopFormat, shop);
+		return getSignLines(shop.getType().name().toUpperCase() + "." + shopFormat, shop);
 	}
 	
 	/**
@@ -350,14 +345,21 @@ public class ShopMessage{
 	 */
 	public static List<Component> getSignLines(String key, AbstractShop shop) {
 		List<Component> lines = new ArrayList<>(4);
-		
-		for(var i = 0; i < 4; i++){
+		for(var i = 1; i < 5; i++){
 			//@formatter:off
-			lines.add(lang.request("sign.text." + key)
-			                     .replace("%amount%",shop.getAmount())
-			                     .replace("%price%",shop.getPrice())
-			                     .replace("%owner%",shop.getOwnerName())
-			                     .toSingleComponent());
+			LangRequest request = lang.request("sign.text." + key + "." + i);
+			
+			request.replace("%item%",shop.getItemStack()::displayName)
+					.replace("%amount%",shop.getAmount())
+					.replace("%price%",new DecimalFormat("0.##").format(shop.getPrice()))
+					.replace("%owner%",shop::getOwnerName)
+					.replace("%stock%",shop.getStock());
+			
+			ItemStack barterStack = shop.getSecondaryItemStack();
+			if(barterStack!=null){
+				request.replace("%barter-item%",barterStack::displayName);
+			}
+			lines.add(request.toSingleComponent());
 			//@formatter:on
 		}
 		return lines;

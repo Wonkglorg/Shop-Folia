@@ -5,8 +5,8 @@ import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.migrate.PlayerShopsConfig;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
-import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
+import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import lombok.Getter;
@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -139,7 +140,20 @@ public class ShopManager{
 		return playerShops.get(playerId).size();
 	}
 	
-	public void loadShops() {
+	public void reload() {
+		displayManager.setLoadingShops(true);
+		if(!allShops.isEmpty()){
+			//if shops already exist save them before doing a reload
+			saveAllShops();
+			displayManager.reload();
+		}
+		allShops.clear();
+		shopsBySign.clear();
+		shopsByContainer.clear();
+		shopsByChunk.clear();
+		unloadedShopsByChunk.clear();
+		shopOwners.clear();
+		
 		getDatabase().getShops(false).thenAccept(shops -> {
 			for(var shop : shops){
 				addShop(shop);
@@ -154,6 +168,7 @@ public class ShopManager{
 			for(var hook : plugin.getShopServiceProvider().getShopLoadHooks()){
 				hook.accept(allShops.values());
 			}
+			displayManager.setLoadingShops(false);
 		});
 	}
 	
@@ -300,25 +315,36 @@ public class ShopManager{
 	 *
 	 * @param shop
 	 */
-	private void loadShop(AbstractShop shop) {
+	private CompletableFuture<AbstractShop> loadShop(AbstractShop shop) {
+		CompletableFuture<AbstractShop> future = new CompletableFuture<>();
+		if(shop.isLoaded()){
+			future.complete(shop);
+			return future;
+		}
 		plugin.getFoliaLib().getScheduler().runAtLocation(shop.getSignLocation(), _ -> {
 			if(!shop.load()){
 				unregisterShop(shop);
 			}
+			future.complete(shop);
 		});
+		return future;
 	}
 	
 	/**
 	 * Registers a new shop and stores it in the database
 	 */
 	public void registerShop(AbstractShop shop) {
-		addShop(shop);
-		database.addShop(shop);
-		database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
-		for(var player : Bukkit.getOnlinePlayers()){
-			//force reloads all displays for players to make sure the newly added shop exists
-			displayManager.processShopDisplaysNearPlayer(player, true);
-		}
+		//loads the shop if not yet loaded needed to accurately store data in database
+		loadShop(shop).thenAccept(s -> {
+			addShop(shop);
+			database.addShop(shop);
+			database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
+			//newly registered shop should be sent to all players, do this here or somewhere else?
+			var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopDisplayDistance());
+			for(var player : nearbyPlayers){
+				displayManager.processShopDisplaysNearPlayer(player, true);
+			}
+		});
 	}
 	
 	/**

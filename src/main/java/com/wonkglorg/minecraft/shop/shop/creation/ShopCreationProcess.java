@@ -7,7 +7,6 @@ import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
-import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import lombok.Getter;
 import lombok.Setter;
@@ -63,10 +62,6 @@ public abstract class ShopCreationProcess{
 	 */
 	protected double price = 0;
 	/**
-	 * If its a combo shop this is the sell price and {@link #price} the buy price
-	 */
-	protected double priceCombo = 0;
-	/**
 	 * The shop is an admin shop
 	 */
 	protected boolean adminShop = false;
@@ -109,7 +104,6 @@ public abstract class ShopCreationProcess{
 				type,
 				amount,
 				price,
-				priceCombo,
 				adminShop,
 				isFakeSign,
 				itemStack,
@@ -185,7 +179,6 @@ public abstract class ShopCreationProcess{
 				sign.getLocation(),
 				player.getUniqueId(),
 				price,
-				priceCombo,
 				amount,
 				adminShop,
 				type,
@@ -193,6 +186,14 @@ public abstract class ShopCreationProcess{
 				System.currentTimeMillis(),
 				Main.getPlugin().getSettingsConfig().getDisplayTypeDefault());
 		shop.setFakeSign(isFakeSign);
+		
+		if(type != ShopType.GAMBLE){
+			shop.setItemStack(itemStack);
+			if(secondaryStack != null){
+				shop.setSecondaryItemStack(secondaryStack);
+			}
+		}
+		
 		boolean loaded = shop.load();
 		if(!loaded){
 			Main.getPlugin()
@@ -201,17 +202,6 @@ public abstract class ShopCreationProcess{
 			return null;
 		}
 		
-		if(type == ShopType.GAMBLE){
-			shop.setItemStack(Main.getPlugin().getItemConfig().getGambleDisplayItem());
-			shop.setAmount(1);
-			shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
-			return null;
-		} else {
-			shop.setItemStack(itemStack);
-			if(secondaryStack != null){
-				shop.setSecondaryItemStack(secondaryStack);
-			}
-		}
 		shop.updateSign();
 		return shop;
 	}

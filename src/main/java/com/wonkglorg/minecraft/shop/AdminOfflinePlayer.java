@@ -39,7 +39,7 @@ public class AdminOfflinePlayer implements OfflinePlayer{
 	
 	@Override
 	public String getName() {
-		return "admin";
+		return "SERVER";
 	}
 	
 	@Override

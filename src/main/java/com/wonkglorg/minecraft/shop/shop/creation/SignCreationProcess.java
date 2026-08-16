@@ -90,7 +90,6 @@ public class SignCreationProcess extends ShopCreationProcess{
 	 */
 	public boolean readPrice(String input, ShopType shopType) {
 		double price = 0;
-		double priceCombo = 0;
 		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.VAULT){
 			Main.getPlugin().logger().debug("Reading Vault currency");
 			try{
@@ -105,12 +104,6 @@ public class SignCreationProcess extends ShopCreationProcess{
 					} else {
 						price = Long.parseLong(multiplePrices[0]);
 					}
-					
-					if(multiplePrices[1].contains(".")){
-						priceCombo = Double.parseDouble(multiplePrices[1]);
-					} else {
-						priceCombo = Long.parseLong(multiplePrices[1]);
-					}
 				} else {
 					if(line3.contains(".")){
 						price = Double.parseDouble(line3);
@@ -120,10 +113,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 				}
 				
 				price *= multiplyValue;
-				priceCombo *= multiplyValue;
 				Main.getPlugin().logger().debug("Price: " + price);
-				Main.getPlugin().logger().debug("Price Combo: " + priceCombo);
-				
 			} catch(NumberFormatException _){
 				return false;
 			}
@@ -135,9 +125,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 				String[] multiplePrices = line3.split(" ");
 				if(multiplePrices.length > 1){
 					price = Long.parseLong(multiplePrices[0]);
-					priceCombo = Long.parseLong(multiplePrices[1]);
 					Main.getPlugin().logger().debug("Price: " + price);
-					Main.getPlugin().logger().debug("Price Combo: " + priceCombo);
 				} else {
 					price = Long.parseLong(line3);
 					Main.getPlugin().logger().debug("Price: " + price);
@@ -152,7 +140,6 @@ public class SignCreationProcess extends ShopCreationProcess{
 			return false;
 		}
 		super.price = price;
-		super.priceCombo = priceCombo;
 		return true;
 	}
 	
@@ -221,8 +208,6 @@ public class SignCreationProcess extends ShopCreationProcess{
 		       amount +
 		       ", price=" +
 		       price +
-		       ", priceCombo=" +
-		       priceCombo +
 		       ", adminShop=" +
 		       adminShop +
 		       ", isFakeSign=" +

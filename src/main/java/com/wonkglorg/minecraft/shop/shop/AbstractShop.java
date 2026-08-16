@@ -58,6 +58,9 @@ import java.util.UUID;
 public abstract class AbstractShop{
 	private static final AdminOfflinePlayer adminOfflinePlayer = new AdminOfflinePlayer();
 	
+	private static final @NotNull BlockData EMERALD_BLOCK_DATA = Material.EMERALD_BLOCK.createBlockData();
+	private static final @NotNull BlockData REDSTONE_BLOCK_DATA = Material.REDSTONE_BLOCK.createBlockData();
+	
 	@Getter
 	@Setter
 	protected UUID id;
@@ -152,7 +155,6 @@ public abstract class AbstractShop{
 		this.facing = facing;
 		this.creationDate = creationDate;
 		this.display = AbstractDisplay.createDisplay(displayType, this);
-		this.signLines = ShopMessage.getSignLines(this);
 		this.signLinesRequireRefresh = true; // Reload signs on load in case config changed!
 		
 		//infer the container location where it should be
@@ -175,7 +177,6 @@ public abstract class AbstractShop{
 	                                  Location signLoc,
 	                                  UUID player,
 	                                  double pri,
-	                                  double priCombo,
 	                                  int amt,
 	                                  Boolean admin,
 	                                  ShopType shopType,
@@ -359,7 +360,7 @@ public abstract class AbstractShop{
 	
 	public Component getOwnerName() {
 		if(this.isAdmin()){
-			return Component.text(adminOfflinePlayer.getName());
+			return Main.getPlugin().getLangManager().request("placeholders.server-display-name").toSingleComponent();
 		}
 		
 		if(this.getOwnerUUID() != null){
@@ -440,14 +441,12 @@ public abstract class AbstractShop{
 		
 		this.item = is.clone();
 		this.item.setAmount(1);
-		this.calculateStock();
 		this.updateSign(true);
 	}
 	
 	public void setSecondaryItemStack(ItemStack is) {
 		this.secondaryItem = is.clone();
 		this.secondaryItem.setAmount(1);
-		this.calculateStock();
 		this.updateSign(true);
 	}
 	
@@ -572,6 +571,8 @@ public abstract class AbstractShop{
 		var result = transaction.canFulfill();
 		if(result != TransactionResult.OK){
 			logger.debug("Transaction could not be fulfilled " + result);
+			logger.debug("===CANCEL SHOP TRANSACTION====");
+			isPerformingTransaction = false;
 			return result;
 		}
 		
@@ -580,6 +581,8 @@ public abstract class AbstractShop{
 		
 		if(event.isCancelled()){
 			logger.debug("Transaction was cancelled by external plugin");
+			logger.debug("===CANCEL SHOP TRANSACTION====");
+			isPerformingTransaction = false;
 			return TransactionResult.CANCELLED;
 		}
 		
@@ -619,10 +622,8 @@ public abstract class AbstractShop{
 		switch(action) {
 			case TRANSACT:
 				TransactionResult result = executeTransaction(new PlayerTransactionParty(player));
-				if(result != TransactionResult.OK){
-					return false;
-				}
-				break;
+				sendEffects(result == TransactionResult.OK, player);
+				return true;
 			case VIEW_DETAILS:
 				this.printSalesInfo(player);
 				break;
@@ -643,7 +644,7 @@ public abstract class AbstractShop{
 				}
 				break;
 			default:
-				break;
+				return true;
 		}
 		return true;
 	}
@@ -744,14 +745,14 @@ public abstract class AbstractShop{
 					player.playSound(signLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
 				}
 				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, Material.EMERALD_BLOCK);
+					player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, EMERALD_BLOCK_DATA);
 				}
 			} else {
 				if(settingsConfig.isPlaySounds()){
 					player.playSound(signLocation, Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F);
 				}
 				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, Material.REDSTONE_BLOCK);
+					player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, REDSTONE_BLOCK_DATA);
 				}
 			}
 		} catch(Exception _){

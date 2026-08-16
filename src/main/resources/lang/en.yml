@@ -49,7 +49,7 @@ placeholders:
   out-of-stock-color: "<red>"
   zero-price: "FREE"
   admin-stock: "unlimited"
-  server-display-name: "Server"
+  server-display-name: "<purple>Server"
 templates:
   stock-color: "[if:%stock%==0]%out-of-stock-color%[else]%in-stock-color%[/if]"
 
@@ -298,7 +298,7 @@ command:
   refresh-reload:
     success: "<green>The display items on all of the shops have been refreshed."
   reload:
-    success: "<green>Reloaded Market!"
+    success: "<green>Reloaded Shops!"
   notify:
     usage:
       -"<blue>/shop notify user<gray>- shows transaction notifications when you interact with other shops"
@@ -315,109 +315,78 @@ sign:
   text:
     SELL:
       normal:
-        1: "%stock_color%<bold>%shop%"
-        2: "Selling; <bold>%amount%"
-        3: "<green>%price%"
+        1: "%stock-color%<bold>[shop]"
+        2: "<white>Selling; <bold>%amount%"
+        3: "%stock-color%%currency-name% %price%"
         4: "%owner%"
       normal_no_display:
-        1: "%stock_color%<bold>sell shop"
-        2: "%item%: %amount%"
-        3: "<green>%price%"
-        4: "%owner%"
+        1: "%stock-color%<bold>[sell shop]"
+        2: "<white>%item%: %amount%"
+        3: "%stock-color%%currency-name% %price%"
+        4: "<white>%owner%"
       admin:
-        1: "<bold>%shop%"
+        1: "%in-stock-color%<bold>[shop]"
         2: "Selling; &l%amount%"
-        3: "&a%price%"
-        4: "&d%server-display-name%"
+        3: "%in-stock-color%%price%"
+        4: "%server-display-name%"
       admin_no_display:
-        1: "<bold>%sell shop%"
+        1: "%in-stock-color%[sell shop]"
         2: "%item%: %amount%"
-        3: "&a%price%"
-        4: "&d%server-display-name%"
+        3: "%in-stock-color%%price%"
+        4: "%server-display-name%"
     BUY:
       normal:
-        1: "%stock color%&l%shop%"
-        2: "Buying; &l%amount%"
-        3: "&a%price%"
+        1: "%stock-color%<bold>%shop%"
+        2: "<white>Buying; %amount%"
+        3: "%stock-color%%currency-name% %price%"
         4: "%owner%"
       normal_no_display:
-        1: "%stock color%&l%buy shop%"
-        2: "%item%: %amount%"
-        3: "&a%price%"
+        1: "%stock-color%<bold>buy shop"
+        2: "%item%: <white>%amount%"
+        3: "%stock-color%%currency-name% %price%"
         4: "%owner%"
       admin:
-        1: "&l%shop%"
-        2: "Buying; &l%amount%"
-        3: "&a%price%"
-        4: "&d%server-display-name%"
+        1: "%in-stock-color%<bold>shop"
+        2: "<white>Buying; &l%amount%"
+        3: "%in-stock-color%%currency-name% %price%"
+        4: "%server-display-name%"
       admin_no_display:
-        1: "&l%buy shop%"
+        1: "%in-stock-color%<bold>buy shop"
         2: "%item%: %amount%"
-        3: "&a%price%"
-        4: "&d%server-display-name%"
+        3: "%in-stock-color%%currency-name% %price%"
+        4: "%server-display-name%"
     BARTER:
       normal:
-        1: "%stock color%&l%shop%"
-        2: "Bartering;"
-        3: "&a%amount%   for   %price%"
+        1: "%stock-color%<bold>%shop%"
+        2: "<white>Bartering;"
+        3: "%stock-color%%amount%   for   %price%"
         4: "%owner%"
       normal_no_display:
-        1: "%stock color%&l%barter shop%"
-        2: "%item%: &a%amount%"
-        3: "%barter item%: &a%price%"
+        1: "%stock-color%<bold>barter shop"
+        2: "%item%: %amount%"
+        3: "%stock-color%%barter-item%: &a%price%"
         4: "%owner%"
       admin:
-        1: "&l%shop%"
-        2: "Bartering;"
-        3: "&a%amount%   for   %price%"
-        4: "&d%server-name%"
+        1: "%in-stock-color%<bold>%shop%"
+        2: "<white>Bartering;"
+        3: "%in-stock-color%%amount%   for   %price%"
+        4: "%server-display-name%"
       admin_no_display:
-        1: "&l%barter shop%"
-        2: "&a%item%: %amount%"
-        3: "%barter item%: &a%price%"
-        4: "&d%server-name%"
+        1: "%in-stock-color%<bold>%barter shop%"
+        2: "%in-stock-color%%item%: %amount%"
+        3: "%barter-item%: &a%price%"
+        4: "%server-display-name%"
     GAMBLE:
       admin:
-        1: "&l%shop%"
+        1: "%stock-color%%shop%"
         2: "&dGambling"
-        3: "&a%price%"
-        4: "&d%server-name%"
+        3: "%stock-color%%price%"
+        4: "%server-display-name%"
       admin_no_display:
-        1: "&l%gamble-shop%"
+        1: "%stock-color%%gamble-shop%"
         2: "Random Item"
-        3: "&a%price%"
-        4: "&d%server-name%"
-    COMBO:
-      normal:
-        1: "%stock color%&l%shop%"
-        2: "Buys or Sells; &l%amount%"
-        3: "&a%price-combo%"
-        4: "%owner%"
-      normal_no_display:
-        1: "%stock-color%&l%buy / sell%"
-        2: "%item%: %amount%"
-        3: "&a%price-combo%"
-        4: "%owner%"
-      admin:
-        1: "&l%shop%"
-        2: "Buys or Sells; &l%amount%"
-        3: "&a%price combo%"
-        4: "&d%server-display-name%"
-      admin_no_display:
-        1: "&l%buy / sell%"
-        2: "%item%: %amount%"
-        3: "&a%price combo%"
-        4: "&d%server-display-name%"
-    timeout:
-      1: "&cSHOP CLOSED"
-      2: "&7CREATION TIMEOUT"
-      3: ""
-      4: ""
-    deleted:
-      1: "&cSHOP CLOSED"
-      2: ""
-      3: ""
-      4: ""
+        3: "%stock-color%%price%"
+        4: "%server-display-name%"
 # Hologram Exclusive Placeholders
 # [lshift] : shift location of a single hologram line one block left #
 # [rshift] : shift location of a single hologram line one block right #

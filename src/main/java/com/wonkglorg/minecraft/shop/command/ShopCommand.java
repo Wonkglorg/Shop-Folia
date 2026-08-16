@@ -3,6 +3,8 @@ package com.wonkglorg.minecraft.shop.command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.wonkglorg.minecraft.command.AbstractCommand;
+import com.wonkglorg.minecraft.config.LangManager;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
@@ -11,8 +13,6 @@ import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
-import com.wonkglorg.minecraft.command.AbstractCommand;
-import com.wonkglorg.minecraft.config.LangManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
@@ -136,9 +136,10 @@ public class ShopCommand extends AbstractCommand{
 			return 1;
 		}
 		heldItem.setAmount(1);
+		//update all shop signs and log the change to the database
 		plugin.getItemConfig().setCurrencyItem(heldItem);
 		lang.request("command.set-currency.success")
-			.replace("%held-item%", ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))
+		    .replace("%held-item%", ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))
 		    .sendToAudience(sender);
 		return 0;
 	}

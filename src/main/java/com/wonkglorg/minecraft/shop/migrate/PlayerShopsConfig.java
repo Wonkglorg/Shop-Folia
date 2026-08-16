@@ -152,7 +152,6 @@ public class PlayerShopsConfig extends Config{
 						signLoc,
 						owner,
 						price,
-						priceSell,
 						amount,
 						isAdmin,
 						shopType,

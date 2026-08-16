@@ -40,12 +40,12 @@ import java.util.logging.Level;
 public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	private static final String SHOP_INSERT_SQL = """
 			INSERT INTO shops
-			(shop_uuid, owner_uuid, item, price,price_combo_sell, amount,last_known_stock_count, last_known_stock_status, shop_type,sign_facing, display_type,fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
-			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+			(shop_uuid, owner_uuid, item, price, amount,last_known_stock_count, last_known_stock_status, shop_type,sign_facing, display_type,fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
+			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 			ON CONFLICT(shop_uuid, owner_uuid) DO NOTHING;
 			""";
 	private static final String SHOP_SELECT_SQL = """
-			SELECT shop_uuid, owner_uuid, item, price,price_combo_sell, amount, last_known_stock_count,last_known_stock_status, destroyed_time, shop_type,sign_facing, display_type, fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z
+			SELECT shop_uuid, owner_uuid, item, price, amount, last_known_stock_count,last_known_stock_status, destroyed_time, shop_type,sign_facing, display_type, fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z
 			  FROM shops
 			 WHERE destroyed_time = 0 OR 1 = ?;
 			""";
@@ -55,7 +55,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			""";
 	
 	private static final String SHOP_UPDATE_SQL = """
-			UPDATE shops SET owner_uuid = ?, item = ?, price = ?, price_combo_sell = ?, amount = ?, last_known_stock_count = ?, shop_type = ?, sign_facing = ?, display_type = ?, fake_sign = ?, barter_item = ?, item_type = ?, item_barter_type = ?, shop_world = ?, shop_x = ?, shop_y = ?, shop_z = ? WHERE shop_uuid = ?
+			UPDATE shops SET owner_uuid = ?, item = ?, price = ?, amount = ?, last_known_stock_count = ?, shop_type = ?, sign_facing = ?, display_type = ?, fake_sign = ?, barter_item = ?, item_type = ?, item_barter_type = ?, shop_world = ?, shop_x = ?, shop_y = ?, shop_z = ? WHERE shop_uuid = ?
 			""";
 	
 	private final Main plugin;
@@ -181,7 +181,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				set.getDouble("shop_y"),
 				set.getDouble("shop_z"));
 		double price = set.getDouble("price");
-		double priceSell = set.getDouble("price_combo_sell");
 		int amount = set.getInt("amount");
 		long creationTime = set.getLong("creation_time");
 		boolean isAdmin = AdminOfflinePlayer.adminUUID.equals(ownerId);
@@ -196,7 +195,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				signLocation,
 				ownerId,
 				price,
-				priceSell,
 				amount,
 				isAdmin,
 				shopType,
