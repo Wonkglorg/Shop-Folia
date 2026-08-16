@@ -31,12 +31,13 @@ public class ItemFrameDisplay extends AbstractDisplay{
 		}
 		
 		spawnItemFramePacket(player,
-				shop.getItemStack(),
+				shop.getDisplayItem(),
 				validLocation,
 				shop.getFacing(),
 				Main.getPlugin().getSettingsConfig().isSetGlowingItemFrame());
 		
-		if(shop.getSecondaryItemStack() != null){
+		ItemStack secondaryStack = shop.getSecondaryDisplayItem();
+		if(secondaryStack != null){
 			Location secondaryValidLocation = shop.getAboveContainer();
 			if(secondaryValidLocation.getBlock().getType() != Material.AIR){
 				Block relative = shop.getAboveSecondaryContainer().getBlock().getRelative(shop.getFacing());
@@ -47,7 +48,7 @@ public class ItemFrameDisplay extends AbstractDisplay{
 			}
 			
 			spawnItemFramePacket(player,
-					shop.getItemStack(),
+					secondaryStack,
 					secondaryValidLocation,
 					shop.getFacing(),
 					Main.getPlugin().getSettingsConfig().isSetGlowingItemFrame());

@@ -1,24 +1,25 @@
 package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.config.SettingsConfig;
+import lombok.Getter;
 
 public enum ShopType{
 	
-	SELL(0),
+	SELL(0, CreationWord.SELL),
 	
-	BUY(1),
+	BUY(1, CreationWord.BUY),
 	
-	BARTER(2),
+	BARTER(2, CreationWord.BARTER),
 	
-	GAMBLE(3),
+	GAMBLE(3, CreationWord.GAMBLE);
 	
-	COMBO(4);
+	private final int weight;
+	@Getter
+	private final CreationWord creationWord;
 	
-	private final int slot;
-	
-	ShopType(int slot) {
-		this.slot = slot;
+	ShopType(int slot, CreationWord creationWord) {
+		this.weight = slot;
+		this.creationWord = creationWord;
 	}
 	
 	@Override
@@ -27,20 +28,12 @@ public enum ShopType{
 			case SELL -> "sell";
 			case BUY -> "buy";
 			case BARTER -> "barter";
-			case COMBO -> "combo";
 			default -> "gamble";
 		};
 	}
 	
 	public String toCreationWord() {
-		SettingsConfig settingsConfig = Main.getPlugin().getSettingsConfig();
-		return switch(this) {
-			case SELL -> settingsConfig.getCreationWord(CreationWord.SELL);
-			case BUY -> settingsConfig.getCreationWord(CreationWord.BUY);
-			case BARTER -> settingsConfig.getCreationWord(CreationWord.BARTER);
-			case COMBO -> settingsConfig.getCreationWord(CreationWord.COMBO);
-			default -> settingsConfig.getCreationWord(CreationWord.GAMBLE);
-		};
+		return Main.getPlugin().getSettingsConfig().getCreationWord(creationWord);
 	}
 	
 	public static ShopType from(String input) {
@@ -62,8 +55,6 @@ public enum ShopType{
 			return ShopType.BUY;
 		} else if(typeString.contains("barter")){
 			return ShopType.BARTER;
-		} else if(typeString.contains("combo")){
-			return ShopType.COMBO;
 		} else {
 			return ShopType.GAMBLE;
 		}

@@ -10,22 +10,21 @@ import com.wonkglorg.minecraft.shop.event.PlayerPostInitializeShopEvent;
 import com.wonkglorg.minecraft.shop.event.PlayerPreInitializeShopEvent;
 import com.wonkglorg.minecraft.shop.event.PlayerResizeShopEvent;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
+import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShop;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.CreationWord;
-import com.wonkglorg.minecraft.shop.shop.GambleShop;
+import com.wonkglorg.minecraft.shop.shop.ShopActionType;
+import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.EconomyUtils;
-import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
-import com.wonkglorg.minecraft.shop.shop.ShopActionType;
-import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.util.Components;
@@ -37,7 +36,6 @@ import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
-import org.bukkit.block.DoubleChest;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Chest.Type;
@@ -294,15 +292,15 @@ public class ShopListener implements Listener{
 		boolean actionPerformed;
 		if(player.isSneaking()){
 			if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
-				actionPerformed = shop.executeClickAction(event, ShopClickType.SHIFT_RIGHT_CLICK_SIGN);
+				actionPerformed = shop.executeClickAction(player, ShopClickType.SHIFT_RIGHT_CLICK_SIGN);
 			} else {
-				actionPerformed = shop.executeClickAction(event, ShopClickType.SHIFT_LEFT_CLICK_SIGN);
+				actionPerformed = shop.executeClickAction(player, ShopClickType.SHIFT_LEFT_CLICK_SIGN);
 			}
 		} else {
 			if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
-				actionPerformed = shop.executeClickAction(event, ShopClickType.RIGHT_CLICK_SIGN);
+				actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_SIGN);
 			} else {
-				actionPerformed = shop.executeClickAction(event, ShopClickType.LEFT_CLICK_SIGN);
+				actionPerformed = shop.executeClickAction(player, ShopClickType.LEFT_CLICK_SIGN);
 			}
 		}
 		
@@ -351,9 +349,9 @@ public class ShopListener implements Listener{
 	private void leftClickShopContainer(PlayerInteractEvent event, AbstractShop shop, Player player) {
 		boolean actionPerformed;
 		if(player.isSneaking()){
-			actionPerformed = shop.executeClickAction(event, ShopClickType.SHIFT_LEFT_CLICK_CHEST);
+			actionPerformed = shop.executeClickAction(player, ShopClickType.SHIFT_LEFT_CLICK_CHEST);
 		} else {
-			actionPerformed = shop.executeClickAction(event, ShopClickType.LEFT_CLICK_CHEST);
+			actionPerformed = shop.executeClickAction(player, ShopClickType.LEFT_CLICK_CHEST);
 		}
 		if(actionPerformed){
 			event.setCancelled(true);
@@ -375,7 +373,7 @@ public class ShopListener implements Listener{
 				return;
 			}
 			
-			boolean actionPerformed = shop.executeClickAction(event, ShopClickType.SHIFT_RIGHT_CLICK_CHEST);
+			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.SHIFT_RIGHT_CLICK_CHEST);
 			
 			if(actionPerformed){
 				event.setCancelled(true);
@@ -394,7 +392,7 @@ public class ShopListener implements Listener{
 					}
 					event.setCancelled(true);
 					
-					shop.executeClickAction(event, ShopClickType.RIGHT_CLICK_CHEST);
+					shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
 					//we are cancelling this event regardless so no need to check if the action was performed
 					
 				} else {
@@ -406,7 +404,7 @@ public class ShopListener implements Listener{
 				// Cancel event to prevent other players from opening the chest
 				event.setCancelled(true);
 				
-				boolean actionPerformed = shop.executeClickAction(event, ShopClickType.RIGHT_CLICK_CHEST);
+				boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
 				if(!actionPerformed){
 					LangRequest request = lang.request("permission.error.openOther");
 					AbstractShop.shopPlaceholders(request, shop);
@@ -625,26 +623,6 @@ public class ShopListener implements Listener{
 			}
 			
 			shop.updateStock();
-			
-			//make sure to set gamble item again if player set it to new custom items
-			if(shop.getType() == ShopType.GAMBLE){
-				((GambleShop) shop).setGambleItem();
-			}
-		}
-		//for some reason, DoubleChest does not extend Container like Chest does
-		else if(event.getInventory().getHolder() instanceof DoubleChest doubleChest){
-			AbstractShop shop = plugin.getShopmanager().getShopByContainer(doubleChest.getLocation().getBlock());
-			
-			if(shop == null){
-				return;
-			}
-			
-			shop.updateStock();
-			
-			//make sure to set gamble item again if player set it to new custom items
-			if(shop.getType() == ShopType.GAMBLE){
-				((GambleShop) shop).setGambleItem();
-			}
 		}
 	}
 	
@@ -693,27 +671,23 @@ public class ShopListener implements Listener{
 		
 		//if no one canceled the destroy event remove any cost if one exists.
 		double cost = settingsConfig.getDestructionCost();
+		PlayerTransactionParty party = new PlayerTransactionParty(player);
 		if(cost > 0){
 			// Check for funds
-			if(!EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
+			if(party.getAvailableFunds(Main.getPlugin().getItemConfig().getCurrencyItem()) < cost){
 				ShopMessage.request("interaction_issue.destroyInsufficientFunds", player, shop).sendToAudience(player);
 				event.setCancelled(true);
 				return;
 			}
 			// Remove funds
-			boolean removed = EconomyUtils.removeFunds(player, player.getInventory(), cost);
-			if(!removed){
-				ShopMessage.request("interaction_issue.destroyInsufficientFunds", player, shop).sendToAudience(player);
-				event.setCancelled(true);
-				return;
-			}
+			party.remove(Main.getPlugin().getItemConfig().getCurrencyItem(), cost);
 		}
 		
 		shopManager.getDatabase().logAction(player, shop, ShopActionType.DESTROY);
 		
 		if((!shop.isAdmin()) && settingsConfig.isReturnCreationCost() && settingsConfig.getCreationCost() > 0){
 			if(settingsConfig.getCurrencyType() != CurrencyType.ITEM){
-				EconomyUtils.addFunds(shop.getOwner(), player.getInventory(), settingsConfig.getCreationCost());
+				party.add(Main.getPlugin().getItemConfig().getCurrencyItem(), settingsConfig.getCreationCost());
 			} else {
 				ItemStack currencyDrop = plugin.getItemConfig().getCurrencyItem().clone();
 				currencyDrop.setAmount((int) settingsConfig.getCreationCost());

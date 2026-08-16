@@ -6,12 +6,10 @@ import com.wonkglorg.minecraft.shop.command.ShopCommand;
 import com.wonkglorg.minecraft.shop.config.ItemConfig;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.gui.ShopGUIListener;
-import com.wonkglorg.minecraft.shop.handler.TransactionHandler;
 import com.wonkglorg.minecraft.shop.listener.DisplayListener;
 import com.wonkglorg.minecraft.shop.listener.ShopListener;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
-import com.wonkglorg.minecraft.shop.manager.TransactionManager;
 import com.wonkglorg.minecraft.shop.service.ShopService;
 import com.wonkglorg.minecraft.shop.service.ShopServiceProvider;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -39,15 +37,12 @@ public class Main extends JavaPlugin{
 	
 	@Getter
 	private DisplayListener displayListener;
-	private TransactionHandler transactionHandler;
 	
 	@Getter
 	private ShopManager shopmanager;
 	@Getter
 	private String commandAlias;
 	private Economy econ = null;
-	@Getter
-	private ItemListType itemListType;
 	@Getter
 	private NamespacedKey signLocationNameSpacedKey;
 	@Getter
@@ -86,7 +81,6 @@ public class Main extends JavaPlugin{
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
 		
-		transactionHandler = new TransactionHandler(this);
 		if(itemConfig.getGambleDisplayItem() == null){
 			itemConfig.setGambleDisplayItem(new ItemStack(Material.DIAMOND));
 		}
@@ -168,10 +162,6 @@ public class Main extends JavaPlugin{
 		}
 		econ = rsp.getProvider();
 		return econ != null;
-	}
-	
-	public TransactionManager getTransactionManager() {
-		return transactionHandler;
 	}
 	
 	public String getPriceString(double price, boolean pricePer) {

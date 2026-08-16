@@ -8,7 +8,7 @@ import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getShopB
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
-import com.wonkglorg.minecraft.shop.util.EconomyUtils;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.block.Block;
@@ -112,7 +112,8 @@ public abstract class ShopCreationProcess{
 				priceCombo,
 				adminShop,
 				isFakeSign,
-				itemStack, secondaryStack,
+				itemStack,
+				secondaryStack,
 				finishedInitialisation,
 				isCancelled);
 	}
@@ -142,7 +143,7 @@ public abstract class ShopCreationProcess{
 		
 		//if players must pay to create shops, check that they have enough money first
 		double cost = Main.getPlugin().getSettingsConfig().getCreationCost();
-		if(cost > 0 && !EconomyUtils.hasSufficientFunds(player, player.getInventory(), cost)){
+		if(cost > 0 && new PlayerTransactionParty(player).getAvailableFunds(Main.getPlugin().getItemConfig().getCurrencyItem()) < cost){
 			plugin.logger().debug("Player lacks funds to cover create shop costs");
 			lang.request("interaction_issue.createInsufficientFunds").sendToAudience(player);
 			return false;
@@ -205,7 +206,7 @@ public abstract class ShopCreationProcess{
 			shop.setAmount(1);
 			shop.getDisplay().setType(DisplayType.LARGE_ITEM, false);
 			return null;
-		}else{
+		} else {
 			shop.setItemStack(itemStack);
 			if(secondaryStack != null){
 				shop.setSecondaryItemStack(secondaryStack);

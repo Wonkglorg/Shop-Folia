@@ -166,8 +166,6 @@ public class SignCreationProcess extends ShopCreationProcess{
 			type = ShopType.BARTER;
 		} else if(input.contains(config.getCreationWord(CreationWord.GAMBLE))){
 			type = ShopType.GAMBLE;
-		} else if(input.contains(config.getCreationWord(CreationWord.COMBO))){
-			type = ShopType.COMBO;
 		} else if(input.contains(config.getCreationWord(CreationWord.SELL))){
 			type = ShopType.SELL;
 		}

@@ -97,8 +97,6 @@ public class SettingsConfig extends Config{
 	@Getter
 	private boolean allowPartialSales;
 	@Getter
-	private ItemListType itemListType;
-	@Getter
 	private @NotNull List<String> worldBlackList = new ArrayList<>();
 	@Getter
 	private Map<ShopClickType, ShopAction> clickTypeActionMap = new EnumMap<>(ShopClickType.class);
@@ -245,16 +243,9 @@ public class SettingsConfig extends Config{
 		returnCreationCost = getBoolean("returnCreationCost");
 		allowPartialSales = getBoolean("allowPartialSales");
 		
-		try{
-			itemListType = ItemListType.valueOf(getString("itemList"));
-		} catch(Exception e){
-			itemListType = ItemListType.NONE;
-		}
-		
 		worldBlackList.addAll(getStringList("worldBlacklist"));
 		
 		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.transactWithShop")), ShopAction.TRANSACT);
-		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.transactWithShopFullStack")), ShopAction.TRANSACT_FULLSTACK);
 		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.viewShopDetails")), ShopAction.VIEW_DETAILS);
 		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.cycleShopDisplay")), ShopAction.CYCLE_DISPLAY);
 		

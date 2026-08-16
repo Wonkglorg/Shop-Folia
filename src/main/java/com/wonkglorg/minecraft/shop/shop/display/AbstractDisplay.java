@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import java.util.UUID;
 
 public abstract class AbstractDisplay{
@@ -189,7 +190,7 @@ public abstract class AbstractDisplay{
 		
 		addEntityId(player, armorStand.getId());
 		
-		ClientboundAddEntityPacket spawnEntityLivingPacket = new ClientboundAddEntityPacket(armorStand.getId(),
+		var spawnEntityLivingPacket = new ClientboundAddEntityPacket(armorStand.getId(),
 				armorStand.getUUID(),
 				location.getX(),
 				location.getY(),
@@ -200,15 +201,14 @@ public abstract class AbstractDisplay{
 				0,
 				armorStand.getDeltaMovement(),
 				armorStand.getYHeadRot());
-		ClientboundSetEntityDataPacket spawnEntityMetadataPacket = new ClientboundSetEntityDataPacket(armorStand.getId(),
-				armorStand.getEntityData().packDirty());
-		ClientboundSetEquipmentPacket spawnEntityEquipmentPacket = null;
+		var spawnEntityMetadataPacket = new ClientboundSetEntityDataPacket(armorStand.getId(),
+				requireNonNull(armorStand.getEntityData().packDirty()));
 		
-		List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList = new ArrayList();
+		List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList = new ArrayList<>();
 		var itemStack = CraftItemStack.asNMSCopy(armorStandData.getEquipment());
 		equipmentList.add(new Pair<>(getMojangEquipmentSlot(armorStandData.getEquipmentSlot()), itemStack));
 		
-		spawnEntityEquipmentPacket = new ClientboundSetEquipmentPacket(armorStand.getId(), equipmentList);
+		var spawnEntityEquipmentPacket = new ClientboundSetEquipmentPacket(armorStand.getId(), equipmentList);
 		
 		sendPacket(player, spawnEntityLivingPacket);
 		sendPacket(player, spawnEntityMetadataPacket);
@@ -230,7 +230,7 @@ public abstract class AbstractDisplay{
 				if(this.isChunkLoaded()){
 					//make sure there is room above the shop for the display
 					Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
-					if(!(aboveShop.getType() == Material.AIR)){
+					if(aboveShop.getType() != Material.AIR){
 						return;
 					}
 				}
@@ -241,20 +241,14 @@ public abstract class AbstractDisplay{
 	}
 	
 	private EquipmentSlot getMojangEquipmentSlot(org.bukkit.inventory.EquipmentSlot equipmentSlot) {
-		switch(equipmentSlot) {
-			case HAND:
-				return EquipmentSlot.MAINHAND;
-			case OFF_HAND:
-				return EquipmentSlot.OFFHAND;
-			case FEET:
-				return EquipmentSlot.FEET;
-			case LEGS:
-				return EquipmentSlot.LEGS;
-			case CHEST:
-				return EquipmentSlot.CHEST;
-			default:
-				return EquipmentSlot.HEAD;
-		}
+		return switch(equipmentSlot) {
+			case HAND -> EquipmentSlot.MAINHAND;
+			case OFF_HAND -> EquipmentSlot.OFFHAND;
+			case FEET -> EquipmentSlot.FEET;
+			case LEGS -> EquipmentSlot.LEGS;
+			case CHEST -> EquipmentSlot.CHEST;
+			default -> EquipmentSlot.HEAD;
+		};
 	}
 	
 	/**
@@ -350,45 +344,6 @@ public abstract class AbstractDisplay{
 		return shop.getContainerLocation().clone().add(dropX, dropY, dropZ);
 	}
 	
-	public Vector getShiftOffset(boolean isLeftShift, boolean isRightShift) {
-		AbstractShop shop = this.getShop();
-		
-		Vector offset = new Vector(0, 0, 0);
-		double space = 0.48;
-		
-		switch(shop.getFacing()) {
-			case NORTH:
-				if(isRightShift){
-					offset.setX(-space);
-				} else if(isLeftShift){
-					offset.setX(space);
-				}
-				break;
-			case EAST:
-				if(isRightShift){
-					offset.setZ(-space);
-				} else if(isLeftShift){
-					offset.setZ(space);
-				}
-				break;
-			case SOUTH:
-				if(isRightShift){
-					offset.setX(space);
-				} else if(isLeftShift){
-					offset.setX(-space);
-				}
-				break;
-			case WEST:
-				if(isRightShift){
-					offset.setZ(space);
-				} else if(isLeftShift){
-					offset.setZ(-space);
-				}
-				break;
-		}
-		return offset;
-	}
-	
 	protected boolean isSameWorld(Player player) {
 		return player.getWorld().getUID().equals(this.shop.getSignLocation().getWorld().getUID());
 	}
@@ -410,9 +365,9 @@ public abstract class AbstractDisplay{
 		entityItem.setPickUpDelay(32767);
 		entityItem.setTicksFrozen(2147483647);
 		
-		ClientboundAddEntityPacket entitySpawnPacket = createEntity(player, entityItem, location, 0);
-		ClientboundSetEntityMotionPacket entityVelocityPacket = new ClientboundSetEntityMotionPacket(entityItem);
-		ClientboundSetEntityDataPacket entityMetadataPacket = new ClientboundSetEntityDataPacket(entityID, entityItem.getEntityData().packDirty());
+		var entitySpawnPacket = createEntity(player, entityItem, location, 0);
+		var entityVelocityPacket = new ClientboundSetEntityMotionPacket(entityItem);
+		var entityMetadataPacket = new ClientboundSetEntityDataPacket(entityID, requireNonNull(entityItem.getEntityData().packDirty()));
 		
 		sendPacket(player, entitySpawnPacket);
 		sendPacket(player, entityVelocityPacket);

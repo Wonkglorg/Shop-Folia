@@ -1,37 +1,29 @@
 package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.shop.Main;
-import static com.wonkglorg.minecraft.shop.shop.BarterShop.BarterType.EXPERIENCE;
-import static com.wonkglorg.minecraft.shop.shop.BarterShop.BarterType.ITEM;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
-import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.ShopMessage;
+import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.UUID;
 
 public class BarterShop extends AbstractShop{
 	
-	private ItemStack originalItem;
-	private BarterType barterType;
-	
-	public BarterShop(UUID shopId, Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate,
+	public BarterShop(UUID shopId,
+	                  Location signLoc,
+	                  UUID player,
+	                  double pri,
+	                  int amt,
+	                  Boolean admin,
+	                  BlockFace facing,
+	                  long creationDate,
 	                  DisplayType type) {
-		super(shopId, signLoc, player, pri, amt, admin, facing, creationDate,type);
-		this.creationWord = CreationWord.BARTER;
-		this.type = ShopType.BARTER;
-		this.barterType = ITEM;
-		this.signLines = ShopMessage.getSignLines(this);
-	}
-	
-	@Override
-	public void setItemStack(ItemStack is) {
-		super.setItemStack(is);
-		if(originalItem == null){
-			originalItem = is.clone();
-		}
+		super(shopId, signLoc, player, ShopType.BARTER, pri, amt, admin, facing, creationDate, type);
 	}
 	
 	@Override
@@ -39,21 +31,13 @@ public class BarterShop extends AbstractShop{
 		return (item != null && secondaryItem != null);
 	}
 	
-	public enum BarterType{
-		ITEM,
-		EXPERIENCE
+	@Override
+	public Transaction startTransaction(TransactionParty party) {
+		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+			case VAULT -> new VaultTransaction(getParty(), party, amount, price, item);
+			case ITEM -> new ItemTransaction(getParty(), party, amount, price, item, secondaryItem);
+			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, amount, price, item);
+		};
 	}
 	
-	public void cycleBarterType() {
-		//if shops are already using experience as the main currency, don't allow barter shops to barter experience (that would be a sell shop)
-		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
-			return;
-		}
-		
-		if(this.barterType == ITEM){
-			this.barterType = EXPERIENCE;
-		} else if(this.barterType == EXPERIENCE){
-			this.barterType = ITEM;
-		}
-	}
 }

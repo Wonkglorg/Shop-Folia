@@ -4,7 +4,7 @@ import com.wonkglorg.minecraft.shop.Main;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.EconomyUtils;
+import com.wonkglorg.minecraft.shop.util.ExpirienceUtils;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
@@ -18,7 +18,7 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 		this.player = player;
 		//if the currency is experience and a value was saved set it to the current players exp
 		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE && getExperience() != -1){
-			EconomyUtils.setTotalExperience(player, getExperience());
+			ExpirienceUtils.setTotalExperience(player, getExperience());
 		}
 	}
 	
@@ -59,14 +59,14 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	}
 	
 	public void removeExperienceAmount(int amount) {
-		EconomyUtils.setTotalExperience(player, EconomyUtils.getTotalExperience(player) - amount);
-		experience = EconomyUtils.getTotalExperience(player);
+		ExpirienceUtils.setTotalExperience(player, ExpirienceUtils.getTotalExperience(player) - amount);
+		experience = ExpirienceUtils.getTotalExperience(player);
 		saveToFile(this);
 	}
 	
 	public void addExperienceAmount(int amount) {
-		EconomyUtils.setTotalExperience(player, EconomyUtils.getTotalExperience(player) + amount);
-		experience = EconomyUtils.getTotalExperience(player);
+		ExpirienceUtils.setTotalExperience(player, ExpirienceUtils.getTotalExperience(player) + amount);
+		experience = ExpirienceUtils.getTotalExperience(player);
 		saveToFile(this);
 	}
 	
@@ -89,4 +89,10 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	public void addTeleportCooldown() {
 		addTeleportCooldown(offlinePlayer.getUniqueId());
 	}
+	
+	@Override
+	public int getExperience() {
+		return ExpirienceUtils.getTotalExperience(player);
+	}
+	
 }

@@ -42,8 +42,6 @@ CREATE TABLE IF NOT EXISTS transactions
     purchaser_uuid TEXT    NOT NULL,
     -- if the value is set to one show it as an offline purchase the next time they log in
     cache_offline  INTEGER NOT NULL DEFAULT 0,
-    -- if fractional sales are enabled how much fractions were bough 1 = full amount, 0 = nothing
-    fraction       REAL,
     -- if the transaction was gambling shows the reward the user got from gambling
     gamble_reward  TEXT,
 

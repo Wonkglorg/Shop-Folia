@@ -7,12 +7,14 @@ import static com.wonkglorg.minecraft.shop.manager.PlayerManager.loadFromFile;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissionAttachmentInfo;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -40,8 +42,11 @@ public abstract class PlayerProfile{
 	@Getter
 	@Setter
 	private boolean notifyStock;
+	
+	/**
+	 * The Experience available to this player, if this profile belongs to an online player, this value is backed directly by the players exp and any modification to this profile will be reflected in their current experience
+	 */
 	@Getter
-	@Setter
 	protected int experience;
 	
 	@Getter
@@ -280,5 +285,10 @@ public abstract class PlayerProfile{
 	
 	public static void addTeleportCooldown(UUID uuid) {
 		PlayerManager.addTeleportCooldown(uuid);
+	}
+	
+	@Internal
+	public void setExperience(int experience) {
+		this.experience = experience;
 	}
 }

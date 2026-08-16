@@ -12,13 +12,13 @@ public class ItemDisplay extends AbstractDisplay{
 	
 	@Override
 	public void onSpawn(@NonNull Player player) {
-		ItemStack stack = shop.getItemStack().clone();
+		ItemStack stack = shop.getDisplayItem();
 		stack.setAmount(1);
 		spawnItemPacket(player, stack, this.getPrimaryLocation());
-		if(shop.getSecondaryItemStack() != null){
-			ItemStack secondStack = shop.getSecondaryItemStack().clone();
-			secondStack.setAmount(1);
-			spawnItemPacket(player, secondStack, this.getBarterLocation());
+		ItemStack secondaryStack = shop.getSecondaryDisplayItem();
+		if(secondaryStack != null){
+			secondaryStack.setAmount(1);
+			spawnItemPacket(player, secondaryStack, this.getBarterLocation());
 		}
 	}
 }

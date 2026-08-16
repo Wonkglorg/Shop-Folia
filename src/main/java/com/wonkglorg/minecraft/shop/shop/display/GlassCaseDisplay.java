@@ -22,14 +22,14 @@ public class GlassCaseDisplay extends AbstractDisplay{
 		spawnArmorStandPacket(player, caseStandData);
 		
 		//Drop initial display item
-		var stack = shop.getItemStack().clone();
+		var stack = shop.getDisplayItem();
 		stack.setAmount(1);
 		spawnItemPacket(player, stack, this.getPrimaryLocation());
 		
-		if(shop.getSecondaryItemStack() != null){
-			var barterStack = shop.getSecondaryItemStack().clone();
-			barterStack.setAmount(1);
-			spawnItemPacket(player, barterStack, this.getBarterLocation());
+		ItemStack secondaryDisplayItem = shop.getSecondaryDisplayItem();
+		if(secondaryDisplayItem != null){
+			secondaryDisplayItem.setAmount(1);
+			spawnItemPacket(player, secondaryDisplayItem, this.getBarterLocation());
 		}
 	}
 }

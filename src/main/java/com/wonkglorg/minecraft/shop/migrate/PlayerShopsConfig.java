@@ -1,11 +1,10 @@
 package com.wonkglorg.minecraft.shop.migrate;
 
 import com.wonkglorg.minecraft.config.types.Config;
-import com.wonkglorg.minecraft.shop.Constants;
+import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
-import com.wonkglorg.minecraft.shop.shop.ComboShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import static com.wonkglorg.minecraft.shop.shop.ShopType.typeFromString;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
@@ -112,7 +111,7 @@ public class PlayerShopsConfig extends Config{
 				}
 				boolean isAdmin;
 				if(shopOwner.equals("admin")){
-					owner = Constants.getAdminUUID();
+					owner = AdminOfflinePlayer.adminUUID;
 					isAdmin = true;
 				} else {
 					owner = UUID.fromString(shopOwner);
@@ -205,7 +204,7 @@ public class PlayerShopsConfig extends Config{
 		if(plugin.isImmediateShutdown()){
 			return 0;
 		}
-		boolean isAdminShops = uuid.equals(Constants.getAdminUUID());
+		boolean isAdminShops = uuid.equals(AdminOfflinePlayer.getAdminUUID());
 		String playerName = isAdminShops ? "admin" : plugin.getServer().getOfflinePlayer(uuid).getName();
 		List<AbstractShop> shops = PlayerProfile.getShops(uuid);
 		
@@ -222,7 +221,12 @@ public class PlayerShopsConfig extends Config{
 		}
 		
 		// There are shops that need to be saved, so go ahead and save the file!
-		logger.debug("attempting to save shops for player " + playerName + " (" + uuid + ") isAdmin: " + (uuid.equals(Constants.getAdminUUID())));
+		logger.debug("attempting to save shops for player " +
+		             playerName +
+		             " (" +
+		             uuid +
+		             ") isAdmin: " +
+		             (uuid.equals(AdminOfflinePlayer.getAdminUUID())));
 		
 		Path tempFile = SHOPS_DATA_FOLDER.resolve(isAdminShops ? playerName : uuid + ".tmp");
 		Path file = SHOPS_DATA_FOLDER.resolve(isAdminShops ? playerName : uuid + ".yml");
@@ -256,9 +260,6 @@ public class PlayerShopsConfig extends Config{
 			section.set("location", locationToString(shop.getSignLocation()));
 			if(shop.getFacing() != null){
 				section.set("facing", shop.getFacing().toString());
-			}
-			if(shop.getType() == ShopType.COMBO){
-				section.set("priceSell", ((ComboShop) shop).getPriceSell());
 			}
 			section.set("amount", shop.getAmount());
 			/*

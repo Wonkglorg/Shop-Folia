@@ -4,17 +4,16 @@ import com.tcoded.folialib.impl.PlatformScheduler;
 import com.wonkglorg.database.DatabaseType;
 import com.wonkglorg.database.databases.SqliteDatabase;
 import com.wonkglorg.database.datasources.FileDataSource;
-import com.wonkglorg.minecraft.shop.Constants;
+import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
-import com.wonkglorg.minecraft.shop.shop.ComboShop;
+import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.ShopState;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.shop.util.OfflineTransactions;
-import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.util.PluginLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -67,7 +66,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		this.plugin = plugin;
 		this.scheduler = plugin.getFoliaLib().getScheduler();
 		initDB();
-		addPlayer(Constants.getAdminUUID(), "admin");
+		addPlayer(AdminOfflinePlayer.getAdminUUID(), "admin");
 	}
 	
 	public void initDB() throws SQLException, IOException {
@@ -185,7 +184,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		double priceSell = set.getDouble("price_combo_sell");
 		int amount = set.getInt("amount");
 		long creationTime = set.getLong("creation_time");
-		boolean isAdmin = Constants.adminUUID.equals(ownerId);
+		boolean isAdmin = AdminOfflinePlayer.adminUUID.equals(ownerId);
 		ShopType shopType = ShopType.from(set.getString("shop_type"));
 		if(shopType == null){
 			throw new IllegalArgumentException("Shoptype is invalid provided: " + set.getString("shop_type"));
@@ -236,25 +235,24 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setString(2, shop.getOwnerUUID().toString());
 		ps.setString(3, ItemStackJsonCodec.serialize(mainStack));
 		ps.setDouble(4, shop.getPrice());
-		ps.setDouble(5, shop.getType() == ShopType.COMBO ? ((ComboShop) shop).getPriceSell() : 0);
-		ps.setInt(6, shop.getAmount());
-		ps.setInt(7, shop.getStock());
-		ps.setString(8, shop.getShopState().toString());
-		ps.setString(9, shop.getType().toString().toUpperCase());
-		ps.setString(10, shop.getFacing().toString().toUpperCase());
-		ps.setString(11,
+		ps.setInt(5, shop.getAmount());
+		ps.setInt(6, shop.getStock());
+		ps.setString(7, shop.getShopState().toString());
+		ps.setString(8, shop.getType().toString().toUpperCase());
+		ps.setString(9, shop.getFacing().toString().toUpperCase());
+		ps.setString(10,
 				(shop.getDisplay() != null && shop.getDisplay().getType() != null)
 				? shop.getDisplay().getType().toString()
 				: DisplayType.NONE.toString());
-		ps.setInt(12, shop.isFakeSign() ? 1 : 0);
-		ps.setString(13, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
-		ps.setLong(14, System.currentTimeMillis());
-		ps.setString(15, mainStack.getType().toString());
-		ps.setString(16, barterStack != null ? barterStack.getType().toString() : null);
-		ps.setString(17, signLocation.getWorld().getName());
-		ps.setInt(18, signLocation.getBlockX());
-		ps.setInt(19, signLocation.getBlockY());
-		ps.setInt(20, signLocation.getBlockZ());
+		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
+		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+		ps.setLong(13, System.currentTimeMillis());
+		ps.setString(14, mainStack.getType().toString());
+		ps.setString(15, barterStack != null ? barterStack.getType().toString() : null);
+		ps.setString(16, signLocation.getWorld().getName());
+		ps.setInt(17, signLocation.getBlockX());
+		ps.setInt(18, signLocation.getBlockY());
+		ps.setInt(19, signLocation.getBlockZ());
 	}
 	
 	public void addPlayer(UUID uuid, String name) {
@@ -310,17 +308,16 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 	}
 	
-	public void logTransaction(UUID shopId, long timestamp, UUID purchaserId, double fraction, @Nullable ItemStack gambleReward) {
+	public void logTransaction(UUID shopId, long timestamp, UUID purchaserId, @Nullable ItemStack gambleReward) {
 		scheduler.runAsync(_ -> {
 			try(var preparedStatement = getConnection().prepareStatement("""
-					INSERT INTO transactions(shop_uuid, timestamp, purchaser_uuid,cache_offline,fraction,gamble_reward) VALUES (?,?,?,?,?,?)
+					INSERT INTO transactions(shop_uuid, timestamp, purchaser_uuid,cache_offline,gamble_reward) VALUES (?,?,?,?,?)
 					""");){//SQLITE auto increments primary keys, message here is false!
 				preparedStatement.setString(1, shopId.toString());
 				preparedStatement.setLong(2, timestamp);
 				preparedStatement.setString(3, purchaserId.toString());
 				preparedStatement.setInt(4, 0); //todo:mjd impplement offline caching for players to get stats when they login next time.
-				preparedStatement.setDouble(5, fraction);
-				preparedStatement.setString(6, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward) : null);
+				preparedStatement.setString(5, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward) : null);
 				preparedStatement.execute();
 			} catch(SQLException e){
 				PluginLogger.error("Error while adding transaction to shop", e);
@@ -352,7 +349,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					"INSERT INTO shop_actions(timestamp, player_uuid, owner_uuid, shop_uuid, player_action) VALUES(?, ?, ?, ?, ?);");){
 				stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
 				stmt.setString(2, player.getUniqueId().toString());
-				if(Constants.getAdminUUID().equals(shopOwner)){
+				if(AdminOfflinePlayer.getAdminUUID().equals(shopOwner)){
 					stmt.setString(3, "admin");
 				} else {
 					stmt.setString(3, shopOwner.toString());
@@ -370,35 +367,35 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	public void logAction(OfflinePlayer player, AbstractShop shop, ShopActionType actionType) {
 		if(actionType == ShopActionType.INIT){
 			plugin.logger().debug(player.getName() +
-			                       " created a " +
-			                       shop.getType().name().toUpperCase() +
-			                       " shop at (" +
-			                       "x: " +
-			                       shop.getContainerLocation().getBlockX() +
-			                       " y: " +
-			                       shop.getContainerLocation().getBlockY() +
-			                       " z: " +
-			                       shop.getContainerLocation().getBlockZ() +
-			                       ") item: " +
-			                       ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
-			                       (shop.getSecondaryItemStack() != null ? " barterItem: " +
-			                                                               ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
+			                      " created a " +
+			                      shop.getType().name().toUpperCase() +
+			                      " shop at (" +
+			                      "x: " +
+			                      shop.getContainerLocation().getBlockX() +
+			                      " y: " +
+			                      shop.getContainerLocation().getBlockY() +
+			                      " z: " +
+			                      shop.getContainerLocation().getBlockZ() +
+			                      ") item: " +
+			                      ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
+			                      (shop.getSecondaryItemStack() != null ? " barterItem: " +
+			                                                              ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
 		}
 		if(actionType == ShopActionType.DESTROY){
 			plugin.logger().debug(player.getName() +
-			                       " destroyed a " +
-			                       shop.getType().name().toUpperCase() +
-			                       " shop at (" +
-			                       "x: " +
-			                       shop.getContainerLocation().getBlockX() +
-			                       " y: " +
-			                       shop.getContainerLocation().getBlockY() +
-			                       " z: " +
-			                       shop.getContainerLocation().getBlockZ() +
-			                       ") item: " +
-			                       ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
-			                       (shop.getSecondaryItemStack() != null ? " barterItem: " +
-			                                                               ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
+			                      " destroyed a " +
+			                      shop.getType().name().toUpperCase() +
+			                      " shop at (" +
+			                      "x: " +
+			                      shop.getContainerLocation().getBlockX() +
+			                      " y: " +
+			                      shop.getContainerLocation().getBlockY() +
+			                      " z: " +
+			                      shop.getContainerLocation().getBlockZ() +
+			                      ") item: " +
+			                      ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
+			                      (shop.getSecondaryItemStack() != null ? " barterItem: " +
+			                                                              ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
 		}
 		logAction(player, shop.getOwnerUUID(), shop.getId(), actionType);
 	}
@@ -477,23 +474,22 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setString(1, shop.getOwnerUUID().toString());
 		ps.setString(2, ItemStackJsonCodec.serialize(mainStack));
 		ps.setDouble(3, shop.getPrice());
-		ps.setDouble(4, shop.getType() == ShopType.COMBO ? ((ComboShop) shop).getPriceSell() : 0);
-		ps.setInt(5, shop.getAmount());
-		ps.setInt(6, shop.getStock());
-		ps.setString(7, shop.getType().toString().toUpperCase());
-		ps.setString(8, shop.getFacing().toString().toUpperCase());
-		ps.setString(9,
+		ps.setInt(4, shop.getAmount());
+		ps.setInt(5, shop.getStock());
+		ps.setString(6, shop.getType().toString().toUpperCase());
+		ps.setString(7, shop.getFacing().toString().toUpperCase());
+		ps.setString(8,
 				shop.getDisplay() != null && shop.getDisplay().getType() != null
 				? shop.getDisplay().getType().toString()
 				: DisplayType.NONE.toString());
-		ps.setInt(10, shop.isFakeSign() ? 1 : 0);
-		ps.setString(11, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
-		ps.setString(12, mainStack.getType().toString());
-		ps.setString(13, barterStack != null ? barterStack.getType().toString() : null);
-		ps.setString(14, signLocation.getWorld().getName());
-		ps.setInt(15, signLocation.getBlockX());
-		ps.setInt(16, signLocation.getBlockY());
-		ps.setInt(17, signLocation.getBlockZ());
-		ps.setString(18, shop.getId().toString());
+		ps.setInt(9, shop.isFakeSign() ? 1 : 0);
+		ps.setString(10, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+		ps.setString(11, mainStack.getType().toString());
+		ps.setString(12, barterStack != null ? barterStack.getType().toString() : null);
+		ps.setString(13, signLocation.getWorld().getName());
+		ps.setInt(14, signLocation.getBlockX());
+		ps.setInt(15, signLocation.getBlockY());
+		ps.setInt(16, signLocation.getBlockZ());
+		ps.setString(17, shop.getId().toString());
 	}
 }

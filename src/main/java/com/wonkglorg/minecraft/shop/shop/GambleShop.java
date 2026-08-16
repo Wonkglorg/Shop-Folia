@@ -2,64 +2,96 @@ package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
-import com.wonkglorg.minecraft.shop.util.ShopMessage;
+import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
-//todo:mjd make gamble shops not admin only but also player ones with items inside that need to be refilled.
 public class GambleShop extends AbstractShop{
 	
-	private ItemStack gambleItem;
+	private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+	/**
+	 * Items contained inside this shop that can be gambled for
+	 */
+	private final List<ItemStack> gambleItems = new ArrayList<>();
+	/**
+	 * Index of the next item to give out when a player successfully completes a transaction with this shop
+	 */
+	private int index = 0;
 	
-	public GambleShop(UUID shopId, Location signLoc, UUID player, double pri, int amt, Boolean admin, BlockFace facing, long creationDate,
-	                  DisplayType type) {
-		super(shopId,signLoc, player, pri, amt, admin, facing,creationDate,type);
-		
-		this.isAdmin = true;
-		this.creationWord = CreationWord.GAMBLE;
-		this.type = ShopType.GAMBLE;
-		this.signLines = ShopMessage.getSignLines(this);
-		setGambleItem();
-		this.setAmount(this.gambleItem.getAmount());
+	public GambleShop(UUID shopId, Location signLoc, UUID player, double pri, int amt, BlockFace facing, long creationDate, DisplayType type) {
+		super(shopId, signLoc, player, ShopType.GAMBLE, pri, amt, true, facing, creationDate, type);
+	}
+	
+	@Override
+	protected void logTransaction(TransactionParty party) {
+		Main.getPlugin().getShopmanager().getDatabase().logTransaction(id,
+				System.currentTimeMillis(),
+				party.getPlayer().getUniqueId(),
+				getItemStack());
+	}
+	
+	@Override
+	protected void postTransactionSuccess(Transaction transaction) {
+		index = randomIndex();
+	}
+	
+	@Override
+	public ItemStack getItemStack() {
+		if(gambleItems.isEmpty()){
+			return null;
+		}
+		return gambleItems.get(index);
+	}
+	
+	@Override
+	public ItemStack getDisplayItem() {
+		//todo:mjd allow for rotating display items when viewing the gamble shop.
+		return Main.getPlugin().getItemConfig().getGambleDisplayItem();
 	}
 	
 	@Override
 	protected void calculateStock() {
 		stock = Integer.MAX_VALUE;
-	}
-	
-	// Called upon a successful gamble transaction
-	public void shuffleGambleItem(Player player) {
-		isPerformingTransaction = true;
-		this.setItemStack(gambleItem.clone());
-		this.setAmount(gambleItem.getAmount());
-		final DisplayType initialDisplayType = this.getDisplay().getType();
-		this.getDisplay().setType(DisplayType.ITEM, false);
-		setGambleItem();
-		this.getDisplay().spawn(player);
+		shopState = ShopState.OK;
 		
-		Main.getPlugin().getFoliaLib().getScheduler().runLater(() -> {
-			setItemStack(Main.getPlugin().getItemConfig().getGambleDisplayItem());
-			if(initialDisplayType == null){
-				display.setType(Main.getPlugin().getSettingsConfig().getDisplayTypeDefault(), false);
-				getDisplay().spawn(player);
-			} else {
-				display.setType(initialDisplayType, false);
-				getDisplay().spawn(player);
-			}
-			isPerformingTransaction = false;
-		}, 20);
+		Inventory inventory = getInventory();
+		gambleItems.clear();
+		for(var item : inventory){
+			gambleItems.add(item.clone());
+		}
+		index = randomIndex();
 	}
 	
-	public void setGambleItem() {
-		this.gambleItem = Main.getPlugin().getDisplayListener().getRandomItem(this);
+	/**
+	 * Gets a random index from the gamble items list
+	 */
+	private int randomIndex() {
+		return RANDOM.nextInt(0, gambleItems.size());
 	}
 	
-	public ItemStack getGambleItem() {
-		return gambleItem;
+	@Override
+	public Transaction startTransaction(TransactionParty party) {
+		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+			case VAULT -> new VaultTransaction(new ShopTransactionParty(this), party, amount, price, getItemStack());
+			case ITEM -> new ItemTransaction(new ShopTransactionParty(this),
+					party,
+					amount,
+					price,
+					getItemStack(),
+					Main.getPlugin().getItemConfig().getCurrencyItem());
+			case EXPERIENCE -> new ExpirienceTransaction(new ShopTransactionParty(this), party, amount, price, getItemStack());
+		};
 	}
 }

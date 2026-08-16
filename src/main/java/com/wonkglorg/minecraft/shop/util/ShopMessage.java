@@ -6,7 +6,6 @@ import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getTeleportCooldownRemaining;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
-import com.wonkglorg.minecraft.shop.shop.ComboShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.util.Components;
@@ -135,7 +134,7 @@ public class ShopMessage{
 				   return context.getProcess().getType().toString();
 			   }
 			   if(context.getShop() != null){
-				   return Main.getPlugin().getSettingsConfig().getCreationWord(context.getShop().getCreationWord());
+				   return Main.getPlugin().getSettingsConfig().getCreationWord(context.getShop().getType().getCreationWord());
 			   }
 			   return null;
 		   })
@@ -160,35 +159,7 @@ public class ShopMessage{
 		   .lazyReplace("%build limit%",()-> String.valueOf(PlayerProfile.getShopBuildLimit(context.getPlayer())))
 		   .replace("%tp time remaining%",DurationBuilder.create(getTeleportCooldownRemaining(context.getPlayer().getUniqueId())).noDecimals().typesToShow(DateType.SECOND).toTimeString())
 		   .replace("%currency name%",plugin.getSettingsConfig().getCurrencyName())
-		   //.replace("%currency item%",()->embedItem(getName(plugin.getItemCurrency()), plugin.getItemCurrency()))
-		   .lazyReplace("%price sell%",()->{
-			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
-				   return((ComboShop) context.getShop()).getPriceSellString();
-			   }
-			   return null;
-		   })
-		   .lazyReplace("%price sell per item%",()->{
-			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
-				   return ((ComboShop) context.getShop()).getPriceSellPerItemString();
-			   }
-			   return null;
-		   })
-		   .lazyReplace("%price combo%",()->{
-			   if(context.getShop() != null && context.getShop().getType() == ShopType.COMBO){
-				   return ((ComboShop) context.getShop()).getPriceComboString();
-			   }
-			   return null;
-		   })
 		   .replace("%price per item%", context.getShop() != null ? context.getShop().getPricePerItemString() : null)
-		   .lazyReplace("%stock%" ,()->{
-			   if(context.getShop() == null){
-				   return null;
-			   } else if(context.getShop().isAdmin()){
-				   return lang.request("placeholders.admin-stock").getRawResultSingleLine();
-			   } else {
-				   return String.valueOf(context.getShop().getStock());
-			   }
-		   })
 		   .replace("%offline transactions%",()->{
 			   Component numOfTransactions = Component.text(String.valueOf(context.getOfflineTransactions().getNumTransactions()));
 			   return numOfTransactions.hoverEvent(showText(getTransactionsHoverEvent(context)));
