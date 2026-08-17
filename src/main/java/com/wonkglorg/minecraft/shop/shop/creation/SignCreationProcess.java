@@ -5,12 +5,16 @@ import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.shop.CreationWord;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
+import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import com.wonkglorg.minecraft.util.Components;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
+import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -183,6 +187,20 @@ public class SignCreationProcess extends ShopCreationProcess{
 		
 		// No match so our multiplier is just 1
 		return 1;
+	}
+	
+	public void updateSignText() {
+		Main.getPlugin().getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
+			if(sign.getBlockData() instanceof WallSign){
+				List<Component> signLines = ShopMessage.getSignLines(this);
+				SignSide signSide = sign.getSide(Side.FRONT);
+				signSide.line(0, signLines.get(0));
+				signSide.line(1, signLines.get(1));
+				signSide.line(2, signLines.get(2));
+				signSide.line(3, signLines.get(3));
+				sign.update(true);
+			}
+		});
 	}
 	
 	@Override

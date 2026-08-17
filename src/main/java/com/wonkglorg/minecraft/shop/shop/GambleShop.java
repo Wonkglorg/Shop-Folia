@@ -1,15 +1,19 @@
 package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
+import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.TransactionResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -48,6 +52,11 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
+	protected void sendTransactionMessage(TransactionResult result, Player player, PlayerProfile owner) {
+	
+	}
+	
+	@Override
 	public ItemStack getItemStack() {
 		if(gambleItems.isEmpty()){
 			return null;
@@ -64,7 +73,7 @@ public class GambleShop extends AbstractShop{
 	@Override
 	protected void calculateStock() {
 		stock = Integer.MAX_VALUE;
-		shopState = ShopState.OK;
+		setShopState(OK, true);
 		
 		Inventory inventory = getInventory();
 		gambleItems.clear();

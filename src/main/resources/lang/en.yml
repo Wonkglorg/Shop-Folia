@@ -44,227 +44,207 @@
 # %out of stock remaining%: (Offline Notification) Remaining number of rows not displayed
 # %tp time remaining%: The amount of seconds remaining on a players teleport to shop cooldown timer
 placeholders:
-  currency-name: "Diamond(s)"
+  currency-name: "<aqua>Diamond(s)"
   in-stock-color: "<green>"
   out-of-stock-color: "<red>"
   zero-price: "FREE"
   admin-stock: "unlimited"
   server-display-name: "<purple>Server"
+  shop-owner-name-color: "<white>"
+  closed-shop: "<red>CLOSED"
 templates:
   stock-color: "[if:%stock%==0]%out-of-stock-color%[else]%in-stock-color%[/if]"
 
+##Shop transaction related messages
 transaction:
-  SELL:
-    user: '&7You bought &f%item-amount% %item%(s)&b%item-enchants% &7from %owner% for &a%price%&7.'
-    owner: '&7%user% bought &f%item-amount% %item%(s)&b%item-enchants% &7from you for &a%price%&7 at &f%location%&7.'
-  BUY:
-    user: '&7You sold &f%item-amount% %item%(s)&b%item-enchants% &7to %owner% for &a%price%&7.'
-    owner: '&7%user% sold &f%item-amount% %item%(s)&b%item-enchants% &7to you for &a%price%&7 at &f%location%&7.'
-  BARTER:
-    user: '&7You bartered &f%barter-item-amount% &7of your &f%barter item%(s)&b%barter-item-enchants% &7for &f%item-amount% &7of %owner%s &f%item%(s)&b%item-enchants%&7.'
-    owner: '&7%user% bartered &f%barter-item-amount% &7of their &f%barter item%(s)&b%barter-item-enchants% &7for &f%item-amount% &7of your &f%item%(s)&b%item-enchants%&7 at &f%location%&7.'
-  GAMBLE:
-    user: '&7You gambled &a%price% &7and received &f%item%&7(x%item-amount%)&b%item-enchants%.'
+  success:
+    SELL:
+      user: '<gray>You bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from %owner% for <aqua>%price% %currency-name% <gray>.'
+      owner: '<gray>%user% bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from you for <aqua>%price% %currency-name%<gray> at <white>%location%<gray>.'
+    BUY:
+      user: '<gray>You sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to %owner% for <aqua>%price% %currency-name%<gray>.'
+      owner: '<gray>%user% sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to you for <aqua>%price% %currency-name%<gray> at <white>%location%<gray>.'
+    BARTER:
+      user: '<gray>You bartered <white>%barter-item-amount% <gray>of your <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of %owner%s <white>%item%(s)<aqua>%item-enchants%<gray>.'
+      owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
+    GAMBLE:
+      user: '<gray>You gambled <green>%price% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
 
-  OFFLINE_TRANSACTIONS_NOTIFICATION:
-    itemRow: '&d| &f - &b%%item%% &7(x&e%item-amount%&7)'
-    outOfStockShop: '&d| &6Out Of Stock Shop: &b%item% &6at &b%location%'
-    moreOutOfStock: '&d| &b%out-of-stock-remaining% &6more Shops Out Of Stock...'
-    summary:
-      - '&d+---------------------------------------------------+'
-      - '&d| &bShop Sales &7(while offline):'
-      - '&d|'
-      - '&d| &7Transactions: &b%offline-transactions% &7(hover for details)'
-      - '&d| &7Profits: &a%offline-profit%'
-      - '&d| &7Spent: &6%offline-spent%'
-      - '&d|'
-      - '&d| &7Items Sold: '
-      - '%offline-items-sold%'
-      - '&d| &7Items Bought: '
-      - '%offline-items-bought%'
-      - '&d|'
-      - '%shops-out-of-stock%'
-      - '&d+---------------------------------------------------+'
-
-transaction_issue:
-  SELL:
-    shopNoStock: "&cThis shop is out of stock."
-    ownerNoStock: "&c%Shop% Your selling shop at <%location%> is out of stock."
-    shopNoSpace: "&cThis shop does not have enough space in its inventory to accept your payment."
-    ownerNoSpace: "&c%Shop% Your selling shop at <%location%> is full."
-    playerNoStock: "&cYou do not have sufficient funds to buy from this shop."
-    playerNoSpace: "&cYou do not have enough space in your inventory to buy from this shop."
-  BUY:
-    shopNoStock: "&cThis shop is out of funds."
-    ownerNoStock: "&c%Shop% Your buying shop at <%location%> is out of funds."
-    shopNoSpace: "&cThis shop does not have enough space in its inventory for your items."
-    ownerNoSpace: "&c%Shop% Your buying shop at <%location%> is full."
-    playerNoStock: "&cYou do not have enough items to sell to this shop."
-    playerNoSpace: "&cYou do not have enough space in your inventory to accept the payment from this shop."
-  BARTER:
-    shopNoStock: "&cThis shop is out of stock."
-    ownerNoStock: "&c%Shop% Your barter shop at <%location%> is out of stock."
-    shopNoSpace: "&cThis shop does not have enough space in its inventory to barter with you."
-    ownerNoSpace: "&c%Shop% Your barter shop at <%location%> is full."
-    playerNoStock: "&cYou do not have sufficient items to barter with this shop."
-    playerNoSpace: "&cYou do not have enough space in your inventory to barter with this shop."
-  GAMBLE:
-    playerNoStock: "&cYou do not have sufficient funds to gamble with this shop."
-    playerNoSpace: "&cYou do not have enough space in your inventory to gamble with this shop."
+    OFFLINE_TRANSACTIONS_NOTIFICATION:
+      itemRow: '<light_purple>| <white> - <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>)'
+      outOfStockShop: '<light_purple>| <gold>Out Of Stock Shop: <aqua>%item% <gold>at <aqua>%location%'
+      moreOutOfStock: '<light_purple>| <aqua>%out-of-stock-remaining% <gold>more Shops Out Of Stock...'
+      summary:
+        - '<light_purple>+---------------------------------------------------+'
+        - '<light_purple>| <aqua>Shop Sales <gray>(while offline):'
+        - '<light_purple>|'
+        - '<light_purple>| <gray>Transactions: <aqua>%offline-transactions% <gray>(hover for details)'
+        - '<light_purple>| <gray>Profits: <green>%offline-profit%'
+        - '<light_purple>| <gray>Spent: <gold>%offline-spent%'
+        - '<light_purple>|'
+        - '<light_purple>| <gray>Items Sold: '
+        - '%offline-items-sold%'
+        - '<light_purple>| <gray>Items Bought: '
+        - '%offline-items-bought%'
+        - '<light_purple>|'
+        - '%shops-out-of-stock%'
+        - '<light_purple>+---------------------------------------------------+'
+  issue:
+    SELL:
+      useOwnShop: "<gray>You cannot use your own shop."
+      shopPerformingTransaction: "<red>Shop is transacting with another player."
+      cancelledExternal: "<gray>Transaction cancelled."
+      shopNoStock: "<red>This shop is out of stock."
+      ownerNoStock: "<red>[Shop] Your selling shop at %location% is out of stock."
+      shopNoSpace: "<red>This shop does not have enough space in its inventory to accept your payment."
+      ownerNoSpace: "<red>[Shop] Your selling shop at %location% is full."
+      playerNoStock: "<red>You do not have sufficient funds to buy from this shop."
+      playerNoSpace: "<red>You do not have enough space in your inventory to buy from this shop."
+    BUY:
+      useOwnShop: "<gray>You cannot use your own shop."
+      shopPerformingTransaction: "<red>Shop is transacting with another player."
+      cancelledExternal: "<gray>Transaction cancelled."
+      shopNoStock: "<red>This shop is out of funds."
+      ownerNoStock: "<red>[Shop] Your buying shop at %location% is out of funds."
+      shopNoSpace: "<red>This shop does not have enough space in its inventory for your items."
+      ownerNoSpace: "<red>[Shop] Your buying shop at %location% is full."
+      playerNoStock: "<red>You do not have enough items to sell to this shop."
+      playerNoSpace: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+    BARTER:
+      useOwnShop: "<gray>You cannot use your own shop."
+      shopPerformingTransaction: "<red>Shop is transacting with another player."
+      cancelledExternal: "<gray>Transaction cancelled."
+      shopNoStock: "<red>This shop is out of stock."
+      ownerNoStock: "<red>[Shop] Your barter shop at %location% is out of stock."
+      shopNoSpace: "<red>This shop does not have enough space in its inventory to barter with you."
+      ownerNoSpace: "<red>[Shop] Your barter shop at %location% is full."
+      playerNoStock: "<red>You do not have sufficient items to barter with this shop."
+      playerNoSpace: "<red>You do not have enough space in your inventory to barter with this shop."
+    GAMBLE:
+      useOwnShop: "<gray>You cannot use your own shop."
+      shopPerformingTransaction: "<red>Shop is transacting with another player."
+      cancelledExternal: "<gray>Transaction cancelled."
+      playerNoStock: "<red>You do not have sufficient funds to gamble with this shop."
+      playerNoSpace: "<red>You do not have enough space in your inventory to gamble with this shop."
 
 interaction:
-  initialCreateInstruction: '&eTo set up your shop, please type your responses in chat when prompted.'
-  SELL:
-    initialize: "&6Now just hit the sign with the item you want to sell to other players!"
-    create: "&eYou have created a shop that sells &6%item%(s)&b%item-enchants%&e."
-    destroy: "&7You have destroyed your selling shop."
-    opDestroy: "&7You have destroyed a selling shop owned by %owner%."
-    opOpen: "&7You are opening a selling shop owned by %owner%."
-    createHitChestAmount: '&eEnter in chat the amount of &a%item%(s)&b%item-enchants% &eyou want to sell per transaction.'
-    createHitChestPrice: '&eEnter in chat the price you will sell &a%item%(x%item-amount%)&b%item-enchants% &efor.'
-  BUY:
-    initialize: "&6Now just hit the sign with the item you want to buy from other players!"
-    initializeAlt: "&7You can also hit the shop with your hand to pick the item from the creative menu."
-    create: "&eYou have created a shop that buys &6%item%(s)&b%item-enchants%&e."
-    destroy: "&7You have destroyed your buying shop."
-    opDestroy: "&7You have destroyed a buying shop owned by %owner%."
-    opOpen: "&7You are opening a buying shop owned by %owner%."
-    createHitChestAmount: '&eEnter in chat the amount of &a%item%(s)&b%item-enchants% &eyou want to buy per transaction.'
-    createHitChestPrice: '&eEnter in chat the price you will buy &a%item%(x%item amount%)&b%item-enchants% &efor.'
-  BARTER:
-    initialize: "&6Now hit the sign with the item you want to barter to other players!"
-    initializeInfo: "&7You have set this shop's barter item to %%item%%(s)"
-    initializeBarter: "&6Now hit the sign again with the item you want barter for!"
-    initializeBarterAlt: "&7You can also hit the shop with your hand to pick the item from the creative menu."
-    create: "&eYou have created a shop that barters &6%item%(s)&b%item-enchants% &efor &6%barter-item%(s)&b%barter-item-enchants%&e."
-    destroy: "&7You have destroyed your bartering shop."
-    opDestroy: "&7You have destroyed a bartering shop owned by %owner%."
-    opOpen: "&7You are opening a bartering shop owned by %owner%."
-    createHitChest: "&eNow &ahit the chest again &ewith the item you want to barter for."
-    createHitChestAmount: '&eEnter in chat the amount of &a%item%(s)&b%item-enchants% &eyou want to barter per transaction.'
-    createHitChestBarterAmount: '&eEnter in chat the amount of &a%barter-item%(s)&b%barter-item-enchants% &eyou want to barter for &a%item%(x%item-amount%)&b%item-enchants%.'
-  COMBO:
-    initialize: "&6Now just hit the sign with the item you want to buy or sell from other players!"
-    initializeAlt: "&7You can also hit the shop with your hand to pick the item from the creative menu."
-    create: "&eYou have created a shop that buys and sells &6%item%(s)&b%item-enchants%&e."
-    destroy: "&7You have destroyed your combo shop (buying and selling)."
-    opDestroy: "&7You have destroyed a combo shop owned by %owner%."
-    opOpen: "&7You are opening a combo shop owned by %owner%."
-    createHitChestAmount: '&eEnter in chat the amount of &a%item%(s)&b%item-enchants% &eyou want to buy/sell per transaction.'
-    createHitChestPrice: '&eEnter in chat the price you will &dBUY &a%item%(x%item-amount%)&b%item-enchants% &efor.'
-    createHitChestPriceCombo: '&eEnter in chat the price you will &dSELL &a%item%(x%item-amount%)&b%item-enchants% &efor.'
-  GAMBLE:
-    create: "&eYou have created a gambling shop."
-    opDestroy: "&7You have destroyed a gambling shop owned by %server name%."
-    createHitChestPrice: '&eEnter in chat the price to gamble with this shop.'
-  createHitChest: '&eEnter in chat what to do with &a%item%(s)&b%item enchants% &7(%shop-types%)'
-  adminCreateHitChest: '&7(Adding &eadmin &7will make the shop unlimited stock.)'
-
-interaction_issue:
-  createLine2: "&cThe amount (line 2) needs to be a positive number."
-  createLine3: "&cThe price (line 3) needs to be a positive number."
-  createNoItem: "&cYou must be holding the item you want to %shop type%"
-  createDirection: "&cThe sign must be in front of the chest in order to create a shop."
-  createSameItem: "&cYou cannot create a barter shop where both items are the same."
-  createDisplayRoom: "&cThis shop could not created because there is no room for a display item."
-  createSignRoom: "&cThis shop could not created because there is no room for a wall sign."
-  createOtherShop: "&cYou may not create a shop on the same chest as another player."
-  createInsufficientFunds: "<red>You do not have the funds required to create this shop."
-  createCooldown: "&cYou can only create a shop every few seconds."
-  createCancel: "&cCancelled shop creation."
-  destroyInsufficientFunds: "&cYou do not have the funds required to destroy this shop."
-  teleportInsufficientFunds: "&cYou do not have the funds required to teleport to this shop."
-  teleportInsufficientCooldown: "&cYou must wait another %tp time remaining% seconds to teleport to a shop."
-  initializeOtherShop: "&cYou may not initialize another players shop with an item."
-  useShopAlreadyInUse: "&cThis shop is in the middle of a transaction."
-  destroyChest: "&cYou must remove the sign from this shop to break it."
-  destroyUninitializedChest: "&cThis chest cannot be destroyed while a shop is being created for it."
-  useOwnShop: "&7You cannot use your own shop."
-  adminOpen: "&7Admin shops are not able to be opened."
-  worldBlacklist: "&cShops are not allowed to be created in this world."
-  regionRestriction: "&cYou do not have permission to do that in this region."
-  itemListDeny: "&cShops on this server are denied from listing this item"
-  createHitChestTimeout: "&7The shop you started to create at %location% has timed out."
+  success:
+    SELL:
+      initialize: "<gold>Now just hit the sign with the item you want to sell to other players!"
+      create: "<yellow>You have created a shop that sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
+      destroy: "<gray>You have destroyed your selling shop."
+      opDestroy: "<gray>You have destroyed a selling shop owned by %owner%."
+      opOpen: "<gray>You are opening a selling shop owned by %owner%."
+    BUY:
+      initialize: "<gold>Now just hit the sign with the item you want to buy from other players!"
+      create: "<yellow>You have created a shop that buys <gold>%item%(s)<aqua>%item-enchants%<yellow>."
+      destroy: "<gray>You have destroyed your buying shop."
+      opDestroy: "<gray>You have destroyed a buying shop owned by %owner%."
+      opOpen: "<gray>You are opening a buying shop owned by %owner%."
+    BARTER:
+      initialize: "<gold>Now hit the sign with the item you want to barter to other players!"
+      initializeBarter:
+        - "<gray>You have set this shop's barter item to %%item%%(s)"
+        - "<gold>Now hit the sign again with the item you want barter for!"
+      create: "<yellow>You have created a shop that barters <gold>%item%(s)<aqua>%item-enchants% <yellow>for <gold>%barter-item%(s)<aqua>%barter-item-enchants%<yellow>."
+      destroy: "<gray>You have destroyed your bartering shop."
+      opDestroy: "<gray>You have destroyed a bartering shop owned by %owner%."
+      opOpen: "<gray>You are opening a bartering shop owned by %owner%."
+    COMBO:
+      initialize: "<gold>Now just hit the sign with the item you want to buy or sell from other players!"
+      create: "<yellow>You have created a shop that buys and sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
+      destroy: "<gray>You have destroyed your combo shop (buying and selling)."
+      opDestroy: "<gray>You have destroyed a combo shop owned by %owner%."
+      opOpen: "<gray>You are opening a combo shop owned by %owner%."
+    GAMBLE:
+      create: "<yellow>You have created a gambling shop."
+      opDestroy: "<gray>You have destroyed a gambling shop owned by %server name%."
+  issues:
+    createLine2: "<red>The amount (line 2) needs to be a positive number."
+    createLine3: "<red>The price (line 3) needs to be a positive number."
+    createNoItem: "<red>You must be holding the item you want to %shop type%"
+    createDirection: "<red>The sign must be in front of the chest in order to create a shop."
+    createSameItem: "<red>You cannot create a barter shop where both items are the same."
+    createDisplayRoom: "<red>This shop could not created because there is no room for a display item."
+    createSignRoom: "<red>This shop could not created because there is no room for a wall sign."
+    createOtherShop: "<red>You may not create a shop on the same chest as another player."
+    createInsufficientFunds: "<red>You do not have the funds required to create this shop."
+    createCooldown: "<red>You can only create a shop every few seconds."
+    createCancel: "<red>Cancelled shop creation."
+    destroyInsufficientFunds: "<red>You do not have the funds required to destroy this shop."
+    initializeOtherShop: "<red>You may not initialize another players shop with an item."
+    useShopAlreadyInUse: "<red>This shop is in the middle of a transaction."
+    destroySignRequiresSneak: "<red>You must sneak to destroy this shop sign."
+    destroyChest: "<red>You must remove the sign from this shop to break it."
+    destroyChestOther: "<red>Only the owner of this shop can destroy it."
+    destroyUninitializedChest: "<red>This chest cannot be destroyed while a shop is being created for it."
+    adminOpen: "<gray>Admin shops are not able to be opened."
+    worldBlacklist: "<red>Shops are not allowed to be created in this world."
+    regionRestriction: "<red>You do not have permission to do that in this region."
+    itemFilterDeny: "<red>This item is disabled for shop usage!"
+    createHitChestTimeout: "<gray>The shop you started to create at %location% has timed out."
 
 description:
   SELL:
-    - '&d+---------------------------------------------------+'
-    - '&d| &aShop Information: &7(selling items)'
-    - '&d| &7Owner: &f%owner%'
-    - '&d|           &7v (hover over item to see details)'
-    - '&d| &7Item: &b%%item%% &7(x&e%item-amount%&7)'
-    - '&d| &7Price: &a%price% &7(%price-per-item% per 1 &7%item%)'
-    - '&d| &7Stock: %stock-color%%stock%'
-    - '&d+---------------------------------------------------+'
+    - '<light_purple>+---------------------------------------------------+'
+    - '<light_purple>| <green>Shop Information: <gray>(selling items)'
+    - '<light_purple>| <gray>Owner: <white>%owner%'
+    - '<light_purple>|           <gray>v (hover over item to see details)'
+    - '<light_purple>| <gray>Item: <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>)'
+    - '<light_purple>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 <gray>%item%)'
+    - '<light_purple>| <gray>Stock: %stock-color%%stock%'
+    - '<light_purple>+---------------------------------------------------+'
   BUY:
-    - '&d+---------------------------------------------------+'
-    - '&d| &aShop Information: &7(buying items)'
-    - '&d| &7Owner: &f%owner%'
-    - '&d|           &7v (hover over item to see details)'
-    - '&d| &7Item: &b%%item%% &7(x&e%item-amount%&7)'
-    - '&d| &7Price: &a%price% &7(%price-per-item% per 1 &7%item%)'
-    - '&d| &7Stock: %stock-color%%stock%'
-    - '&d+---------------------------------------------------+'
+    - '<light_purple>+---------------------------------------------------+'
+    - '<light_purple>| <green>Shop Information: <gray>(buying items)'
+    - '<light_purple>| <gray>Owner: <white>%owner%'
+    - '<light_purple>|           <gray>v (hover over item to see details)'
+    - '<light_purple>| <gray>Item: <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>)'
+    - '<light_purple>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 <gray>%item%)'
+    - '<light_purple>| <gray>Stock: %stock-color%%stock%'
+    - '<light_purple>+---------------------------------------------------+'
   COMBO:
-    - '&d+---------------------------------------------------+'
-    - '&d| &aShop Information: &7(buying or selling items) %stock color%in stock'
-    - '&d| &7Owner: &f%owner%'
-    - '&d| &7Click &eLEFT &7side of sign:'
-    - '&d| &7You get: &a%price% &7for your &b%%item%% &7(x&e%item-amount%&7)'
-    - '&d| &7Click &eRIGHT &7side of sign'
-    - '&d| &7You get: &b%%item%% &7(x&e%item-amount%&7) for your &a%price-sell%'
-    - '&d+---------------------------------------------------+'
+    - '<light_purple>+---------------------------------------------------+'
+    - '<light_purple>| <green>Shop Information: <gray>(buying or selling items) %stock color%in stock'
+    - '<light_purple>| <gray>Owner: <white>%owner%'
+    - '<light_purple>| <gray>Click <yellow>LEFT <gray>side of sign:'
+    - '<light_purple>| <gray>You get: <green>%price% <gray>for your <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>)'
+    - '<light_purple>| <gray>Click <yellow>RIGHT <gray>side of sign'
+    - '<light_purple>| <gray>You get: <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>) for your <green>%price-sell%'
+    - '<light_purple>+---------------------------------------------------+'
   BARTER:
-    - '&d+---------------------------------------------------+'
-    - '&d| &aShop Information: &7(bartering items) %stock-color%in stock'
-    - '&d| &7Owner: &f%owner%'
-    - '&d|             &7v (hover over items to see details)'
-    - '&d| &eYou give: &b%%barter-item%% &7(x&e%barter-item-amount%&7)'
-    - '&d| &aYou get: &b%%item%% &7(x&e%item-amount%&7)'
-    - '&d| &7Price: &7(%price per item% per 1 %item%)'
-    - '&d+---------------------------------------------------+'
+    - '<light_purple>+---------------------------------------------------+'
+    - '<light_purple>| <green>Shop Information: <gray>(bartering items) %stock-color%in stock'
+    - '<light_purple>| <gray>Owner: <white>%owner%'
+    - '<light_purple>|             <gray>v (hover over items to see details)'
+    - '<light_purple>| <yellow>You give: <aqua>%%barter-item%% <gray>(x<yellow>%barter-item-amount%<gray>)'
+    - '<light_purple>| <green>You get: <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>)'
+    - '<light_purple>| <gray>Price: <gray>(%price per item% per 1 %item%)'
+    - '<light_purple>+---------------------------------------------------+'
   GAMBLE:
-    - '&d+---------------------------------------------------+'
-    - '&d| &aShop Information: &7(gambling for items)'
-    - '&d| &7Item: &b%%item%%'
-    - '&d| &7Price: &a%price%'
-    - '&d+---------------------------------------------------+'
+    - '<light_purple>+---------------------------------------------------+'
+    - '<light_purple>| <green>Shop Information: <gray>(gambling for items)'
+    - '<light_purple>| <gray>Item: <aqua>%%item%%'
+    - '<light_purple>| <gray>Price: <green>%price%'
+    - '<light_purple>+---------------------------------------------------+'
 
 permission:
   error:
-    use: "&cYou are not authorized to use %shop-type% shops."
-    create: "&cYou are not authorized to create %shop-type% shops."
-    destroy: "&cYou are not authorized to destroy your own shops."
-    destroyOther: "&cYou are not authorized to destroy other players shops."
-    openOther: "&cYou are not authorized to open other players shops."
-    buildLimit: "&cYou have already reached your build limit of %user-amount%/%build-limit% shops."
+    use: "<red>You are not authorized to use %shop-type% shops."
+    create: "<red>You are not authorized to create %shop-type% shops."
+    destroy: "<red>You are not authorized to destroy your own shops."
+    destroyOther: "<red>You are not authorized to destroy other players shops."
+    openOther: "<red>You are not authorized to open other players shops."
+    buildLimit: "<red>You have already reached your build limit of %user-amount%/%build-limit% shops."
 
 hover:
   location:
-    - '%item% &7(x%item-amount%)'
-    - '&b%item-enchants%'
-    - '&7Type: &b%shop-type%'
-    - '&7Price: &a%price%'
+    - '%item% <gray>(x%item-amount%)'
+    - '<aqua>%item-enchants%'
+    - '<gray>Type: <aqua>%shop-type%'
+    - '<gray>Price: <green>%price%'
     - '%stock-color%%stock% in stock'
-    - '&7%owner%'
-
-creativeSelection:
-  enter:
-    - "&6Open your inventory and select the item you want to receive."
-    - "&eTo select the item, pick it up and drop it outside of the inventory window."
-  prompt:
-    - "&cYou cannot move in locked creative mode."
-    - "&6Open your inventory and select the item you want to receive."
-    - "&eTo select the item, pick it up and drop it outside of the inventory window."
-
-guiSearchSelection:
-  enter:
-    - "&6Open your inventory and select the item you want to search for."
-    - "&eTo select the item, pick it up and drop it outside of the inventory window."
-  prompt:
-    - "&cYou cannot move in locked creative mode."
-    - "&6Open your inventory and select the item you want to search for."
-    - "&eTo select the item, pick it up and drop it outside of the inventory window."
+    - '<gray>%owner%'
 
 command:
   usage:
@@ -289,7 +269,7 @@ command:
   set-currency:
     error-no-console: "<red>This command can only be executed by a player"
     error-digital-currency: "<red>The server is not using an item based currency so no item could be set."
-    error-no-item-in-hand: "<red>>You must hold a valid item to use that command."
+    error-no-item-in-hand: "<red>You must hold a valid item to use that command."
     success: "<green>Set the servers currency to %held-item%"
   set-gamble:
     error-no-console: "<red>This command can only be executed by a player"
@@ -305,81 +285,96 @@ command:
       -"<blue>/shop notify owner<gray>- shows transaction notifications when players interact with your shops"
       -"<blue>/shop notify stock<gray>- shows notifications when your shop runs out of stock"
     user:
-      success: "&7Your notifications for your own transactions with shops are now %notify-state%"
+      success: "<gray>Your notifications for your own transactions with shops are now %notify-state%"
     owner:
-      success: "&7Your notifications for players transacting with your shops are now %notify-state%"
+      success: "<gray>Your notifications for players transacting with your shops are now %notify-state%"
     stock:
-      success: "&7Your notifications for your shops running out of stock are now %notify-state%"
+      success: "<gray>Your notifications for your shops running out of stock are now %notify-state%"
 
 sign:
   text:
     SELL:
+      initialise:
+        1: "<red><bold>[sell shop]"
+        2: "<red>%item%<red>: %amount%"
+        3: "<red>%price% %currency-name%"
+        4: "<red>%owner%"
       normal:
         1: "%stock-color%<bold>[shop]"
-        2: "<white>Selling; <bold>%amount%"
-        3: "%stock-color%%currency-name% %price%"
-        4: "%owner%"
+        2: "<white>Selling: <bold>%amount%"
+        3: "<aqua>%price% %currency-name%"
+        4: "<white>%owner%"
       normal_no_display:
         1: "%stock-color%<bold>[sell shop]"
-        2: "<white>%item%: %amount%"
-        3: "%stock-color%%currency-name% %price%"
+        2: "<white>%item%<white>: %amount%"
+        3: "<aqua>%price% %currency-name%"
         4: "<white>%owner%"
       admin:
         1: "%in-stock-color%<bold>[shop]"
-        2: "Selling; &l%amount%"
-        3: "%in-stock-color%%price%"
+        2: "<white>Selling: %amount%"
+        3: "<aqua>%price% %currency-name%"
         4: "%server-display-name%"
       admin_no_display:
         1: "%in-stock-color%[sell shop]"
-        2: "%item%: %amount%"
-        3: "%in-stock-color%%price%"
+        2: "%item%<white>: %amount%"
+        3: "<aqua>%price% %currency-name%"
         4: "%server-display-name%"
     BUY:
+      initialise:
+        1: "<red><bold>[sell shop]"
+        2: "<red>%item%<red>: %amount%"
+        3: "<red>%price% %currency-name%"
+        4: "<red>%owner%"
       normal:
-        1: "%stock-color%<bold>%shop%"
-        2: "<white>Buying; %amount%"
-        3: "%stock-color%%currency-name% %price%"
-        4: "%owner%"
+        1: "%stock-color%<bold>[shop]"
+        2: "<white>Buying: %amount%"
+        3: "<aqua>%price% %currency-name%"
+        4: "<white>%owner%"
       normal_no_display:
-        1: "%stock-color%<bold>buy shop"
-        2: "%item%: <white>%amount%"
-        3: "%stock-color%%currency-name% %price%"
-        4: "%owner%"
+        1: "%stock-color%<bold>[buy shop]"
+        2: "%item%<white>: %amount%"
+        3: "<aqua>%price% %currency-name%"
+        4: "<white>%owner%"
       admin:
-        1: "%in-stock-color%<bold>shop"
-        2: "<white>Buying; &l%amount%"
-        3: "%in-stock-color%%currency-name% %price%"
+        1: "%in-stock-color%<bold>[shop]"
+        2: "<white>Buying: %amount%"
+        3: "<aqua>%price% %currency-name%"
         4: "%server-display-name%"
       admin_no_display:
-        1: "%in-stock-color%<bold>buy shop"
-        2: "%item%: %amount%"
-        3: "%in-stock-color%%currency-name% %price%"
+        1: "%in-stock-color%<bold>[buy shop]"
+        2: "%item%<white>: %amount%"
+        3: "<aqua>%price% %currency-name%"
         4: "%server-display-name%"
     BARTER:
+      initialise:
+        1: "<red><bold>[sell shop]"
+        2: "<red>%item%<red>: %amount%"
+        3: "<red>%price% %currency-name%"
+        4: "<red>%owner%"
       normal:
-        1: "%stock-color%<bold>%shop%"
-        2: "<white>Bartering;"
-        3: "%stock-color%%amount%   for   %price%"
-        4: "%owner%"
+        1: "%stock-color%<bold>[shop]"
+        2: "<white>Bartering: "
+        3: "<white>%amount%   for   %price%"
+        4: "<white>%owner%"
       normal_no_display:
-        1: "%stock-color%<bold>barter shop"
-        2: "%item%: %amount%"
-        3: "%stock-color%%barter-item%: &a%price%"
-        4: "%owner%"
+        1: "%stock-color%<bold>[barter shop]"
+        2: "%item%<white>: %amount%"
+        3: "%barter-item%<white>: %price%"
+        4: "<white>%owner%"
       admin:
-        1: "%in-stock-color%<bold>%shop%"
+        1: "%in-stock-color%<bold>[shop]"
         2: "<white>Bartering;"
-        3: "%in-stock-color%%amount%   for   %price%"
+        3: "<white>%amount%   for   %price%"
         4: "%server-display-name%"
       admin_no_display:
-        1: "%in-stock-color%<bold>%barter shop%"
-        2: "%in-stock-color%%item%: %amount%"
-        3: "%barter-item%: &a%price%"
+        1: "%in-stock-color%<bold>[barter shop]"
+        2: "%item%<white>: %amount%"
+        3: "%barter-item%<white>: %price%"
         4: "%server-display-name%"
     GAMBLE:
       admin:
-        1: "%stock-color%%shop%"
-        2: "&dGambling"
+        1: "%stock-color%[Shop]"
+        2: "<light_purple>Gambling"
         3: "%stock-color%%price%"
         4: "%server-display-name%"
       admin_no_display:
@@ -388,39 +383,32 @@ sign:
         3: "%stock-color%%price%"
         4: "%server-display-name%"
 # Hologram Exclusive Placeholders
-# [lshift] : shift location of a single hologram line one block left #
-# [rshift] : shift location of a single hologram line one block right #
-# [split] : split the line into multiple lines if it's too long #
-
-# Target Maximum Length for [split], we will attempt to split lines that are longer than this.
-targetMaxLength: 40
-
 display_tag_text:
   SELL:
     normal:
-      - "[item]&7(x[item amount])"
-      - "&b[item enchants][split]"
-      - "&7<right click sign to have shop sell the item to you>"
+      - "[item]<gray>(x[item amount])"
+      - "<aqua>[item enchants][split]"
+      - "<gray><right click sign to have shop sell the item to you>"
   BUY:
     normal:
-      - "[item]&7(x[item amount])"
-      - "&b[item enchants][split]"
-      - "&7<right click sign to have shop buy the item from you>"
+      - "[item]<gray>(x[item amount])"
+      - "<aqua>[item enchants][split]"
+      - "<gray><right click sign to have shop buy the item from you>"
   BARTER:
     normal:
-      - '&aYou get:            &6You trade:'
-      - '[item]&7(x[item amount])        &f[barter item]&7(x[barter item amount])'
-      - '&b[item enchants]          &b[barter item enchants]'
-      - '&7<right click sign to barter items with shop>'
+      - '<green>You get:            <gold>You trade:'
+      - '[item]<gray>(x[item amount])        <white>[barter item]<gray>(x[barter item amount])'
+      - '<aqua>[item enchants]          <aqua>[barter item enchants]'
+      - '<gray><right click sign to barter items with shop>'
   GAMBLE:
     normal:
       - "[gamble item]"
-      - "&7<right click sign to gamble for a random item>"
+      - "<gray><right click sign to gamble for a random item>"
   COMBO:
     normal:
-      - "[item]&7(x[item amount])"
-      - "&b[item enchants][split]"
-      - "&7<click &aLEFT &7side of sign for shop to &aBUY &7item from you>"
-      - "[item]&7(x[item amount]) for &a[price]"
-      - "&7<click &6RIGHT &7side of sign for shop to &6SELL &7item to you>"
-      - "[item]&7(x[item amount]) for &6[price sell]"
+      - "[item]<gray>(x[item amount])"
+      - "<aqua>[item enchants][split]"
+      - "<gray><click <green>LEFT <gray>side of sign for shop to <green>BUY <gray>item from you>"
+      - "[item]<gray>(x[item amount]) for <green>[price]"
+      - "<gray><click <gold>RIGHT <gray>side of sign for shop to <gold>SELL <gray>item to you>"
+      - "[item]<gray>(x[item amount]) for <gold>[price sell]"

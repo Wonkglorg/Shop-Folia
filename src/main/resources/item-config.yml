@@ -1,0 +1,20 @@
+gamble-display-item:
+  ==: org.bukkit.inventory.ItemStack
+  DataVersion: 4903
+  id: minecraft:diamond
+  count: 1
+  schema_version: 1
+
+currency-item:
+  ==: org.bukkit.inventory.ItemStack
+  DataVersion: 4903
+  id: minecraft:diamond
+  count: 1
+  schema_version: 1
+
+shop:
+  blacklist:
+    materials: COMMAND_BLOCK
+
+  whitelist:
+    materials:

@@ -69,6 +69,9 @@ public abstract class TransactionParty{
 	public int getAvailableItemFunds(ItemStack itemStack) {
 		int amount = 0;
 		for(var item : inventory){
+			if(item == null){
+				continue;
+			}
 			if(itemStack.isSimilar(item)){
 				amount += item.getAmount();
 			}
@@ -118,7 +121,7 @@ public abstract class TransactionParty{
 		currency.setAmount(amount);
 		
 		//let minecraft handle the checking and confirming, if it has room the returned map will be empty
-		return !createVirtualInventory().addItem(itemStack).isEmpty();
+		return createVirtualInventory().addItem(itemStack).isEmpty();
 	}
 	
 	/**
@@ -218,7 +221,7 @@ public abstract class TransactionParty{
 	public void removeItem(ItemStack itemStack, int amount) {
 		ItemStack clone = itemStack.clone();
 		clone.setAmount(amount);
-		inventory.remove(clone);
+		inventory.removeItemAnySlot(clone);
 	}
 	
 	/**

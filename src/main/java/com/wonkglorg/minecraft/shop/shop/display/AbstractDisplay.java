@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -60,6 +61,7 @@ public abstract class AbstractDisplay{
 	public static AbstractDisplay createDisplay(DisplayType type, AbstractShop shop) {
 		return switch(type) {
 			case NONE -> new NonDisplay(shop);
+			case TEXT -> new TextDisplay(shop);
 			case ITEM -> new ItemDisplay(shop);
 			case LARGE_ITEM -> new LargeItemDisplay(shop);
 			case GLASS_CASE -> new GlassCaseDisplay(shop);
@@ -113,7 +115,7 @@ public abstract class AbstractDisplay{
 		}
 	}
 	
-	protected ClientboundAddEntityPacket createEntity(Player player, net.minecraft.world.entity.Entity entity, int data) {
+	protected ClientboundAddEntityPacket createEntity(Player player, Entity entity, int data) {
 		addEntityId(player, entity.getId());
 		return new ClientboundAddEntityPacket(entity.getId(),
 				entity.getUUID(),
@@ -128,7 +130,7 @@ public abstract class AbstractDisplay{
 				entity.getYHeadRot());
 	}
 	
-	protected ClientboundAddEntityPacket createEntity(Player player, net.minecraft.world.entity.Entity entity, Location location, int data) {
+	protected ClientboundAddEntityPacket createEntity(Player player, Entity entity, Location location, int data) {
 		addEntityId(player, entity.getId());
 		return new ClientboundAddEntityPacket(entity.getId(),
 				entity.getUUID(),

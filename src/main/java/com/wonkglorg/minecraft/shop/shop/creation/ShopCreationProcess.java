@@ -56,10 +56,12 @@ public abstract class ShopCreationProcess{
 	/**
 	 * How much this shop sells
 	 */
+	@Getter
 	protected int amount = 0;
 	/**
 	 * For what price
 	 */
+	@Getter
 	protected double price = 0;
 	/**
 	 * The shop is an admin shop
@@ -124,7 +126,7 @@ public abstract class ShopCreationProcess{
 		Main plugin = Main.getPlugin();
 		if(!isAllowedInDimension()){
 			plugin.logger().debug("Dimension check failed");
-			plugin.getLangManager().request("interaction_issue.worldBlacklist").sendToAudience(player);
+			plugin.getLangManager().request("interaction.issues.worldBlacklist").sendToAudience(player);
 			return false;
 		}
 		
@@ -139,7 +141,7 @@ public abstract class ShopCreationProcess{
 		double cost = Main.getPlugin().getSettingsConfig().getCreationCost();
 		if(cost > 0 && new PlayerTransactionParty(player).getAvailableFunds(Main.getPlugin().getItemConfig().getCurrencyItem()) < cost){
 			plugin.logger().debug("Player lacks funds to cover create shop costs");
-			lang.request("interaction_issue.createInsufficientFunds").sendToAudience(player);
+			lang.request("interaction.issues.createInsufficientFunds").sendToAudience(player);
 			return false;
 		}
 		

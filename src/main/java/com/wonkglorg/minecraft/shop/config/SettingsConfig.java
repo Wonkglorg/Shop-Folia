@@ -1,12 +1,12 @@
 package com.wonkglorg.minecraft.shop.config;
 
+import com.wonkglorg.minecraft.config.types.Config;
 import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.CreationWord;
-import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.shop.ShopAction;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
-import com.wonkglorg.minecraft.config.types.Config;
+import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import lombok.Getter;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
@@ -27,47 +27,96 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private @Nullable String logLevel;
+	/***
+	 * How many hours a player can be offline before their shops get deleted
+	 */
 	@Getter
-	private DisplayType displayTypeDefault;
-	@Getter
-	private DisplayType[] displayCycle;
-	@Getter
-	private boolean allowCreateMethodSign;
-	@Getter
-	private boolean playSounds;
-	@Getter
-	private boolean playEffects;
-	@Getter
-	private boolean allowCreateMethodChest;
-	@Getter
-	private boolean setGlowingItemFrame;
-	@Getter
-	private boolean setGlowingSignText;
-	@Getter
-	private boolean destroyShopRequiresSneak;
-	@Getter
-	private boolean checkItemDurability;
-	@Getter
-	private boolean ignoreItemRepairCost;
-	@Getter
-	private boolean forceDisplayToNoneIfBlocked;
+	private int hoursOfflineToRemoveShops;
 	/**
 	 * The type of currency to use on the server
 	 */
 	@Getter
 	private CurrencyType currencyType;
+	/**
+	 * Words used to create shops with
+	 */
 	@Getter
-	private boolean enableGUI;
+	private Map<CreationWord, String> signCreationWords = new EnumMap<>(CreationWord.class);
+	/**
+	 * The currency cost when creating a shop
+	 */
 	@Getter
-	private int displayLightLevel;
+	private double creationCost;
+	/**
+	 * The currency cost when destroying a shop
+	 */
 	@Getter
-	private int hoursOfflineToRemoveShops;
+	private double destructionCost;
+	/**
+	 * If the cost for creating the shop should be returned on destruction
+	 */
 	@Getter
-	private TreeMap<Double, String> priceSuffixes;
+	private boolean returnCreationCost;
+	/**
+	 * Price suffix mappings
+	 */
+	@Getter
+	private TreeMap<Double, String> priceSuffixes = new TreeMap<>();
 	@Getter
 	private double priceSuffixMinimumValue;
+	/**
+	 * The default display new shops spawn with
+	 */
 	@Getter
-	private boolean allowFractionalCurrency;
+	private DisplayType displayTypeDefault;
+	/**
+	 * The cycle order of shop displays
+	 */
+	@Getter
+	private DisplayType[] displayCycle;
+	/**
+	 * If signs can be used to create a chest shop
+	 */
+	@Getter
+	private boolean allowCreateMethodSign;
+	/**
+	 * If commands can be used to create a chest shop
+	 */
+	@Getter
+	private boolean allowCreateMethodCommand;
+	/**
+	 * Play sounds on shop interactions
+	 */
+	@Getter
+	private boolean playSounds;
+	/**
+	 * Play particle effects on shop interactions
+	 */
+	@Getter
+	private boolean playEffects;
+	/**
+	 * If the itemframe should glow on shop displays
+	 */
+	@Getter
+	private boolean setGlowingItemFrame;
+	/**
+	 * If the sign text should glow
+	 */
+	@Getter
+	private boolean setGlowingSignText;
+	/**
+	 * If sneaking is required to destroy a shop
+	 */
+	@Getter
+	private boolean destroyShopRequiresSneak;
+	/**
+	 * Light level the display emits when placed
+	 */
+	@Getter
+	private int displayLightLevel;
+	/**
+	 * If offline purchases should be logged when owner joins
+	 */
 	@Getter
 	private boolean offlinePurchaseNotificationsEnabled;
 	/**
@@ -80,30 +129,25 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private String currencyFormat;
+	/**
+	 * What containers are valid shop containers
+	 */
 	@Getter
 	private Set<Material> enabledContainers;
-	@Getter
-	private boolean inverseComboShops;
-	@Getter
-	private double creationCost;
-	@Getter
-	private double teleportCost;
-	@Getter
-	private double destructionCost;
-	@Getter
-	private double teleportCooldown;
-	@Getter
-	private boolean returnCreationCost;
-	@Getter
-	private boolean allowPartialSales;
+	/**
+	 * No shops can be created in these worlds
+	 */
 	@Getter
 	private @NotNull List<String> worldBlackList = new ArrayList<>();
+	/**
+	 * Mappings for actions on a shop
+	 */
 	@Getter
 	private Map<ShopClickType, ShopAction> clickTypeActionMap = new EnumMap<>(ShopClickType.class);
 	
-	@Getter
-	private Map<CreationWord, String> creationWords = new EnumMap<>(CreationWord.class);
-	// Shop display optimization settings
+	/**
+	 * How far a player has to move before display recalculations can happen
+	 */
 	@Getter
 	private double displayMovementThreshold;
 	/**
@@ -120,24 +164,8 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private int shopSearchRadius;
-	/**
-	 * Gets the number of shop displays to process in a single batch when sending to a player.
-	 * This controls how many displays are sent at once to create a smoother appearance.
-	 */
-	@Getter
-	private int displayBatchSize;
-	/**
-	 * Gets the delay between batches of shop displays in server ticks (20 ticks = 1 second).
-	 * Higher values create a smoother appearance but take longer to show all displays.
-	 */
-	@Getter
-	private int displayBatchDelay;
 	@Getter
 	private boolean debugAllowUseOwnShop;
-	@Getter
-	private boolean debugTransactionDebugLogs;
-	@Getter
-	private int debugShopCreateCooldown;
 	@Getter
 	private boolean debugForceResaveAll;
 	@Getter
@@ -151,40 +179,18 @@ public class SettingsConfig extends Config{
 	public void reload() {
 		silentLoad();
 		logLevel = getString("logLevel");
-		try{
-			displayTypeDefault = DisplayType.valueOf(getString("displayType"));
-		} catch(Exception _){
-			displayTypeDefault = DisplayType.ITEM;
-		}
-		
-		try{
-			List<String> cycle = getStringList("displayCycle");
-			if(cycle.isEmpty()){
-				for(DisplayType dt : DisplayType.values()){
-					cycle.add(dt.name());
-				}
-			}
-			
-			displayCycle = new DisplayType[cycle.size()];
-			for(int i = 0; i < cycle.size(); i++){
-				displayCycle[i] = DisplayType.valueOf(cycle.get(i));
-			}
-		} catch(Exception e){
-			e.printStackTrace();
-		}
-		
-		allowCreateMethodSign = getBoolean("creationMethod.placeSign");
-		allowCreateMethodChest = getBoolean("creationMethod.hitChest");
-		enableGUI = getBoolean("enableGUI");
-		checkItemDurability = getBoolean("checkItemDurability");
-		ignoreItemRepairCost = getBoolean("ignoreItemRepairCost");
-		forceDisplayToNoneIfBlocked = getBoolean("forceDisplayToNoneIfBlocked");
-		displayLightLevel = getInt("displayLightLevel");
-		setGlowingItemFrame = getBoolean("setGlowingItemFrame");
 		hoursOfflineToRemoveShops = getInt("deletePlayerShopsAfterXHoursOffline");
-		playSounds = getBoolean("playSounds");
-		playEffects = getBoolean("playEffects");
-		setGlowingSignText = getBoolean("setGlowingSignText");
+		//todo:mjd compare the current currency to the one last logged in the db and update the action if it differs.
+		currencyType = CurrencyType.fromValue(getString("currency.type", "ITEM"));
+		
+		for(var word : CreationWord.values()){
+			signCreationWords.put(word, getString("sign.creation." + word, word.getDefaultWord()));
+		}
+		
+		creationCost = getDouble("cost.shop.creation");
+		destructionCost = getDouble("cost.shop.destruction");
+		returnCreationCost = getBoolean("cost.returnCreationCosat");
+		
 		priceSuffixes = new TreeMap<>();
 		for(String suffixKey : getConfigurationSection("priceSuffixes").getKeys(false)){
 			if(suffixKey.equals("minimumValue")){
@@ -198,29 +204,43 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
+		displayTypeDefault = DisplayType.fromValue(getString("displayType"));
+		
+		List<String> cycle = getStringList("displayCycle");
+		if(cycle.isEmpty()){
+			for(DisplayType dt : DisplayType.values()){
+				cycle.add(dt.name());
+			}
+		}
+		
+		displayCycle = new DisplayType[cycle.size()];
+		for(int i = 0; i < cycle.size(); i++){
+			displayCycle[i] = DisplayType.fromValue(cycle.get(i));
+		}
+		
+		displayLightLevel = getInt("displayLightLevel");
+		setGlowingItemFrame = getBoolean("setGlowingItemFrame");
+		setGlowingSignText = getBoolean("setGlowingSignText");
+		
+		for(var action : getStringList("actionMappings.transactWithShop")){
+			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT);
+		}
+		for(var action : getStringList("actionMappings.viewShopDetails")){
+			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.VIEW_DETAILS);
+		}
+		for(var action : getStringList("actionMappings.cycleShopDisplay")){
+			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.CYCLE_DISPLAY);
+		}
+		
+		allowCreateMethodSign = getBoolean("creationMethod.placeSign");
+		allowCreateMethodCommand = getBoolean("creationMethod.placeSign");
+		
+		playSounds = getBoolean("playSounds");
+		playEffects = getBoolean("playEffects");
+		
 		destroyShopRequiresSneak = getBoolean("destroyShopRequiresSneak");
 		
-		try{
-			currencyType = CurrencyType.valueOf(getString("currency.type"));
-		} catch(Exception e){
-			currencyType = CurrencyType.ITEM;
-		}
-		
-		if(currencyType == CurrencyType.VAULT){
-			allowFractionalCurrency = getBoolean("allowFractionalCurrency");
-		}
-		
-		//todo:mjd compare the current currency to the one last logged in the db and update the action if it differs.
-		
 		offlinePurchaseNotificationsEnabled = getBoolean("offlinePurchaseNotifications.enabled");
-		
-		if(offlinePurchaseNotificationsEnabled && getString("logging.type").toUpperCase().equals("OFF")){
-			Main.getPlugin().logger().warning(
-					"Offline purchase notifications are enabled in `config.yml` but DB logging is set to `OFF`. Offline purchase notifications will be disabled.");
-			Main.getPlugin().logger().warning(
-					"Please set `logging.type` to `FILE` or setup a database in `config.yml` to enable offline purchase notifications.");
-			offlinePurchaseNotificationsEnabled = false;
-		}
 		
 		currencyName = getString("currency.name");
 		currencyFormat = getString("currency.format", "");
@@ -234,42 +254,21 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
-		inverseComboShops = getBoolean("inverseComboShops");
-		
-		creationCost = getDouble("creationCost");
-		destructionCost = getDouble("destructionCost");
-		teleportCost = getDouble("teleportCost");
-		teleportCooldown = getDouble("teleportCooldown");
-		returnCreationCost = getBoolean("returnCreationCost");
-		allowPartialSales = getBoolean("allowPartialSales");
-		
 		worldBlackList.addAll(getStringList("worldBlacklist"));
-		
-		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.transactWithShop")), ShopAction.TRANSACT);
-		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.viewShopDetails")), ShopAction.VIEW_DETAILS);
-		clickTypeActionMap.put(ShopClickType.valueOf(getString("actionMappings.cycleShopDisplay")), ShopAction.CYCLE_DISPLAY);
-		
-		for(var word : CreationWord.values()){
-			creationWords.put(word, getString("sign.creation." + word, word.getDefaultWord()));
-		}
 		
 		// Load shop display optimization settings
 		displayProcessInterval = getDouble("displayProcessInterval");
 		displayMovementThreshold = getDouble("displayMovementThreshold");
 		maxShopDisplayDistance = getDouble("maxShopDisplayDistance");
 		shopSearchRadius = getInt("shopSearchRadius");
-		displayBatchSize = getInt("displayBatchSize", 10);
-		displayBatchDelay = getInt("displayBatchDelay", 2);
 		
 		debugAllowUseOwnShop = getBoolean("debug.allowUseOwnShop");
-		debugTransactionDebugLogs = getBoolean("debug.transactionDebugLogs");
-		debugShopCreateCooldown = getInt("debug.shopCreateCooldown");
 		debugForceResaveAll = getBoolean("debug.forceResaveAll");
 		migrateOldData = getBoolean("debug.migrateOldData");
 	}
 	
 	public String getCreationWord(CreationWord wordKey) {
-		return creationWords.get(wordKey);
+		return signCreationWords.get(wordKey);
 	}
 	
 	public ShopAction getShopAction(ShopClickType type) {

@@ -1,11 +1,11 @@
 package com.wonkglorg.minecraft.shop.manager;
 
+import com.wonkglorg.minecraft.config.types.Config;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.player.OfflinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.config.types.Config;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -88,6 +88,7 @@ public class PlayerManager{
 		} else {
 			PLAYER_DATA.set(basePath + ".experience", null);
 		}
+		PLAYER_DATA.silentSave();
 	}
 	
 	private static void setOrRemove(String path, boolean value) {
@@ -122,7 +123,7 @@ public class PlayerManager{
 	}
 	
 	public static Duration getTeleportCooldownRemaining(UUID uuid) {
-		double cooldownSeconds = Main.getPlugin().getSettingsConfig().getTeleportCooldown();
+		double cooldownSeconds = 0;//Main.getPlugin().getSettingsConfig().getTeleportCooldown();
 		
 		if(cooldownSeconds <= 0){
 			return Duration.ZERO;

@@ -7,10 +7,11 @@ import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.ShopManager.BlockKey;
+import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
-import static com.wonkglorg.minecraft.shop.shop.ShopState.EMPTY;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.offline;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.online;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
-import static com.wonkglorg.minecraft.shop.shop.ShopState.OVERFILLED;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
@@ -21,7 +22,6 @@ import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
-import static com.wonkglorg.minecraft.shop.util.ItemNameUtil.getItemHover;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
@@ -29,6 +29,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.Location;
@@ -50,6 +51,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -129,9 +131,8 @@ public abstract class AbstractShop{
 	/**
 	 * The current state of the shop stock
 	 */
-	@Setter
 	@Getter
-	protected ShopState shopState;
+	private ShopState shopState;
 	
 	protected AbstractShop(UUID id,
 	                       Location signLoc,
@@ -258,6 +259,12 @@ public abstract class AbstractShop{
 		// Now that the world/container data is valid, refresh stock and state.
 		updateStock();
 		
+		//if the stock update did not already change the sign do it now (mostly needed when running a plugin reload to update all shop signs to the new lang entries)
+		if(signLinesRequireRefresh){
+			updateSign(true);
+			signLinesRequireRefresh = false;
+		}
+		
 		isLoaded = true;
 		return true;
 	}
@@ -269,34 +276,7 @@ public abstract class AbstractShop{
 	/**
 	 * Calculates the stock amount of the shop
 	 */
-	protected void calculateStock() {
-		if(this.isAdmin){
-			// There is always stock in the admin shop!
-			stock = Integer.MAX_VALUE;
-			shopState = OK;
-			return;
-		}
-		if(item == null){
-			//leave cached value
-			return;
-		}
-		ShopTransactionParty party = getParty();
-		
-		double availableFunds = party.getAvailableFunds(item);
-		stock = (int) (availableFunds / this.getAmount());
-		
-		if(stock < 1){
-			shopState = EMPTY;
-			return;
-		}
-		
-		if(party.canAcceptPayment(item, price)){
-			shopState = OK;
-			return;
-		}
-		
-		shopState = OVERFILLED;
-	}
+	protected abstract void calculateStock();
 	
 	public void updateStock() {
 		int oldStock = stock;
@@ -307,19 +287,8 @@ public abstract class AbstractShop{
 		// Update sign if needed
 		boolean hasStockChange = stock != oldStock;
 		if(hasStockChange){
-			Main.getPlugin().logger().debug("[AbstractShop.updateStock] updateSign, new stock != oldStock! newStock: " +
-			                                stock +
-			                                " old stock: " +
-			                                oldStock +
-			                                "\n" +
-			                                this);
-			this.updateSign(true);
 			needsSave = true;
-			return;
 		}
-		
-		// Allow sign to update if there is a pending change (signLinesRequireRefresh)
-		this.updateSign();
 	}
 	
 	public void setStockOnLoad(int stock) {
@@ -365,10 +334,13 @@ public abstract class AbstractShop{
 		
 		if(this.getOwnerUUID() != null){
 			// Use cache first - this avoids expensive disk I/O
-			return Component.text(PlayerNameCache.getName(this.getOwnerUUID()));
+			return MiniMessage.miniMessage().deserialize(Main.getPlugin()
+			                                                 .getLangManager()
+			                                                 .request("placeholders.shop-owner-name-color")
+			                                                 .toSingleStringResult() + PlayerNameCache.getName(this.getOwnerUUID()));
 		}
 		
-		return Component.text("CLOSED").color(TextColor.color(255, 0, 0));
+		return Main.getPlugin().getLangManager().request("placeholders.closed-shop").toSingleComponent();
 	}
 	
 	public OfflinePlayer getOwner() {
@@ -441,13 +413,11 @@ public abstract class AbstractShop{
 		
 		this.item = is.clone();
 		this.item.setAmount(1);
-		this.updateSign(true);
 	}
 	
 	public void setSecondaryItemStack(ItemStack is) {
 		this.secondaryItem = is.clone();
 		this.secondaryItem.setAmount(1);
-		this.updateSign(true);
 	}
 	
 	public void updateSign() {this.updateSign(false);}
@@ -517,6 +487,17 @@ public abstract class AbstractShop{
 		}, 2);
 	}
 	
+	/**
+	 * Sets a new shop state and refreshes sign if shop state changed
+	 */
+	public void setShopState(ShopState state, boolean updateSign) {
+		if(shopState != state && updateSign){
+			updateSign(true);
+			signLinesRequireRefresh = false;
+		}
+		shopState = state;
+	}
+	
 	public void printSalesInfo(Player player) {
 		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType().toString().toUpperCase());
 		shopPlaceholders(request, this);
@@ -527,25 +508,23 @@ public abstract class AbstractShop{
 		//@formatter:off
 		ItemStack item = shop.item;
 		
-		request.replace("%owner%", shop.getOwnerName())
-			   .replace("%price%",shop.getPrice())
+		request.replace("%owner%", shop::getOwnerName)
+			   .replace("%price%",shop.getPriceFormatted())
 			   .replace("%stock%",shop.getStock())
 			   .replace("%amount%",shop.getAmount())
 			   .replace("%location%",UtilMethods.getCleanLocation(shop.getSignLocation(),false))
 			   .replace("%world%",shop.getSignLocation().getWorld().getName())
-			   .replace("%item%", ItemNameUtil.getName(item).hoverEvent(getItemHover(item)))
+			   .replace("%item%", ()->ItemNameUtil.getName(item))
                .replace("%item-type%", item.getType())
                .replace("%item-amount%",shop.getAmount())
-               .replace("%item-item-lore%", UtilMethods.getLore(item))
-               .replace("%item-enchants%",UtilMethods.getEnchantmentsComponent(item));
+               .replace("%item-enchants%",()->UtilMethods.getEnchantmentsComponent(item));
 		ItemStack barterItem = shop.secondaryItem;
 		if(barterItem != null){
-			request.replace("%barter-item%", ItemNameUtil.getName(barterItem).hoverEvent(getItemHover(barterItem)))
+			request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem))
 			       .replace("%barter-item-type%", barterItem.getType())
 			       .replace("%barter-durability%",UtilMethods.getDurabilityPercent(barterItem))
 			       .replace("%barter-item-amount%", barterItem.getAmount())
-			       .replace("%barter-item-lore%", UtilMethods.getLore(barterItem))
-				   .replace("%barter-item-enchants%",UtilMethods.getEnchantmentsComponent(barterItem));
+				   .replace("%barter-item-enchants%",()->UtilMethods.getEnchantmentsComponent(barterItem));
 		}
 		//@formatter:on
 	}
@@ -562,9 +541,17 @@ public abstract class AbstractShop{
 		if(isPerformingTransaction){
 			return TransactionResult.SHOP_IS_PERFORMING_TRANSACTION;
 		}
-		isPerformingTransaction = true;
 		ShopLogger logger = Main.getPlugin().logger();
+		isPerformingTransaction = true;
 		logger.debug("====STARTING SHOP TRANSACTION====");
+		
+		if(party.getPlayer().getUniqueId().equals(owner) && !Main.getPlugin().getSettingsConfig().isDebugAllowUseOwnShop()){
+			logger.debug("Owner is trying to transact their own shop while this debug feature is disabled in the config");
+			logger.debug("===CANCEL SHOP TRANSACTION====");
+			isPerformingTransaction = false;
+			return TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP;
+		}
+		
 		logger.debug("Transaction with shop " + this + " and party " + party);
 		Transaction transaction = startTransaction(party);
 		logger.debug("Opened transaction " + transaction);
@@ -589,6 +576,7 @@ public abstract class AbstractShop{
 		transaction.execute();
 		logTransaction(party);
 		logger.debug("===FINISHED SHOP TRANSACTION====");
+		calculateStock();
 		postTransactionSuccess(transaction);
 		isPerformingTransaction = false;
 		return result;
@@ -622,6 +610,8 @@ public abstract class AbstractShop{
 		switch(action) {
 			case TRANSACT:
 				TransactionResult result = executeTransaction(new PlayerTransactionParty(player));
+				OfflinePlayer shopOwner = getOwner();
+				sendTransactionMessage(result, player, shopOwner.isConnected() ? online(shopOwner.getPlayer()) : offline(shopOwner));
 				sendEffects(result == TransactionResult.OK, player);
 				return true;
 			case VIEW_DETAILS:
@@ -648,6 +638,15 @@ public abstract class AbstractShop{
 		}
 		return true;
 	}
+	
+	/**
+	 * The transaction messages to send
+	 *
+	 * @param result the result of the transaction
+	 * @param player the player transacting with the shop
+	 * @param owner the shop owners profile
+	 */
+	protected abstract void sendTransactionMessage(TransactionResult result, Player player, PlayerProfile owner);
 	
 	/**
 	 * @return the currency type being used by the server
@@ -718,6 +717,12 @@ public abstract class AbstractShop{
 			}
 		}
 		
+		if(currentType == nextType){
+			logger.debug("no changes, next type is same as current type");
+			logger.debug("===FINISHED DISPLAY CYCLE===");
+			return;
+		}
+		
 		logger.debug("Next Display " + nextType);
 		logger.debug("Removing old displays");
 		Collection<Player> nearbyPlayers = this.getSignLocation().getNearbyPlayers(Main.getPlugin().getSettingsConfig().getMaxShopDisplayDistance());
@@ -731,8 +736,9 @@ public abstract class AbstractShop{
 		
 		//refresh the shop display for all players within range of the shop
 		for(var nearbyPlayer : nearbyPlayers){
-			Main.getPlugin().getShopmanager().getDisplayManager().processShopDisplaysNearPlayer(nearbyPlayer, true);
+			display.spawn(nearbyPlayer);
 		}
+		updateSign(true);
 		setNeedsSave(true);
 		logger.debug("===FINISHED DISPLAY CYCLE===");
 	}
@@ -787,6 +793,10 @@ public abstract class AbstractShop{
 			return secondaryContainerLocation.clone().add(0, 1, 0);
 		}
 		return null;
+	}
+	
+	public String getPriceFormatted() {
+		return new DecimalFormat("0.##").format(price);
 	}
 	
 	@Override

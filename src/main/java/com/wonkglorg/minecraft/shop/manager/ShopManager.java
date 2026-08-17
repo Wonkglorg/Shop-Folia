@@ -257,7 +257,7 @@ public class ShopManager{
 		ShopCreationProcess process = playersInShopCreation.remove(player.getUniqueId());
 		plugin.logger().debug("Removing player " + player.getName() + "from shop creation list");
 		if(process != null){
-			Main.getPlugin().getLangManager().request("interaction_issue.createCancel").sendToAudience(player);
+			Main.getPlugin().getLangManager().request("interaction.issues.createCancel").sendToAudience(player);
 			Sign sign = process.getSign();
 			plugin.getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
 				if(sign.getBlockData() instanceof WallSign){
@@ -342,7 +342,7 @@ public class ShopManager{
 			//newly registered shop should be sent to all players, do this here or somewhere else?
 			var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopDisplayDistance());
 			for(var player : nearbyPlayers){
-				displayManager.processShopDisplaysNearPlayer(player, true);
+				shop.getDisplay().spawn(player);
 			}
 		});
 	}

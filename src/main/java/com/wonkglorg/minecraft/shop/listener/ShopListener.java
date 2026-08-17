@@ -29,6 +29,7 @@ import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.util.Components;
 import lombok.extern.slf4j.Slf4j;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -40,6 +41,8 @@ import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Chest.Type;
 import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -60,6 +63,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
+import java.util.List;
 
 @Slf4j
 public class ShopListener implements Listener{
@@ -157,6 +161,8 @@ public class ShopListener implements Listener{
 		}
 		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
 		shopManager.addPlayerShopCreation(player, process);
+		process.updateSignText();
+		lang.request("interaction.success." + process.getType().toString().toUpperCase() + ".initialize").sendToAudience(player);
 		logger.debug("=====SHOP CREATION SUCCESS====");
 	}
 	
@@ -198,6 +204,12 @@ public class ShopListener implements Listener{
 		
 		ShopCreationProcess process = shopManager.getShopCreationProcess(player);
 		
+		if(!(process instanceof SignCreationProcess signProcess)){
+			logger.debug("Current player process is not a sign process");
+			logger.debug("====SHOP INITIALISATION CANCEL====");
+			return;
+		}
+		
 		logger.debug("Current player process data: " + process);
 		
 		if(!process.getSign().getLocation().equals(event.getClickedBlock().getLocation())){
@@ -219,7 +231,7 @@ public class ShopListener implements Listener{
 		if(!shopManager.passesItemListCheck(item)){
 			logger.debug("Item is not allowed to be set as a shop");
 			logger.debug("====SHOP INITIALISATION CANCEL====");
-			lang.request("interaction_issue.blacklisted-item").sendToAudience(player);
+			lang.request("interaction.issues.itemFilterDeny").sendToAudience(player);
 			return;
 		}
 		
@@ -231,11 +243,13 @@ public class ShopListener implements Listener{
 		if(shopEvent.isCancelled()){
 			logger.debug("Event was cancelled by third party plugin");
 			logger.debug("====SHOP INITIALISATION CANCEL====");
+			lang.request("interaction.issues.createCancel").sendToAudience(player);
 			return;
 		}
 		
 		AbstractShop shop = null;
 		event.setCancelled(true); //cancel event otherwise 1 tick breaking and creative mode destroy the shop sign while clicking on it
+		
 		if(process.getType() != ShopType.BARTER){
 			process.setItemStack(item);
 			shop = process.createShop();
@@ -244,6 +258,8 @@ public class ShopListener implements Listener{
 			if(process.getItemStack() == null){
 				process.setItemStack(item);
 				logger.debug("Setting first item for barter shop: " + item);
+				lang.request("interaction.success." + process.getType().toString().toUpperCase() + ".initializeBarter").sendToAudience(player);
+				signProcess.updateSignText();
 				return; //do not finish shop because barter needs 2 items
 			} else {
 				process.setSecondaryStack(item);
@@ -256,6 +272,9 @@ public class ShopListener implements Listener{
 			shopManager.finishShopCreation(player, shop);
 			logger.debug("Sending Post init shop event");
 			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
+			LangRequest request = lang.request("interaction.success." + shop.getType().toString().toUpperCase() + ".create");
+			AbstractShop.shopPlaceholders(request, shop);
+			request.sendToAudience(player);
 			logger.debug("====SHOP INITIALISATION DONE====");
 		}
 	}
@@ -389,34 +408,23 @@ public class ShopListener implements Listener{
 			
 		}
 		//non-owner is trying to open shop
-		if(shop.getOwnerUUID().equals(player.getUniqueId())){
+		boolean isOwner = shop.getOwnerUUID().equals(player.getUniqueId());
+		
+		if(isOwner){
 			return;
 		}
+		
 		if(isOperator(player)){
-			if(shop.isAdmin()){
-				if(shop.getType() == ShopType.GAMBLE){
-					//allow gamble shops to be opened by operators
-					return;
-				}
-				event.setCancelled(true);
-				
-				shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
-				//we are cancelling this event regardless so no need to check if the action was performed
-			} else {
-				LangRequest request = lang.request("interaction." + shop.getType().toString() + ".opOpen");
-				AbstractShop.shopPlaceholders(request, shop);
-				request.sendToAudience(player);
+			if(!shop.isAdmin()){
+				lang.request("interaction." + shop.getType().toString() + ".opOpen").replace("%owner%", shop.getOwner().getName()).sendToAudience(
+						player);
 			}
 		} else {
-			// Cancel event to prevent other players from opening the chest
-			event.setCancelled(true);
-			
 			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
 			if(!actionPerformed){
-				LangRequest request = lang.request("permission.error.openOther");
-				AbstractShop.shopPlaceholders(request, shop);
-				request.sendToAudience(player);
+				lang.request("permission.error.openOther").sendToAudience(player);
 			}
+			event.setCancelled(true);
 		}
 	}
 	
@@ -525,7 +533,7 @@ public class ShopListener implements Listener{
 			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
 			// protect shops that are in the middle of a shop creation process from being destroyed
 			if(shopManager.isContainerInShopCreationProcess(b.getLocation())){
-				lang.request("interaction_issue.destroyUninitializedChest").sendToAudience(player);
+				lang.request("interaction.issues.destroyUninitializedChest").sendToAudience(player);
 				event.setCancelled(true); // don't break chest
 				return;
 			}
@@ -646,26 +654,26 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
-		if(settingsConfig.isDestroyShopRequiresSneak() && !player.isSneaking()){
-			event.setCancelled(true);
-			Main.getPlugin().logger().debug("[MiscListener.shopDestroy : getDestroyShopRequiresSneak] updateSign");
-			shop.updateSign();
+		boolean isOwner = shop.getOwnerUUID().equals(player.getUniqueId());
+		
+		if(isOwner && !isAllowedToDestroyShop(player, shop.getType())){
+			logger.debug("Owner %s without permission trying to break shop container".formatted(player.getName()));
+			lang.request("permission.error.destroy").sendToAudience(player);
 			return;
 		}
 		
-		//player trying to break their own shop
-		if(shop.getOwnerUUID().equals(player.getUniqueId())){
-			if(!isAllowedToDestroyShop(player, shop.getType())){
-				ShopMessage.request("permission.destroy", player, shop).sendToAudience(player);
-				event.setCancelled(true);
-				return;
-			}
-		} else { //trying to break other shop
-			if(!isAllowedToDestroyShopOther(player)){
-				ShopMessage.request("permission.destroyOther", player, shop).sendToAudience(player);
-				event.setCancelled(true);
-				return;
-			}
+		if(!isOwner && !isAllowedToDestroyShopOther(player)){
+			logger.debug("Player %s without destroy other permission trying to break shop container of %s".formatted(player.getName(),
+					shop.getOwner().getName()));
+			lang.request("permission.error.destroyOther").sendToAudience(player);
+			return;
+		}
+		
+		if(settingsConfig.isDestroyShopRequiresSneak() && !player.isSneaking()){
+			event.setCancelled(true);
+			shop.updateSign();
+			lang.request("interaction.issues.destroySignRequiresSneak").sendToAudience(player);
+			return;
 		}
 		
 		PlayerDestroyShopEvent e = new PlayerDestroyShopEvent(player, shop);
@@ -681,7 +689,7 @@ public class ShopListener implements Listener{
 		if(cost > 0){
 			// Check for funds
 			if(party.getAvailableFunds(Main.getPlugin().getItemConfig().getCurrencyItem()) < cost){
-				ShopMessage.request("interaction_issue.destroyInsufficientFunds", player, shop).sendToAudience(player);
+				lang.request("interaction.issues.destroyInsufficientFunds").sendToAudience(player);
 				event.setCancelled(true);
 				return;
 			}
@@ -700,7 +708,13 @@ public class ShopListener implements Listener{
 				shop.getContainerLocation().getWorld().dropItemNaturally(shop.getContainerLocation(), currencyDrop);
 			}
 		}
-		ShopMessage.request("interaction." + shop.getType().toString() + ".destroy", player, shop).sendToAudience(player);
+		if(isOwner){
+			lang.request("interaction." + shop.getType().toString() + ".destroy").sendToAudience(player);
+		} else {
+			lang.request("interaction." + shop.getType().toString() + ".opDestroy").replace("%owner%", shop.getOwner().getName()).sendToAudience(
+					player);
+		}
+		
 		//remove the whole shop registration
 		shopManager.unregisterShop(shop);
 	}
@@ -717,31 +731,40 @@ public class ShopListener implements Listener{
 		//this is the primary container of the shop, do not allow destruction, the sign needs to be broken not the chest.
 		Location blockLocation = event.getBlock().getLocation();
 		
+		boolean isOwner = shop.getOwnerUUID().equals(player.getUniqueId());
+		
+		if(isOwner && !isAllowedToDestroyShop(player, shop.getType())){
+			logger.debug("Owner %s without permission trying to break shop container".formatted(player.getName()));
+			lang.request("permission.error.destroy").sendToAudience(player);
+			return;
+		}
+		
+		if(!isOwner && !isAllowedToDestroyShopOther(player)){
+			logger.debug("Player %s without destroy other permission trying to break shop container of %s".formatted(player.getName(),
+					shop.getOwner().getName()));
+			lang.request("permission.error.destroyOther").sendToAudience(player);
+			return;
+		}
+		
 		if(shop.getContainerLocation().equals(blockLocation)){
-			if(shop.getOwnerUUID().equals(player.getUniqueId()) || isAllowedToDestroyShopOther(player)){
-				ShopMessage.request("interactionIssue.destroyChest", player, shop).sendToAudience(player);
-				shop.sendEffects(false, player);
-			} else {
-				ShopMessage.request("permission.destroyOther", player, shop).sendToAudience(player);
-			}
+			logger.debug("Trying to break main shop container, only destroying sign is allowed");
+			lang.request("interaction.issues.destroyChest").sendToAudience(player);
+			shop.sendEffects(false, player);
 			return;
 		}
 		
 		logger.debug("Trying to downsize shop");
-		if(shop.getOwnerUUID().equals(player.getUniqueId()) || isAllowedToDestroyShopOther(player)){
-			logger.debug("Sending resize event");
-			PlayerResizeShopEvent e = new PlayerResizeShopEvent(player, shop, blockLocation, false);
-			Bukkit.getPluginManager().callEvent(e);
-			
-			if(e.isCancelled()){
-				logger.debug("Resize event was cancelled by third party plugin");
-				event.setCancelled(true);
-				return;
-			}
-			// Explicitly allow the chest to be broken since it is the "Expansion" chest
-			// we need to uncancel the event so that the chest can be broken.
-			event.setCancelled(false);
-			shop.removeSecondaryContainerLocation();
+		PlayerResizeShopEvent e = new PlayerResizeShopEvent(player, shop, blockLocation, false);
+		Bukkit.getPluginManager().callEvent(e);
+		
+		if(e.isCancelled()){
+			logger.debug("Resize event was cancelled by third party plugin");
+			event.setCancelled(true);
+			return;
 		}
+		// Explicitly allow the chest to be broken since it is the "Expansion" chest
+		// we need to uncancel the event so that the chest can be broken.
+		event.setCancelled(false);
+		shop.removeSecondaryContainerLocation();
 	}
 }

@@ -139,7 +139,7 @@ public class ShopCommand extends AbstractCommand{
 		//update all shop signs and log the change to the database
 		plugin.getItemConfig().setCurrencyItem(heldItem);
 		lang.request("command.set-currency.success")
-		    .replace("%held-item%", ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))
+		    .replace("%held-item%", () -> ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))
 		    .sendToAudience(sender);
 		return 0;
 	}
@@ -161,14 +161,9 @@ public class ShopCommand extends AbstractCommand{
 	
 	private int usageMessage(CommandContext<CommandSourceStack> ctx) {
 		CommandSender sender = ctx.getSource().getSender();
-		if(plugin.getSettingsConfig().isEnableGUI() && sender instanceof Player player){
-			//ShopGuiWindow window = plugin.getGuiHandler().getWindow(player);
-			//window.open();
-		} else {
-			lang.request("command.usage.user").sendToAudience(sender);
-			if(PlayerProfile.isOperator(sender)){
-				lang.request("command.usage.admin").sendToAudience(sender);
-			}
+		lang.request("command.usage.user").sendToAudience(sender);
+		if(PlayerProfile.isOperator(sender)){
+			lang.request("command.usage.admin").sendToAudience(sender);
 		}
 		return 1;
 	}

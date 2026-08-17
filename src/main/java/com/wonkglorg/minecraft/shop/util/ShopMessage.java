@@ -7,6 +7,7 @@ import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getTeleportCooldownRemaining;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
+import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.util.Components;
 import static com.wonkglorg.minecraft.util.Components.toComponent;
@@ -20,7 +21,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -324,9 +324,9 @@ public class ShopMessage{
 		
 		String shopFormat;
 		if(shop.isAdmin()){
-			shopFormat = ".admin";
+			shopFormat = "admin";
 		} else {
-			shopFormat = ".normal";
+			shopFormat = "normal";
 		}
 		
 		if(displayType == DisplayType.NONE){
@@ -351,7 +351,7 @@ public class ShopMessage{
 			
 			request.replace("%item%",shop.getItemStack()::displayName)
 					.replace("%amount%",shop.getAmount())
-					.replace("%price%",new DecimalFormat("0.##").format(shop.getPrice()))
+					.replace("%price%",shop.getPriceFormatted())
 					.replace("%owner%",shop::getOwnerName)
 					.replace("%stock%",shop.getStock());
 			
@@ -359,6 +359,32 @@ public class ShopMessage{
 			if(barterStack!=null){
 				request.replace("%barter-item%",barterStack::displayName);
 			}
+			lines.add(request.toSingleComponent());
+			//@formatter:on
+		}
+		return lines;
+	}
+	
+	/**
+	 * Gets the initialize context sign lines
+	 */
+	public static List<Component> getSignLines(ShopCreationProcess context) {
+		List<Component> lines = new ArrayList<>(4);
+		for(var i = 1; i < 5; i++){
+			//@formatter:off
+			LangRequest request = lang.request("sign.text." + context.getType().toString().toUpperCase() + ".initialise." + i);
+			
+			if(context.getItemStack() != null){
+				request.replace("%item%",context.getItemStack()::displayName);
+			}
+			if(context.getSecondaryStack() != null){
+				request.replace("%barter-item%",context.getSecondaryStack()::displayName);
+			}
+			
+			request.replace("%amount%",context.getAmount())
+			       .replace("%price%",context.getPrice())
+			       .replace("%owner%",context.getPlayer().getName())
+			       .replace("%stock%",0);
 			lines.add(request.toSingleComponent());
 			//@formatter:on
 		}

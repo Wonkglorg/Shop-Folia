@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 
 public enum DisplayType{
 	NONE(s -> true),
+	TEXT(s -> true),
 	ITEM(s -> s.getAboveContainer().getBlock().getType() == Material.AIR),
 	LARGE_ITEM(s -> s.getAboveContainer().getBlock().getType() == Material.AIR),
 	GLASS_CASE(s -> s.getAboveContainer().getBlock().getType() == Material.AIR),
@@ -25,5 +26,14 @@ public enum DisplayType{
 	
 	public boolean canSpawn(AbstractShop shop) {
 		return canSpawn.test(shop);
+	}
+	
+	public static DisplayType fromValue(String value) {
+		for(var type : DisplayType.values()){
+			if(type.toString().equalsIgnoreCase(value)){
+				return type;
+			}
+		}
+		return NONE;
 	}
 }

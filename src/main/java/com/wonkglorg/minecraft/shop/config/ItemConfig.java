@@ -1,7 +1,7 @@
 package com.wonkglorg.minecraft.shop.config;
 
-import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.config.types.Config;
+import com.wonkglorg.minecraft.shop.Main;
 import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -21,16 +21,7 @@ public class ItemConfig extends Config{
 	 */
 	@Getter
 	private ItemStack gambleDisplayItem;
-	/**
-	 * No shop can be created if it is present here
-	 */
-	@Getter
-	private List<ItemStack> blacklistItems = new ArrayList<>();
-	/**
-	 * Shop needs to be made of this material to be allowed
-	 */
-	@Getter
-	private List<ItemStack> whitelistItems = new ArrayList<>();
+	
 	/**
 	 * No shop can be created with this material
 	 */
@@ -49,53 +40,50 @@ public class ItemConfig extends Config{
 	
 	public void reload() {
 		silentLoad();
-		currencyItem = getItemStack("currency-item", new ItemStack(Material.EMERALD));
+		currencyItem = getItemStack("currency-item", new ItemStack(Material.DIAMOND));
 		currencyItem.setAmount(1);
-		gambleDisplayItem = getItemStack("gamble-display-item", null);
+		gambleDisplayItem = getItemStack("gamble-display-item", new ItemStack(Material.DIAMOND));
 		blacklistMaterials.clear();
 		whitelistMaterials.clear();
 		
-		blacklistItems = getItemStackList("blacklist.items");
-		
 		if(contains("blacklist.materials")){
 			for(var material : getStringList("blacklist.materials")){
-				blacklistMaterials.add(Material.valueOf(material));
+				try{
+					blacklistMaterials.add(Material.valueOf(material));
+				} catch(IllegalArgumentException e){
+					logger.warning("Invalid blacklist material:" + material);
+				}
 			}
 		}
 		
-		whitelistItems = getItemStackList("whitelist.items");
-		
 		if(contains("whitelist.materials")){
 			for(var material : getStringList("whitelist.materials")){
-				whitelistMaterials.add(Material.valueOf(material));
+				try{
+					whitelistMaterials.add(Material.valueOf(material));
+				} catch(IllegalArgumentException e){
+					logger.warning("Invalid whitelist material:" + material);
+				}
 			}
 		}
 	}
 	
+	/**
+	 * If the item is allowed by the black / whitelist
+	 */
 	public boolean isValidItem(ItemStack itemStack) {
 		if(itemStack == null || itemStack.getType().isAir()){
 			return false;
 		}
 		
-		if(blacklistMaterials.contains(itemStack.getType())){
+		if(!blacklistMaterials.isEmpty() && blacklistMaterials.contains(itemStack.getType())){
 			return false;
 		}
 		
-		if(blacklistItems.stream().anyMatch(item -> item.isSimilar(itemStack))){
+		if(!whitelistMaterials.isEmpty() && !whitelistMaterials.contains(itemStack.getType())){
 			return false;
 		}
 		
-		boolean hasMaterialWhitelist = !whitelistMaterials.isEmpty();
-		boolean hasItemWhitelist = !whitelistItems.isEmpty();
-		
-		// No whitelist means all non-blacklisted items are allowed.
-		if(!hasMaterialWhitelist && !hasItemWhitelist){
-			return true;
-		}
-		
-		// An item is valid if it matches either active whitelist.
-		return (hasMaterialWhitelist && whitelistMaterials.contains(itemStack.getType())) || (hasItemWhitelist && whitelistItems.stream().anyMatch(
-				item -> item.isSimilar(itemStack)));
+		return true;
 	}
 	
 	public List<ItemStack> getItemStackList(String path) {

@@ -33,11 +33,11 @@ public class VaultTransaction extends Transaction{
 	
 	@Override
 	public void execute() {
-		buyer.removeCurrency(price);
-		buyer.addItem(tradedStack, amount);
-		
-		seller.addCurrency(price);
 		seller.removeItem(tradedStack, amount);
+		buyer.removeCurrency(price);
+		
+		buyer.addItem(tradedStack, amount);
+		seller.addCurrency(price);
 	}
 	
 	@Override

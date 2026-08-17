@@ -34,10 +34,10 @@ public class ExpirienceTransaction extends Transaction{
 	@Override
 	public void execute() {
 		buyer.removeExperience((int) price);
-		buyer.addItem(tradedStack, amount);
-		
-		seller.addExperience((int) price);
 		seller.removeItem(tradedStack, amount);
+		
+		buyer.addItem(tradedStack, amount);
+		seller.addExperience((int) price);
 	}
 	
 	@Override

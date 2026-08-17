@@ -5,12 +5,14 @@ import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ExpirienceUtils;
+import lombok.Getter;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
 import java.util.List;
 
 public class OnlinePlayerProfile extends OfflinePlayerProfile{
+	@Getter
 	private final Player player;
 	
 	public OnlinePlayerProfile(Player player) {

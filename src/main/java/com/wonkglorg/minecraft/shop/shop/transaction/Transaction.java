@@ -64,11 +64,11 @@ public abstract class Transaction{
 	 * @return the result of the possible transaction
 	 */
 	public TransactionResult canFulfill() {
-		if(getBuyerAvailableFunds() < amount){
+		if(getBuyerAvailableFunds() < price){
 			return TransactionResult.INSUFFICIENT_FUNDS_BUYER;
 		}
 		
-		if(getSellerAvailableFunds() < price){
+		if(getSellerAvailableFunds() < amount){
 			return TransactionResult.INSUFFICIENT_FUNDS_SELLER;
 		}
 		

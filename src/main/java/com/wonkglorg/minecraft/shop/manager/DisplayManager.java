@@ -43,7 +43,6 @@ public class DisplayManager{
 	
 	/**
 	 * Shops whose displays are currently visible to each player.
-	 *
 	 * Access to the Set should occur on the player's entity/region thread.
 	 */
 	private final Map<UUID, Set<AbstractShop>> visibleShopsByPlayer = new ConcurrentHashMap<>();
@@ -215,7 +214,7 @@ public class DisplayManager{
 			return true;
 		}
 		
-		return previous.distanceSquared(current) >= 4.0;
+		return previous.distanceSquared(current) >= Main.getPlugin().getSettingsConfig().getDisplayMovementThreshold();
 	}
 	
 	private void clearPlayerState(UUID playerId) {

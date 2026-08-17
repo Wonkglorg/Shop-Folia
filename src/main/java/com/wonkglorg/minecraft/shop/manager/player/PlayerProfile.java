@@ -7,7 +7,6 @@ import static com.wonkglorg.minecraft.shop.manager.PlayerManager.loadFromFile;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
-import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.OfflinePlayer;

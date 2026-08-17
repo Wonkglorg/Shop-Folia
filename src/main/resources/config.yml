@@ -1,12 +1,8 @@
-#
-# WIKI PAGE: https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml) #
-#
-
-# =================================================================== #
-#                         GENERAL SETTINGS                            #
-# =================================================================== #
-# This enables a graphical user interface to use all shop features without typing commands #
-enableGUI: true
+# Available Log Levels:
+# * WARN   : Logs warnings and errors
+# * INFO   : Standard logging, only logs on startup, warnings, and errors
+# * DEBUG  : Logs detailed information useful for debugging issues
+logLevel: INFO
 
 # This will permanently delete a player's shops if they have not logged onto the server after X hours #
 # Set this to 0 to never auto-delete a player's shops #
@@ -28,52 +24,32 @@ deletePlayerShopsAfterXHoursOffline: 0
 # this to the type of item being used. If you are using VAULT, you will want to change this to a currency symbol
 # like '$'. If you are using EXPERIENCE, you will want to name this "Experience" or something similar
 
-# format :
-# This is the order in which prices are displayed. For example, if you are using ITEM with Emeralds as the currency,
-# '[price] [name]' would show '5 Emerald(s)'. If you are using VAULT, this would show '5 $', so setting this as
-# '[name][price]' would show '$5'.
+
 currency:
+  #the type of currency to use (name for currencies is defined in the specific lang file of the plugin
   type: ITEM
-  name: "Emerald(s)"
-  format: "[price] [name]"
 
 # what words to use for sign shop creation
 sign:
   creation:
-    SHOP: "shop"
+    SHOP: "shop" #this is the first line on a sign
+    #these go in the last line to denote what shop type it is
     SELL: "sell"
     BUY: "buy"
     BARTER: "barter"
     GAMBLE: "gamble"
     ADMIN: "admin"
-    COMBO: "combo"
 
-# Does your currency support fractional units?
-# false (default) - Only allow whole currency units
-# true - Allow fractional units down to 0.01 (Vault Required!)
-allowFractionalCurrency: false
-# This allows shops to sell partial stacks for a calculated partial rate if the shop is low on stock #
-# https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml)#allowpartialsales #
-allowPartialSales: true
-# This will make it so shops will only complete transactions if the item durabilities are the same #
-checkItemDurability: true
-# This will make it so shops will still complete transactions if the item "repair cost" is different, like with enchanted books or armor
-# * "repair cost" defines how many times an item has been combined in an anvil
-ignoreItemRepairCost: true
 
-# The amount of money a player is charged to create a shop #
-creationCost: 0
-# The amount of money a player is charged to destroy a shop #
-destructionCost: 0
+cost:
+  shop:
+    #the cost to charge when creating a shop
+    creation: 0
+    #the cost to charge when destroying a shop
+    destruction: 0
+  # This returns the creation cost to the shop creator when the shop is destroyed #
+  returnCreationCosat: false
 
-# The amount of money a player is charged to teleport to a shop (via the GUI) #
-teleportCost: 0
-# The amount of time (in seconds) a player must wait between shop teleports #
-teleportCooldown: 0
-
-# This returns the creation cost to the shop creator when the shop is destroyed #
-# Adds virtual funds if using vault currency and drops the item on the chest location if using physical currency #
-returnCreationCost: false
 
 # This formats suffixes for large numbers like (5,000 = 5k) or (5,000,000 = 5M) #
 # minimumValue = minimum value to start formatting strings #
@@ -121,20 +97,13 @@ displayCycle:
   - LARGE_ITEM
   - ITEM_FRAME
 
-# This will force shop display to be set to NONE if the display has no room #
-# If this is false, the shop will simply say it cannot be created because the display is blocked #
-forceDisplayToNoneIfBlocked: true
-
 # This controls what light level (0 to 15) shop displays emit #
-# THIS CAN ONLY BE USED IN MINECRAFT 1.17 OR ABOVE #
 displayLightLevel: 0
 
 # This controls whether the item frames of shop displays are glowing #
-# THIS CAN ONLY BE USED IN MINECRAFT 1.17 OR ABOVE #
 setGlowingItemFrame: false
 
 # This controls whether shop sign text should be glowing by default #
-# THIS CAN ONLY BE USED IN MINECRAFT 1.17 OR ABOVE #
 # Signs on Bedrock Edition might look dimmed out
 setGlowingSignText: false
 
@@ -155,17 +124,24 @@ setGlowingSignText: false
 #   - RIGHT_CLICK_CHEST
 #   - SHIFT_RIGHT_CLICK_CHEST
 actionMappings:
-  transactWithShop: RIGHT_CLICK_SIGN
-  transactWithShopFullStack: SHIFT_RIGHT_CLICK_SIGN
-  viewShopDetails: LEFT_CLICK_CHEST
-  cycleShopDisplay: SHIFT_RIGHT_CLICK_CHEST
+  #clicks used to trade with a shop
+  transactWithShop:
+    - RIGHT_CLICK_SIGN
+    - SHIFT_RIGHT_CLICK_SIGN
+  #transactWithShopFullStack:
+  #view details about a shop
+  viewShopDetails:
+    - LEFT_CLICK_CHEST
+  #cycle displays on a shop
+  cycleShopDisplay:
+    - SHIFT_RIGHT_CLICK_CHEST
 
 # These are the methods players are able to use to create shops #
 # placeSign - players can place signs on chests and fill out the info on the sign itself #
 # hitChest - players can hit a chest and they will be prompted to fill out the info in chat. A sign will be created. #
 creationMethod:
   placeSign: true
-  hitChest: true
+  command: true
 
 # This will show shop creation instructions as floating text above shops #
 displayFloatingCreateText: true
@@ -177,10 +153,6 @@ destroyShopRequiresSneak: false
 # These will need to be set to false if your server is running anything less than Minecraft 1.9 #
 playSounds: true
 playEffects: true
-
-# If this is set to true, LEFT side of combo shop signs will BUY items and RIGHT side will SELL items #
-# If this is set to false, LEFT side of combo shop signs will SELL items and RIGHT side will BUY items #
-inverseComboShops: false
 
 # Options:
 # NONE - all items can be listed in shops
@@ -216,40 +188,9 @@ enabledContainers:
   - WHITE_SHULKER_BOX
   - YELLOW_SHULKER_BOX
 
-# =================================================================== #
-#                    DATABASE LOGGING SETTINGS                        #
-#                  OFFLINE PURCHASE NOTIFICATIONS                     #
-# =================================================================== #
-# https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml)#database-logging--notifications
 
-# Database logging for player Shop Actions & Transactions #
-# Required for Offline Purchase Notifications to be sent, default enabled with FILE database #
-# Also helpful if you want to keep an eye out for cheaters that abuse Shop bugs so that you can take action. #
-#
-# It will track:
-# * Anytime a player performs a Shop action (see `actionMappings`). Tracks timestamp, shop, player, action performed, and transaction id.
-# * Shop Transactions that are executed. Tracks transaction id, price, amount, and item traded in the transaction.
-logging:
-  # options for database `type` are:
-  # - 'OFF': Disables database logging and offline purchase notifications
-  # - 'FILE': (Default) Uses a File based H2 database for tracking purchases, requires no extra setup
-  # - 'MYSQL': Uses a remote MYSQL Database to manage purchase tracking
-  # - 'MARIADB': Uses a remote MARIADB Database to manage purchase tracking
-  type: "FILE"
-  serverName: "127.0.0.1"
-  databaseName: "shopdb"
-  port: 3306
-  user: "shop"
-  password: "mysecurepassword"
-  # properties are only used on a 'MYSQL' type for now, you shouldn't need to touch this normally
-  properties:
-    - "useSSL=false"
-
-# Logging must be enabled for purchase notifications to appear!
-# Check lang/en.yml to customize the offline purchase notification message #
-offlinePurchaseNotifications:
-  # Should offline purchases be shown to the user
-  enabled: true
+# Should purchases while the player was offline be sent to them on join
+offlinePurchaseNotifications: true
 
 # =================================================================== #
 #                   SHOP PERFORMANCE OPTIMIZATIONS                    #
@@ -277,29 +218,6 @@ displayMovementThreshold: 1.0
 #       so setting this higher than 20 will only "preload" shop displays for players beyond this distance.
 maxShopDisplayDistance: 20.0
 
-# Radius (in chunks) around a player to search for shops
-# Each increment searches exponentially more chunks (1=3x3 area, 2=5x5 area, etc)
-# Recommended: 1, default: 1
-# You can set this higher, but unless you are going above 24, you will not see any difference.
-# The code is highly optimized, so you can set this higher, but you should not need to.
-shopSearchRadius: 1
-
-# Number of shop displays to process in a single batch when sending to a player
-# This setting helps make shop displays appear more smoothly by sending them in smaller groups
-# Lower values create a smoother experience but take longer to fully load all displays
-# Higher values load displays faster but may cause momentary client lag
-# This primarily affects client-side performance, not server performance
-# Recommended range: 5-20, default: 10
-displayBatchSize: 10
-
-# Delay between batches of shop displays in server ticks (20 ticks = 1 second)
-# This setting controls how much time passes between sending each batch of displays to a player
-# Lower values make all displays appear faster but may cause client stuttering
-# Higher values create a smoother appearance but take longer to show all displays
-# This primarily affects client-side experience, not server performance
-# Recommended range: 1-3, default: 2
-displayBatchDelay: 2
-
 # =================================================================== #
 #                            DEBUG TOOLS                              #
 # =================================================================== #
@@ -309,25 +227,11 @@ displayBatchDelay: 2
 #
 # If you are running into issues, or doing a lot of testing, you can enable these debug settings
 # in order to speed up your debugging!
-
-# To get more visibility into Shop actions, you can increase the log level to see more!
-# Available Log Levels:
-# * WARN   : Logs warnings and errors
-# * INFO   : Standard logging, only logs on startup, warnings, and errors
-# * DEBUG  : Logs detailed information useful for debugging issues
-logLevel: INFO
-
 debug:
   # (default: false) Should owners be able to buy/sell from their own shop
   allowUseOwnShop: false
-  # (default: false) Show price calculation debug logs when purchases are made
-  transactionDebugLogs: false
   # (default: 5000) The cooldown in milliseconds for how long a player must wait between creating new shop creation processes
   shopCreateCooldown: 5000
-  # (default: false) Set ALL shops to be saved when the server starts up, right after they are loaded from the file.
-  #                  Can be helpful if you have very old nbt data or items that are incompatible in player files.
-  # Note: MAKE BACKUP BEFORE USING THIS!
-  forceResaveAll: false
   # If old data should be migrated
   migrateOldData: false
 

@@ -149,8 +149,8 @@ public class Main extends JavaPlugin{
 	public void reload() {
 		this.logger().info("Loading Shop " + this.getPluginMeta().getVersion());
 		PlayerManager.reload();
-		settingsConfig.silentLoad();
-		itemConfig.silentLoad();
+		settingsConfig.reload();
+		itemConfig.reload();
 		logger.setLogLevel(settingsConfig.getLogLevel());
 		langManager.silentLoad();
 		shopmanager.reload();

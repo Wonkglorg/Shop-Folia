@@ -16,30 +16,53 @@ public class ItemTransaction extends Transaction{
 	
 	@Override
 	public double getBuyerAvailableFunds() {
-		return buyer.getAvailableItemFunds(tradedStack);
+		return buyer.getAvailableItemFunds(currency);
 	}
 	
 	@Override
 	public boolean canBuyerAcceptPayment() {
-		return buyer.canAcceptItemPayment(currency, (int) price);
+		var inventory = buyer.createVirtualInventory();
+		
+		var cloneCurrency = currency.clone();
+		cloneCurrency.setAmount((int) price);
+		
+		if(!inventory.removeItemAnySlot(cloneCurrency).isEmpty()){
+			return false;
+		}
+		var tradeStackClone = tradedStack.clone();
+		tradeStackClone.setAmount(amount);
+		
+		return inventory.addItem(tradedStack).isEmpty();
 	}
 	
 	@Override
 	public double getSellerAvailableFunds() {
-		return seller.getAvailableItemFunds(currency);
+		return seller.getAvailableItemFunds(tradedStack);
 	}
 	
 	@Override
 	public boolean canSellerAcceptPayment() {
-		return seller.canAcceptItemPayment(tradedStack, amount);
+		var inventory = seller.createVirtualInventory();
+		
+		var tradeStackClone = tradedStack.clone();
+		tradeStackClone.setAmount(amount);
+		
+		if(!inventory.removeItemAnySlot(tradeStackClone).isEmpty()){
+			return false;
+		}
+		
+		var cloneCurrency = currency.clone();
+		cloneCurrency.setAmount((int) price);
+		
+		return inventory.addItem(cloneCurrency).isEmpty();
 	}
 	
 	@Override
 	public void execute() {
 		buyer.removeItem(currency, (int) price);
-		buyer.addItem(tradedStack, amount);
-		
 		seller.removeItem(tradedStack, amount);
+		
+		buyer.addItem(tradedStack, amount);
 		seller.addItem(currency, (int) price);
 	}
 	
