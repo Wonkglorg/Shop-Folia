@@ -6,6 +6,7 @@ import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getTeleportCooldownRemaining;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
+import static com.wonkglorg.minecraft.shop.shop.AbstractShop.formatPrice;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
@@ -376,13 +377,18 @@ public class ShopMessage{
 			
 			if(context.getItemStack() != null){
 				request.replace("%item%",context.getItemStack()::displayName);
+			}else{
+				request.replace("%item%","");
 			}
+			
 			if(context.getSecondaryStack() != null){
 				request.replace("%barter-item%",context.getSecondaryStack()::displayName);
+			}else{
+				request.replace("%barter-item%","");
 			}
 			
 			request.replace("%amount%",context.getAmount())
-			       .replace("%price%",context.getPrice())
+			       .replace("%price%",formatPrice(context.getPrice()))
 			       .replace("%owner%",context.getPlayer().getName())
 			       .replace("%stock%",0);
 			lines.add(request.toSingleComponent());
@@ -399,8 +405,8 @@ public class ShopMessage{
 	public static List<Component> getSignLinesTimeout() {
 		List<Component> lines = new ArrayList<>(4);
 		
-		for(var i = 0; i < 4; i++){
-			lines.add(lang.request("sign.text.timeout" + i).toSingleComponent());
+		for(var i = 1; i < 5; i++){
+			lines.add(lang.request("sign.text.TIMEOUT." + i).toSingleComponent());
 		}
 		return lines;
 	}

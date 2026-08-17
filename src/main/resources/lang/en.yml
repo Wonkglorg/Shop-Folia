@@ -169,7 +169,6 @@ interaction:
     createSignRoom: "<red>This shop could not created because there is no room for a wall sign."
     createOtherShop: "<red>You may not create a shop on the same chest as another player."
     createInsufficientFunds: "<red>You do not have the funds required to create this shop."
-    createCooldown: "<red>You can only create a shop every few seconds."
     createCancel: "<red>Cancelled shop creation."
     destroyInsufficientFunds: "<red>You do not have the funds required to destroy this shop."
     initializeOtherShop: "<red>You may not initialize another players shop with an item."
@@ -293,6 +292,11 @@ command:
 
 sign:
   text:
+    TIMEOUT:
+      1:
+      2:
+      3:
+      4:
     SELL:
       initialise:
         1: "<red><bold>[sell shop]"
@@ -382,7 +386,7 @@ sign:
         2: "Random Item"
         3: "%stock-color%%price%"
         4: "%server-display-name%"
-# Hologram Exclusive Placeholders
+# UNUSED FOR NOW!
 display_tag_text:
   SELL:
     normal:

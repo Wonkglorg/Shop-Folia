@@ -62,6 +62,7 @@ public abstract class AbstractShop{
 	
 	private static final @NotNull BlockData EMERALD_BLOCK_DATA = Material.EMERALD_BLOCK.createBlockData();
 	private static final @NotNull BlockData REDSTONE_BLOCK_DATA = Material.REDSTONE_BLOCK.createBlockData();
+	public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.##");
 	
 	@Getter
 	@Setter
@@ -795,8 +796,12 @@ public abstract class AbstractShop{
 		return null;
 	}
 	
+	public static String formatPrice(double price) {
+		return DECIMAL_FORMAT.format(price);
+	}
+	
 	public String getPriceFormatted() {
-		return new DecimalFormat("0.##").format(price);
+		return formatPrice(price);
 	}
 	
 	@Override

@@ -64,8 +64,6 @@ public class SignCreationProcess extends ShopCreationProcess{
 		} else {
 			Main.getPlugin().logger().debug("Shop type: " + type);
 		}
-		
-		finishedInitialisation = true;
 		return true;
 	}
 	

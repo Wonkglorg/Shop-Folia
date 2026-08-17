@@ -79,7 +79,7 @@ public abstract class ShopCreationProcess{
 	protected ItemStack secondaryStack = null;
 	
 	@Getter
-	protected boolean finishedInitialisation;
+	protected boolean finishedInitialisation = false;
 	@Getter
 	protected boolean isCancelled;
 	
@@ -205,6 +205,7 @@ public abstract class ShopCreationProcess{
 		}
 		
 		shop.updateSign();
+		finishedInitialisation = true;
 		return shop;
 	}
 	

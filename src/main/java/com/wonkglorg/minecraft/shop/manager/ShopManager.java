@@ -196,11 +196,13 @@ public class ShopManager{
 	
 	public void addPlayerShopCreation(Player player, ShopCreationProcess process) {
 		playersInShopCreation.put(player.getUniqueId(), process);
-		
+		plugin.logger().debug("Shop Creation process started for: " + player.getName());
 		//give player a limited amount of time to finish creating the shop until it is deleted
 		plugin.getFoliaLib().getScheduler().runLater(() -> {
+			plugin.logger().debug("Shop Creation timeout handle for: " + player.getName());
 			//already canceled by something else no need to od it again
 			if(process.isCancelled()){
+				plugin.logger().debug("Shop Creation already cancelled");
 				return;
 			}
 			//the shop has still not been initialized with an item from a player
