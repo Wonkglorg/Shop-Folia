@@ -39,11 +39,12 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
-	protected void logTransaction(TransactionParty party) {
+	protected void logTransaction(TransactionParty party, int multiplier) {
 		Main.getPlugin().getShopmanager().getDatabase().logTransaction(id,
 				System.currentTimeMillis(),
 				party.getPlayer().getUniqueId(),
-				getItemStack());
+				getItemStack(),
+				1);
 	}
 	
 	@Override
@@ -91,7 +92,7 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
-	public Transaction startTransaction(TransactionParty party) {
+	public Transaction startTransaction(TransactionParty party, int multiplier) {//multiplier is ignored for gambling
 		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT -> new VaultTransaction(new ShopTransactionParty(this), party, amount, price, getItemStack());
 			case ITEM -> new ItemTransaction(new ShopTransactionParty(this),

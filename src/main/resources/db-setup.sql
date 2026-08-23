@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS transactions
     cache_offline  INTEGER NOT NULL DEFAULT 0,
     -- if the transaction was gambling shows the reward the user got from gambling
     gamble_reward  TEXT,
+    -- How many trades were done within this one transactions with the shop
+    transaction_count INTEGER,
 
     FOREIGN KEY (shop_uuid)
         REFERENCES shops (shop_uuid)

@@ -297,16 +297,17 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 	}
 	
-	public void logTransaction(UUID shopId, long timestamp, UUID purchaserId, @Nullable ItemStack gambleReward) {
+	public void logTransaction(UUID shopId, long timestamp, UUID purchaserId, @Nullable ItemStack gambleReward, int multiplier) {
 		scheduler.runAsync(_ -> {
 			try(var preparedStatement = getConnection().prepareStatement("""
-					INSERT INTO transactions(shop_uuid, timestamp, purchaser_uuid,cache_offline,gamble_reward) VALUES (?,?,?,?,?)
+					INSERT INTO transactions(shop_uuid, timestamp, purchaser_uuid,cache_offline,gamble_reward, transaction_count) VALUES (?,?,?,?,?,?)
 					""");){//SQLITE auto increments primary keys, message here is false!
 				preparedStatement.setString(1, shopId.toString());
 				preparedStatement.setLong(2, timestamp);
 				preparedStatement.setString(3, purchaserId.toString());
 				preparedStatement.setInt(4, 0); //todo:mjd impplement offline caching for players to get stats when they login next time.
 				preparedStatement.setString(5, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward) : null);
+				preparedStatement.setInt(6, multiplier);
 				preparedStatement.execute();
 			} catch(SQLException e){
 				PluginLogger.error("Error while adding transaction to shop", e);

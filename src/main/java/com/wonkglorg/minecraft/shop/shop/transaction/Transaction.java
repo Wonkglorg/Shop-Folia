@@ -1,6 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop.transaction;
 
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
+import lombok.Getter;
 import org.bukkit.inventory.ItemStack;
 
 public abstract class Transaction{
@@ -15,15 +16,23 @@ public abstract class Transaction{
 	/**
 	 * The currency price to pay for the transacted stack
 	 */
+	@Getter
 	protected final double price;
 	/**
 	 * The amount of the stack being traded
 	 */
+	@Getter
 	protected final int amount;
 	/**
 	 * The stack being traded
 	 */
 	protected final ItemStack tradedStack;
+	
+	/**
+	 * The last evaluated result from {@link #canFulfill()}
+	 */
+	@Getter
+	private TransactionResult result;
 	
 	protected Transaction(TransactionParty buyer, TransactionParty seller, int amount, double price, ItemStack tradedStack) {
 		this.buyer = buyer;
@@ -65,21 +74,21 @@ public abstract class Transaction{
 	 */
 	public TransactionResult canFulfill() {
 		if(getBuyerAvailableFunds() < price){
-			return TransactionResult.INSUFFICIENT_FUNDS_BUYER;
+			return result = TransactionResult.INSUFFICIENT_FUNDS_BUYER;
 		}
 		
 		if(getSellerAvailableFunds() < amount){
-			return TransactionResult.INSUFFICIENT_FUNDS_SELLER;
+			return result = TransactionResult.INSUFFICIENT_FUNDS_SELLER;
 		}
 		
 		if(!canBuyerAcceptPayment()){
-			return TransactionResult.INVENTORY_FULL_BUYER;
+			return result = TransactionResult.INVENTORY_FULL_BUYER;
 		}
 		if(!canSellerAcceptPayment()){
-			return TransactionResult.INVENTORY_FULL_SELLER;
+			return result = TransactionResult.INVENTORY_FULL_SELLER;
 		}
 		
-		return TransactionResult.OK;
+		return result = TransactionResult.OK;
 	}
 	
 	@Override

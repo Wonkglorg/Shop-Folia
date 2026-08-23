@@ -40,12 +40,13 @@ public class BarterShop extends AbstractShop{
 	}
 	
 	@Override
-	public Transaction startTransaction(TransactionParty party) {
-		
+	public Transaction startTransaction(TransactionParty party, int multiplier) {
+		int calculatedAmount = amount * multiplier;
+		double calculatedPrice = price * multiplier;
 		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
-			case VAULT -> new VaultTransaction(party, getParty(), amount, price, item);
-			case ITEM -> new ItemTransaction(party, getParty(), amount, price, item, secondaryItem);
-			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, amount, price, item);
+			case VAULT -> new VaultTransaction(party, getParty(), calculatedAmount, calculatedPrice, item);
+			case ITEM -> new ItemTransaction(party, getParty(), calculatedAmount, calculatedPrice, item, secondaryItem);
+			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, calculatedAmount, calculatedPrice, item);
 		};
 	}
 	
@@ -61,7 +62,7 @@ public class BarterShop extends AbstractShop{
 			//leave cached value
 			return;
 		}
-		Transaction transaction = startTransaction(null);
+		Transaction transaction = startTransaction(null, 1);
 		
 		double availableFunds = transaction.getSellerAvailableFunds();
 		stock = (int) (availableFunds / this.getAmount());

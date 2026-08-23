@@ -154,12 +154,6 @@ destroyShopRequiresSneak: false
 playSounds: true
 playEffects: true
 
-# Options:
-# NONE - all items can be listed in shops
-# DENY_LIST - all items except those defined in itemList.yml can be listed in shops
-# ALLOW_LIST - only items defined in itemList.yml can be listed in shops
-itemList: NONE
-
 # Add the names of worlds that you do not want shops to be able to be created in here #
 worldBlacklist:
   - "example_world"

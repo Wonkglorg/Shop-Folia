@@ -41,6 +41,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Chest;
+import org.bukkit.block.data.type.Chest.Type;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.block.sign.Side;
 import org.bukkit.block.sign.SignSide;
@@ -134,6 +135,12 @@ public abstract class AbstractShop{
 	 */
 	@Getter
 	private ShopState shopState;
+	
+	/**
+	 * The shops container if the shop has been loaded otherwise null
+	 */
+	@Nullable
+	private Inventory inventory;
 	
 	protected AbstractShop(UUID id,
 	                       Location signLoc,
@@ -242,7 +249,7 @@ public abstract class AbstractShop{
 		removeSecondaryContainerLocation();
 		
 		// Cache the second half when the attached container is a double chest.
-		if(containerBlock.getBlockData() instanceof Chest chestData && chestData.getType() != Chest.Type.SINGLE){
+		if(containerBlock.getBlockData() instanceof Chest chestData && chestData.getType() != Type.SINGLE){
 			
 			BlockFace otherChestDirection = getOtherChestDirection(chestData.getType(), chestData.getFacing());
 			
@@ -314,14 +321,17 @@ public abstract class AbstractShop{
 	}
 	
 	public Inventory getInventory() {
+		if(inventory != null){
+			return inventory;
+		}
 		if(containerLocation == null || signLocation == null || !this.isChunkLoaded()){
 			return null;
 		}
 		Block chestBlock = containerLocation.getBlock();
 		if(chestBlock.getState() instanceof InventoryHolder){
-			return ((InventoryHolder) (chestBlock.getState())).getInventory();
+			inventory = ((InventoryHolder) (chestBlock.getState())).getInventory();
 		}
-		return null;
+		return inventory;
 	}
 	
 	public UUID getOwnerUUID() {
@@ -532,13 +542,16 @@ public abstract class AbstractShop{
 	
 	/**
 	 * Starts a transaction with the specified party
+	 *
+	 * @param party the party this shop transactions with
+	 * @param multiplier how many times the shop should transact with the player. (1 = the normal shops amount for the listed price, 2 = 2 times both values)
 	 */
-	protected abstract Transaction startTransaction(TransactionParty party);
+	protected abstract Transaction startTransaction(TransactionParty party, int multiplier);
 	
 	/**
 	 * executes a transaction between this shop and the other party
 	 */
-	public TransactionResult executeTransaction(TransactionParty party) {
+	public TransactionResult executeTransaction(TransactionParty party, boolean requestFullstack) {
 		if(isPerformingTransaction){
 			return TransactionResult.SHOP_IS_PERFORMING_TRANSACTION;
 		}
@@ -554,9 +567,14 @@ public abstract class AbstractShop{
 		}
 		
 		logger.debug("Transaction with shop " + this + " and party " + party);
-		Transaction transaction = startTransaction(party);
+		
+		Transaction transaction = findAffordableTransaction(party, requestFullstack);
 		logger.debug("Opened transaction " + transaction);
-		var result = transaction.canFulfill();
+		int multiplier = transaction.getAmount() / amount;
+		if(requestFullstack){
+			logger.debug("Set biggest possible transaction multiplier to: " + multiplier);
+		}
+		var result = transaction.getResult();
 		if(result != TransactionResult.OK){
 			logger.debug("Transaction could not be fulfilled " + result);
 			logger.debug("===CANCEL SHOP TRANSACTION====");
@@ -575,7 +593,7 @@ public abstract class AbstractShop{
 		}
 		
 		transaction.execute();
-		logTransaction(party);
+		logTransaction(party, multiplier);
 		logger.debug("===FINISHED SHOP TRANSACTION====");
 		calculateStock();
 		postTransactionSuccess(transaction);
@@ -584,10 +602,57 @@ public abstract class AbstractShop{
 	}
 	
 	/**
+	 * Find the largest possible transaction that can be done
+	 *
+	 * @param party the party transactions with the shop
+	 * @param requestFullstack if the request should try to do multiple transactions in one
+	 * @return check its {@link Transaction#getResult()} before continuing with the transaction to check if it could succeed
+	 */
+	private @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack) {
+		if(!requestFullstack){
+			Transaction transaction = startTransaction(party, 1);
+			transaction.canFulfill();
+		}
+		
+		int maxMultiplier = getMaximumFullStackMultiplier();
+		
+		Transaction transaction = null;
+		
+		for(int multiplier = maxMultiplier; multiplier >= 1; multiplier--){
+			transaction = startTransaction(party, multiplier);
+			if(transaction.canFulfill() == TransactionResult.OK){
+				return transaction;
+			}
+		}
+		
+		assert transaction != null;
+		
+		return transaction;
+	}
+	
+	/**
+	 *
+	 * @return te maximum multiplier this shop allows based on the item being transacted.
+	 */
+	protected int getMaximumFullStackMultiplier() {
+		int maxStackSize = item.getMaxStackSize();
+		
+		if(amount > maxStackSize){
+			return 1;
+		}
+		
+		return Math.max(1, maxStackSize / amount);
+	}
+	
+	/**
 	 * Logs the transaction between the shop and the party
 	 */
-	protected void logTransaction(TransactionParty party) {
-		Main.getPlugin().getShopmanager().getDatabase().logTransaction(id, System.currentTimeMillis(), party.getPlayer().getUniqueId(), null);
+	protected void logTransaction(TransactionParty party, int multiplier) {
+		Main.getPlugin().getShopmanager().getDatabase().logTransaction(id,
+				System.currentTimeMillis(),
+				party.getPlayer().getUniqueId(),
+				null,
+				multiplier);
 	}
 	
 	/**
@@ -609,8 +674,8 @@ public abstract class AbstractShop{
 		}
 		
 		switch(action) {
-			case TRANSACT:
-				TransactionResult result = executeTransaction(new PlayerTransactionParty(player));
+			case TRANSACT, TRANSACT_FULL_STACK:
+				TransactionResult result = executeTransaction(new PlayerTransactionParty(player), action == ShopAction.TRANSACT_FULL_STACK);
 				OfflinePlayer shopOwner = getOwner();
 				sendTransactionMessage(result, player, shopOwner.isConnected() ? online(shopOwner.getPlayer()) : offline(shopOwner));
 				sendEffects(result == TransactionResult.OK, player);

@@ -48,7 +48,7 @@ public class SellShop extends AbstractShop{
 			return;
 		}
 		//starts a mock transaction to get accurate data on what the actual trade logic would do
-		Transaction transaction = startTransaction(null);
+		Transaction transaction = startTransaction(null, 1);
 		
 		double availableFunds = transaction.getSellerAvailableFunds();
 		stock = (int) (availableFunds / this.getAmount());
@@ -67,12 +67,13 @@ public class SellShop extends AbstractShop{
 		setShopState(OVERFILLED, true);
 	}
 	
-	@Override
-	public Transaction startTransaction(TransactionParty party) {
+	public Transaction startTransaction(TransactionParty party, int multiplier) {
+		int calculatedAmount = amount * multiplier;
+		double calculatedPrice = price * multiplier;
 		return switch(getCurrencyType()) {
-			case VAULT -> new VaultTransaction(party, getParty(), amount, price, item);
-			case ITEM -> new ItemTransaction(party, getParty(), amount, price, item, getCurrencyItem());
-			case EXPERIENCE -> new ExpirienceTransaction(party, getParty(), amount, price, item);
+			case VAULT -> new VaultTransaction(party, getParty(), calculatedAmount, calculatedPrice, item);
+			case ITEM -> new ItemTransaction(party, getParty(), calculatedAmount, calculatedPrice, item, getCurrencyItem());
+			case EXPERIENCE -> new ExpirienceTransaction(party, getParty(), calculatedAmount, calculatedPrice, item);
 		};
 	}
 	

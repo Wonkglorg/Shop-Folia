@@ -46,7 +46,7 @@ public class BuyShop extends AbstractShop{
 			//leave cached value
 			return;
 		}
-		Transaction transaction = startTransaction(null);
+		Transaction transaction = startTransaction(null, 1);
 		
 		double availableFunds = transaction.getBuyerAvailableFunds();
 		stock = (int) (availableFunds / this.getPrice());
@@ -65,11 +65,13 @@ public class BuyShop extends AbstractShop{
 	}
 	
 	@Override
-	public Transaction startTransaction(TransactionParty party) {
+	public Transaction startTransaction(TransactionParty party, int multiplier) {
+		int calculatedAmount = amount * multiplier;
+		double calculatedPrice = price * multiplier;
 		return switch(getCurrencyType()) {
-			case VAULT -> new VaultTransaction(getParty(), party, amount, price, item);
-			case ITEM -> new ItemTransaction(getParty(), party, amount, price, item, getCurrencyItem());
-			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, amount, price, item);
+			case VAULT -> new VaultTransaction(getParty(), party, calculatedAmount, calculatedPrice, item);
+			case ITEM -> new ItemTransaction(getParty(), party, calculatedAmount, calculatedPrice, item, getCurrencyItem());
+			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, calculatedAmount, calculatedPrice, item);
 		};
 	}
 	
