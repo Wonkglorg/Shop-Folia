@@ -273,7 +273,7 @@ public class ShopListener implements Listener{
 			logger.debug("Sending Post init shop event");
 			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
 			LangRequest request = lang.request("interaction.success." + shop.getType().toString().toUpperCase() + ".create");
-			AbstractShop.shopPlaceholders(request, shop);
+			AbstractShop.shopPlaceholders(request, shop,false);
 			request.sendToAudience(player);
 			logger.debug("====SHOP INITIALISATION DONE====");
 		}

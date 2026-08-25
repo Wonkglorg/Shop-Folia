@@ -127,8 +127,8 @@ actionMappings:
   #clicks used to trade with a shop
   transactWithShop:
     - RIGHT_CLICK_SIGN
+  transactWithShopFullStack:
     - SHIFT_RIGHT_CLICK_SIGN
-  #transactWithShopFullStack:
   #view details about a shop
   viewShopDetails:
     - LEFT_CLICK_CHEST

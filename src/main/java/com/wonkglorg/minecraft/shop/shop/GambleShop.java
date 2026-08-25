@@ -53,7 +53,7 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
-	protected void sendTransactionMessage(TransactionResult result, Player player, PlayerProfile owner) {
+	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
 	
 	}
 	

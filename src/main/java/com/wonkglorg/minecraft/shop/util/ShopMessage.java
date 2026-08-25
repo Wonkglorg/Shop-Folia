@@ -117,7 +117,7 @@ public class ShopMessage{
 	request.replace("%player%", context.getPlayer() != null ? context.getPlayer().getName() : "");
 	
 	if(context.getShop() != null){
-		AbstractShop.shopPlaceholders(request,context.getShop());
+		AbstractShop.shopPlaceholders(request,context.getShop(),false);
 	}
 	
 	

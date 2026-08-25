@@ -225,12 +225,17 @@ public class SettingsConfig extends Config{
 		for(var action : getStringList("actionMappings.transactWithShop")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT);
 		}
+		for(var action : getStringList("actionMappings.transactWithShopFullStack")){
+			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT_FULL_STACK);
+		}
+		
 		for(var action : getStringList("actionMappings.viewShopDetails")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.VIEW_DETAILS);
 		}
 		for(var action : getStringList("actionMappings.cycleShopDisplay")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.CYCLE_DISPLAY);
 		}
+		
 		
 		allowCreateMethodSign = getBoolean("creationMethod.placeSign");
 		allowCreateMethodCommand = getBoolean("creationMethod.placeSign");

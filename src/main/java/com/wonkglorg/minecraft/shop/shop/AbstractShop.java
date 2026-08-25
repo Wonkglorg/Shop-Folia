@@ -25,6 +25,8 @@ import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
+import it.unimi.dsi.fastutil.Pair;
+import static it.unimi.dsi.fastutil.Pair.of;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -135,12 +137,6 @@ public abstract class AbstractShop{
 	 */
 	@Getter
 	private ShopState shopState;
-	
-	/**
-	 * The shops container if the shop has been loaded otherwise null
-	 */
-	@Nullable
-	private Inventory inventory;
 	
 	protected AbstractShop(UUID id,
 	                       Location signLoc,
@@ -321,17 +317,14 @@ public abstract class AbstractShop{
 	}
 	
 	public Inventory getInventory() {
-		if(inventory != null){
-			return inventory;
-		}
 		if(containerLocation == null || signLocation == null || !this.isChunkLoaded()){
 			return null;
 		}
 		Block chestBlock = containerLocation.getBlock();
 		if(chestBlock.getState() instanceof InventoryHolder){
-			inventory = ((InventoryHolder) (chestBlock.getState())).getInventory();
+			return ((InventoryHolder) (chestBlock.getState())).getInventory();
 		}
-		return inventory;
+		return null;
 	}
 	
 	public UUID getOwnerUUID() {
@@ -511,11 +504,11 @@ public abstract class AbstractShop{
 	
 	public void printSalesInfo(Player player) {
 		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType().toString().toUpperCase());
-		shopPlaceholders(request, this);
+		shopPlaceholders(request, this, true);
 		request.sendToAudience(player);
 	}
 	
-	public static void shopPlaceholders(LangRequest request, AbstractShop shop) {
+	public static void shopPlaceholders(LangRequest request, AbstractShop shop, boolean includeHover) {
 		//@formatter:off
 		ItemStack item = shop.item;
 		
@@ -524,18 +517,29 @@ public abstract class AbstractShop{
 			   .replace("%stock%",shop.getStock())
 			   .replace("%amount%",shop.getAmount())
 			   .replace("%location%",UtilMethods.getCleanLocation(shop.getSignLocation(),false))
+			   .replace("%price-per-item%",shop.price / shop.amount)
 			   .replace("%world%",shop.getSignLocation().getWorld().getName())
-			   .replace("%item%", ()->ItemNameUtil.getName(item))
                .replace("%item-type%", item.getType())
                .replace("%item-amount%",shop.getAmount())
                .replace("%item-enchants%",()->UtilMethods.getEnchantmentsComponent(item));
+		
+		if(includeHover){
+			request.replace("%item%", ()->ItemNameUtil.getName(item).hoverEvent(ItemNameUtil.getItemHover(item)));
+		}else{
+			request.replace("%item%", ()->ItemNameUtil.getName(item));
+		}
 		ItemStack barterItem = shop.secondaryItem;
 		if(barterItem != null){
-			request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem))
-			       .replace("%barter-item-type%", barterItem.getType())
+			request.replace("%barter-item-type%", barterItem.getType())
 			       .replace("%barter-durability%",UtilMethods.getDurabilityPercent(barterItem))
 			       .replace("%barter-item-amount%", barterItem.getAmount())
 				   .replace("%barter-item-enchants%",()->UtilMethods.getEnchantmentsComponent(barterItem));
+			
+			if(includeHover){
+				request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem).hoverEvent(ItemNameUtil.getItemHover(barterItem)));
+			}else{
+				request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem));
+			}
 		}
 		//@formatter:on
 	}
@@ -551,9 +555,9 @@ public abstract class AbstractShop{
 	/**
 	 * executes a transaction between this shop and the other party
 	 */
-	public TransactionResult executeTransaction(TransactionParty party, boolean requestFullstack) {
+	public Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
 		if(isPerformingTransaction){
-			return TransactionResult.SHOP_IS_PERFORMING_TRANSACTION;
+			return of(TransactionResult.SHOP_IS_PERFORMING_TRANSACTION, 0);
 		}
 		ShopLogger logger = Main.getPlugin().logger();
 		isPerformingTransaction = true;
@@ -563,7 +567,7 @@ public abstract class AbstractShop{
 			logger.debug("Owner is trying to transact their own shop while this debug feature is disabled in the config");
 			logger.debug("===CANCEL SHOP TRANSACTION====");
 			isPerformingTransaction = false;
-			return TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP;
+			return of(TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP, 0);
 		}
 		
 		logger.debug("Transaction with shop " + this + " and party " + party);
@@ -579,7 +583,7 @@ public abstract class AbstractShop{
 			logger.debug("Transaction could not be fulfilled " + result);
 			logger.debug("===CANCEL SHOP TRANSACTION====");
 			isPerformingTransaction = false;
-			return result;
+			return of(result, 0);
 		}
 		
 		var event = new ShopTransactionEvent(this, party.getPlayer());
@@ -589,7 +593,7 @@ public abstract class AbstractShop{
 			logger.debug("Transaction was cancelled by external plugin");
 			logger.debug("===CANCEL SHOP TRANSACTION====");
 			isPerformingTransaction = false;
-			return TransactionResult.CANCELLED;
+			return of(TransactionResult.CANCELLED, 0);
 		}
 		
 		transaction.execute();
@@ -598,7 +602,7 @@ public abstract class AbstractShop{
 		calculateStock();
 		postTransactionSuccess(transaction);
 		isPerformingTransaction = false;
-		return result;
+		return of(result, multiplier);
 	}
 	
 	/**
@@ -612,6 +616,7 @@ public abstract class AbstractShop{
 		if(!requestFullstack){
 			Transaction transaction = startTransaction(party, 1);
 			transaction.canFulfill();
+			return transaction;
 		}
 		
 		int maxMultiplier = getMaximumFullStackMultiplier();
@@ -675,9 +680,11 @@ public abstract class AbstractShop{
 		
 		switch(action) {
 			case TRANSACT, TRANSACT_FULL_STACK:
-				TransactionResult result = executeTransaction(new PlayerTransactionParty(player), action == ShopAction.TRANSACT_FULL_STACK);
+				var resultPair = executeTransaction(new PlayerTransactionParty(player), action == ShopAction.TRANSACT_FULL_STACK);
+				TransactionResult result = resultPair.first();
+				int multiplier = resultPair.right();
 				OfflinePlayer shopOwner = getOwner();
-				sendTransactionMessage(result, player, shopOwner.isConnected() ? online(shopOwner.getPlayer()) : offline(shopOwner));
+				sendTransactionMessage(result, multiplier, player, shopOwner.isConnected() ? online(shopOwner.getPlayer()) : offline(shopOwner));
 				sendEffects(result == TransactionResult.OK, player);
 				return true;
 			case VIEW_DETAILS:
@@ -709,10 +716,11 @@ public abstract class AbstractShop{
 	 * The transaction messages to send
 	 *
 	 * @param result the result of the transaction
+	 * @param multiplier how many times this item was traded in this transaction
 	 * @param player the player transacting with the shop
 	 * @param owner the shop owners profile
 	 */
-	protected abstract void sendTransactionMessage(TransactionResult result, Player player, PlayerProfile owner);
+	protected abstract void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner);
 	
 	/**
 	 * @return the currency type being used by the server

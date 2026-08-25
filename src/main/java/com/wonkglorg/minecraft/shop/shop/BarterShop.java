@@ -80,16 +80,20 @@ public class BarterShop extends AbstractShop{
 	}
 	
 	@Override
-	protected void sendTransactionMessage(TransactionResult result, Player player, PlayerProfile owner) {
+	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
 		var lang = Main.getPlugin().getLangManager();
 		switch(result) {
 			case OK -> {
 				LangRequest userRequest = lang.request("transaction.success.BARTER.user");
-				shopPlaceholders(userRequest, this);
+				shopPlaceholders(userRequest, this, false);
+				userRequest.replace("%price%", formatPrice(price * multiplier));
+				userRequest.replace("%amount%", amount * multiplier);
 				userRequest.sendToAudience(player);
 				if(owner.isNotifyOwner() && owner instanceof OnlinePlayerProfile online){
 					LangRequest ownerRequest = lang.request("transaction.success.BARTER.owner").replace("%user%", player.getName());
-					shopPlaceholders(ownerRequest, this);
+					shopPlaceholders(ownerRequest, this, false);
+					ownerRequest.replace("%price%", formatPrice(price * multiplier));
+					ownerRequest.replace("%amount%", amount * multiplier);
 					ownerRequest.sendToAudience(online.getPlayer());
 				}
 			}
@@ -100,7 +104,7 @@ public class BarterShop extends AbstractShop{
 				lang.request("transaction.issue.BARTER.shopNoStock").sendToAudience(player);
 				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
 					LangRequest ownerRequest = lang.request("transaction.issue.BARTER.ownerNoStock");
-					shopPlaceholders(ownerRequest, this);
+					shopPlaceholders(ownerRequest, this, false);
 					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
 				}
 			}
@@ -109,7 +113,7 @@ public class BarterShop extends AbstractShop{
 				lang.request("transaction.issue.BARTER.shopNoSpace").sendToAudience(player);
 				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
 					LangRequest ownerRequest = lang.request("transaction.issue.BARTER.ownerNoSpace");
-					shopPlaceholders(ownerRequest, this);
+					shopPlaceholders(ownerRequest, this, false);
 					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
 				}
 			}
