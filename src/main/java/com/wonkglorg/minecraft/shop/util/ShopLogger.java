@@ -143,6 +143,10 @@ public class ShopLogger extends Logger{
 		super.log(Level.INFO, message);
 	}
 	
+	public void severe(String message, Throwable t) {
+		severe(message + " " + getStackTrace(t));
+	}
+	
 	public void debug(String message) {logFilterLevel(DEBUG, "[Debug] " + message);}
 	
 	public void debug(String message, Throwable t) {

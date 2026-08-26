@@ -6,6 +6,7 @@ import com.wonkglorg.database.databases.SqliteDatabase;
 import com.wonkglorg.database.datasources.FileDataSource;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB.ShopHistoryEntry;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.ShopState;
@@ -13,7 +14,6 @@ import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
-import com.wonkglorg.minecraft.shop.util.OfflineTransactions;
 import com.wonkglorg.minecraft.util.PluginLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -76,11 +76,13 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	public void addShop(AbstractShop shop) {
 		scheduler.runAsync(_ -> {
 			try(var ps = getConnection().prepareStatement(SHOP_INSERT_SQL)){
-				if(shop.getFacing() == null){
-					PluginLogger.error("Shop " + shop + "is missing a facing direction!");
-					return;
-				}
 				insertShopValues(shop, ps);
+				if(shop.getFacing() == null){
+					PluginLogger.error("Shop " +
+					                   shop +
+					                   "is missing a facing direction if this happens during migration the error can be ignored. marking as invalid and setting default direction for insertion!");
+					removeShop(shop);
+				}
 				ps.executeUpdate();
 			} catch(SQLException e){
 				PluginLogger.error("Error while creating shop chest", e);
@@ -95,14 +97,16 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		
 		scheduler.runAsync(_ -> {
 			try(var connection = getConnection(); var ps = connection.prepareStatement(SHOP_INSERT_SQL)){
-				
+				List<AbstractShop> invalidShops = new ArrayList<>();
 				connection.setAutoCommit(false);
 				
 				try{
 					for(AbstractShop shop : shops){
 						if(shop.getFacing() == null){
-							PluginLogger.error("Shop " + shop + "is missing a facing direction!");
-							continue;
+							PluginLogger.error("Shop " +
+							                   shop +
+							                   "is missing a facing direction if this happens during migration the error can be ignored. marking as invalid and setting default direction for insertion!");
+							invalidShops.add(shop);
 						}
 						insertShopValues(shop, ps);
 						ps.addBatch();
@@ -117,6 +121,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					
 				} finally{
 					connection.setAutoCommit(true);
+				}
+				
+				for(var shop : invalidShops){
+					removeShop(shop);
 				}
 				
 			} catch(SQLException e){
@@ -228,7 +236,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setInt(6, shop.getStock());
 		ps.setString(7, shop.getShopState().toString());
 		ps.setString(8, shop.getType().toString().toUpperCase());
-		ps.setString(9, shop.getFacing().toString().toUpperCase());
+		BlockFace facing = shop.getFacing();
+		if(facing == null){
+			facing = BlockFace.EAST;
+		}
+		ps.setString(9, facing.toString().toUpperCase());
 		ps.setString(10,
 				(shop.getDisplay() != null && shop.getDisplay().getType() != null)
 				? shop.getDisplay().getType().toString()
@@ -260,6 +272,52 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				PluginLogger.error("Error while adding user to db", e);
 			}
 		});
+	}
+	
+	public void addLegacyPlayers(Map<UUID, String> players) {
+		if(players == null || players.isEmpty()){
+			return;
+		}
+		
+		Connection connection = getConnection();
+		
+		try{
+			connection.setAutoCommit(false);
+			
+			try(var ps = connection.prepareStatement("""
+					INSERT INTO players (uuid, name)
+					VALUES (?, ?)
+					ON CONFLICT(uuid) DO UPDATE SET name = excluded.name
+					""")){
+				
+				for(var player : players.entrySet()){
+					ps.setString(1, player.getKey().toString());
+					ps.setString(2, player.getValue());
+					
+					ps.addBatch();
+				}
+				
+				ps.executeBatch();
+			}
+			
+			connection.commit();
+			
+		} catch(SQLException e){
+			try{
+				connection.rollback();
+			} catch(SQLException rollbackException){
+				PluginLogger.error("Error while rolling back legacy players", rollbackException);
+			}
+			
+			PluginLogger.error("Error while adding legacy players to db", e);
+			
+		} finally{
+			try{
+				connection.setAutoCommit(true);
+			} catch(SQLException e){
+				PluginLogger.error("Error while restoring database auto-commit", e);
+			}
+		}
 	}
 	
 	/**
@@ -297,6 +355,53 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 	}
 	
+	public void removeLegacyShops(Collection<AbstractShop> shops) {
+		if(shops == null || shops.isEmpty()){
+			return;
+		}
+		
+		Connection connection = getConnection();
+		
+		try{
+			connection.setAutoCommit(false);
+			
+			try(var ps = connection.prepareStatement("""
+					UPDATE shops
+					SET destroyed_time = ?
+					WHERE shop_uuid = ?
+					""")){
+				
+				long destroyedTime = System.currentTimeMillis();
+				
+				for(AbstractShop shop : shops){
+					ps.setLong(1, destroyedTime);
+					ps.setString(2, shop.getId().toString());
+					ps.addBatch();
+				}
+				
+				ps.executeBatch();
+			}
+			
+			connection.commit();
+			
+		} catch(SQLException e){
+			try{
+				connection.rollback();
+			} catch(SQLException rollbackException){
+				PluginLogger.error("Error while rolling back legacy shop removal", rollbackException);
+			}
+			
+			PluginLogger.error("Error while deactivating legacy shops", e);
+			
+		} finally{
+			try{
+				connection.setAutoCommit(true);
+			} catch(SQLException e){
+				PluginLogger.error("Error while restoring database auto-commit", e);
+			}
+		}
+	}
+	
 	public void logTransaction(UUID shopId, long timestamp, UUID purchaserId, @Nullable ItemStack gambleReward, int multiplier) {
 		scheduler.runAsync(_ -> {
 			try(var preparedStatement = getConnection().prepareStatement("""
@@ -314,6 +419,61 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			}
 		});
 		
+	}
+	
+	public void logLegacyTransactions(List<ShopHistoryEntry> entries) {
+		if(entries == null || entries.isEmpty()){
+			return;
+		}
+		
+		Connection connection = getConnection();
+		
+		try{
+			connection.setAutoCommit(false);
+			
+			try(var preparedStatement = connection.prepareStatement("""
+					INSERT INTO transactions(
+					    shop_uuid,
+					    timestamp,
+					    purchaser_uuid,
+					    cache_offline,
+					    gamble_reward,
+					    transaction_count
+					) VALUES (?, ?, ?, ?, ?, ?)
+					""")){
+				
+				for(ShopHistoryEntry entry : entries){
+					preparedStatement.setString(1, entry.shopUuid().toString());
+					preparedStatement.setLong(2, entry.timestamp());
+					preparedStatement.setString(3, entry.purchaserUuid().toString());
+					preparedStatement.setInt(4, 0);
+					preparedStatement.setNull(5, java.sql.Types.VARCHAR);
+					preparedStatement.setInt(6, 1);
+					
+					preparedStatement.addBatch();
+				}
+				
+				preparedStatement.executeBatch();
+			}
+			
+			connection.commit();
+			
+		} catch(SQLException e){
+			try{
+				connection.rollback();
+			} catch(SQLException rollbackException){
+				PluginLogger.error("Error while rolling back legacy transactions", rollbackException);
+			}
+			
+			PluginLogger.error("Error while adding legacy transactions to shop", e);
+			
+		} finally{
+			try{
+				connection.setAutoCommit(true);
+			} catch(SQLException e){
+				PluginLogger.error("Error while restoring database auto-commit", e);
+			}
+		}
 	}
 	
 	public void logCurrencyChange(CurrencyType type, @Nullable ItemStack currency) {
@@ -390,16 +550,8 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		logAction(player, shop.getOwnerUUID(), shop.getId(), actionType);
 	}
 	
-	public void calculateOfflineTransactions(OfflineTransactions offlineTransactions) {
-	
-	}
-	
 	public void updateShops(Collection<? extends AbstractShop> shops) {
 		if(shops == null || shops.isEmpty() || plugin.isImmediateShutdown()){
-			return;
-		}
-		
-		if(plugin.isImmediateShutdown()){
 			return;
 		}
 		

@@ -6,6 +6,7 @@ import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,7 +35,7 @@ public class ItemConfig extends Config{
 	private List<Material> whitelistMaterials = new ArrayList<>();
 	
 	public ItemConfig() {
-		super(Main.getPlugin().getDataPath().resolve("item-config.yml"));
+		super(Main.getPlugin(), Path.of("item-config.yml"));
 		reload();
 	}
 	

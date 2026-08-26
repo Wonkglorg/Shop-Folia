@@ -3,6 +3,8 @@ package com.wonkglorg.minecraft.shop.manager;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
+import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB;
+import com.wonkglorg.minecraft.shop.migrate.PlayerNameCacheMigrationConfig;
 import com.wonkglorg.minecraft.shop.migrate.PlayerShopsConfig;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
@@ -30,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -85,19 +88,44 @@ public class ShopManager{
 	
 	public ShopManager(Main plugin) throws SQLException, IOException {
 		this.plugin = plugin;
-		this.settingsConfig = new SettingsConfig();
+		this.settingsConfig = plugin.getSettingsConfig();
 		this.logger = plugin.logger();
 		this.displayManager = new DisplayManager(plugin, this);
 		
 		database = new ShopDatabase(plugin);
-		if(settingsConfig.isMigrateOldData()){
-			logger.info("Migrating Legacy files to database!");
-			database.addShops(PlayerShopsConfig.loadLegacyShops());
-			logger.info("Finished Migrating files to database!");
-			settingsConfig.setMigrateOldData(false);
-			settingsConfig.silentSave();
+	}
+	
+	private void migrateData(Main plugin) {
+		try{
+			if(settingsConfig.isMigrateOldData()){
+				logger.info("Migrating Legacy shop files to database!");
+				database.addLegacyPlayers(new PlayerNameCacheMigrationConfig().getNames());
+				database.addShops(PlayerShopsConfig.loadLegacyShops());
+				
+				Thread.sleep(1000); //this is quick and dirty, no need for better as its a one time thing...
+				
+				logger.info("Finished Migrating shop files to database!");
+				
+				if(MarketManagerDB.containsDb(plugin)){
+					logger.info("Found market manager Database to migrate!");
+					MarketManagerDB migrationDb = new MarketManagerDB(plugin);
+					Map<AbstractShop, Boolean> shops = migrationDb.getShops();
+					database.addShops(shops.keySet());
+					Thread.sleep(1000); //this is quick and dirty, no need for better as its a one time thing...
+					
+					database.removeLegacyShops(shops.entrySet().stream().filter(Entry::getValue).map(Entry::getKey).toList());
+					database.logLegacyTransactions(migrationDb.getTransactions());
+					logger.info("Finished migrating Market Manager Database!");
+				} else {
+					logger.info("No market manager Database found for migration.");
+				}
+				Thread.sleep(1000); //this is quick and dirty, no need for better as its a one time thing...
+				settingsConfig.setMigrateOldData(false);
+				settingsConfig.silentSave();
+			}
+		} catch(InterruptedException e){
+			throw new RuntimeException(e);
 		}
-		
 	}
 	
 	public Set<AbstractShop> getShopsNearLocation(Location location, int chunkRadius) {
@@ -154,6 +182,8 @@ public class ShopManager{
 		unloadedShopsByChunk.clear();
 		shopOwners.clear();
 		
+		migrateData(plugin);
+		PlayerNameCache.initialize();
 		getDatabase().getShops(false).thenAccept(shops -> {
 			for(var shop : shops){
 				addShop(shop);

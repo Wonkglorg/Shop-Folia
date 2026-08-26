@@ -20,6 +20,7 @@ public class PlayerNameCache{
 	 * Initialize cache on startup - checks if cache file exists
 	 */
 	public static void initialize() {
+		cache.clear();
 		cache.putAll(Main.getPlugin().getShopmanager().getDatabase().loadPlayerNames());
 	}
 	

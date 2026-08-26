@@ -57,8 +57,6 @@ public class Main extends JavaPlugin{
 	@Getter
 	private ShopServiceProvider shopServiceProvider;
 	
-	private boolean isMockBukkit = false;
-	
 	@Getter
 	private boolean immediateShutdown = false;
 	
@@ -76,8 +74,6 @@ public class Main extends JavaPlugin{
 	
 	@Override
 	public void onEnable() {
-		this.isMockBukkit = plugin.getServer().getClass().getPackage().getName().contains("mockbukkit");
-		
 		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
 		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
 		
@@ -105,7 +101,7 @@ public class Main extends JavaPlugin{
 		try{
 			shopmanager = new ShopManager(plugin);
 		} catch(Exception e){
-			logger.severe("Unable to load shop database" + e.getMessage());
+			logger.severe("Unable to load shop database " + e.getMessage(),e);
 			logger.debug("Unable to load shop database", e);
 			immediateShutdown();
 		}
@@ -118,9 +114,7 @@ public class Main extends JavaPlugin{
 		
 		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
 		
-		if(!isMockBukkit){
-			this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
-		}
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
 	}
 	
 	/**
@@ -167,28 +161,6 @@ public class Main extends JavaPlugin{
 		}
 		econ = rsp.getProvider();
 		return econ != null;
-	}
-	
-	public String getPriceString(double price, boolean pricePer) {
-		if(price == 0){
-			return "free";
-		}
-		
-		String format = settingsConfig.getCurrencyFormat();
-		
-		if(format.contains("[name]")){
-			format = format.replace("[name]", settingsConfig.getCurrencyName());
-		}
-		if(format.contains("[price]")){
-			if(settingsConfig.getCurrencyType() == CurrencyType.VAULT){
-				return format.replace("[price]", UtilMethods.formatLongToKString(price, true));
-			} else if(pricePer){
-				return format.replace("[price]", UtilMethods.formatLongToKString(price, false));
-			} else {
-				return format.replace("[price]", "" + (int) price);
-			}
-		}
-		return format;
 	}
 	
 	public Economy getEconomy() {

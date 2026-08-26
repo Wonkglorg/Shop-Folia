@@ -3,7 +3,9 @@ package com.wonkglorg.minecraft.shop.db;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
@@ -16,32 +18,23 @@ public final class ItemStackJsonCodec{
 	}
 	
 	public static String serialize(ItemStack itemStack) {
-		if(itemStack == null){
+		if (itemStack == null) {
 			return null;
 		}
 		
 		ItemStack item = itemStack.clone();
 		item.setAmount(1);
 		
-		Map<String, Object> data = item.serialize();
-		
-		//those fields are unnecessary in the database, no need to store them
-		data.remove("DataVersion");
-		data.remove("count");
-		
-		return GSON.toJson(data);
+		JsonObject json = Bukkit.getUnsafe().serializeItemAsJson(item);
+		return GSON.toJson(json);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static ItemStack deserialize(String json) {
-		if(json == null || json.isBlank()){
+		if (json == null || json.isBlank()) {
 			return null;
 		}
 		
-		JsonElement element = JsonParser.parseString(json);
-		
-		Map<String, Object> data = GSON.fromJson(element, Map.class);
-		
-		return ItemStack.deserialize(data);
+		JsonObject object = JsonParser.parseString(json).getAsJsonObject();
+		return Bukkit.getUnsafe().deserializeItemFromJson(object);
 	}
 }

@@ -36,7 +36,7 @@ public class PlayerShopsConfig extends Config{
 	/**
 	 * The folder player shops get saved to
 	 */
-	public static final Path SHOPS_DATA_FOLDER = Main.getPlugin().getDataPath().resolve("data", "shops");
+	public static final Path SHOPS_DATA_FOLDER = Main.getPlugin().getDataPath().resolve("migration", "shops");
 	
 	/**
 	 * The shop file name
@@ -80,7 +80,7 @@ public class PlayerShopsConfig extends Config{
 		} catch(IOException e){
 			throw new RuntimeException(e);
 		}
-		Main.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " Shops!");
+		Main.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " legacy Shops!");
 		return shops;
 	}
 	
@@ -120,16 +120,17 @@ public class PlayerShopsConfig extends Config{
 				
 				BlockFace facing = null;
 				String facingStr = section.getString("facing");
-				if(facingStr != null){
+				if(facingStr == null){
+					Main.getPlugin().logger().warning(
+							"Shop without a facing location during migration usually indicates a no longer valid shop, marking as invalid (id:%s,owner:%s)".formatted(
+									id,
+									owner));
+				} else {
 					facing = BlockFace.valueOf(facingStr);
 				}
 				
 				String type = section.getString("type");
 				double price = section.getDouble("price");
-				double priceSell = 0;
-				if(section.contains("priceSell")){
-					priceSell = section.getDouble("priceSell", 0);
-				}
 				int amount = section.getInt("amount");
 				
 				ShopType shopType = typeFromString(type);

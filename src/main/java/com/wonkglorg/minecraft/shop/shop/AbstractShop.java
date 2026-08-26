@@ -136,7 +136,7 @@ public abstract class AbstractShop{
 	 * The current state of the shop stock
 	 */
 	@Getter
-	private ShopState shopState;
+	private ShopState shopState = OK;
 	
 	protected AbstractShop(UUID id,
 	                       Location signLoc,
@@ -162,19 +162,20 @@ public abstract class AbstractShop{
 		this.display = AbstractDisplay.createDisplay(displayType, this);
 		this.signLinesRequireRefresh = true; // Reload signs on load in case config changed!
 		
-		//infer the container location where it should be
-		this.containerLocation = new Location(signLoc.getWorld(),
-				signLoc.getBlockX() - (double) facing.getModX(),
-				signLoc.getBlockY() - (double) facing.getModY(),
-				signLoc.getBlockZ() - (double) facing.getModZ());
-		
-		this.containerKey = BlockKey.of(containerLocation);
+		//can be null for legacy config imports.
+		if(facing != null){
+			//infer the container location where it should be
+			this.containerLocation = new Location(signLoc.getWorld(),
+					signLoc.getBlockX() - (double) facing.getModX(),
+					signLoc.getBlockY() - (double) facing.getModY(),
+					signLoc.getBlockZ() - (double) facing.getModZ());
+			this.containerKey = BlockKey.of(containerLocation);
+		}
 		fakeSign = false;
 		
 		if(isAdmin){
 			owner = AdminOfflinePlayer.getAdminUUID();
 			stock = Integer.MAX_VALUE;
-			shopState = OK;
 		}
 	}
 	
@@ -386,21 +387,6 @@ public abstract class AbstractShop{
 		return getSecondaryItemStack();
 	}
 	
-	public double getPricePerItem() {
-		// Calculate pricePerItem for partial sales, round up!
-		return this.getPrice() / this.getAmount();
-	}
-	
-	public double getItemsPerPriceUnit() {
-		// Calculate items you can get for each price unit, round down!
-		return this.getAmount() / this.getPrice();
-	}
-	
-	public String getPricePerItemString() {
-		double pricePer = this.getPricePerItem();
-		return Main.getPlugin().getPriceString(pricePer, true);
-	}
-	
 	//only use this method if the shop has not been added to the main handler maps yet
 	public void setAdmin(boolean isAdmin) {
 		this.isAdmin = isAdmin;
@@ -420,6 +406,9 @@ public abstract class AbstractShop{
 	}
 	
 	public void setSecondaryItemStack(ItemStack is) {
+		if(is == null){
+			return;
+		}
 		this.secondaryItem = is.clone();
 		this.secondaryItem.setAmount(1);
 	}

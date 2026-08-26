@@ -83,13 +83,13 @@ public class BuyShop extends AbstractShop{
 				LangRequest userRequest = lang.request("transaction.success.BUY.user");
 				shopPlaceholders(userRequest, this,false);
 				userRequest.replace("%price%", formatPrice(price * multiplier));
-				userRequest.replace("%amount%", amount * multiplier);
+				userRequest.replace("%item-amount%", amount * multiplier);
 				userRequest.sendToAudience(player);
 				if(owner.isNotifyOwner() && owner instanceof OnlinePlayerProfile online){
 					LangRequest ownerRequest = lang.request("transaction.success.BUY.owner").replace("%user%", player.getName());
 					shopPlaceholders(ownerRequest, this,false);
 					ownerRequest.replace("%price%", formatPrice(price * multiplier));
-					ownerRequest.replace("%amount%", amount * multiplier);
+					ownerRequest.replace("%item-amount%", amount * multiplier);
 					ownerRequest.sendToAudience(online.getPlayer());
 				}
 			}

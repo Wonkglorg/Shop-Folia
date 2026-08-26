@@ -81,7 +81,7 @@ priceSuffixes:
 
 # This will change the type of item display that shops will use by default above their chests #
 # The options are: NONE, ITEM, GLASS_CASE, LARGE_ITEM, ITEM_FRAME #
-displayType: ITEM
+displayType: NONE
 
 # This will show the hover text above the item display #
 # The options are: NONE, RIGHT_CLICK_CHEST, VIEW_SIGN #
@@ -228,4 +228,5 @@ debug:
   shopCreateCooldown: 5000
   # If old data should be migrated
   migrateOldData: false
+  #todo migrate marketmanager db. check what else I can migrate from the shops db
 
