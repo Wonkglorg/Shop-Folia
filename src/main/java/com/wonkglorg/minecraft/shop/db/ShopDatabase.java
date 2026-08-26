@@ -44,10 +44,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 			ON CONFLICT(shop_uuid, owner_uuid) DO NOTHING;
 			""";
+	
 	private static final String SHOP_SELECT_SQL = """
-			SELECT shop_uuid, owner_uuid, item, price, amount, last_known_stock_count,last_known_stock_status, destroyed_time, shop_type,sign_facing, display_type, fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z
+			SELECT shop_uuid, owner_uuid, item, price, amount, last_known_stock_count,last_known_stock_status, destroy_time, shop_type,sign_facing, display_type, fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z
 			  FROM shops
-			 WHERE destroyed_time = 0 OR 1 = ?;
+			 WHERE destroy_time = 0 OR 1 = ?;
 			""";
 	
 	private static final String SHOP_CACHE_STOCK_SQL = """
@@ -56,6 +57,13 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	private static final String SHOP_UPDATE_SQL = """
 			UPDATE shops SET owner_uuid = ?, item = ?, price = ?, amount = ?, last_known_stock_count = ?, shop_type = ?, sign_facing = ?, display_type = ?, fake_sign = ?, barter_item = ?, item_type = ?, item_barter_type = ?, shop_world = ?, shop_x = ?, shop_y = ?, shop_z = ? WHERE shop_uuid = ?
+			""";
+	
+	private static final String LEGACY_SHOP_INSERT_SQL = """
+			INSERT INTO shops
+			(shop_uuid, owner_uuid, item, price, amount,last_known_stock_count, last_known_stock_status, shop_type,sign_facing, display_type,fake_sign, barter_item, creation_time,destroy_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
+			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+			ON CONFLICT(shop_uuid, owner_uuid) DO NOTHING;
 			""";
 	
 	private final Main plugin;
@@ -90,47 +98,67 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 	}
 	
-	public void addShops(Collection<? extends AbstractShop> shops) {
+	public void addLegacyShops(Map<UUID, AbstractShop> shops, Map<UUID, Long> deletionTimes) {
 		if(shops == null || shops.isEmpty()){
 			return;
 		}
-		
-		scheduler.runAsync(_ -> {
-			try(var connection = getConnection(); var ps = connection.prepareStatement(SHOP_INSERT_SQL)){
-				List<AbstractShop> invalidShops = new ArrayList<>();
-				connection.setAutoCommit(false);
-				
-				try{
-					for(AbstractShop shop : shops){
-						if(shop.getFacing() == null){
-							PluginLogger.error("Shop " +
-							                   shop +
-							                   "is missing a facing direction if this happens during migration the error can be ignored. marking as invalid and setting default direction for insertion!");
-							invalidShops.add(shop);
-						}
-						insertShopValues(shop, ps);
-						ps.addBatch();
+		try(var connection = getConnection(); var ps = connection.prepareStatement(LEGACY_SHOP_INSERT_SQL)){
+			connection.setAutoCommit(false);
+			
+			try{
+				for(AbstractShop shop : shops.values()){
+					ItemStack mainStack = shop.getItemStack().clone();
+					mainStack.setAmount(1);
+					ItemStack barterStack = shop.getSecondaryItemStack();
+					if(barterStack != null){
+						barterStack = barterStack.clone();
+						barterStack.setAmount(1);
 					}
-					
-					ps.executeBatch();
-					connection.commit();
-					
-				} catch(SQLException e){
-					connection.rollback();
-					throw e;
-					
-				} finally{
-					connection.setAutoCommit(true);
+					Location signLocation = shop.getSignLocation();
+					ps.setString(1, shop.getId().toString());
+					ps.setString(2, shop.getOwnerUUID().toString());
+					ps.setString(3, ItemStackJsonCodec.serialize(mainStack));
+					ps.setDouble(4, shop.getPrice());
+					ps.setInt(5, shop.getAmount());
+					ps.setInt(6, shop.getStock());
+					ps.setString(7, shop.getShopState().toString());
+					ps.setString(8, shop.getType().toString().toUpperCase());
+					BlockFace facing = shop.getFacing();
+					if(facing == null){
+						facing = BlockFace.EAST;
+					}
+					ps.setString(9, facing.toString().toUpperCase());
+					ps.setString(10,
+							(shop.getDisplay() != null && shop.getDisplay().getType() != null)
+							? shop.getDisplay().getType().toString()
+							: DisplayType.NONE.toString());
+					ps.setInt(11, shop.isFakeSign() ? 1 : 0);
+					ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+					ps.setLong(13, shop.getCreationDate());
+					ps.setLong(14, deletionTimes.getOrDefault(shop.getId(), 0L));
+					ps.setString(15, mainStack.getType().toString());
+					ps.setString(16, barterStack != null ? barterStack.getType().toString() : null);
+					ps.setString(17, signLocation.getWorld().getName());
+					ps.setInt(18, signLocation.getBlockX());
+					ps.setInt(19, signLocation.getBlockY());
+					ps.setInt(20, signLocation.getBlockZ());
+					ps.addBatch();
 				}
 				
-				for(var shop : invalidShops){
-					removeShop(shop);
-				}
+				ps.executeBatch();
+				connection.commit();
 				
 			} catch(SQLException e){
-				PluginLogger.error("Error while creating shops", e);
+				connection.rollback();
+				throw e;
+				
+			} finally{
+				connection.setAutoCommit(true);
 			}
-		});
+			
+		} catch(SQLException e){
+			PluginLogger.error("Error while creating shops", e);
+		}
 	}
 	
 	public CompletableFuture<List<AbstractShop>> getShops(boolean includeDeleted) {
@@ -247,7 +275,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				: DisplayType.NONE.toString());
 		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
 		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
-		ps.setLong(13, System.currentTimeMillis());
+		ps.setLong(13, shop.getCreationDate());
 		ps.setString(14, mainStack.getType().toString());
 		ps.setString(15, barterStack != null ? barterStack.getType().toString() : null);
 		ps.setString(16, signLocation.getWorld().getName());
@@ -341,7 +369,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		scheduler.runAsync(_ -> {
 			try(var ps = getConnection().prepareStatement("""
 					UPDATE shops
-					SET destroyed_time = ?
+					SET destroy_time = ?
 					WHERE shop_uuid = ?
 					""")){
 				
@@ -353,54 +381,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				PluginLogger.error("Error while deactivating shop", e);
 			}
 		});
-	}
-	
-	public void removeLegacyShops(Collection<AbstractShop> shops) {
-		if(shops == null || shops.isEmpty()){
-			return;
-		}
-		
-		Connection connection = getConnection();
-		
-		try{
-			connection.setAutoCommit(false);
-			
-			try(var ps = connection.prepareStatement("""
-					UPDATE shops
-					SET destroyed_time = ?
-					WHERE shop_uuid = ?
-					""")){
-				
-				long destroyedTime = System.currentTimeMillis();
-				
-				for(AbstractShop shop : shops){
-					ps.setLong(1, destroyedTime);
-					ps.setString(2, shop.getId().toString());
-					ps.addBatch();
-					logger.warning("Marking Legacy shop as removed: " + shop);
-				}
-				
-				ps.executeBatch();
-			}
-			
-			connection.commit();
-			
-		} catch(SQLException e){
-			try{
-				connection.rollback();
-			} catch(SQLException rollbackException){
-				PluginLogger.error("Error while rolling back legacy shop removal", rollbackException);
-			}
-			
-			PluginLogger.error("Error while deactivating legacy shops", e);
-			
-		} finally{
-			try{
-				connection.setAutoCommit(true);
-			} catch(SQLException e){
-				PluginLogger.error("Error while restoring database auto-commit", e);
-			}
-		}
 	}
 	
 	public void logTransaction(UUID shopId, long timestamp, UUID purchaserId, @Nullable ItemStack gambleReward, int multiplier) {

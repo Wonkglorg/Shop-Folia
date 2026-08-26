@@ -71,6 +71,7 @@ public abstract class AbstractShop{
 	@Setter
 	protected UUID id;
 	@Getter
+	@Setter
 	protected long creationDate;
 	@Setter
 	protected boolean needsSave = false;

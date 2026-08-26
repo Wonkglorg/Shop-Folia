@@ -35,13 +35,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public class ShopManager{
@@ -100,61 +98,58 @@ public class ShopManager{
 	}
 	
 	private void migrateData(Main plugin) {
-		try{
-			List<AbstractShop> legacyShops = null;
-			if(settingsConfig.isMigrateOldData()){
-				logger.info("Migrating Legacy shop files to database!");
-				legacyShops = PlayerShopsConfig.loadLegacyShops();
-				database.addShops(legacyShops);
-				
-				Thread.sleep(1000); //this is quick and dirty, no need for better as its a one time thing...
-				
-				logger.info("Finished Migrating shop files to database!");
-				
-				Path playerNameCache = Main.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data", "playerNameCache.yml"));
-				if(Files.exists(playerNameCache)){
-					logger.info("Migrating old Player Name Cache");
-					YamlConfiguration nameCache = YamlConfiguration.loadConfiguration(playerNameCache.toFile());
-					Map<UUID, String> names = new HashMap<>();
-					
-					for(var entry : nameCache.getKeys(false)){
-						names.put(UUID.fromString(entry), nameCache.getString(entry));
-					}
-					database.addLegacyPlayers(names);
-				}
-				
-				if(MarketManagerDB.containsDb(plugin)){
-					logger.info("Found market manager Database to migrate!");
-					MarketManagerDB migrationDb = new MarketManagerDB(plugin);
-					Map<AbstractShop, Boolean> marketManagerShops = migrationDb.getShops();
-					Set<AbstractShop> marketShops = marketManagerShops.keySet();
-					database.addShops(marketShops);
-					Thread.sleep(1000); //this is quick and dirty, no need for better as its a one time thing...
-					if(!legacyShops.isEmpty()){
-						for(var shop : legacyShops){
-							marketShops.removeIf(s -> s.getId().equals(shop.getId()));
-						}
-						database.removeLegacyShops(legacyShops);
-					} else {
-						//no legacy shops exist using the market managers data to resolve currently valid
-						database.removeLegacyShops(marketManagerShops.entrySet()
-						                                             .stream()
-						                                             .filter(Predicate.not(Entry::getValue))
-						                                             .map(Entry::getKey)
-						                                             .toList());
-					}
-					database.logLegacyTransactions(migrationDb.getTransactions());
-					logger.info("Finished migrating Market Manager Database!");
-				} else {
-					logger.info("No market manager Database found for migration.");
-				}
-				Thread.sleep(1000); //this is quick and dirty, no need for better as its a one time thing...
-				settingsConfig.setMigrateOldData(false);
-				settingsConfig.silentSave();
-			}
-		} catch(InterruptedException e){
-			throw new RuntimeException(e);
+		if(!settingsConfig.isMigrateOldData()){
+			return;
 		}
+		Path playerNameCache = Main.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data", "playerNameCache.yml"));
+		if(Files.exists(playerNameCache)){
+			logger.info("Loading legacy name cache from yml file...");
+			YamlConfiguration nameCache = YamlConfiguration.loadConfiguration(playerNameCache.toFile());
+			Map<UUID, String> names = new HashMap<>();
+			
+			for(var entry : nameCache.getKeys(false)){
+				names.put(UUID.fromString(entry), nameCache.getString(entry));
+			}
+			database.addLegacyPlayers(names);
+			logger.info("Loaded legacy name cache from yml file...");
+		}
+		
+		logger.info("Loading legacy shops from yml files...");
+		List<AbstractShop> shopPluginLegacyShops = PlayerShopsConfig.loadLegacyShops();
+		logger.info("Loaded %s shops from yml files!".formatted(shopPluginLegacyShops.size()));
+		
+		//the shops to insert and their "destruction time" as the value
+		Map<UUID, AbstractShop> shopsToInsert = new HashMap<>();
+		Map<UUID, Long> shopDeletionTimes = new HashMap<>();
+		for(var shop : shopPluginLegacyShops){
+			shopsToInsert.put(shop.getId(), shop);
+			shopDeletionTimes.put(shop.getId(), 0L);
+		}
+		
+		if(MarketManagerDB.containsDb(plugin)){
+			logger.info("Found market manager Database to migrate!");
+			MarketManagerDB managerDB = new MarketManagerDB(plugin);
+			Map<AbstractShop, Boolean> migrationDb = managerDB.getShops();
+			logger.info("Loaded market manager shop history!");
+			for(var shop : migrationDb.keySet()){
+				if(shopsToInsert.containsKey(shop.getId())){
+					//sets creation date for shop as the shop plugin did not have such data but the market manager does
+					shopsToInsert.get(shop.getId()).setCreationDate(shop.getCreationDate());
+				} else {
+					shopsToInsert.put(shop.getId(), shop);
+					shopDeletionTimes.put(shop.getId(), System.currentTimeMillis());
+				}
+			}
+			
+			logger.info("Loading Market Manager Shop Transaction History");
+			database.logLegacyTransactions(managerDB.getTransactions());
+			logger.info("Loaded Market Manager Shop Transaction History");
+		} else {
+			logger.info("No market manager Database found for migration.");
+		}
+		database.addLegacyShops(shopsToInsert, shopDeletionTimes);
+		settingsConfig.setMigrateOldData(false);
+		settingsConfig.silentSave();
 	}
 	
 	public Set<AbstractShop> getShopsNearLocation(Location location, int chunkRadius) {
