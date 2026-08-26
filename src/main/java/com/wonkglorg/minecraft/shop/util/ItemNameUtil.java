@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowItem;
 import static net.kyori.adventure.text.event.HoverEvent.showItem;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -21,13 +22,29 @@ public class ItemNameUtil{
 		return toPlainText(getName(item));
 	}
 	
+	public static String formatMaterialName(Material material) {
+		String[] parts = material.name().toLowerCase().split("_");
+		StringBuilder sb = new StringBuilder();
+		for(String part : parts){
+			if(part.isEmpty()){
+				continue;
+			}
+			sb.append(Character.toUpperCase(part.charAt(0)));
+			if(part.length() > 1){
+				sb.append(part.substring(1));
+			}
+			sb.append(" ");
+		}
+		return sb.toString().trim();
+	}
+	
 	public static Component getName(ItemStack item) {
 		if(item == null){
 			return Component.text("");
 		}
 		ItemMeta meta = item.getItemMeta();
 		if(meta == null){
-			return getNameTranslatable(item.getType());
+			return Component.text(formatMaterialName(item.getType()));
 		}
 		
 		if(meta.hasCustomName()){

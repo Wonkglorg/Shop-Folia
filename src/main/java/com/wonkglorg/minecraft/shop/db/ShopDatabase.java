@@ -377,6 +377,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					ps.setLong(1, destroyedTime);
 					ps.setString(2, shop.getId().toString());
 					ps.addBatch();
+					logger.warning("Marking Legacy shop as removed: " + shop);
 				}
 				
 				ps.executeBatch();

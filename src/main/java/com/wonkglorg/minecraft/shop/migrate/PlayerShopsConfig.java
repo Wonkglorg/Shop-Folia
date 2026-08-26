@@ -36,7 +36,7 @@ public class PlayerShopsConfig extends Config{
 	/**
 	 * The folder player shops get saved to
 	 */
-	public static final Path SHOPS_DATA_FOLDER = Main.getPlugin().getDataPath().resolve("migration", "shops");
+	private static final Path SHOPS_DATA_FOLDER = Main.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data"));
 	
 	/**
 	 * The shop file name
@@ -48,12 +48,8 @@ public class PlayerShopsConfig extends Config{
 	public static List<AbstractShop> loadLegacyShops() {
 		List<AbstractShop> shops = new ArrayList<>();
 		if(!Files.exists(SHOPS_DATA_FOLDER)){
-			try{
-				Files.createDirectories(SHOPS_DATA_FOLDER);
-			} catch(IOException e){
-				Main.getPlugin().logger().severe("Unable to create shop directory." + e.getMessage());
-				return shops;
-			}
+			logger.warning("No legacy shop data found under shop-old");
+			return new ArrayList<>();
 		}
 		
 		AtomicInteger numShopsLoaded = new AtomicInteger(0);

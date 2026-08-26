@@ -4,7 +4,6 @@ import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB;
-import com.wonkglorg.minecraft.shop.migrate.PlayerNameCacheMigrationConfig;
 import com.wonkglorg.minecraft.shop.migrate.PlayerShopsConfig;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
@@ -22,13 +21,17 @@ import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.block.sign.Side;
 import org.bukkit.block.sign.SignSide;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public class ShopManager{
@@ -97,23 +101,48 @@ public class ShopManager{
 	
 	private void migrateData(Main plugin) {
 		try{
+			List<AbstractShop> legacyShops = null;
 			if(settingsConfig.isMigrateOldData()){
 				logger.info("Migrating Legacy shop files to database!");
-				database.addLegacyPlayers(new PlayerNameCacheMigrationConfig().getNames());
-				database.addShops(PlayerShopsConfig.loadLegacyShops());
+				legacyShops = PlayerShopsConfig.loadLegacyShops();
+				database.addShops(legacyShops);
 				
 				Thread.sleep(1000); //this is quick and dirty, no need for better as its a one time thing...
 				
 				logger.info("Finished Migrating shop files to database!");
 				
+				Path playerNameCache = Main.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data", "playerNameCache.yml"));
+				if(Files.exists(playerNameCache)){
+					logger.info("Migrating old Player Name Cache");
+					YamlConfiguration nameCache = YamlConfiguration.loadConfiguration(playerNameCache.toFile());
+					Map<UUID, String> names = new HashMap<>();
+					
+					for(var entry : nameCache.getKeys(false)){
+						names.put(UUID.fromString(entry), nameCache.getString(entry));
+					}
+					database.addLegacyPlayers(names);
+				}
+				
 				if(MarketManagerDB.containsDb(plugin)){
 					logger.info("Found market manager Database to migrate!");
 					MarketManagerDB migrationDb = new MarketManagerDB(plugin);
-					Map<AbstractShop, Boolean> shops = migrationDb.getShops();
-					database.addShops(shops.keySet());
+					Map<AbstractShop, Boolean> marketManagerShops = migrationDb.getShops();
+					Set<AbstractShop> marketShops = marketManagerShops.keySet();
+					database.addShops(marketShops);
 					Thread.sleep(1000); //this is quick and dirty, no need for better as its a one time thing...
-					
-					database.removeLegacyShops(shops.entrySet().stream().filter(Entry::getValue).map(Entry::getKey).toList());
+					if(!legacyShops.isEmpty()){
+						for(var shop : legacyShops){
+							marketShops.removeIf(s -> s.getId().equals(shop.getId()));
+						}
+						database.removeLegacyShops(legacyShops);
+					} else {
+						//no legacy shops exist using the market managers data to resolve currently valid
+						database.removeLegacyShops(marketManagerShops.entrySet()
+						                                             .stream()
+						                                             .filter(Predicate.not(Entry::getValue))
+						                                             .map(Entry::getKey)
+						                                             .toList());
+					}
 					database.logLegacyTransactions(migrationDb.getTransactions());
 					logger.info("Finished migrating Market Manager Database!");
 				} else {

@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class MarketManagerDB extends SqliteDatabase<FileDataSource>{
 	
-	public static final Path DBPATH = Path.of("migration", "marketmanager", "shopStats.db");
+	public static final Path DBPATH = Main.getPlugin().getDataPath().getParent().resolve(Path.of("MarketManager", "shopStats.db"));
 	
 	public static final String SHOP_TRANSACTIONS_SQL = """
 			SELECT shopUuid, timestamp, purchaserUuid
@@ -44,11 +44,11 @@ public class MarketManagerDB extends SqliteDatabase<FileDataSource>{
 			""";
 	
 	public MarketManagerDB(Plugin plugin) {
-		super(new FileDataSource(DatabaseType.SQLITE, plugin.getDataPath().resolve(DBPATH)));
+		super(new FileDataSource(DatabaseType.SQLITE, DBPATH));
 	}
 	
 	public static boolean containsDb(Main plugin) {
-		return Files.exists(plugin.getDataPath().resolve(DBPATH));
+		return Files.exists(DBPATH);
 	}
 	
 	public List<ShopHistoryEntry> getTransactions() {
@@ -66,6 +66,10 @@ public class MarketManagerDB extends SqliteDatabase<FileDataSource>{
 		}
 	}
 	
+	/**
+	 * @return a map where the key is the shop and the value indicates
+	 *         whether the shop is active (true) or destroyed (false)
+	 */
 	public Map<AbstractShop, Boolean> getShops() {
 		try(var ps = getConnection().prepareStatement(SHOP_SELECT_SQL)){
 			

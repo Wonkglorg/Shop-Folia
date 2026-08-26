@@ -355,19 +355,25 @@ public abstract class AbstractShop{
 		return Bukkit.getOfflinePlayer(this.owner);
 	}
 	
+	/**
+	 * @return the main item of this shop (always with a count of 1)
+	 */
 	public ItemStack getItemStack() {
 		if(item != null){
 			ItemStack is = item.clone();
-			is.setAmount(this.getAmount());
+			is.setAmount(1);
 			return is;
 		}
 		return null;
 	}
 	
+	/**
+	 * @return the secondary item of this shop (always with a count of 1)
+	 */
 	public ItemStack getSecondaryItemStack() {
 		if(secondaryItem != null){
 			ItemStack is = secondaryItem.clone();
-			is.setAmount((int) this.getPrice());
+			is.setAmount(1);
 			return is;
 		}
 		return null;
@@ -869,18 +875,30 @@ public abstract class AbstractShop{
 	@Override
 	public String toString() {
 		return "AbstractShop{" +
-		       "type=" +
+		       "id=" +
+		       id +
+		       ", type=" +
 		       type.toString().toUpperCase() +
 		       ", item=" +
 		       item +
 		       ", price=" +
 		       price +
+		       ", amount=" +
+		       amount +
 		       (secondaryItem != null ? ", secondaryItem=" + secondaryItem : "") +
 		       (isAdmin ? ", isAdmin=" + isAdmin : "") +
 		       ", stock=" +
 		       stock +
 		       ", owner=" +
 		       owner +
+		       ", signLocation=" +
+		       ((signLocation != null) ? signLocation.getWorld().getName() +
+		                                 ":" +
+		                                 signLocation.getBlockX() +
+		                                 "/" +
+		                                 signLocation.getBlockY() +
+		                                 "/" +
+		                                 signLocation.getBlockZ() : "null") +
 		       ", chestLocation=" +
 		       ((containerLocation != null) ? containerLocation.getWorld().getName() +
 		                                      ":" +

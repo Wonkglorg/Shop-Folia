@@ -11,8 +11,6 @@ deletePlayerShopsAfterXHoursOffline: 0
 # =================================================================== #
 #                      CURRENCY AND ECONOMY                           #
 # =================================================================== #
-# https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml)#currency-and-economy-settings
-
 # type :
 # ITEM - shops will use a specified item as the currency (default is Emerald). To change this item in-game, run the
 #        command '/shop setcurrency while holding the item in your hand you want to use as currency.
@@ -77,8 +75,6 @@ priceSuffixes:
 # =================================================================== #
 #                           SHOP DISPLAY                              #
 # =================================================================== #
-# https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml)#shop-display
-
 # This will change the type of item display that shops will use by default above their chests #
 # The options are: NONE, ITEM, GLASS_CASE, LARGE_ITEM, ITEM_FRAME #
 displayType: NONE
@@ -110,8 +106,6 @@ setGlowingSignText: false
 # =================================================================== #
 #                         SHOP INTERACTIONS                           #
 # =================================================================== #
-# https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml)#shop-interactions
-
 # Here you can map player actions on shops to specific controls
 #   - NONE
 #   - LEFT_CLICK_SIGN
@@ -189,8 +183,6 @@ offlinePurchaseNotifications: true
 # =================================================================== #
 #                   SHOP PERFORMANCE OPTIMIZATIONS                    #
 # =================================================================== #
-# https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml)#shop-performance-optimizations
-
 # You should not need to change these settings, we have tried to balance them for performance & experience. #
 # If you are experiencing performance issues however, you can try to tune them. #
 
@@ -215,8 +207,6 @@ maxShopDisplayDistance: 20.0
 # =================================================================== #
 #                            DEBUG TOOLS                              #
 # =================================================================== #
-# https://github.com/snowgears/shopbugs/wiki/Configuration-(config.yml)#debug-tools
-
 # Normally Developer Use only, but helpful if you are running into bugs and want more details!
 #
 # If you are running into issues, or doing a lot of testing, you can enable these debug settings
@@ -228,5 +218,4 @@ debug:
   shopCreateCooldown: 5000
   # If old data should be migrated
   migrateOldData: false
-  #todo migrate marketmanager db. check what else I can migrate from the shops db
 
