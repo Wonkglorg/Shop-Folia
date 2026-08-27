@@ -51,6 +51,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.geysermc.floodgate.api.FloodgateApi;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -509,24 +510,32 @@ public abstract class AbstractShop{
 	}
 	
 	public void printSalesInfo(Player player) {
-		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType().toString().toUpperCase());
-		shopPlaceholders(request, this, true);
+		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType());
+		shopPlaceholders(request, this, true,player);
 		request.sendToAudience(player);
 	}
 	
-	public static void shopPlaceholders(LangRequest request, AbstractShop shop, boolean includeHover) {
+	public static void shopPlaceholders(LangRequest request, AbstractShop shop, boolean includeHover, Player player) {
 		//@formatter:off
 		ItemStack item = shop.item;
 		
+		if(includeHover && Main.floodGateEnabled){
+			FloodgateApi api = FloodgateApi.getInstance();
+			if(api != null && api.isFloodgateId(player.getUniqueId())){
+				includeHover = false;
+			}
+		}
+		
+		
 		request.replace("%owner%", shop::getOwnerName)
-			   .replace("%stock-state%",shop.getShopState())
+			   .replace("%stock-state%",shop.getShopState().toString())
 			   .replace("%price%",shop.getPriceFormatted())
 			   .replace("%stock%",shop.getStock())
 			   .replace("%amount%",shop.getAmount())
 			   .replace("%location%",UtilMethods.getCleanLocation(shop.getSignLocation(),false))
 			   .replace("%price-per-item%",shop.price / shop.amount)
 			   .replace("%world%",shop.getSignLocation().getWorld().getName())
-               .replace("%item-type%", item.getType())
+               .replace("%item-type%", item.getType().toString())
                .replace("%item-amount%",shop.getAmount())
                .replace("%item-enchants%",()->UtilMethods.getEnchantmentsComponent(item));
 		
@@ -537,11 +546,12 @@ public abstract class AbstractShop{
 		}
 		ItemStack barterItem = shop.secondaryItem;
 		if(barterItem != null){
-			request.replace("%barter-item-type%", barterItem.getType())
+			request.replace("%barter-item-type%", barterItem.getType().toString())
 			       .replace("%barter-durability%",UtilMethods.getDurabilityPercent(barterItem))
 			       .replace("%barter-item-amount%", barterItem.getAmount())
 				   .replace("%barter-item-enchants%",()->UtilMethods.getEnchantmentsComponent(barterItem));
 			
+
 			if(includeHover){
 				request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem).hoverEvent(ItemNameUtil.getItemHover(barterItem)));
 			}else{

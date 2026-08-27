@@ -87,6 +87,11 @@ repositories {
         name = "sk89q-repo"
         url = "https://maven.enginehub.org/repo/"
     }
+
+
+    maven {
+        url = uri("https://repo.opencollab.dev/main/")
+    }
 }
 
 dependencies {
@@ -122,16 +127,12 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombok_version}"
 
     //Core dependencies
-    compileOnly 'it.unimi.dsi:fastutil:8.5.6'
     compileOnly 'net.milkbowl.vault:VaultAPI:1.7'
-    compileOnly 'com.griefcraft.lwc:LWCX:2.2.7'
-    implementation 'com.zaxxer:HikariCP:5.0.1'
-    implementation 'org.mariadb.jdbc:mariadb-java-client:2.7.5'
 
     //FoliaLib
     implementation 'com.github.technicallycoded:FoliaLib:0.4.4'
 
-
+    compileOnly "org.geysermc.floodgate:api:${floodgate_version}"
     //test dependencies
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -184,7 +185,10 @@ tasks.named("shadowJar") {
 
     destinationDirectory.set(file(jarOutputDir))
 
-    relocate("com.tcoded.folialib", "com.snowgears.shop.lib.folialib")
+    relocate("com.tcoded.folialib", "com.wonkglorg.shop.lib.folialib")
+
+
+    relocate("com.wonkglorg.minecraft.config", "com.wonkglorg.shop.lib.config")
 
     doLast {
         println("Shadow jar generated at: ${archiveFile.get().asFile.absolutePath}")

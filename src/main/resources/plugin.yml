@@ -5,7 +5,9 @@ author: ${author}
 version: ${version}
 api-version: ${api_version}
 folia-supported: true
-softdepend: [NBTAPI, Vault]
+softdepend:
+  - Vault
+  - floodgate
 permissions:
   shop.use:
     description: Allows player to use all shops.

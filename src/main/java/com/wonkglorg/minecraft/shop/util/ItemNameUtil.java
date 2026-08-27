@@ -16,7 +16,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
-@SuppressWarnings("removal")
 public class ItemNameUtil{
 	
 	public ItemNameUtil() { /* utility class */ }

@@ -38,7 +38,7 @@ public class ShopSignUtil{
 			shopFormat += "_no_display";
 		}
 		
-		return getSignLines(shop.getType().name().toUpperCase() + "." + shopFormat, shop);
+		return getSignLines(shop.getType() + "." + shopFormat, shop);
 	}
 	
 	/**

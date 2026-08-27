@@ -27,7 +27,7 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin{
-	
+	public static boolean floodGateEnabled = false;
 	@Getter
 	private static Main plugin;
 	private ShopLogger logger = new ShopLogger(this);
@@ -43,10 +43,6 @@ public class Main extends JavaPlugin{
 	@Getter
 	private String commandAlias;
 	private Economy econ = null;
-	@Getter
-	private NamespacedKey signLocationNameSpacedKey;
-	@Getter
-	private NamespacedKey playerUUIDNameSpacedKey;
 	
 	@Getter
 	private SettingsConfig settingsConfig;
@@ -74,9 +70,7 @@ public class Main extends JavaPlugin{
 	
 	@Override
 	public void onEnable() {
-		signLocationNameSpacedKey = new NamespacedKey(this, "signLocation");
-		playerUUIDNameSpacedKey = new NamespacedKey(this, "playerUUID");
-		
+		floodGateEnabled = Bukkit.getPluginManager().getPlugin("floodgate") != null;
 		if(itemConfig.getGambleDisplayItem() == null){
 			itemConfig.setGambleDisplayItem(new ItemStack(Material.DIAMOND));
 		}

@@ -211,7 +211,7 @@ public abstract class ShopCreationProcess{
 	
 	protected boolean isAllowedToCreateShop() {
 		if(!PlayerProfile.isAllowedToCreateShop(player, type)){
-			lang.request("permission.error.create").replace("%shop-type%", type).sendToAudience(player);
+			lang.request("permission.error.create").replace("%shop-type%", type.toString()).sendToAudience(player);
 			return false;
 		}
 		return true;

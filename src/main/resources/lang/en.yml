@@ -13,7 +13,6 @@
 # %barter item lore% : The lore (description) of the barter item in the transaction #
 # %barter item enchants% : The enchantments of the barter item in the transaction #
 # %price% : The price of the items (adjusted to match virtual or physical currency) #
-# %price sell% : The sell price of combo shops (adjusted to match virtual or physical currency) #
 # %price combo% : The full combo price string (adjusted to match virtual or physical currency) #
 # %price per item% : The price of 1 individual item (calculated from total price and adjusted to match virtual or physical currency) #
 # %price sell per item% : The price of selling 1 individual item (combo shops) (calculated from total price and adjusted to match virtual or physical currency) #
@@ -59,20 +58,20 @@ templates:
 ##Shop transaction related messages
 transaction:
   success:
-    SELL:
+    sell:
       user: '<gray>You bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from %owner% for <aqua>%price% %currency-name% <gray>.'
       owner: '<gray>%user% bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from you for <aqua>%price% %currency-name%<gray> at <white>%location%<gray>.'
-    BUY:
+    buy:
       user: '<gray>You sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to %owner% for <aqua>%price% %currency-name%<gray>.'
       owner: '<gray>%user% sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to you for <aqua>%price% %currency-name%<gray> at <white>%location%<gray>.'
-    BARTER:
+    barter:
       user: '<gray>You bartered <white>%barter-item-amount% <gray>of your <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of %owner%s <white>%item%(s)<aqua>%item-enchants%<gray>.'
       owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
-    GAMBLE:
+    gamble:
       user: '<gray>You gambled <green>%price% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
 
     OFFLINE_TRANSACTIONS_NOTIFICATION:
-      itemRow: '<light_purple>| <white> - <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>)'
+      itemRow: '<light_purple>| <white> - <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'
       outOfStockShop: '<light_purple>| <gold>Out Of Stock Shop: <aqua>%item% <gold>at <aqua>%location%'
       moreOutOfStock: '<light_purple>| <aqua>%out-of-stock-remaining% <gold>more Shops Out Of Stock...'
       summary:
@@ -91,7 +90,7 @@ transaction:
         - '%shops-out-of-stock%'
         - '<light_purple>+---------------------------------------------------+'
   issue:
-    SELL:
+    sell:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
       cancelledExternal: "<gray>Transaction cancelled."
@@ -101,7 +100,7 @@ transaction:
       ownerNoSpace: "<red>[Shop] Your selling shop at %location% is full."
       playerNoStock: "<red>You do not have sufficient funds to buy from this shop."
       playerNoSpace: "<red>You do not have enough space in your inventory to buy from this shop."
-    BUY:
+    buy:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
       cancelledExternal: "<gray>Transaction cancelled."
@@ -111,7 +110,7 @@ transaction:
       ownerNoSpace: "<red>[Shop] Your buying shop at %location% is full."
       playerNoStock: "<red>You do not have enough items to sell to this shop."
       playerNoSpace: "<red>You do not have enough space in your inventory to accept the payment from this shop."
-    BARTER:
+    barter:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
       cancelledExternal: "<gray>Transaction cancelled."
@@ -121,7 +120,7 @@ transaction:
       ownerNoSpace: "<red>[Shop] Your barter shop at %location% is full."
       playerNoStock: "<red>You do not have sufficient items to barter with this shop."
       playerNoSpace: "<red>You do not have enough space in your inventory to barter with this shop."
-    GAMBLE:
+    gamble:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
       cancelledExternal: "<gray>Transaction cancelled."
@@ -130,34 +129,28 @@ transaction:
 
 interaction:
   success:
-    SELL:
+    sell:
       initialize: "<gold>Now just hit the sign with the item you want to sell to other players!"
       create: "<yellow>You have created a shop that sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
       destroy: "<gray>You have destroyed your selling shop."
       opDestroy: "<gray>You have destroyed a selling shop owned by %owner%."
       opOpen: "<gray>You are opening a selling shop owned by %owner%."
-    BUY:
+    buy:
       initialize: "<gold>Now just hit the sign with the item you want to buy from other players!"
       create: "<yellow>You have created a shop that buys <gold>%item%(s)<aqua>%item-enchants%<yellow>."
       destroy: "<gray>You have destroyed your buying shop."
       opDestroy: "<gray>You have destroyed a buying shop owned by %owner%."
       opOpen: "<gray>You are opening a buying shop owned by %owner%."
-    BARTER:
+    barter:
       initialize: "<gold>Now hit the sign with the item you want to barter to other players!"
       initializeBarter:
-        - "<gray>You have set this shop's barter item to %%item%%(s)"
+        - "<gray>You have set this shop's barter item to %item%(s)"
         - "<gold>Now hit the sign again with the item you want barter for!"
       create: "<yellow>You have created a shop that barters <gold>%item%(s)<aqua>%item-enchants% <yellow>for <gold>%barter-item%(s)<aqua>%barter-item-enchants%<yellow>."
       destroy: "<gray>You have destroyed your bartering shop."
       opDestroy: "<gray>You have destroyed a bartering shop owned by %owner%."
       opOpen: "<gray>You are opening a bartering shop owned by %owner%."
-    COMBO:
-      initialize: "<gold>Now just hit the sign with the item you want to buy or sell from other players!"
-      create: "<yellow>You have created a shop that buys and sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
-      destroy: "<gray>You have destroyed your combo shop (buying and selling)."
-      opDestroy: "<gray>You have destroyed a combo shop owned by %owner%."
-      opOpen: "<gray>You are opening a combo shop owned by %owner%."
-    GAMBLE:
+    gamble:
       create: "<yellow>You have created a gambling shop."
       opDestroy: "<gray>You have destroyed a gambling shop owned by %server name%."
   issues:
@@ -185,7 +178,7 @@ interaction:
     createHitChestTimeout: "<gray>The shop you started to create at %location% has timed out."
 
 description:
-  SELL:
+  sell:
     - '<light_purple>+---------------------------------------------------+'
     - '<light_purple>| <green>Shop Information: <gray>(selling items)'
     - '<light_purple>| <gray>Owner: <white>%owner%'
@@ -194,7 +187,7 @@ description:
     - '<light_purple>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 <gray>%item%)'
     - '<light_purple>| <gray>Stock: %stock-color%%stock%'
     - '<light_purple>+---------------------------------------------------+'
-  BUY:
+  buy:
     - '<light_purple>+---------------------------------------------------+'
     - '<light_purple>| <green>Shop Information: <gray>(buying items)'
     - '<light_purple>| <gray>Owner: <white>%owner%'
@@ -203,28 +196,19 @@ description:
     - '<light_purple>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 <gray>%item%)'
     - '<light_purple>| <gray>Stock: %stock-color%%stock%'
     - '<light_purple>+---------------------------------------------------+'
-  COMBO:
-    - '<light_purple>+---------------------------------------------------+'
-    - '<light_purple>| <green>Shop Information: <gray>(buying or selling items) %stock color%in stock'
-    - '<light_purple>| <gray>Owner: <white>%owner%'
-    - '<light_purple>| <gray>Click <yellow>LEFT <gray>side of sign:'
-    - '<light_purple>| <gray>You get: <green>%price% <gray>for your <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>)'
-    - '<light_purple>| <gray>Click <yellow>RIGHT <gray>side of sign'
-    - '<light_purple>| <gray>You get: <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>) for your <green>%price-sell%'
-    - '<light_purple>+---------------------------------------------------+'
-  BARTER:
+  barter:
     - '<light_purple>+---------------------------------------------------+'
     - '<light_purple>| <green>Shop Information: <gray>(bartering items) %stock-color%in stock'
     - '<light_purple>| <gray>Owner: <white>%owner%'
     - '<light_purple>|             <gray>v (hover over items to see details)'
-    - '<light_purple>| <yellow>You give: <aqua>%%barter-item%% <gray>(x<yellow>%barter-item-amount%<gray>)'
-    - '<light_purple>| <green>You get: <aqua>%%item%% <gray>(x<yellow>%item-amount%<gray>)'
-    - '<light_purple>| <gray>Price: <gray>(%price per item% per 1 %item%)'
+    - '<light_purple>| <yellow>You give: <aqua>%barter-item% <gray>(x<yellow>%barter-item-amount%<gray>)'
+    - '<light_purple>| <green>You get: <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'
+    - '<light_purple>| <gray>Price: <gray>(%price-per-item% per 1 %item%)'
     - '<light_purple>+---------------------------------------------------+'
-  GAMBLE:
+  gamble:
     - '<light_purple>+---------------------------------------------------+'
     - '<light_purple>| <green>Shop Information: <gray>(gambling for items)'
-    - '<light_purple>| <gray>Item: <aqua>%%item%%'
+    - '<light_purple>| <gray>Item: <aqua>%item%'
     - '<light_purple>| <gray>Price: <green>%price%'
     - '<light_purple>+---------------------------------------------------+'
 
@@ -293,12 +277,12 @@ command:
 
 sign:
   text:
-    TIMEOUT:
+    timeout:
       1: "<red> TIMEOUT"
       2: "<red> TIMEOUT"
       3: "<red> TIMEOUT"
       4: "<red> TIMEOUT"
-    SELL:
+    sell:
       initialise:
         1: "<red><bold>[sell shop]"
         2: "<red>%item%<red>: %amount%"
@@ -324,7 +308,7 @@ sign:
         2: "%item%<white>: %amount%"
         3: "<aqua>%price% %currency-name%"
         4: "%server-display-name%"
-    BUY:
+    buy:
       initialise:
         1: "<red><bold>[sell shop]"
         2: "<red>%item%<red>: %amount%"
@@ -350,7 +334,7 @@ sign:
         2: "%item%<white>: %amount%"
         3: "<aqua>%price% %currency-name%"
         4: "%server-display-name%"
-    BARTER:
+    barter:
       initialise:
         1: "<red><bold>[sell shop]"
         2: "<red>%item%<red>: %amount%"
@@ -376,7 +360,7 @@ sign:
         2: "%item%<white>: %amount%"
         3: "%barter-item%<white>: %price%"
         4: "%server-display-name%"
-    GAMBLE:
+    gamble:
       admin:
         1: "%stock-color%[Shop]"
         2: "<light_purple>Gambling"
@@ -389,31 +373,23 @@ sign:
         4: "%server-display-name%"
 # UNUSED FOR NOW!
 display_tag_text:
-  SELL:
+  sell:
     normal:
       - "[item]<gray>(x[item amount])"
       - "<aqua>[item enchants][split]"
       - "<gray><right click sign to have shop sell the item to you>"
-  BUY:
+  buy:
     normal:
       - "[item]<gray>(x[item amount])"
       - "<aqua>[item enchants][split]"
       - "<gray><right click sign to have shop buy the item from you>"
-  BARTER:
+  barter:
     normal:
       - '<green>You get:            <gold>You trade:'
       - '[item]<gray>(x[item amount])        <white>[barter item]<gray>(x[barter item amount])'
       - '<aqua>[item enchants]          <aqua>[barter item enchants]'
       - '<gray><right click sign to barter items with shop>'
-  GAMBLE:
+  gamble:
     normal:
       - "[gamble item]"
       - "<gray><right click sign to gamble for a random item>"
-  COMBO:
-    normal:
-      - "[item]<gray>(x[item amount])"
-      - "<aqua>[item enchants][split]"
-      - "<gray><click <green>LEFT <gray>side of sign for shop to <green>BUY <gray>item from you>"
-      - "[item]<gray>(x[item amount]) for <green>[price]"
-      - "<gray><click <gold>RIGHT <gray>side of sign for shop to <gold>SELL <gray>item to you>"
-      - "[item]<gray>(x[item amount]) for <gold>[price sell]"

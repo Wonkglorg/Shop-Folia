@@ -253,7 +253,7 @@ public class ShopListener implements Listener{
 			if(process.getItemStack() == null){
 				process.setItemStack(item);
 				logger.debug("Setting first item for barter shop: " + item);
-				lang.request("interaction.success." + process.getType().toString().toUpperCase() + ".initializeBarter").sendToAudience(player);
+				lang.request("interaction.success." + process.getType() + ".initializeBarter").sendToAudience(player);
 				signProcess.updateSignText();
 				return; //do not finish shop because barter needs 2 items
 			} else {
@@ -267,8 +267,8 @@ public class ShopListener implements Listener{
 			shopManager.finishShopCreation(player, shop);
 			logger.debug("Sending Post init shop event");
 			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
-			LangRequest request = lang.request("interaction.success." + shop.getType().toString().toUpperCase() + ".create");
-			AbstractShop.shopPlaceholders(request, shop, false);
+			LangRequest request = lang.request("interaction.success." + shop.getType() + ".create");
+			AbstractShop.shopPlaceholders(request, shop, false, player);
 			request.sendToAudience(player);
 			logger.debug("====SHOP INITIALISATION DONE====");
 		}
@@ -411,7 +411,7 @@ public class ShopListener implements Listener{
 		
 		if(isOperator(player)){
 			if(!shop.isAdmin()){
-				lang.request("interaction." + shop.getType().toString().toUpperCase() + ".opOpen")
+				lang.request("interaction.success." + shop.getType() + ".opOpen")
 				    .replace("%owner%", shop.getOwner().getName())
 				    .sendToAudience(player);
 			}

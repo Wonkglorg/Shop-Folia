@@ -54,6 +54,7 @@ public class ShopManager{
 	/**
 	 * All registered shops
 	 */
+	@Getter
 	private final Map<UUID, AbstractShop> allShops = new ConcurrentHashMap<>();
 	/**
 	 * All shops by their sign location
