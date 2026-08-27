@@ -81,13 +81,13 @@ public class ShopSignUtil{
 			LangRequest request = lang.request("sign.text." + context.getType().toString().toUpperCase() + ".initialise." + i);
 			
 			if(context.getItemStack() != null){
-				request.replace("%item%",context.getItemStack()::displayName);
+				request.replace("%item%",() -> ItemNameUtil.getName(context.getItemStack()));
 			}else{
 				request.replace("%item%","");
 			}
 			
 			if(context.getSecondaryStack() != null){
-				request.replace("%barter-item%",context.getSecondaryStack()::displayName);
+				request.replace("%barter-item%",()->ItemNameUtil.getName(context.getSecondaryStack()));
 			}else{
 				request.replace("%barter-item%","");
 			}

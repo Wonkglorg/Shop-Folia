@@ -294,10 +294,10 @@ command:
 sign:
   text:
     TIMEOUT:
-      1:
-      2:
-      3:
-      4:
+      1: "<red> TIMEOUT"
+      2: "<red> TIMEOUT"
+      3: "<red> TIMEOUT"
+      4: "<red> TIMEOUT"
     SELL:
       initialise:
         1: "<red><bold>[sell shop]"

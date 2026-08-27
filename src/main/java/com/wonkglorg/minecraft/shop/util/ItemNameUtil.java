@@ -1,19 +1,21 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import static com.wonkglorg.minecraft.util.Components.toComponent;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowItem;
 import static net.kyori.adventure.text.event.HoverEvent.showItem;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemRarity;
+import static org.bukkit.inventory.ItemRarity.COMMON;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
+@SuppressWarnings("removal")
 public class ItemNameUtil{
 	
 	public ItemNameUtil() { /* utility class */ }
@@ -22,7 +24,7 @@ public class ItemNameUtil{
 		return toPlainText(getName(item));
 	}
 	
-	public static String formatMaterialName(Material material) {
+	public static Component formatMaterialName(Material material) {
 		String[] parts = material.name().toLowerCase().split("_");
 		StringBuilder sb = new StringBuilder();
 		for(String part : parts){
@@ -35,17 +37,22 @@ public class ItemNameUtil{
 			}
 			sb.append(" ");
 		}
-		return sb.toString().trim();
+		return Component.text(sb.toString().trim());
 	}
 	
-	//todo make it easier to apply more formatting options / allow customisations?
 	public static Component getName(ItemStack item) {
 		if(item == null){
 			return Component.text("");
 		}
+		ItemRarity rarity = COMMON;
+		if(item.hasData(DataComponentTypes.RARITY)){
+			rarity = item.getData(DataComponentTypes.RARITY);
+			assert rarity != null;
+		}
+		
 		ItemMeta meta = item.getItemMeta();
 		if(meta == null){
-			return Component.text(formatMaterialName(item.getType())).color(TextColor.color(255,255,255));
+			return formatMaterialName(item.getType()).color(rarity.color());
 		}
 		
 		if(meta.hasCustomName()){
@@ -54,47 +61,18 @@ public class ItemNameUtil{
 		
 		// Add custom formatting for player heads
 		if(meta instanceof SkullMeta skullMeta && skullMeta.getOwningPlayer() != null){
-			return Component.text(skullMeta.getOwningPlayer().getName() + "'s Head");
+			return Component.text(skullMeta.getOwningPlayer().getName() + "'s Head").color(rarity.color());
 		}
-		
-		// Add support for displaying smithing template types
-		String itemType = item.getType().name();
-		
-		if(itemType.endsWith("_SMITHING_TEMPLATE")){
-			String templateType = itemType.replace("_SMITHING_TEMPLATE", "");
-			// Extract the template pattern name (e.g., "EYE" from "EYE_ARMOR_TRIM_SMITHING_TEMPLATE")
-			if(templateType.endsWith("_ARMOR_TRIM")){
-				String trimNameColor = "<yellow>";
-				// Aqua: "Vex", "Spire", "Eye" and "Ward"
-				if(templateType.contains("VEX") || templateType.contains("SPIRE") || templateType.contains("EYE") || templateType.contains("WARD")){
-					trimNameColor = "<aqua>";
-				} else if(templateType.contains("SILENCE")){
-					trimNameColor = "<light-purple>";
-				}
-				String formattedName = UtilMethods.capitalize(templateType.toLowerCase().replace("_", " "));
-				return toComponent(trimNameColor + formattedName);
-			} else if(templateType.equals("NETHERITE_UPGRADE")){
-				return toComponent("<yellow>Netherite Upgrade Template");
-			} else {
-				return toComponent("<yellow>" + UtilMethods.capitalize(templateType.toLowerCase().replace("_", " ")));
-			}
-		}
-		
 		// Add custom potion formatting
 		if(item.getItemMeta() instanceof PotionMeta potionMeta && potionMeta.getBasePotionType() != null){
 			String formattedName = UtilMethods.capitalize(item.getType().name().replace("_", " ").toLowerCase());
 			formattedName += " of ";
 			formattedName += UtilMethods.capitalize(potionMeta.getBasePotionType().toString().replace("_", " ").toLowerCase());
-			return Component.text(formattedName).color(TextColor.color(255,255,255));
-		}
-		
-		// Ominous Bottle's are Yellow *shrug*
-		if(item.getType() == Material.OMINOUS_BOTTLE){
-			return toComponent("<yellow>").append(Component.text(formatMaterialName(item.getType())));
+			return Component.text(formattedName).color(rarity.color());
 		}
 		
 		// Fallback to the material name
-		return Component.text(formatMaterialName(item.getType())).color(TextColor.color(255,255,255));
+		return formatMaterialName(item.getType()).color(rarity.color());
 	}
 	
 	public static HoverEvent<ShowItem> getItemHover(ItemStack item) {
