@@ -6,7 +6,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowItem;
 import static net.kyori.adventure.text.event.HoverEvent.showItem;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -89,11 +88,11 @@ public class ItemNameUtil{
 		
 		// Ominous Bottle's are Yellow *shrug*
 		if(item.getType() == Material.OMINOUS_BOTTLE){
-			return toComponent("<yellow>").append(getNameTranslatable(item.getType()));
+			return toComponent("<yellow>").append(Component.text(formatMaterialName(item.getType())));
 		}
 		
 		// Fallback to the material name
-		return getNameTranslatable(item.getType());
+		return Component.text(formatMaterialName(item.getType()));
 	}
 	
 	public static HoverEvent<ShowItem> getItemHover(ItemStack item) {
@@ -102,10 +101,6 @@ public class ItemNameUtil{
 		}
 		var dataComponents = ItemNBTUtils.getNMSItemStackDataComponents(item);
 		return showItem(item.getType().getKey(), 1, dataComponents);
-	}
-	
-	public static Component getNameTranslatable(Material material) {
-		return Component.translatable(material.translationKey());
 	}
 	
 	public static Component getEnchantmentTranslatable(Enchantment enchantment) {
