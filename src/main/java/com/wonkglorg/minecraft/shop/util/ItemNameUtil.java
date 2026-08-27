@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowItem;
 import static net.kyori.adventure.text.event.HoverEvent.showItem;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -37,13 +38,14 @@ public class ItemNameUtil{
 		return sb.toString().trim();
 	}
 	
+	//todo make it easier to apply more formatting options / allow customisations?
 	public static Component getName(ItemStack item) {
 		if(item == null){
 			return Component.text("");
 		}
 		ItemMeta meta = item.getItemMeta();
 		if(meta == null){
-			return Component.text(formatMaterialName(item.getType()));
+			return Component.text(formatMaterialName(item.getType())).color(TextColor.color(255,255,255));
 		}
 		
 		if(meta.hasCustomName()){
@@ -83,7 +85,7 @@ public class ItemNameUtil{
 			String formattedName = UtilMethods.capitalize(item.getType().name().replace("_", " ").toLowerCase());
 			formattedName += " of ";
 			formattedName += UtilMethods.capitalize(potionMeta.getBasePotionType().toString().replace("_", " ").toLowerCase());
-			return Component.text(formattedName);
+			return Component.text(formattedName).color(TextColor.color(255,255,255));
 		}
 		
 		// Ominous Bottle's are Yellow *shrug*
@@ -92,7 +94,7 @@ public class ItemNameUtil{
 		}
 		
 		// Fallback to the material name
-		return Component.text(formatMaterialName(item.getType()));
+		return Component.text(formatMaterialName(item.getType())).color(TextColor.color(255,255,255));
 	}
 	
 	public static HoverEvent<ShowItem> getItemHover(ItemStack item) {

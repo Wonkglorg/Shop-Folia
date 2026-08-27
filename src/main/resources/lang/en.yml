@@ -47,13 +47,14 @@ placeholders:
   currency-name: "<aqua>Diamond(s)"
   in-stock-color: "<green>"
   out-of-stock-color: "<red>"
+  overfilled-stock-color: "<gold>"
   zero-price: "FREE"
   admin-stock: "unlimited"
   server-display-name: "<purple>Server"
   shop-owner-name-color: "<white>"
   closed-shop: "<red>CLOSED"
 templates:
-  stock-color: "[if:%stock%==0]%out-of-stock-color%[else]%in-stock-color%[/if]"
+  stock-color: "[if:%stock-state%==EMPTY]%out-of-stock-color%[else-if:%stock-state%==OK]%in-stock-color%[else]%overfilled-stock-color%[/if]"
 
 ##Shop transaction related messages
 transaction:

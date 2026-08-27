@@ -9,7 +9,7 @@ import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
-import com.wonkglorg.minecraft.shop.util.ShopMessage;
+import com.wonkglorg.minecraft.shop.util.ShopSignUtil;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -50,6 +50,7 @@ public class ShopManager{
 	private final SettingsConfig settingsConfig;
 	@Getter
 	private final DisplayManager displayManager;
+	//todo:mjd for any shop with a hopper feeding it periodically update the shop sign to reflect the current fill.
 	/**
 	 * All registered shops
 	 */
@@ -317,7 +318,7 @@ public class ShopManager{
 			Sign sign = process.getSign();
 			plugin.getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
 				if(sign.getBlockData() instanceof WallSign){
-					List<Component> lines = ShopMessage.getSignLinesTimeout();
+					List<Component> lines = ShopSignUtil.getSignLinesTimeout();
 					SignSide side = sign.getSide(Side.FRONT);
 					side.line(0, lines.get(0));
 					side.line(1, lines.get(1));

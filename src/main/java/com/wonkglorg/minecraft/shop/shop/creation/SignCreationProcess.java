@@ -5,7 +5,7 @@ import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.shop.CreationWord;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.ShopMessage;
+import com.wonkglorg.minecraft.shop.util.ShopSignUtil;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import com.wonkglorg.minecraft.util.Components;
 import net.kyori.adventure.text.Component;
@@ -190,7 +190,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 	public void updateSignText() {
 		Main.getPlugin().getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
 			if(sign.getBlockData() instanceof WallSign){
-				List<Component> signLines = ShopMessage.getSignLines(this);
+				List<Component> signLines = ShopSignUtil.getSignLines(this);
 				SignSide signSide = sign.getSide(Side.FRONT);
 				signSide.line(0, signLines.get(0));
 				signSide.line(1, signLines.get(1));

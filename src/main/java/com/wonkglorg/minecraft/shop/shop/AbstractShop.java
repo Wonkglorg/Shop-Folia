@@ -23,7 +23,7 @@ import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
-import com.wonkglorg.minecraft.shop.util.ShopMessage;
+import com.wonkglorg.minecraft.shop.util.ShopSignUtil;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import it.unimi.dsi.fastutil.Pair;
 import static it.unimi.dsi.fastutil.Pair.of;
@@ -294,7 +294,6 @@ public abstract class AbstractShop{
 		boolean hasStockChange = stock != oldStock;
 		if(hasStockChange){
 			needsSave = true;
-			updateSign();
 		}
 	}
 	
@@ -437,7 +436,7 @@ public abstract class AbstractShop{
 		}
 		// Immediately set to false to prevent multiple calls to updateSign overlapping
 		signLinesRequireRefresh = false;
-		signLines = ShopMessage.getSignLines(this);
+		signLines = ShopSignUtil.getSignLines(this);
 		
 		// Use the sign's location to ensure the update runs in the correct region in Folia
 		Main.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(signLocation, _ -> {
@@ -498,11 +497,15 @@ public abstract class AbstractShop{
 	 * Sets a new shop state and refreshes sign if shop state changed
 	 */
 	public void setShopState(ShopState state, boolean updateSign) {
-		if(shopState != state && updateSign){
-			updateSign(true);
-			signLinesRequireRefresh = false;
-		}
+		var oldState = shopState;
 		shopState = state;
+		if(!updateSign){
+			return;
+		}
+		
+		if(shopState != oldState){
+			updateSign(true);
+		}
 	}
 	
 	public void printSalesInfo(Player player) {
@@ -516,6 +519,7 @@ public abstract class AbstractShop{
 		ItemStack item = shop.item;
 		
 		request.replace("%owner%", shop::getOwnerName)
+			   .replace("%stock-state%",shop.getShopState())
 			   .replace("%price%",shop.getPriceFormatted())
 			   .replace("%stock%",shop.getStock())
 			   .replace("%amount%",shop.getAmount())

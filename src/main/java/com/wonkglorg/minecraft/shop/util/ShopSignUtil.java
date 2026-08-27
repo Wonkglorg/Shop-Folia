@@ -5,6 +5,7 @@ import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import static com.wonkglorg.minecraft.shop.shop.AbstractShop.formatPrice;
+import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import net.kyori.adventure.text.Component;
@@ -13,7 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShopMessage{
+public class ShopSignUtil{
 	
 	private static final Main plugin = Main.getPlugin();
 	
@@ -53,7 +54,8 @@ public class ShopMessage{
 			//@formatter:off
 			LangRequest request = lang.request("sign.text." + key + "." + i);
 			
-			request.replace("%item%",shop.getItemStack()::displayName)
+			request.replace("%item%",() -> ItemNameUtil.getName(shop.getItemStack()))
+					.replace("%stock-state%",shop.getShopState())
 					.replace("%amount%",shop.getAmount())
 					.replace("%price%",shop.getPriceFormatted())
 					.replace("%owner%",shop::getOwnerName)
@@ -61,7 +63,7 @@ public class ShopMessage{
 			
 			ItemStack barterStack = shop.getSecondaryItemStack();
 			if(barterStack!=null){
-				request.replace("%barter-item%",barterStack::displayName);
+				request.replace("%barter-item%",() -> ItemNameUtil.getName(shop.getSecondaryItemStack()));
 			}
 			lines.add(request.toSingleComponent());
 			//@formatter:on
@@ -91,6 +93,7 @@ public class ShopMessage{
 			}
 			
 			request.replace("%amount%",context.getAmount())
+			       .replace("%stock-state%",OK)
 			       .replace("%price%",formatPrice(context.getPrice()))
 			       .replace("%owner%",context.getPlayer().getName())
 			       .replace("%stock%",0);

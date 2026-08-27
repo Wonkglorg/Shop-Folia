@@ -48,7 +48,7 @@ public class SellShop extends AbstractShop{
 			return;
 		}
 		//starts a mock transaction to get accurate data on what the actual trade logic would do
-		Transaction transaction = startTransaction(null, 1); //todo should also check for full stack purchases? Would that make sense for calculations or too much overhead?
+		Transaction transaction = startTransaction(null, 1);
 		double availableFunds = transaction.getSellerAvailableFunds();
 		stock = (int) (availableFunds / this.getAmount());
 		
