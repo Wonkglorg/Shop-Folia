@@ -1,5 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
+import com.wonkglorg.minecraft.shop.Main;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
@@ -25,6 +26,10 @@ public class ItemNameUtil{
 	}
 	
 	public static Component formatMaterialName(Material material) {
+		if(Main.getPlugin().getSettingsConfig().isUseLocalizedMaterials()){
+			return Component.translatable(material.translationKey());
+		}
+		
 		String[] parts = material.name().toLowerCase().split("_");
 		StringBuilder sb = new StringBuilder();
 		for(String part : parts){
@@ -56,7 +61,12 @@ public class ItemNameUtil{
 		}
 		
 		if(meta.hasCustomName()){
-			return meta.customName();
+			Component component = meta.customName();
+			assert component != null;
+			if(component.color() == null){
+				return component.color(rarity.color());
+			}
+			return component;
 		}
 		
 		// Add custom formatting for player heads

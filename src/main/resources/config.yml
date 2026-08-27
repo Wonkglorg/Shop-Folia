@@ -73,7 +73,7 @@ priceSuffixes:
     value: 1000000000000000000
 
 # =================================================================== #
-#                           SHOP DISPLAY                              #
+#                           SHOP                                      #
 # =================================================================== #
 # This will change the type of item display that shops will use by default above their chests #
 # The options are: NONE, ITEM, GLASS_CASE, LARGE_ITEM, ITEM_FRAME #
@@ -105,6 +105,9 @@ setGlowingSignText: false
 
 #Controls if the sign should be auto waxed after creation
 setWaxedSign: true
+
+#if set to true uses the clients locale to display material names
+useLocalizedMaterialNames: false
 
 # =================================================================== #
 #                         SHOP INTERACTIONS                           #
@@ -151,6 +154,9 @@ destroyShopRequiresSneak: false
 playSounds: true
 playEffects: true
 
+# =================================================================== #
+#                                FILTERS                              #
+# =================================================================== #
 # Add the names of worlds that you do not want shops to be able to be created in here #
 worldBlacklist:
   - "example_world"

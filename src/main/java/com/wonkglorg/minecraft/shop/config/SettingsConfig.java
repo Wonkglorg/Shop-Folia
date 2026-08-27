@@ -109,6 +109,12 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private boolean setWaxedSign;
+	
+	/**
+	 * If the materials should be displayed in the clients language
+	 */
+	@Getter
+	private boolean useLocalizedMaterials;
 	/**
 	 * If sneaking is required to destroy a shop
 	 */
@@ -227,6 +233,7 @@ public class SettingsConfig extends Config{
 		setGlowingItemFrame = getBoolean("setGlowingItemFrame");
 		setGlowingSignText = getBoolean("setGlowingSignText");
 		setWaxedSign = getBoolean("setWaxedSign");
+		useLocalizedMaterials = getBoolean("useLocalizedMaterialNames");
 		
 		for(var action : getStringList("actionMappings.transactWithShop")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT);
