@@ -103,6 +103,9 @@ setGlowingItemFrame: false
 # Signs on Bedrock Edition might look dimmed out
 setGlowingSignText: false
 
+#Controls if the sign should be auto waxed after creation
+setWaxedSign: true
+
 # =================================================================== #
 #                         SHOP INTERACTIONS                           #
 # =================================================================== #

@@ -105,6 +105,11 @@ public class SettingsConfig extends Config{
 	@Getter
 	private boolean setGlowingSignText;
 	/**
+	 * If the sign should be waxed
+	 */
+	@Getter
+	private boolean setWaxedSign;
+	/**
 	 * If sneaking is required to destroy a shop
 	 */
 	@Getter
@@ -221,6 +226,7 @@ public class SettingsConfig extends Config{
 		displayLightLevel = getInt("displayLightLevel");
 		setGlowingItemFrame = getBoolean("setGlowingItemFrame");
 		setGlowingSignText = getBoolean("setGlowingSignText");
+		setWaxedSign = getBoolean("setWaxedSign");
 		
 		for(var action : getStringList("actionMappings.transactWithShop")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT);

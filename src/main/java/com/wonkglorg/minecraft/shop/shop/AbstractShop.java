@@ -480,6 +480,12 @@ public abstract class AbstractShop{
 				hasSignUpdate = true;
 				frontSideSign.setGlowingText(shouldGlow);
 			}
+			boolean shouldWax = Main.getPlugin().getSettingsConfig().isSetWaxedSign();
+			if(shouldWax != sign.isWaxed()){
+				hasSignUpdate = true;
+				sign.setWaxed(shouldWax);
+			}
+			
 			// Update the sign if it has changed
 			if(hasSignUpdate){
 				sign.update(true);
