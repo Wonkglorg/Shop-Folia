@@ -294,6 +294,7 @@ public abstract class AbstractShop{
 		boolean hasStockChange = stock != oldStock;
 		if(hasStockChange){
 			needsSave = true;
+			updateSign();
 		}
 	}
 	

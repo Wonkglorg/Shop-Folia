@@ -26,10 +26,8 @@ import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionPart
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
-import com.wonkglorg.minecraft.shop.util.ShopMessage;
 import com.wonkglorg.minecraft.util.Components;
 import lombok.extern.slf4j.Slf4j;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -41,8 +39,6 @@ import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Chest.Type;
 import org.bukkit.block.data.type.WallSign;
-import org.bukkit.block.sign.Side;
-import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -63,7 +59,6 @@ import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
-import java.util.List;
 
 @Slf4j
 public class ShopListener implements Listener{
@@ -273,7 +268,7 @@ public class ShopListener implements Listener{
 			logger.debug("Sending Post init shop event");
 			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
 			LangRequest request = lang.request("interaction.success." + shop.getType().toString().toUpperCase() + ".create");
-			AbstractShop.shopPlaceholders(request, shop,false);
+			AbstractShop.shopPlaceholders(request, shop, false);
 			request.sendToAudience(player);
 			logger.debug("====SHOP INITIALISATION DONE====");
 		}
@@ -407,7 +402,7 @@ public class ShopListener implements Listener{
 			}
 			
 		}
-		//non-owner is trying to open shop
+		//owner is trying to open shop
 		boolean isOwner = shop.getOwnerUUID().equals(player.getUniqueId());
 		
 		if(isOwner){
@@ -416,8 +411,9 @@ public class ShopListener implements Listener{
 		
 		if(isOperator(player)){
 			if(!shop.isAdmin()){
-				lang.request("interaction." + shop.getType().toString() + ".opOpen").replace("%owner%", shop.getOwner().getName()).sendToAudience(
-						player);
+				lang.request("interaction." + shop.getType().toString().toUpperCase() + ".opOpen")
+				    .replace("%owner%", shop.getOwner().getName())
+				    .sendToAudience(player);
 			}
 		} else {
 			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
