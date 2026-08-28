@@ -1,6 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop.transaction;
 
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
+import static com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty.removeItemSmallestStacksFirst;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -15,22 +16,21 @@ public class ItemTransaction extends Transaction{
 	}
 	
 	@Override
-	public double getBuyerAvailableFunds() {
+	public double getBuyerAvailableItems() {
 		return buyer.getAvailableItemFunds(currency);
 	}
 	
 	@Override
-	public boolean canBuyerAcceptPayment() {
+	public boolean canBuyerAcceptItems() {
 		if(amount == 0){
 			return true;
 		}
 		var inventory = buyer.createVirtualInventory();
-		
-		var cloneCurrency = currency.clone();
-		cloneCurrency.setAmount((int) price);
-		
-		if(!inventory.removeItemAnySlot(cloneCurrency).isEmpty()){
-			return false;
+		//only check if the price fits in the buyers inv if there is a price
+		if(price != 0){
+			if(removeItemSmallestStacksFirst(inventory, currency, (int) price) != 0){
+				return false;
+			}
 		}
 		var tradeStackClone = tradedStack.clone();
 		tradeStackClone.setAmount(amount);
@@ -49,12 +49,10 @@ public class ItemTransaction extends Transaction{
 			return true;
 		}
 		var inventory = seller.createVirtualInventory();
-		
-		var tradeStackClone = tradedStack.clone();
-		tradeStackClone.setAmount(amount);
-		
-		if(!inventory.removeItemAnySlot(tradeStackClone).isEmpty()){
-			return false;
+		if(amount != 0){
+			if(removeItemSmallestStacksFirst(inventory, tradedStack, amount) != 0){
+				return false;
+			}
 		}
 		
 		var cloneCurrency = currency.clone();
@@ -75,18 +73,18 @@ public class ItemTransaction extends Transaction{
 	@Override
 	public String toString() {
 		return "ItemTransaction{" +
-		       "currency=" +
-		       currency +
-		       ", buyer=" +
-		       buyer +
-		       ", seller=" +
-		       seller +
-		       ", price=" +
-		       price +
-		       ", amount=" +
-		       amount +
-		       ", tradedStack=" +
-		       tradedStack +
-		       '}';
+			   "currency=" +
+			   currency +
+			   ", buyer=" +
+			   buyer +
+			   ", seller=" +
+			   seller +
+			   ", price=" +
+			   price +
+			   ", amount=" +
+			   amount +
+			   ", tradedStack=" +
+			   tradedStack +
+			   '}';
 	}
 }

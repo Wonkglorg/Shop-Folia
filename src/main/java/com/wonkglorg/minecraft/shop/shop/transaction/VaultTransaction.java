@@ -12,16 +12,8 @@ public class VaultTransaction extends Transaction{
 	}
 	
 	@Override
-	public double getBuyerAvailableFunds() {
+	public double getBuyerAvailableItems() {
 		return buyer.getAvailableVaultFunds();
-	}
-	
-	@Override
-	public boolean canBuyerAcceptPayment() {
-		if(amount == 0){
-			return true;
-		}
-		return buyer.canAcceptVaultPayment(amount);
 	}
 	
 	@Override

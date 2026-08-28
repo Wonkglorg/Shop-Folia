@@ -68,8 +68,13 @@ public class BarterShop extends AbstractShop{
 		double availableFunds = transaction.getSellerAvailableFunds();
 		stock = (int) (availableFunds / this.getAmount());
 		
-		if(stock < 1){
+		if(stock < 1 && amount > 0){
 			setShopState(EMPTY, true);
+			return;
+		}
+		
+		if(price == 0){
+			setShopState(OK,true);
 			return;
 		}
 		

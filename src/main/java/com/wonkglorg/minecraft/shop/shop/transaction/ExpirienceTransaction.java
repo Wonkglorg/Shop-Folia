@@ -12,16 +12,8 @@ public class ExpirienceTransaction extends Transaction{
 	}
 	
 	@Override
-	public double getBuyerAvailableFunds() {
+	public double getBuyerAvailableItems() {
 		return buyer.getAvailableExperienceFunds();
-	}
-	
-	@Override
-	public boolean canBuyerAcceptPayment() {
-		if(amount == 0){
-			return true;
-		}
-		return buyer.canAcceptExperiencePayment(amount);
 	}
 	
 	@Override

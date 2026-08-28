@@ -49,15 +49,20 @@ public class BuyShop extends AbstractShop{
 		}
 		Transaction transaction = startTransaction(null, 1);
 		
-		double availableFunds = transaction.getBuyerAvailableFunds();
-		stock = (int) (availableFunds / this.getPrice());
+		double availableFunds = transaction.getBuyerAvailableItems();
+		stock = (int) (availableFunds / this.getAmount());
 		
-		if(stock < 1){
+		if(stock < 1 && amount > 0){
 			setShopState(EMPTY, true);
 			return;
 		}
 		
-		if(transaction.canBuyerAcceptPayment()){
+		if(price == 0){
+			setShopState(OK,true);
+			return;
+		}
+		
+		if(transaction.canBuyerAcceptItems()){
 			setShopState(OK, true);
 			return;
 		}

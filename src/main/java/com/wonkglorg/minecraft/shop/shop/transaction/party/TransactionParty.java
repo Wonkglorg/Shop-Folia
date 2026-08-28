@@ -9,6 +9,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * A party in a transaction
@@ -221,7 +226,61 @@ public abstract class TransactionParty{
 	public void removeItem(ItemStack itemStack, int amount) {
 		ItemStack clone = itemStack.clone();
 		clone.setAmount(amount);
-		inventory.removeItemAnySlot(clone);
+		removeItemSmallestStacksFirst(inventory, clone, amount);
+	}
+	
+	/**
+	 * Removes items from the inventory, consuming the smallest matching
+	 * stacks first.
+	 *
+	 * @param item the item to remove
+	 * @param amount the amount to remove
+	 * @return the amount of items that could not be removed
+	 */
+	public static int removeItemSmallestStacksFirst(@NotNull Inventory inventory, @NotNull ItemStack item, int amount) {
+		if(amount <= 0){
+			return 0;
+		}
+		
+		List<Integer> matchingSlots = new ArrayList<>();
+		
+		for(int slot = 0; slot < inventory.getSize(); slot++){
+			ItemStack stack = inventory.getItem(slot);
+			
+			if(stack == null || stack.getAmount() <= 0){
+				continue;
+			}
+			
+			if(stack.isSimilar(item)){
+				matchingSlots.add(slot);
+			}
+		}
+		
+		// Smallest stacks first.
+		matchingSlots.sort(Comparator.comparingInt(slot -> inventory.getItem(slot).getAmount()));
+		
+		int remaining = amount;
+		
+		for(int slot : matchingSlots){
+			if(remaining <= 0){
+				break;
+			}
+			
+			ItemStack stack = inventory.getItem(slot);
+			
+			int removeAmount = Math.min(stack.getAmount(), remaining);
+			int newAmount = stack.getAmount() - removeAmount;
+			
+			if(newAmount <= 0){
+				inventory.setItem(slot, null);
+			} else {
+				stack.setAmount(newAmount);
+			}
+			
+			remaining -= removeAmount;
+		}
+		
+		return remaining;
 	}
 	
 	/**

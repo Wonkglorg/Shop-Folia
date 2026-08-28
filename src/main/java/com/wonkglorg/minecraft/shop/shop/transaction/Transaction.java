@@ -34,6 +34,15 @@ public abstract class Transaction{
 	@Getter
 	private TransactionResult result;
 	
+	/**
+	 * Represents a transaction between 2 parties
+	 *
+	 * @param buyer the party buying an itemstack for the servers provided currency
+	 * @param seller the party selling the itemstack
+	 * @param amount how much of the itemstack to buy
+	 * @param price the price of the transaction
+	 * @param tradedStack the item being traded
+	 */
 	protected Transaction(TransactionParty buyer, TransactionParty seller, int amount, double price, ItemStack tradedStack) {
 		this.buyer = buyer;
 		this.seller = seller;
@@ -45,12 +54,20 @@ public abstract class Transaction{
 	/**
 	 * Get the funds the buyer has access to in this transaction
 	 */
-	public abstract double getBuyerAvailableFunds();
+	public abstract double getBuyerAvailableItems();
 	
 	/**
-	 * If the buyer can accept payments in this transaction
+	 * If the buyer can accept the items in this transaction
 	 */
-	public abstract boolean canBuyerAcceptPayment();
+	public boolean canBuyerAcceptItems() {
+		if(amount == 0){
+			return true;
+		}
+		var inventory = buyer.createVirtualInventory();
+		var tradeStackClone = tradedStack.clone();
+		tradeStackClone.setAmount(amount);
+		return inventory.addItem(tradedStack).isEmpty();
+	}
 	
 	/**
 	 * Get the funds the seller has access to in this transaction
@@ -73,7 +90,7 @@ public abstract class Transaction{
 	 * @return the result of the possible transaction
 	 */
 	public TransactionResult canFulfill() {
-		if(getBuyerAvailableFunds() < price){
+		if(getBuyerAvailableItems() < price){
 			return result = TransactionResult.INSUFFICIENT_FUNDS_BUYER;
 		}
 		
@@ -81,7 +98,7 @@ public abstract class Transaction{
 			return result = TransactionResult.INSUFFICIENT_FUNDS_SELLER;
 		}
 		
-		if(!canBuyerAcceptPayment()){
+		if(!canBuyerAcceptItems()){
 			return result = TransactionResult.INVENTORY_FULL_BUYER;
 		}
 		

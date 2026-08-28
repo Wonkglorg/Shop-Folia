@@ -24,14 +24,14 @@ import java.util.UUID;
 public class SellShop extends AbstractShop{
 	
 	public SellShop(UUID shopId,
-	                Location signLoc,
-	                UUID player,
-	                double pri,
-	                int amt,
-	                Boolean admin,
-	                BlockFace facing,
-	                long creationDate,
-	                DisplayType type) {
+					Location signLoc,
+					UUID player,
+					double pri,
+					int amt,
+					Boolean admin,
+					BlockFace facing,
+					long creationDate,
+					DisplayType type) {
 		super(shopId, signLoc, player, ShopType.SELL, pri, amt, admin, facing, creationDate, type);
 	}
 	
@@ -51,13 +51,18 @@ public class SellShop extends AbstractShop{
 		//starts a mock transaction to get accurate data on what the actual trade logic would do
 		Transaction transaction = startTransaction(null, 1);
 		double availableFunds = transaction.getSellerAvailableFunds();
-		stock = (int) (availableFunds / this.getAmount());
+		stock = (int) (availableFunds / amount);
 		
-		if(stock < 1){
+		//if there is no stock and the shop is offering more than 0 items
+		if(stock < 1 && amount > 0){
 			setShopState(EMPTY, true);
 			return;
 		}
 		
+		if(price == 0){
+			setShopState(OK,true);
+			return;
+		}
 		//start a test transaction to see if the shop can accept payment
 		if(transaction.canSellerAcceptPayment()){
 			setShopState(OK, true);
