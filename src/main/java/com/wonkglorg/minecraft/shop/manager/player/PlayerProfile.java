@@ -177,6 +177,15 @@ public abstract class PlayerProfile{
 		return isOperator(player) || player.hasPermission("shop.destroy.other");
 	}
 	
+	/**
+	 * If the user is allowed to cycle shop displays of their own shops
+	 */
+	public static boolean isAllowedToCycleDisplay(Permissible player){return isOperator(player) || player.hasPermission("shop.setdisplay");}
+	/**
+	 * If the user is allowed to cycle shop displays of other players shops
+	 */
+	public static boolean isAllowedToCycleDisplayOther(Permissible player){return isOperator(player) || player.hasPermission("shop.setdisplay.other");}
+	
 	private static boolean hasActionPermission(String permissionBase, Permissible player) {
 		if(isOperator(player)){
 			return true;

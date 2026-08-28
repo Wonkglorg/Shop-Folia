@@ -8,7 +8,8 @@ import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.ShopManager.BlockKey;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplay;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplayOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.offline;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.online;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
@@ -858,17 +859,17 @@ public abstract class AbstractShop{
 				//player clicked another player's shop sign
 				if(!this.getOwnerUUID().equals(player.getUniqueId())){
 					//player has permission to change another player's shop display
-					if((isOperator(player))){
+					if((isAllowedToCycleDisplayOther(player))){
 						this.cycleDisplay();
+						return true;
 					}
-					//player clicked own shop sign
-				} else {
-					if(!player.hasPermission("shop.setdisplay")){
-						return false;
-					}
-					
-					this.cycleDisplay();
+					return false;
 				}
+				
+				if(!isAllowedToCycleDisplay(player)){
+					return false;
+				}
+				this.cycleDisplay();
 				break;
 			default:
 				return true;

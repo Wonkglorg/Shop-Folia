@@ -21,9 +21,6 @@ permissions:
   shop.use.barter:
     description: Allows player to use barter shops.
     default: op
-  shop.use.combo:
-    description: Allows player to use combo buy/sell shops.
-    default: op
   shop.use.gamble:
     description: Allows player to use gambling shops.
     default: op
@@ -38,9 +35,6 @@ permissions:
     default: op
   shop.create.barter:
     description: Allows player to create barter shops.
-    default: op
-  shop.create.combo:
-    description: Allows player to create combo shops that both buy and sell.
     default: op
   shop.create.gamble:
     description: Allows player to create admin gamble shops. Only give this permission to Operators!
@@ -60,8 +54,8 @@ permissions:
   shop.setdisplay:
     description: Allows player to set the display type on their shop (allows shop display cycling, see actionMappings in config.yml).
     default: op
-  shop.gui.teleport:
-    description: Allows player to use teleport to shops by using the gui.
+  shop.setdisplay.other:
+    description: Allows player to set the display type on other shops (allows shop display cycling, see actionMappings in config.yml).
     default: op
   shop.user:
     description: Allows users to access the /shop command with basic access to informational commands

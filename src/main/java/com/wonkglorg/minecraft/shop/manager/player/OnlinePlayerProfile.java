@@ -7,6 +7,7 @@ import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ExpirienceUtils;
 import lombok.Getter;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.Permissible;
 
 import java.time.Duration;
 import java.util.List;
@@ -56,16 +57,28 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 		return isAllowedToDestroyShopOther(player);
 	}
 	
+	/**
+	 * See {@link #isAllowedToCycleDisplay(Permissible)}
+	 */
+	public boolean isAllowedToCycleDisplay() {return isAllowedToCycleDisplay(player);}
+	
+	/**
+	 * See {@link #isAllowedToCycleDisplayOther(Permissible)}
+	 */
+	public boolean isAllowedToCycleDisplayOther() {return isAllowedToCycleDisplayOther(player);}
+	
 	public int getShopBuildLimit() {
 		return getShopBuildLimit(player);
 	}
 	
+	@Override
 	public void removeExperienceAmount(int amount) {
 		ExpirienceUtils.setTotalExperience(player, ExpirienceUtils.getTotalExperience(player) - amount);
 		experience = ExpirienceUtils.getTotalExperience(player);
 		saveToFile(this);
 	}
 	
+	@Override
 	public void addExperienceAmount(int amount) {
 		ExpirienceUtils.setTotalExperience(player, ExpirienceUtils.getTotalExperience(player) + amount);
 		experience = ExpirienceUtils.getTotalExperience(player);

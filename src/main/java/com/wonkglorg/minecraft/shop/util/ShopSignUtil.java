@@ -112,7 +112,7 @@ public class ShopSignUtil{
 		List<Component> lines = new ArrayList<>(4);
 		
 		for(var i = 1; i < 5; i++){
-			lines.add(lang.request("sign.text.TIMEOUT." + i).toSingleComponent());
+			lines.add(lang.request("sign.text.timeout." + i).toSingleComponent());
 		}
 		return lines;
 	}
