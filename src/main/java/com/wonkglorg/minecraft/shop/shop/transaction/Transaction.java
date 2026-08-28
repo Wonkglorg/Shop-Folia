@@ -73,19 +73,28 @@ public abstract class Transaction{
 	 * @return the result of the possible transaction
 	 */
 	public TransactionResult canFulfill() {
-		if(getBuyerAvailableFunds() < price){
-			return result = TransactionResult.INSUFFICIENT_FUNDS_BUYER;
+		if(price > 0){
+			if(getBuyerAvailableFunds() < price){
+				return result = TransactionResult.INSUFFICIENT_FUNDS_BUYER;
+			}
 		}
 		
-		if(getSellerAvailableFunds() < amount){
-			return result = TransactionResult.INSUFFICIENT_FUNDS_SELLER;
+		if(amount > 0){
+			if(getSellerAvailableFunds() < amount){
+				return result = TransactionResult.INSUFFICIENT_FUNDS_SELLER;
+			}
 		}
 		
-		if(!canBuyerAcceptPayment()){
-			return result = TransactionResult.INVENTORY_FULL_BUYER;
+		if(price > 0){
+			if(!canBuyerAcceptPayment()){
+				return result = TransactionResult.INVENTORY_FULL_BUYER;
+			}
 		}
-		if(!canSellerAcceptPayment()){
-			return result = TransactionResult.INVENTORY_FULL_SELLER;
+		
+		if(amount > 0){
+			if(!canSellerAcceptPayment()){
+				return result = TransactionResult.INVENTORY_FULL_SELLER;
+			}
 		}
 		
 		return result = TransactionResult.OK;
@@ -94,16 +103,16 @@ public abstract class Transaction{
 	@Override
 	public String toString() {
 		return "Transaction{" +
-		       "buyer=" +
-		       buyer +
-		       ", seller=" +
-		       seller +
-		       ", price=" +
-		       price +
-		       ", amount=" +
-		       amount +
-		       ", tradedStack=" +
-		       tradedStack +
-		       '}';
+			   "buyer=" +
+			   buyer +
+			   ", seller=" +
+			   seller +
+			   ", price=" +
+			   price +
+			   ", amount=" +
+			   amount +
+			   ", tradedStack=" +
+			   tradedStack +
+			   '}';
 	}
 }
