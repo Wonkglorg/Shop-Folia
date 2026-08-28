@@ -21,6 +21,9 @@ public class ItemTransaction extends Transaction{
 	
 	@Override
 	public boolean canBuyerAcceptPayment() {
+		if(amount == 0){
+			return true;
+		}
 		var inventory = buyer.createVirtualInventory();
 		
 		var cloneCurrency = currency.clone();
@@ -42,6 +45,9 @@ public class ItemTransaction extends Transaction{
 	
 	@Override
 	public boolean canSellerAcceptPayment() {
+		if(price == 0){
+			return true;
+		}
 		var inventory = seller.createVirtualInventory();
 		
 		var tradeStackClone = tradedStack.clone();

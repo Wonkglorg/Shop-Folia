@@ -73,28 +73,21 @@ public abstract class Transaction{
 	 * @return the result of the possible transaction
 	 */
 	public TransactionResult canFulfill() {
-		if(price > 0){
-			if(getBuyerAvailableFunds() < price){
-				return result = TransactionResult.INSUFFICIENT_FUNDS_BUYER;
-			}
+		if(getBuyerAvailableFunds() < price){
+			return result = TransactionResult.INSUFFICIENT_FUNDS_BUYER;
 		}
 		
-		if(amount > 0){
-			if(getSellerAvailableFunds() < amount){
-				return result = TransactionResult.INSUFFICIENT_FUNDS_SELLER;
-			}
+		if(getSellerAvailableFunds() < amount){
+			return result = TransactionResult.INSUFFICIENT_FUNDS_SELLER;
 		}
 		
-		if(price > 0){
-			if(!canBuyerAcceptPayment()){
-				return result = TransactionResult.INVENTORY_FULL_BUYER;
-			}
+		if(!canBuyerAcceptPayment()){
+			return result = TransactionResult.INVENTORY_FULL_BUYER;
 		}
 		
-		if(amount > 0){
-			if(!canSellerAcceptPayment()){
-				return result = TransactionResult.INVENTORY_FULL_SELLER;
-			}
+		if(!canSellerAcceptPayment()){
+			return result = TransactionResult.INVENTORY_FULL_SELLER;
+			
 		}
 		
 		return result = TransactionResult.OK;

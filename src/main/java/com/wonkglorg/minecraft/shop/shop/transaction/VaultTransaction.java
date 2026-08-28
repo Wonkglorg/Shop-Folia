@@ -18,6 +18,9 @@ public class VaultTransaction extends Transaction{
 	
 	@Override
 	public boolean canBuyerAcceptPayment() {
+		if(amount == 0){
+			return true;
+		}
 		return buyer.canAcceptVaultPayment(amount);
 	}
 	
@@ -28,6 +31,9 @@ public class VaultTransaction extends Transaction{
 	
 	@Override
 	public boolean canSellerAcceptPayment() {
+		if(price == 0){
+			return true;
+		}
 		return seller.canAcceptVaultPayment(price);
 	}
 	

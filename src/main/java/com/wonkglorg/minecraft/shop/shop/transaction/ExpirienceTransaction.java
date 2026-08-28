@@ -18,6 +18,9 @@ public class ExpirienceTransaction extends Transaction{
 	
 	@Override
 	public boolean canBuyerAcceptPayment() {
+		if(amount == 0){
+			return true;
+		}
 		return buyer.canAcceptExperiencePayment(amount);
 	}
 	
@@ -28,6 +31,9 @@ public class ExpirienceTransaction extends Transaction{
 	
 	@Override
 	public boolean canSellerAcceptPayment() {
+		if(price == 0){
+			return true;
+		}
 		return seller.canAcceptExperiencePayment(price);
 	}
 	
@@ -43,16 +49,16 @@ public class ExpirienceTransaction extends Transaction{
 	@Override
 	public String toString() {
 		return "ExpirienceTransaction{" +
-		       "buyer=" +
-		       buyer +
-		       ", seller=" +
-		       seller +
-		       ", price=" +
-		       price +
-		       ", amount=" +
-		       amount +
-		       ", tradedStack=" +
-		       tradedStack +
-		       '}';
+			   "buyer=" +
+			   buyer +
+			   ", seller=" +
+			   seller +
+			   ", price=" +
+			   price +
+			   ", amount=" +
+			   amount +
+			   ", tradedStack=" +
+			   tradedStack +
+			   '}';
 	}
 }
