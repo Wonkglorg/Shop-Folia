@@ -35,6 +35,7 @@ import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
+import org.bukkit.block.DoubleChest;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Chest.Type;
@@ -55,6 +56,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
@@ -412,8 +414,8 @@ public class ShopListener implements Listener{
 		if(isOperator(player)){
 			if(!shop.isAdmin()){
 				lang.request("interaction.success." + shop.getType() + ".opOpen")
-				    .replace("%owner%", shop.getOwner().getName())
-				    .sendToAudience(player);
+					.replace("%owner%", shop.getOwner().getName())
+					.sendToAudience(player);
 			}
 		} else {
 			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
@@ -625,7 +627,8 @@ public class ShopListener implements Listener{
 	
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onShopInventoryClose(InventoryCloseEvent event) {
-		if(event.getInventory().getHolder() instanceof Container container){
+		InventoryHolder holder = event.getInventory().getHolder();
+		if(holder instanceof Container container){
 			AbstractShop shop = plugin.getShopmanager().getShopByContainer(container.getBlock());
 			
 			if(shop == null){
@@ -633,7 +636,24 @@ public class ShopListener implements Listener{
 			}
 			
 			shop.updateStock();
+			return;
 		}
+		
+		//double chest is its own thing and not a Container
+		if(holder instanceof DoubleChest chest){
+			InventoryHolder leftSide = chest.getLeftSide();
+			if(leftSide == null){
+				return;
+			}
+			AbstractShop shop = plugin.getShopmanager().getShopByContainer(leftSide.getInventory().getLocation());
+			
+			if(shop == null){
+				return;
+			}
+			
+			shop.updateStock();
+		}
+		
 	}
 	
 	/**
