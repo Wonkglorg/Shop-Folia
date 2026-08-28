@@ -32,15 +32,14 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.EulerAngle;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractDisplay{
 	
@@ -50,7 +49,7 @@ public abstract class AbstractDisplay{
 	@Getter
 	protected AbstractShop shop;
 	
-	protected Map<UUID, List<Integer>> entityIDs = new HashMap<>(); //player UUID. display entities
+	protected Map<UUID, List<Integer>> entityIDs = new ConcurrentHashMap<>(); //player UUID. display entities
 	
 	protected AbstractDisplay(AbstractShop shop, DisplayType type) {
 		this.plugin = Main.getPlugin();
@@ -82,7 +81,7 @@ public abstract class AbstractDisplay{
 	 * Spawns the display for the player
 	 */
 	public void spawn(@NotNull Player player) {
-		remove();//if anything exists already remove the old stuff first
+		remove(player);//if the player sees this display already remove it first
 		spawnLight();
 		onSpawn(player);
 	}
@@ -105,7 +104,6 @@ public abstract class AbstractDisplay{
 	 * Removes the display from the player
 	 */
 	public void remove(@NotNull Player player) {
-		removeLight();
 		List<Integer> entityIds = entityIDs.remove(player.getUniqueId());
 		if(entityIds != null){
 			for(var entityId : entityIds){
@@ -156,7 +154,7 @@ public abstract class AbstractDisplay{
 			
 		} catch(Exception e){
 			Main.getPlugin().getLogger().severe("Unknown error sending packet to player for Display (Item/Hologram text), error message: " +
-			                                    e.getMessage());
+												e.getMessage());
 		}
 	}
 	

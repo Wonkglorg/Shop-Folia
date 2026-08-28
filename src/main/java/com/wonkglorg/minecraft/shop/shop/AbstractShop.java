@@ -52,6 +52,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.geysermc.floodgate.api.FloodgateApi;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,33 +62,56 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings({"unused", "UnknownLangKey"})
 public abstract class AbstractShop{
+	/**
+	 * Static reference used for all admin shop owners
+	 */
 	private static final AdminOfflinePlayer adminOfflinePlayer = new AdminOfflinePlayer();
-	
+	/**
+	 * Block Data used for positive interaction results
+	 */
 	private static final @NotNull BlockData EMERALD_BLOCK_DATA = Material.EMERALD_BLOCK.createBlockData();
+	/**
+	 * Block Data used for negative interaction results
+	 */
 	private static final @NotNull BlockData REDSTONE_BLOCK_DATA = Material.REDSTONE_BLOCK.createBlockData();
+	/**
+	 * Decimal Format for prices
+	 */
 	public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.##");
 	
+	/**
+	 * The shops unique identifier
+	 */
 	@Getter
-	@Setter
-	protected UUID id;
+	protected final UUID id;
+	/**
+	 * The millisecond time of the shops creation
+	 */
 	@Getter
 	@Setter
 	protected long creationDate;
+	/**
+	 * If the shop needs to be saved to the db due to changed values
+	 */
 	@Setter
 	protected boolean needsSave = false;
+	/**
+	 * Has the shop been fully loaded via {@link #load()}
+	 */
 	@Getter
 	protected boolean isLoaded = false;
 	/**
 	 * The location of the sign
 	 */
 	@Getter
-	protected Location signLocation;
+	protected final Location signLocation;
 	/**
 	 * Represents a block key used for indexing and accessing references
 	 */
 	@Getter
-	protected BlockKey signKey;
+	protected final BlockKey signKey;
 	/**
 	 * The location of the container attached to the sign
 	 */
@@ -105,92 +129,157 @@ public abstract class AbstractShop{
 	 */
 	@Getter
 	protected BlockKey containerKey;
+	/**
+	 * The facing direction of the shop sign
+	 */
 	@Getter
 	protected BlockFace facing;
-	@Setter
-	protected UUID owner;
-	protected ItemStack item;
-	protected ItemStack secondaryItem;
+	
+	/**
+	 * Shop owners uuid
+	 */
+	protected final UUID owner;
+	/**
+	 * The main item being traded
+	 */
+	protected @Nullable ItemStack item;
+	/**
+	 * The secondary item being traded used for {@link BarterShop}
+	 */
+	protected @Nullable ItemStack secondaryItem;
+	/**
+	 * The display shown above the shop
+	 */
 	@Getter
-	protected AbstractDisplay display;
-	@Setter
+	protected @NotNull AbstractDisplay display;
+	/**
+	 * Price of the shop
+	 */
 	@Getter
 	protected double price;
-	@Setter
+	/**
+	 * Amount this shop sells
+	 */
 	@Getter
 	protected int amount;
+	/**
+	 * If the shop is considered an admin shop
+	 */
 	@Getter
 	protected boolean isAdmin;
+	/**
+	 * The type of the shop
+	 */
 	@Getter
 	protected ShopType type;
+	/**
+	 * Cached lines this shop uses for its sign.
+	 */
 	@Getter
 	protected List<Component> signLines;
+	/**
+	 * If the sign requires a refresh
+	 */
 	protected boolean signLinesRequireRefresh;
+	/**
+	 * If the shop is currently performing a transaction
+	 */
 	@Getter
 	protected boolean isPerformingTransaction;
+	/**
+	 * If the sign used for creation was spawned by the plugin or not, used to determine if the sign drops when the shop is destroyed
+	 */
 	@Setter
 	@Getter
 	protected boolean fakeSign;
-	
+	/**
+	 * Current stock amount of the shop, represents the stick since the last chest interaction this might have changed and should be updated using {@link #updateSign()} if any plugin container changes were performed
+	 */
 	@Getter
 	protected int stock;
 	/**
-	 * The current state of the shop stock
+	 * The current state of the shop stock based on the stock amount and space in the shops inventory
 	 */
 	@Getter
 	private ShopState shopState = OK;
 	
-	protected AbstractShop(UUID id,
-	                       Location signLoc,
-	                       UUID player,
-	                       ShopType type,
-	                       double pri,
-	                       int amt,
-	                       boolean admin,
-	                       BlockFace facing,
-	                       long creationDate,
-	                       DisplayType displayType) {
+	/**
+	 *
+	 * @param id the unique id of the shop
+	 * @param signLoc its sign location
+	 * @param player the owner of the shop
+	 * @param type the type of shop
+	 * @param pri the price of the shop
+	 * @param amt the amount being traded
+	 * @param admin if the shop an admin shop
+	 * @param facing the facing direction of the sign
+	 * @param creationDate when the shop was created initially
+	 * @param displayType the display type to show
+	 */
+	protected AbstractShop(@NotNull UUID id,
+						   @NotNull Location signLoc,
+						   @NotNull UUID player,
+						   @NotNull ShopType type,
+						   double pri,
+						   int amt,
+						   boolean admin,
+						   @NotNull BlockFace facing,
+						   long creationDate,
+						   @NotNull DisplayType displayType) {
 		this.id = id;
 		this.signLocation = signLoc;
 		this.signKey = BlockKey.of(signLoc);
-		this.owner = player;
 		this.type = type;
 		this.price = pri;
 		this.amount = amt;
 		this.isAdmin = admin;
 		this.item = null;
+		this.secondaryItem = null;
 		this.facing = facing;
 		this.creationDate = creationDate;
 		this.display = AbstractDisplay.createDisplay(displayType, this);
 		this.signLinesRequireRefresh = true; // Reload signs on load in case config changed!
 		
-		//can be null for legacy config imports.
-		if(facing != null){
-			//infer the container location where it should be
-			this.containerLocation = new Location(signLoc.getWorld(),
-					signLoc.getBlockX() - (double) facing.getModX(),
-					signLoc.getBlockY() - (double) facing.getModY(),
-					signLoc.getBlockZ() - (double) facing.getModZ());
-			this.containerKey = BlockKey.of(containerLocation);
-		}
+		//infer the container location where it should be
+		this.containerLocation = new Location(signLoc.getWorld(),
+				signLoc.getBlockX() - (double) facing.getModX(),
+				signLoc.getBlockY() - (double) facing.getModY(),
+				signLoc.getBlockZ() - (double) facing.getModZ());
+		this.containerKey = BlockKey.of(containerLocation);
 		fakeSign = false;
 		
 		if(isAdmin){
 			owner = AdminOfflinePlayer.getAdminUUID();
 			stock = Integer.MAX_VALUE;
+		} else {
+			this.owner = player;
 		}
 	}
 	
+	/**
+	 *
+	 * @param id the unique id of the shop
+	 * @param signLoc its sign location
+	 * @param player the owner of the shop
+	 * @param shopType the type of shop
+	 * @param pri the price of the shop
+	 * @param amt the amount being traded
+	 * @param admin if the shop an admin shop
+	 * @param facing the facing direction of the sign
+	 * @param creationDate when the shop was created initially
+	 * @param type the display type to show
+	 * @return a new abstract shop constructed with these values
+	 */
 	public static AbstractShop create(UUID id,
-	                                  Location signLoc,
-	                                  UUID player,
-	                                  double pri,
-	                                  int amt,
-	                                  Boolean admin,
-	                                  ShopType shopType,
-	                                  BlockFace facing,
-	                                  long creationDate,
-	                                  DisplayType type) {
+									  Location signLoc,
+									  UUID player,
+									  double pri,
+									  int amt,
+									  Boolean admin,
+									  ShopType shopType,
+									  BlockFace facing,
+									  long creationDate,
+									  DisplayType type) {
 		
 		return switch(shopType) {
 			case SELL -> new SellShop(id, signLoc, player, pri, amt, admin, facing, creationDate, type);
@@ -200,6 +289,9 @@ public abstract class AbstractShop{
 		};
 	}
 	
+	/**
+	 * @return if the chunk this shop is in is loaded
+	 */
 	public boolean isChunkLoaded() {
 		return signLocation.isChunkLoaded();
 	}
@@ -218,9 +310,9 @@ public abstract class AbstractShop{
 		
 		if(!(signBlock.getBlockData() instanceof WallSign wallSign)){
 			Main.getPlugin().logger().warning("Error attempting to load shop! Sign Block for Shop is not a WallSign (detected: " +
-			                                  signBlock.getType() +
-			                                  "), deleting shop: " +
-			                                  this);
+											  signBlock.getType() +
+											  "), deleting shop: " +
+											  this);
 			return false;
 		}
 		
@@ -276,6 +368,9 @@ public abstract class AbstractShop{
 		return true;
 	}
 	
+	/**
+	 * @return if the shop has outstanding data to be saved
+	 */
 	public boolean needsSave() {
 		return needsSave;
 	}
@@ -285,6 +380,9 @@ public abstract class AbstractShop{
 	 */
 	protected abstract void calculateStock();
 	
+	/**
+	 * Recalculates and updates the shops stock
+	 */
 	public void updateStock() {
 		int oldStock = stock;
 		
@@ -298,16 +396,24 @@ public abstract class AbstractShop{
 		}
 	}
 	
+	/**
+	 * @param stock set the stock amount (should only be used to fill in cached data until the shop can be chunk loaded to get the proper stock count via {@link #updateStock()}
+	 */
 	public void setStockOnLoad(int stock) {
 		this.stock = stock;
 	}
 	
+	/**
+	 * @return If the shop is fully initialized and has a valid item
+	 */
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean isInitialized() {
 		return (item != null);
 	}
 	
-	//getter methods
-	
+	/**
+	 * @return the sign represented by this shop
+	 */
 	public WallSign getSign() {
 		if(!this.isChunkLoaded()){
 			return null;
@@ -319,6 +425,9 @@ public abstract class AbstractShop{
 		return null;
 	}
 	
+	/**
+	 * @return loads the current inventory from its block state
+	 */
 	public Inventory getInventory() {
 		if(containerLocation == null || signLocation == null || !this.isChunkLoaded()){
 			return null;
@@ -330,27 +439,41 @@ public abstract class AbstractShop{
 		return null;
 	}
 	
-	public UUID getOwnerUUID() {
+	/**
+	 * @return the uuid of the owner
+	 */
+	public @NotNull UUID getOwnerUUID() {
 		return owner;
 	}
 	
-	public Component getOwnerName() {
-		if(this.isAdmin()){
-			return Main.getPlugin().getLangManager().request("placeholders.server-display-name").toSingleComponent();
+	/**
+	 * @return the raw string name of the shop
+	 */
+	public @NotNull String getOwnerName() {
+		if(this.isAdmin){
+			return "admin";
 		}
-		
-		if(this.getOwnerUUID() != null){
-			// Use cache first - this avoids expensive disk I/O
-			return MiniMessage.miniMessage().deserialize(Main.getPlugin()
-			                                                 .getLangManager()
-			                                                 .request("placeholders.shop-owner-name-color")
-			                                                 .toSingleStringResult() + PlayerNameCache.getName(this.getOwnerUUID()));
-		}
-		
-		return Main.getPlugin().getLangManager().request("placeholders.closed-shop").toSingleComponent();
+		return PlayerNameCache.getName(this.owner);
 	}
 	
-	public OfflinePlayer getOwner() {
+	/**
+	 * @return the formatted name of the shop owner based on the configs definition
+	 */
+	public @NotNull Component getOwnerNameFormatted() {
+		if(this.isAdmin){
+			return Main.getPlugin().getLangManager().request("placeholders.server-display-name").toSingleComponent();
+		}
+		// Use cache first - this avoids expensive disk I/O
+		return MiniMessage.miniMessage().deserialize(Main.getPlugin()
+														 .getLangManager()
+														 .request("placeholders.shop-owner-name-color")
+														 .toSingleStringResult() + PlayerNameCache.getName(this.getOwnerUUID()));
+	}
+	
+	/**
+	 * @return the player object of the shop owner or if the shop is an admin shop {@link AdminOfflinePlayer}
+	 */
+	public @NotNull OfflinePlayer getOwner() {
 		if(isAdmin){
 			return adminOfflinePlayer;
 		}
@@ -358,9 +481,9 @@ public abstract class AbstractShop{
 	}
 	
 	/**
-	 * @return the main item of this shop (always with a count of 1)
+	 * @return copy of the main item of this shop (always with a count of 1)
 	 */
-	public ItemStack getItemStack() {
+	public @Nullable ItemStack getItemStack() {
 		if(item != null){
 			ItemStack is = item.clone();
 			is.setAmount(1);
@@ -370,9 +493,9 @@ public abstract class AbstractShop{
 	}
 	
 	/**
-	 * @return the secondary item of this shop (always with a count of 1)
+	 * @return copy of the secondary item of this shop (always with a count of 1)
 	 */
-	public ItemStack getSecondaryItemStack() {
+	public @Nullable ItemStack getSecondaryItemStack() {
 		if(secondaryItem != null){
 			ItemStack is = secondaryItem.clone();
 			is.setAmount(1);
@@ -395,14 +518,9 @@ public abstract class AbstractShop{
 		return getSecondaryItemStack();
 	}
 	
-	//only use this method if the shop has not been added to the main handler maps yet
-	public void setAdmin(boolean isAdmin) {
-		this.isAdmin = isAdmin;
-		if(isAdmin){
-			this.owner = AdminOfflinePlayer.getAdminUUID();
-		}
-	}
-	
+	/**
+	 * Sets this shops item stack
+	 */
 	public void setItemStack(ItemStack is) {
 		// If the item stack passed is null, go ahead and just skip it.
 		if(is == null){
@@ -413,6 +531,9 @@ public abstract class AbstractShop{
 		this.item.setAmount(1);
 	}
 	
+	/**
+	 * Sets this shops secondary item stack
+	 */
 	public void setSecondaryItemStack(ItemStack is) {
 		if(is == null){
 			return;
@@ -421,8 +542,16 @@ public abstract class AbstractShop{
 		this.secondaryItem.setAmount(1);
 	}
 	
+	/**
+	 * Requests a sign update
+	 */
 	public void updateSign() {this.updateSign(false);}
 	
+	/**
+	 * Requests a sign update
+	 *
+	 * @param forceUpdate if the update should be force applied even if no outstanding line change is pending
+	 */
 	public void updateSign(boolean forceUpdate) {
 		// If we don't need to update the lines, then don't update them!
 		if(!signLinesRequireRefresh && !forceUpdate){
@@ -444,9 +573,9 @@ public abstract class AbstractShop{
 			// Update the GUI Icon since the sign needs an update.
 			if(!(signLocation.getBlock().getState() instanceof Sign sign)){
 				Main.getPlugin().logger().warning("Error attempting to update Shop sign! Sign Block for Shop is not a Sign (detected: " +
-				                                  signLocation.getBlock().getType() +
-				                                  "), deleting shop: " +
-				                                  this);
+												  signLocation.getBlock().getType() +
+												  "), deleting shop: " +
+												  this);
 				return;
 			}
 			
@@ -509,12 +638,23 @@ public abstract class AbstractShop{
 		}
 	}
 	
+	/**
+	 * Prints Shop info about the shop to the player in chat
+	 */
 	public void printSalesInfo(Player player) {
 		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType());
-		shopPlaceholders(request, this, true,player);
+		shopPlaceholders(request, this, true, player);
 		request.sendToAudience(player);
 	}
 	
+	/**
+	 * Adds the shops placeholder values to the request
+	 *
+	 * @param request the request to add to
+	 * @param shop the shops data
+	 * @param includeHover if items should contain hover components
+	 * @param player the player this will be sent to (used for floodgate integration)
+	 */
 	public static void shopPlaceholders(LangRequest request, AbstractShop shop, boolean includeHover, Player player) {
 		//@formatter:off
 		ItemStack item = shop.item;
@@ -526,8 +666,10 @@ public abstract class AbstractShop{
 			}
 		}
 		
+		assert item != null;
 		
-		request.replace("%owner%", shop::getOwnerName)
+		
+		request.replace("%owner%", shop::getOwnerNameFormatted)
 			   .replace("%stock-state%",shop.getShopState().toString())
 			   .replace("%price%",shop.getPriceFormatted())
 			   .replace("%stock%",shop.getStock())
@@ -567,12 +709,16 @@ public abstract class AbstractShop{
 	 * @param party the party this shop transactions with
 	 * @param multiplier how many times the shop should transact with the player. (1 = the normal shops amount for the listed price, 2 = 2 times both values)
 	 */
-	protected abstract Transaction startTransaction(TransactionParty party, int multiplier);
+	protected abstract @NotNull Transaction startTransaction(TransactionParty party, int multiplier);
 	
 	/**
 	 * executes a transaction between this shop and the other party
+	 *
+	 * @param party the party trading with this shop
+	 * @param requestFullstack if the request to buy a full stack
+	 * @return the result of the transaction and how often the trade happened if successful
 	 */
-	public Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
+	public @NotNull Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
 		if(isPerformingTransaction){
 			return of(TransactionResult.SHOP_IS_PERFORMING_TRANSACTION, 0);
 		}
@@ -657,6 +803,7 @@ public abstract class AbstractShop{
 	 * @return te maximum multiplier this shop allows based on the item being transacted.
 	 */
 	protected int getMaximumFullStackMultiplier() {
+		assert item != null;
 		int maxStackSize = item.getMaxStackSize();
 		
 		if(amount > maxStackSize){
@@ -742,7 +889,7 @@ public abstract class AbstractShop{
 	/**
 	 * @return the currency type being used by the server
 	 */
-	public static CurrencyType getCurrencyType() {
+	public static @NotNull CurrencyType getCurrencyType() {
 		return Main.getPlugin().getSettingsConfig().getCurrencyType();
 	}
 	
@@ -756,7 +903,7 @@ public abstract class AbstractShop{
 	/**
 	 * @return the Shop Transaction Party represented by this shop
 	 */
-	protected ShopTransactionParty getParty() {
+	protected @NotNull ShopTransactionParty getParty() {
 		return new ShopTransactionParty(this);
 	}
 	
@@ -834,6 +981,12 @@ public abstract class AbstractShop{
 		logger.debug("===FINISHED DISPLAY CYCLE===");
 	}
 	
+	/**
+	 * Sends effects to the player based on the config defined options
+	 *
+	 * @param success if its a success or fail effect
+	 * @param player the player to send it to
+	 */
 	public void sendEffects(boolean success, Player player) {
 		try{
 			SettingsConfig settingsConfig = Main.getPlugin().getSettingsConfig();
@@ -856,6 +1009,12 @@ public abstract class AbstractShop{
 		}
 	}
 	
+	/**
+	 * Adds a secondary container location to this shop
+	 *
+	 * @param location the location of the secondary container
+	 */
+	@Internal
 	public void addSecondaryContainerLocation(@NotNull Location location) {
 		if(secondaryContainerLocation != null){
 			removeSecondaryContainerLocation();
@@ -864,6 +1023,10 @@ public abstract class AbstractShop{
 		Main.getPlugin().getShopmanager().addSecondaryShopLocation(location, this);
 	}
 	
+	/**
+	 * Removes the secondary container location from this shop
+	 */
+	@Internal
 	public void removeSecondaryContainerLocation() {
 		if(secondaryContainerLocation != null){
 			Main.getPlugin().getShopmanager().removeSecondaryChestLocation(secondaryContainerLocation, this);
@@ -871,64 +1034,79 @@ public abstract class AbstractShop{
 		secondaryContainerLocation = null;
 	}
 	
-	public Location getAboveSign() {
+	/**
+	 * @return the location above the sign
+	 */
+	public @NotNull Location getAboveSign() {
 		return signLocation.clone().add(0, 1, 0);
 	}
 	
-	public Location getAboveContainer() {
+	/**
+	 * @return the location above the main shop container
+	 */
+	public @NotNull Location getAboveContainer() {
 		return containerLocation.clone().add(0, 1, 0);
 	}
 	
-	public Location getAboveSecondaryContainer() {
+	/**
+	 * @return the location above the secondary container if exists
+	 */
+	public @Nullable Location getAboveSecondaryContainer() {
 		if(secondaryContainerLocation != null){
 			return secondaryContainerLocation.clone().add(0, 1, 0);
 		}
 		return null;
 	}
 	
-	public static String formatPrice(double price) {
+	/**
+	 * Formats a double to the decimal price format the shop shows
+	 */
+	public static @NotNull String formatPrice(double price) {
 		return DECIMAL_FORMAT.format(price);
 	}
 	
-	public String getPriceFormatted() {
+	/**
+	 * Shows the price of the shop as a proper formatted string to show to players
+	 */
+	public @NotNull String getPriceFormatted() {
 		return formatPrice(price);
 	}
 	
 	@Override
 	public String toString() {
 		return "AbstractShop{" +
-		       "id=" +
-		       id +
-		       ", type=" +
-		       type.toString().toUpperCase() +
-		       ", item=" +
-		       item +
-		       ", price=" +
-		       price +
-		       ", amount=" +
-		       amount +
-		       (secondaryItem != null ? ", secondaryItem=" + secondaryItem : "") +
-		       (isAdmin ? ", isAdmin=" + isAdmin : "") +
-		       ", stock=" +
-		       stock +
-		       ", owner=" +
-		       owner +
-		       ", signLocation=" +
-		       ((signLocation != null) ? signLocation.getWorld().getName() +
-		                                 ":" +
-		                                 signLocation.getBlockX() +
-		                                 "/" +
-		                                 signLocation.getBlockY() +
-		                                 "/" +
-		                                 signLocation.getBlockZ() : "null") +
-		       ", chestLocation=" +
-		       ((containerLocation != null) ? containerLocation.getWorld().getName() +
-		                                      ":" +
-		                                      containerLocation.getBlockX() +
-		                                      "/" +
-		                                      containerLocation.getBlockY() +
-		                                      "/" +
-		                                      containerLocation.getBlockZ() : "null") +
-		       '}';
+			   "id=" +
+			   id +
+			   ", type=" +
+			   type.toString().toUpperCase() +
+			   ", item=" +
+			   item +
+			   ", price=" +
+			   price +
+			   ", amount=" +
+			   amount +
+			   (secondaryItem != null ? ", secondaryItem=" + secondaryItem : "") +
+			   (isAdmin ? ", isAdmin=true" : "") +
+			   ", stock=" +
+			   stock +
+			   ", owner=" +
+			   owner +
+			   ", signLocation=" +
+			   (signLocation != null ? signLocation.getWorld().getName() +
+									   ":" +
+									   signLocation.getBlockX() +
+									   "/" +
+									   signLocation.getBlockY() +
+									   "/" +
+									   signLocation.getBlockZ() : "null") +
+			   ", chestLocation=" +
+			   (containerLocation != null ? containerLocation.getWorld().getName() +
+											":" +
+											containerLocation.getBlockX() +
+											"/" +
+											containerLocation.getBlockY() +
+											"/" +
+											containerLocation.getBlockZ() : "null") +
+			   '}';
 	}
 }

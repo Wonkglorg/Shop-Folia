@@ -157,7 +157,7 @@ public class ShopListener implements Listener{
 		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
 		shopManager.addPlayerShopCreation(player, process);
 		process.updateSignText();
-		lang.request("interaction.success." + process.getType().toString().toUpperCase() + ".initialize").sendToAudience(player);
+		lang.request("interaction.success." + process.getType() + ".initialize").sendToAudience(player);
 		logger.debug("=====SHOP CREATION SUCCESS====");
 	}
 	

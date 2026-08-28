@@ -17,6 +17,7 @@ import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -66,7 +67,7 @@ public class SellShop extends AbstractShop{
 		setShopState(OVERFILLED, true);
 	}
 	
-	public Transaction startTransaction(TransactionParty party, int multiplier) {
+	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {
 		int calculatedAmount = amount * multiplier;
 		double calculatedPrice = price * multiplier;
 		return switch(getCurrencyType()) {

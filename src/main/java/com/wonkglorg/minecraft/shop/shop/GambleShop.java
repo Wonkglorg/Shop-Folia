@@ -16,6 +16,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,7 +93,7 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
-	public Transaction startTransaction(TransactionParty party, int multiplier) {//multiplier is ignored for gambling
+	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {//multiplier is ignored for gambling
 		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT -> new VaultTransaction(new ShopTransactionParty(this), party, amount, price, getItemStack());
 			case ITEM -> new ItemTransaction(new ShopTransactionParty(this),

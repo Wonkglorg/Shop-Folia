@@ -58,7 +58,7 @@ public class ShopSignUtil{
 					.replace("%stock-state%",shop.getShopState())
 					.replace("%amount%",shop.getAmount())
 					.replace("%price%",shop.getPriceFormatted())
-					.replace("%owner%",shop::getOwnerName)
+					.replace("%owner%",shop::getOwnerNameFormatted)
 					.replace("%stock%",shop.getStock());
 			
 			ItemStack barterStack = shop.getSecondaryItemStack();
@@ -78,7 +78,7 @@ public class ShopSignUtil{
 		List<Component> lines = new ArrayList<>(4);
 		for(var i = 1; i < 5; i++){
 			//@formatter:off
-			LangRequest request = lang.request("sign.text." + context.getType().toString().toUpperCase() + ".initialise." + i);
+			LangRequest request = lang.request("sign.text." + context.getType() + ".initialise." + i);
 			
 			if(context.getItemStack() != null){
 				request.replace("%item%",() -> ItemNameUtil.getName(context.getItemStack()));
