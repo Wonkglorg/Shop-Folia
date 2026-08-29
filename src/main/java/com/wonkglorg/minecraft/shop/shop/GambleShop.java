@@ -80,6 +80,7 @@ public class GambleShop extends AbstractShop{
 		Inventory inventory = getInventory();
 		gambleItems.clear();
 		for(var item : inventory){
+			if(item == null) continue;
 			gambleItems.add(item.clone());
 		}
 		index = randomIndex();

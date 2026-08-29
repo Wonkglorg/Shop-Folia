@@ -141,7 +141,8 @@ public abstract class ShopCreationProcess{
 		int buildPermissionNumber = getShopBuildLimit(player);
 		if(numberOfShops >= buildPermissionNumber){
 			plugin.logger().debug("Player exceeds shop build limit");
-			plugin.getLangManager().request("permission.error.buildLimit").sendToAudience(player);
+			plugin.getLangManager().request("permission.error.buildLimit").replace("%user-amount%", numberOfShops).replace("%build-limit%",
+					buildPermissionNumber).sendToAudience(player);
 			return false;
 		}
 		
@@ -161,8 +162,8 @@ public abstract class ShopCreationProcess{
 	public boolean verifyBlocks() {
 		//container has been broken or otherwise no longer a valid container, sign is gone or changed orientation
 		return shopManager.isAllowedContainer(container) &&
-		       sign.getBlock() instanceof WallSign wallSign &&
-		       wallSign.getFacing().equals(signDirection);
+			   sign.getBlock() instanceof WallSign wallSign &&
+			   wallSign.getFacing().equals(signDirection);
 	}
 	
 	/**
@@ -199,8 +200,8 @@ public abstract class ShopCreationProcess{
 		boolean loaded = shop.load();
 		if(!loaded){
 			Main.getPlugin()
-			    .getLogger()
-			    .warning("Shop creation failed, unable to load the shop. Aborting shop creation."); // only seen this happen in tests
+				.getLogger()
+				.warning("Shop creation failed, unable to load the shop. Aborting shop creation."); // only seen this happen in tests
 			return null;
 		}
 		
@@ -211,7 +212,7 @@ public abstract class ShopCreationProcess{
 	
 	protected boolean isAllowedToCreateShop() {
 		if(!PlayerProfile.isAllowedToCreateShop(player, type)){
-			lang.request("permission.error.create").replace("%shop-type%", type.toString()).sendToAudience(player);
+			lang.request("permission.error.create-type").replace("%shop-type%", type.toString()).sendToAudience(player);
 			return false;
 		}
 		return true;

@@ -41,6 +41,7 @@ import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Chest.Type;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -157,6 +158,16 @@ public class ShopListener implements Listener{
 			return;
 		}
 		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
+		
+		if(process.getType() == ShopType.GAMBLE){
+			if(shopInitialisation(event, process, player, Main.getPlugin().getItemConfig().getGambleDisplayItem())){
+				logger.debug("=====SHOP CREATION SUCCESS====");
+			} else {
+				logger.debug("====SHOP CREATION CANCEL====");
+			}
+			return;
+		}
+		
 		shopManager.addPlayerShopCreation(player, process);
 		process.updateSignText();
 		lang.request("interaction.success." + process.getType() + ".initialize").sendToAudience(player);
@@ -234,14 +245,21 @@ public class ShopListener implements Listener{
 		
 		logger.debug("Is allowed item");
 		
+		if(shopInitialisation(event, signProcess, player, item)){
+			logger.debug("====SHOP INITIALISATION DONE====");
+		} else {
+			logger.debug("====SHOP INITIALISATION CANCEL====");
+		}
+	}
+	
+	private boolean shopInitialisation(Cancellable event, SignCreationProcess process, Player player, ItemStack item) {
 		logger.debug("Sending shop pre init event");
 		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
 		Bukkit.getPluginManager().callEvent(shopEvent);
 		if(shopEvent.isCancelled()){
 			logger.debug("Event was cancelled by third party plugin");
-			logger.debug("====SHOP INITIALISATION CANCEL====");
 			lang.request("interaction.issues.createCancel").sendToAudience(player);
-			return;
+			return false;
 		}
 		
 		AbstractShop shop = null;
@@ -256,8 +274,8 @@ public class ShopListener implements Listener{
 				process.setItemStack(item);
 				logger.debug("Setting first item for barter shop: " + item);
 				lang.request("interaction.success." + process.getType() + ".initializeBarter").sendToAudience(player);
-				signProcess.updateSignText();
-				return; //do not finish shop because barter needs 2 items
+				process.updateSignText();
+				return false;
 			} else {
 				process.setSecondaryStack(item);
 				shop = process.createShop();
@@ -272,8 +290,9 @@ public class ShopListener implements Listener{
 			LangRequest request = lang.request("interaction.success." + shop.getType() + ".create");
 			AbstractShop.shopPlaceholders(request, shop, false, player);
 			request.sendToAudience(player);
-			logger.debug("====SHOP INITIALISATION DONE====");
+			return true;
 		}
+		return true;
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
@@ -674,7 +693,8 @@ public class ShopListener implements Listener{
 		
 		if(isOwner && !isAllowedToDestroyShop(player, shop.getType())){
 			logger.debug("Owner %s without permission trying to break shop container".formatted(player.getName()));
-			lang.request("permission.error.destroy").sendToAudience(player);
+			lang.request("permission.error.destroy").replace("%shop-type%", shop.getType().getCreationWord()).sendToAudience(player);
+			event.setCancelled(true);
 			return;
 		}
 		
@@ -682,6 +702,7 @@ public class ShopListener implements Listener{
 			logger.debug("Player %s without destroy other permission trying to break shop container of %s".formatted(player.getName(),
 					shop.getOwner().getName()));
 			lang.request("permission.error.destroyOther").sendToAudience(player);
+			event.setCancelled(true);
 			return;
 		}
 		
@@ -725,10 +746,11 @@ public class ShopListener implements Listener{
 			}
 		}
 		if(isOwner){
-			lang.request("interaction." + shop.getType().toString() + ".destroy").sendToAudience(player);
+			lang.request("interaction.success." + shop.getType().toString() + ".destroy").sendToAudience(player);
 		} else {
-			lang.request("interaction." + shop.getType().toString() + ".opDestroy").replace("%owner%", shop.getOwner().getName()).sendToAudience(
-					player);
+			lang.request("interaction.success." + shop.getType().toString() + ".opDestroy")
+				.replace("%owner%", shop.getOwner().getName())
+				.sendToAudience(player);
 		}
 		
 		//remove the whole shop registration

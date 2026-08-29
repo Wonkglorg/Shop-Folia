@@ -667,9 +667,6 @@ public abstract class AbstractShop{
 			}
 		}
 		
-		assert item != null;
-		
-		
 		request.replace("%owner%", shop::getOwnerNameFormatted)
 			   .replace("%stock-state%",shop.getShopState().toString())
 			   .replace("%price%",shop.getPriceFormatted())
@@ -678,15 +675,18 @@ public abstract class AbstractShop{
 			   .replace("%location%",UtilMethods.getCleanLocation(shop.getSignLocation(),false))
 			   .replace("%price-per-item%",shop.price / shop.amount)
 			   .replace("%world%",shop.getSignLocation().getWorld().getName())
-               .replace("%item-type%", item.getType().toString())
-               .replace("%item-amount%",shop.getAmount())
-               .replace("%item-enchants%",()->UtilMethods.getEnchantmentsComponent(item));
+               .replace("%item-amount%",shop.getAmount());
 		
-		if(includeHover){
-			request.replace("%item%", ()->ItemNameUtil.getName(item).hoverEvent(ItemNameUtil.getItemHover(item)));
-		}else{
-			request.replace("%item%", ()->ItemNameUtil.getName(item));
+		if(item != null){
+			request.replace("%item-enchants%",()->UtilMethods.getEnchantmentsComponent(item))
+				   .replace("%item-type%", item.getType().toString());
+			if(includeHover){
+				request.replace("%item%", ()->ItemNameUtil.getName(item).hoverEvent(ItemNameUtil.getItemHover(item)));
+			}else{
+				request.replace("%item%", ()->ItemNameUtil.getName(item));
+			}
 		}
+		
 		ItemStack barterItem = shop.secondaryItem;
 		if(barterItem != null){
 			request.replace("%barter-item-type%", barterItem.getType().toString())

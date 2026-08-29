@@ -215,11 +215,12 @@ description:
 permission:
   error:
     use: "<red>You are not authorized to use %shop-type% shops."
-    create: "<red>You are not authorized to create %shop-type% shops."
+    create: "<red>You are not authorized to create shops."
+    create-type: "<red>You are not authorized to create shops of type %shop-type%."
     destroy: "<red>You are not authorized to destroy your own shops."
     destroyOther: "<red>You are not authorized to destroy other players shops."
     openOther: "<red>You are not authorized to open other players shops."
-    buildLimit: "<red>You have already reached your build limit of %user-amount%/%build-limit% shops."
+    buildLimit: "<red>You reached your build limit of %user-amount%/%build-limit% shops."
 
 hover:
   location:
@@ -310,7 +311,7 @@ sign:
         4: "%server-display-name%"
     buy:
       initialise:
-        1: "<red><bold>[sell shop]"
+        1: "<red><bold>[buy shop]"
         2: "<red>%item%<red>: %amount%"
         3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
         4: "<red>%owner%"
@@ -336,9 +337,9 @@ sign:
         4: "%server-display-name%"
     barter:
       initialise:
-        1: "<red><bold>[sell shop]"
-        2: "<red>%item%<red>: %amount%"
-        3: "<red>%price% %currency-name%"
+        1: "<red><bold>[barter shop]"
+        2: "%item%<red>: %amount%"
+        3: "%barter-item%<red>: %price%"
         4: "<red>%owner%"
       normal:
         1: "%stock-color%<bold>[shop]"

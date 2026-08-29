@@ -125,7 +125,7 @@ public abstract class PlayerProfile{
 	 * If the user either has the operator permission or is op, giving them full access to all features of the plugin
 	 */
 	public static boolean isOperator(Permissible player) {
-		return player.isOp() || !player.hasPermission(Constants.SHOP_PERMISSION_OPERATOR);
+		return player.isOp() || player.hasPermission(Constants.SHOP_PERMISSION_OPERATOR);
 	}
 	
 	/**
@@ -236,13 +236,13 @@ public abstract class PlayerProfile{
 	
 	/**
 	 * @param player the player to check for
-	 * @return how many shops the player can build total (does not include already built shops)
+	 * @return how many shops the player can build total (does not take already built shops into account)
 	 */
 	public static int getShopBuildLimit(Permissible player) {
 		if(player.isOp()){
 			return 99999;
 		}
-		int baseBuildLimit = -1;
+		int baseBuildLimit = 0;
 		int extraBuildLimit = 0;
 		Set<PermissionAttachmentInfo> permissions = player.getEffectivePermissions();
 		

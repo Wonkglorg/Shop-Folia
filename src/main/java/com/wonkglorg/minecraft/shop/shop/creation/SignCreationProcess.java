@@ -45,8 +45,8 @@ public class SignCreationProcess extends ShopCreationProcess{
 		Integer amountRead = readAmount(lines.get(1));
 		if(amountRead == null){
 			Main.getPlugin().logger().debug("Malformed shop line 2");
-			lang.request("interaction_issue.createLine2").sendToAudience(player);
-			lang.request("interaction_issue.createCancel").sendToAudience(player);
+			lang.request("interaction.issues.createLine2").sendToAudience(player);
+			lang.request("interaction.issues.createCancel").sendToAudience(player);
 			return false;
 		} else {
 			amount = amountRead;
@@ -54,16 +54,11 @@ public class SignCreationProcess extends ShopCreationProcess{
 		
 		if(!readPrice(Components.toPlainText(lines.get(2)), type)){
 			Main.getPlugin().logger().debug("Malformed shop line 3");
-			lang.request("interaction_issue.createLine3").sendToAudience(player);
+			lang.request("interaction.issues.createLine3").sendToAudience(player);
 			return false;
 		}
 		
-		if(type == null){
-			type = ShopType.SELL;
-			Main.getPlugin().logger().debug("No Type specified defaulting to " + type);
-		} else {
-			Main.getPlugin().logger().debug("Shop type: " + type);
-		}
+		Main.getPlugin().logger().debug("Shop type: " + type);
 		return true;
 	}
 	
@@ -146,19 +141,18 @@ public class SignCreationProcess extends ShopCreationProcess{
 	}
 	
 	private ShopType getShopType(String input) {
-		ShopType type = null;
 		SettingsConfig config = Main.getPlugin().getSettingsConfig();
 		input = input.toLowerCase();
 		if(input.contains(config.getCreationWord(CreationWord.BUY))){
-			type = ShopType.BUY;
+			return ShopType.BUY;
 		} else if(input.contains(config.getCreationWord(CreationWord.BARTER))){
-			type = ShopType.BARTER;
+			return ShopType.BARTER;
 		} else if(input.contains(config.getCreationWord(CreationWord.GAMBLE))){
-			type = ShopType.GAMBLE;
+			return ShopType.GAMBLE;
 		} else if(input.contains(config.getCreationWord(CreationWord.SELL))){
-			type = ShopType.SELL;
+			return ShopType.SELL;
 		}
-		return type;
+		return ShopType.SELL;
 	}
 	
 	//this takes a dirty (pre-cleaned) string and finds how much to multiply the final by
@@ -204,38 +198,38 @@ public class SignCreationProcess extends ShopCreationProcess{
 	@Override
 	public String toString() {
 		return "SignCreationProcess{" +
-		       "player=" +
-		       player +
-		       ", playerIsOperator=" +
-		       playerIsOperator +
-		       ", playerUUID=" +
-		       playerUUID +
-		       ", shopId=" +
-		       shopId +
-		       ", sign=" +
-		       sign +
-		       ", container=" +
-		       container +
-		       ", signDirection=" +
-		       signDirection +
-		       ", type=" +
-		       type +
-		       ", amount=" +
-		       amount +
-		       ", price=" +
-		       price +
-		       ", adminShop=" +
-		       adminShop +
-		       ", isFakeSign=" +
-		       isFakeSign +
-		       ", itemStack=" +
-		       itemStack +
-		       ", secondaryStack=" +
-		       secondaryStack +
-		       ", finishedInitialisation=" +
-		       finishedInitialisation +
-		       ", isCancelled=" +
-		       isCancelled +
-		       '}';
+			   "player=" +
+			   player +
+			   ", playerIsOperator=" +
+			   playerIsOperator +
+			   ", playerUUID=" +
+			   playerUUID +
+			   ", shopId=" +
+			   shopId +
+			   ", sign=" +
+			   sign +
+			   ", container=" +
+			   container +
+			   ", signDirection=" +
+			   signDirection +
+			   ", type=" +
+			   type +
+			   ", amount=" +
+			   amount +
+			   ", price=" +
+			   price +
+			   ", adminShop=" +
+			   adminShop +
+			   ", isFakeSign=" +
+			   isFakeSign +
+			   ", itemStack=" +
+			   itemStack +
+			   ", secondaryStack=" +
+			   secondaryStack +
+			   ", finishedInitialisation=" +
+			   finishedInitialisation +
+			   ", isCancelled=" +
+			   isCancelled +
+			   '}';
 	}
 }

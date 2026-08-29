@@ -191,7 +191,11 @@ public class ShopManager{
 	}
 	
 	public int getNumberOfShops(UUID playerId) {
-		return playerShops.get(playerId).size();
+		List<AbstractShop> abstractShops = playerShops.get(playerId);
+		if(abstractShops == null){
+			return 0;
+		}
+		return abstractShops.size();
 	}
 	
 	public void reload() {
@@ -494,11 +498,11 @@ public class ShopManager{
 					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
 						for(AbstractShop shop : plugin.getShopmanager().getShops(offlinePlayer.getUniqueId())){
 							plugin.logger().info("Deleting Shop because player " +
-							                     offlinePlayer.getName() +
-							                     " has not logged in within the required " +
-							                     (int) hoursSinceLastPlayed +
-							                     " hours! " +
-							                     shop);
+												 offlinePlayer.getName() +
+												 " has not logged in within the required " +
+												 (int) hoursSinceLastPlayed +
+												 " hours! " +
+												 shop);
 							plugin.getShopmanager().unregisterShop(shop);
 						}
 					}
