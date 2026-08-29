@@ -49,7 +49,7 @@ placeholders:
   overfilled-stock-color: "<gold>"
   zero-price: "<aqua>FREE"
   admin-stock: "unlimited"
-  server-display-name: "<purple>Server"
+  server-display-name: "<light_purple>Server"
   shop-owner-name-color: "<white>"
   closed-shop: "<red>CLOSED"
 templates:
@@ -363,14 +363,14 @@ sign:
         4: "%server-display-name%"
     gamble:
       admin:
-        1: "%stock-color%[Shop]"
+        1: "<green><bold>[shop]"
         2: "<light_purple>Gambling"
-        3: "%stock-color%%price%"
+        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
         4: "%server-display-name%"
       admin_no_display:
-        1: "%stock-color%%gamble-shop%"
+        1: "<green><bold>[gamble-shop]"
         2: "Random Item"
-        3: "%stock-color%%price%"
+        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
         4: "%server-display-name%"
 # UNUSED FOR NOW!
 display_tag_text:
