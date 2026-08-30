@@ -54,6 +54,7 @@ placeholders:
   closed-shop: "<red>CLOSED"
 templates:
   stock-color: "[if:%stock-state%==EMPTY]%out-of-stock-color%[else-if:%stock-state%==OK]%in-stock-color%[else]%overfilled-stock-color%[/if]"
+  shop-price-display: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
 
 ##Shop transaction related messages
 transaction:
@@ -124,6 +125,7 @@ transaction:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
       cancelledExternal: "<gray>Transaction cancelled."
+      shopNoStock: "<red>This shop does not have items to gamble."
       playerNoStock: "<red>You do not have sufficient funds to gamble with this shop."
       playerNoSpace: "<red>You do not have enough space in your inventory to gamble with this shop."
 
@@ -152,7 +154,7 @@ interaction:
       opOpen: "<gray>You are opening a bartering shop owned by %owner%."
     gamble:
       create: "<yellow>You have created a gambling shop."
-      opDestroy: "<gray>You have destroyed a gambling shop owned by %server name%."
+      opDestroy: "<gray>You have destroyed a gambling shop owned by %server-name%."
   issues:
     createLine2: "<red>The amount (line 2) needs to be a positive number."
     createLine3: "<red>The price (line 3) needs to be a positive number."
@@ -208,7 +210,7 @@ description:
   gamble:
     - '<light_purple>+---------------------------------------------------+'
     - '<light_purple>| <green>Shop Information: <gray>(gambling for items)'
-    - '<light_purple>| <gray>Item: <aqua>%item%'
+    - '<light_purple>| <gray><aqua>Random Item'
     - '<light_purple>| <gray>Price: <green>%price%'
     - '<light_purple>+---------------------------------------------------+'
 
@@ -292,85 +294,85 @@ sign:
       normal:
         1: "%stock-color%<bold>[shop]"
         2: "<white>Selling: <bold>%amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "<white>%owner%"
       normal_no_display:
         1: "%stock-color%<bold>[sell shop]"
         2: "<white>%item%<white>: %amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "<white>%owner%"
       admin:
         1: "%in-stock-color%<bold>[shop]"
         2: "<white>Selling: %amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "%server-display-name%"
       admin_no_display:
         1: "%in-stock-color%[sell shop]"
         2: "%item%<white>: %amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "%server-display-name%"
     buy:
       initialise:
         1: "<red><bold>[buy shop]"
         2: "<red>%item%<red>: %amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "<red>%owner%"
       normal:
         1: "%stock-color%<bold>[shop]"
         2: "<white>Buying: %amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "<white>%owner%"
       normal_no_display:
         1: "%stock-color%<bold>[buy shop]"
         2: "%item%<white>: %amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "<white>%owner%"
       admin:
         1: "%in-stock-color%<bold>[shop]"
         2: "<white>Buying: %amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "%server-display-name%"
       admin_no_display:
         1: "%in-stock-color%<bold>[buy shop]"
         2: "%item%<white>: %amount%"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "%server-display-name%"
     barter:
       initialise:
         1: "<red><bold>[barter shop]"
         2: "%item%<red>: %amount%"
-        3: "%barter-item%<red>: %price%"
+        3: "%barter-item%<red>: %shop-price-display%"
         4: "<red>%owner%"
       normal:
         1: "%stock-color%<bold>[shop]"
         2: "<white>Bartering: "
-        3: "<white>%amount%   for   %price%"
+        3: "<white>%amount%   for   %shop-price-display%"
         4: "<white>%owner%"
       normal_no_display:
         1: "%stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %price%"
+        3: "%barter-item%<white>:   %shop-price-display%"
         4: "<white>%owner%"
       admin:
         1: "%in-stock-color%<bold>[shop]"
         2: "<white>Bartering;"
-        3: "<white>%amount%   for   %price%"
+        3: "<white>%amount%   for   %shop-price-display%"
         4: "%server-display-name%"
       admin_no_display:
         1: "%in-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %price%"
+        3: "%barter-item%<white>:  %shop-price-display%"
         4: "%server-display-name%"
     gamble:
       admin:
-        1: "<green><bold>[shop]"
+        1: "%stock-color%<bold>[shop]"
         2: "<light_purple>Gambling"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        3: "%shop-price-display%"
         4: "%server-display-name%"
       admin_no_display:
-        1: "<green><bold>[gamble-shop]"
-        2: "Random Item"
-        3: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+        1: "%stock-color%<bold>[gamble-shop]"
+        2: "<light_purple>Random Item"
+        3: "%shop-price-display%"
         4: "%server-display-name%"
 # UNUSED FOR NOW!
 display_tag_text:

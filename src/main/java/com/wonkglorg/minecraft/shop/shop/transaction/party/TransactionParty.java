@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * A party in a transaction
  */
-public abstract class TransactionParty{
+public class TransactionParty{
 	/**
 	 * The player representing this party
 	 */
@@ -29,7 +29,7 @@ public abstract class TransactionParty{
 	 */
 	protected final Inventory inventory;
 	
-	protected TransactionParty(OfflinePlayer player, Inventory inventory) {
+	public TransactionParty(OfflinePlayer player, Inventory inventory) {
 		this.player = player;
 		this.inventory = inventory;
 	}
@@ -283,10 +283,14 @@ public abstract class TransactionParty{
 		return remaining;
 	}
 	
+	public Inventory createVirtualInventory() {
+		return createVirtualInventory(inventory);
+	}
+	
 	/**
 	 * Gets a virtual copy of the inventory to modify without changing the real inventory yet
 	 */
-	public Inventory createVirtualInventory() {
+	public static Inventory createVirtualInventory(Inventory inventory) {
 		// Check a cloned inventory instead of manipulating the original inventory
 		Inventory clonedInv = Bukkit.createInventory(null, inventory.getStorageContents().length);
 		clonedInv.setContents(inventory.getStorageContents());

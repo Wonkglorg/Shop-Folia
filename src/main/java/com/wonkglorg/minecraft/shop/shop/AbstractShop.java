@@ -776,7 +776,7 @@ public abstract class AbstractShop{
 	 * @param requestFullstack if the request should try to do multiple transactions in one
 	 * @return check its {@link Transaction#getResult()} before continuing with the transaction to check if it could succeed
 	 */
-	private @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack) {
+	protected @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack) {
 		if(!requestFullstack){
 			Transaction transaction = startTransaction(party, 1);
 			transaction.canFulfill();

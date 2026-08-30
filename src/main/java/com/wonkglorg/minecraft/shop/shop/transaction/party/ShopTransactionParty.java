@@ -2,6 +2,7 @@ package com.wonkglorg.minecraft.shop.shop.transaction.party;
 
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import lombok.Getter;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -12,8 +13,18 @@ public class ShopTransactionParty extends TransactionParty{
 	private final AbstractShop shop;
 	
 	public ShopTransactionParty(AbstractShop shop) {
-		//admin shops do not have a valid backing owner use null instead
 		super(shop.getOwner(), shop.getInventory());
+		this.shop = shop;
+	}
+	
+	/**
+	 * Used for shops where a different inventory should be used instead of the shops internal one
+	 *
+	 * @param shop
+	 * @param inventory
+	 */
+	public ShopTransactionParty(AbstractShop shop, Inventory inventory) {
+		super(shop.getOwner(), inventory);
 		this.shop = shop;
 	}
 	

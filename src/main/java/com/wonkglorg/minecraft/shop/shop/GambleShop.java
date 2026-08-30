@@ -1,5 +1,6 @@
 package com.wonkglorg.minecraft.shop.shop;
 
+import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
@@ -11,11 +12,14 @@ import com.wonkglorg.minecraft.shop.shop.transaction.TransactionResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
+import static com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty.createVirtualInventory;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -24,6 +28,10 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GambleShop extends AbstractShop{
+	/**
+	 * Used when no valid item is defined in the shop
+	 */
+	private static final ItemStack DEFAULT_EMPTY_ITEM = new ItemStack(Material.STONE);
 	
 	private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 	/**
@@ -37,6 +45,7 @@ public class GambleShop extends AbstractShop{
 	
 	public GambleShop(UUID shopId, Location signLoc, UUID player, double pri, int amt, BlockFace facing, long creationDate, DisplayType type) {
 		super(shopId, signLoc, player, ShopType.GAMBLE, pri, amt, true, facing, creationDate, type);
+		stock = Integer.MAX_VALUE;
 	}
 	
 	@Override
@@ -50,12 +59,31 @@ public class GambleShop extends AbstractShop{
 	
 	@Override
 	protected void postTransactionSuccess(Transaction transaction) {
+		setItemStack(getItemStack());
 		index = randomIndex();
 	}
 	
 	@Override
 	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
-	
+		var lang = Main.getPlugin().getLangManager();
+		switch(result) {
+			case OK -> {
+				LangRequest userRequest = lang.request("transaction.success.gamble.user");
+				shopPlaceholders(userRequest, this, false, player);
+				userRequest.replace("%price%", formatPrice(price * multiplier));
+				userRequest.replace("%item-amount%", amount * multiplier);
+				userRequest.sendToAudience(player);
+			}
+			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.gamble.shopPerformingTransaction").sendToAudience(player);
+			case CANCELLED -> lang.request("transaction.issue.gamble.cancelledExternal").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.gamble.playerNoStock").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_SELLER -> {
+			}
+			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.gamble.playerNoSpace").sendToAudience(player);
+			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.gamble.shopNoStock").sendToAudience(player);
+			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.gamble.useOwnShop").sendToAudience(player);
+		}
+		
 	}
 	
 	@Override
@@ -74,36 +102,57 @@ public class GambleShop extends AbstractShop{
 	
 	@Override
 	protected void calculateStock() {
-		stock = Integer.MAX_VALUE;
-		setShopState(OK, true);
-		
 		Inventory inventory = getInventory();
 		gambleItems.clear();
 		for(var item : inventory){
-			if(item == null) continue;
+			if(item == null){
+				continue;
+			}
 			gambleItems.add(item.clone());
 		}
 		index = randomIndex();
+		if(gambleItems.isEmpty()){
+			setShopState(ShopState.EMPTY, true);
+		} else {
+			setShopState(OK, true);
+		}
 	}
 	
 	/**
 	 * Gets a random index from the gamble items list
 	 */
 	private int randomIndex() {
+		if(gambleItems.isEmpty()){
+			return 0;
+		}
 		return RANDOM.nextInt(0, gambleItems.size());
+	}
+	
+	//override the default party and give it a fake virtual inventory to do trades with, as the real one should never be changed by a transaction
+	@Override
+	protected @NotNull ShopTransactionParty getParty() {
+		return new ShopTransactionParty(this, createVirtualInventory(getInventory()));
+	}
+	
+	//gamble shop can not have anything besides 1x transaction
+	@Override
+	protected @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack) {
+		return startTransaction(party, 1);
 	}
 	
 	@Override
 	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {//multiplier is ignored for gambling
+		ItemStack itemStack = getItemStack();
+		if(itemStack == null){
+			amount = 9999; //use a big amount number to prevent the trade from passing (no item is in the gamble shop)
+			itemStack = DEFAULT_EMPTY_ITEM;
+		} else {
+			amount = itemStack.getAmount();
+		}
 		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
-			case VAULT -> new VaultTransaction(new ShopTransactionParty(this), party, amount, price, getItemStack());
-			case ITEM -> new ItemTransaction(new ShopTransactionParty(this),
-					party,
-					amount,
-					price,
-					getItemStack(),
-					Main.getPlugin().getItemConfig().getCurrencyItem());
-			case EXPERIENCE -> new ExpirienceTransaction(new ShopTransactionParty(this), party, amount, price, getItemStack());
+			case VAULT -> new VaultTransaction(party, getParty(), amount, price, itemStack);
+			case ITEM -> new ItemTransaction(party, getParty(), amount, price, itemStack, Main.getPlugin().getItemConfig().getCurrencyItem());
+			case EXPERIENCE -> new ExpirienceTransaction(party, getParty(), amount, price, itemStack);
 		};
 	}
 }

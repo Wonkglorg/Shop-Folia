@@ -160,6 +160,8 @@ public class ShopListener implements Listener{
 		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
 		
 		if(process.getType() == ShopType.GAMBLE){
+			shopManager.addPlayerShopCreation(player, process);
+			process.updateSignText();
 			if(shopInitialisation(event, process, player, Main.getPlugin().getItemConfig().getGambleDisplayItem())){
 				logger.debug("=====SHOP CREATION SUCCESS====");
 			} else {
