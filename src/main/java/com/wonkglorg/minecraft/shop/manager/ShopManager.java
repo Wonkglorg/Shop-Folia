@@ -415,9 +415,8 @@ public class ShopManager{
 	public void unregisterShop(AbstractShop shop) {
 		removeShop(shop);
 		database.removeShop(shop);
-		if(shop.getDisplay() != null){
-			shop.getDisplay().remove();
-		}
+		shop.getDisplay().cleanup();
+		shop.getDisplay().remove();
 	}
 	
 	public boolean isAllowedContainer(Block b) {

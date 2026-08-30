@@ -374,6 +374,14 @@ public abstract class AbstractDisplay{
 		sendPacket(player, entityMetadataPacket);
 	}
 	
+	/**
+	 * Cleanup all data for this display
+	 */
+	public void cleanup(){
+		remove();
+		removeLight();
+	}
+	
 	@Override
 	public String toString() {
 		return "AbstractDisplay{type=" + type + ", shop=" + shop + '}';
