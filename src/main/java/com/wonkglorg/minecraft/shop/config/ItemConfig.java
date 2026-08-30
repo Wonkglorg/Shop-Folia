@@ -87,15 +87,6 @@ public class ItemConfig extends Config{
 		return true;
 	}
 	
-	public List<ItemStack> getItemStackList(String path) {
-		List<?> list = getList(path);
-		if(list == null){
-			return new ArrayList<>();
-		}
-		
-		return list.stream().filter(ItemStack.class::isInstance).map(ItemStack.class::cast).collect(Collectors.toCollection(ArrayList::new));
-	}
-	
 	public void setCurrencyItem(ItemStack currencyItem) {
 		this.currencyItem = currencyItem;
 		set("currency-item", currencyItem);

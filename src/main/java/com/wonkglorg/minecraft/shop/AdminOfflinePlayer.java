@@ -219,10 +219,11 @@ public class AdminOfflinePlayer implements OfflinePlayer{
 		return null;
 	}
 	
+	@SuppressWarnings("NullableProblems")
 	@Override
-	public @Nullable PersistentDataContainerView getPersistentDataContainer() {
+	public @Nullable PersistentDataContainerView getPersistentDataContainer() { //NOSONAR
 		return null;
-	}//NOSONAR
+	}
 	
 	@Override
 	public @NotNull Map<String, Object> serialize() {

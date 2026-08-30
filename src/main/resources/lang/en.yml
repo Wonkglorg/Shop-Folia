@@ -60,16 +60,16 @@ templates:
 transaction:
   success:
     sell:
-      user: '<gray>You bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from %owner% for <aqua>%price% %currency-name% <gray>.'
-      owner: '<gray>%user% bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from you for <aqua>%price% %currency-name%<gray> at <white>%location%<gray>.'
+      user: '<gray>You bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from %owner% for %shop-price-display%<gray>.'
+      owner: '<gray>%user% bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from you for %shop-price-display%<gray> at <white>%location%<gray>.'
     buy:
-      user: '<gray>You sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to %owner% for <aqua>%price% %currency-name%<gray>.'
-      owner: '<gray>%user% sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to you for <aqua>%price% %currency-name%<gray> at <white>%location%<gray>.'
+      user: '<gray>You sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to %owner% for %shop-price-display%<gray>.'
+      owner: '<gray>%user% sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to you for %shop-price-display%<gray> at <white>%location%<gray>.'
     barter:
       user: '<gray>You bartered <white>%barter-item-amount% <gray>of your <white>%barter-item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of %owner%s <white>%item%(s)<aqua>%item-enchants%<gray>.'
       owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
     gamble:
-      user: '<gray>You gambled <green>%price% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
+      user: '<gray>You gambled %shop-price-display% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
 
     OFFLINE_TRANSACTIONS_NOTIFICATION:
       itemRow: '<light_purple>| <white> - <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'

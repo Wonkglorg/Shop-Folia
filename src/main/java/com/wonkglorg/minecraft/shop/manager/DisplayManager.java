@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 
 import java.util.Collections;
@@ -20,8 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DisplayManager{
-	
-	private final NamespacedKey displayKey;
 	@Setter
 	private boolean isLoadingShops = true;
 	private final Main plugin;
@@ -51,8 +48,6 @@ public class DisplayManager{
 		this.plugin = plugin;
 		this.shopManager = shopManager;
 		
-		this.displayKey = new NamespacedKey(plugin, "display");
-		
 		displayTask = plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
 			if(isLoadingShops){
 				return;
@@ -73,11 +68,7 @@ public class DisplayManager{
 		
 		if(visible != null){
 			for(AbstractShop shop : visible){
-				try{
-					shop.getDisplay().remove(player);
-				} catch(Exception e){
-					plugin.logger().warning("Failed to remove display for " + player.getName());
-				}
+				shop.getDisplay().remove(player);
 			}
 		}
 		
@@ -116,8 +107,7 @@ public class DisplayManager{
 				updateVisibleDisplays(player, location, force);
 				
 			} catch(Exception e){
-				plugin.logger().warning("Error processing shop displays for player " + player.getName());
-				e.printStackTrace();
+				plugin.logger().severe("Error processing shop displays for player " + player.getName(), e);
 			} finally{
 				playersBeingProcessed.remove(playerId);
 			}
@@ -182,7 +172,7 @@ public class DisplayManager{
 		
 		AbstractDisplay display = shop.getDisplay();
 		
-		if(display == null || display.getType() == DisplayType.NONE){
+		if(display.getType() == DisplayType.NONE){
 			return false;
 		}
 		

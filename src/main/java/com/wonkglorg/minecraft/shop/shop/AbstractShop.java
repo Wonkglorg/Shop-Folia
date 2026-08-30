@@ -989,24 +989,21 @@ public abstract class AbstractShop{
 	 * @param player the player to send it to
 	 */
 	public void sendEffects(boolean success, Player player) {
-		try{
-			SettingsConfig settingsConfig = Main.getPlugin().getSettingsConfig();
-			if(success){
-				if(settingsConfig.isPlaySounds()){
-					player.playSound(signLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
-				}
-				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, EMERALD_BLOCK_DATA);
-				}
-			} else {
-				if(settingsConfig.isPlaySounds()){
-					player.playSound(signLocation, Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F);
-				}
-				if(settingsConfig.isPlayEffects()){
-					player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, REDSTONE_BLOCK_DATA);
-				}
+		SettingsConfig settingsConfig = Main.getPlugin().getSettingsConfig();
+		if(success){
+			if(settingsConfig.isPlaySounds()){
+				player.playSound(signLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
 			}
-		} catch(Exception _){
+			if(settingsConfig.isPlayEffects()){
+				player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, EMERALD_BLOCK_DATA);
+			}
+		} else {
+			if(settingsConfig.isPlaySounds()){
+				player.playSound(signLocation, Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F);
+			}
+			if(settingsConfig.isPlayEffects()){
+				player.getWorld().playEffect(containerLocation, Effect.DESTROY_BLOCK, REDSTONE_BLOCK_DATA);
+			}
 		}
 	}
 	

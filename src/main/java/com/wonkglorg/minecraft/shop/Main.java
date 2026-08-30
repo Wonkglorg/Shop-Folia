@@ -5,7 +5,6 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.shop.command.ShopCommand;
 import com.wonkglorg.minecraft.shop.config.ItemConfig;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
-import com.wonkglorg.minecraft.shop.gui.ShopGUIListener;
 import com.wonkglorg.minecraft.shop.listener.DisplayListener;
 import com.wonkglorg.minecraft.shop.listener.ShopListener;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
@@ -14,13 +13,11 @@ import com.wonkglorg.minecraft.shop.service.ShopService;
 import com.wonkglorg.minecraft.shop.service.ShopServiceProvider;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
-import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
@@ -104,7 +101,6 @@ public class Main extends JavaPlugin{
 		
 		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
-		getServer().getPluginManager().registerEvents(new ShopGUIListener(), this);
 		
 		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
 		

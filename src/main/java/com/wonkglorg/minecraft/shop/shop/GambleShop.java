@@ -137,7 +137,10 @@ public class GambleShop extends AbstractShop{
 	//gamble shop can not have anything besides 1x transaction
 	@Override
 	protected @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack) {
-		return startTransaction(party, 1);
+		Transaction transaction = startTransaction(party, 1);
+		//populates the transaction result object with the result state
+		transaction.canFulfill();
+		return transaction;
 	}
 	
 	@Override

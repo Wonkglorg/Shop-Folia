@@ -109,6 +109,34 @@ setWaxedSign: true
 #if set to true uses the clients locale to display material names
 useLocalizedMaterialNames: false
 
+#todo new idea for sign creation config
+#the line format shops need to abide by when being created every line can be a list of possible options of multiple permutations are allowed, placeholders:
+# %price% - the price to pay
+# %amount% - the item amount being given
+#sign-creation-layout:
+#  sell:
+#    1: 'shop'
+#    2: '%amount%'
+#    3: '%price%'
+#    4:
+#      - 'sell'
+#      - ''
+#  buy:
+#    1: 'shop'
+#    2: '%amount%'
+#    3: '%price%'
+#    4: 'buy'
+#  barter:
+#    1: 'shop'
+#    2: '%amount%'
+#    3: '%price%'
+#    4: 'barter'
+#  gamble:
+#    1: 'shop'
+#    2: ''
+#    3: '%price%'
+#    4: 'gamble'
+
 # =================================================================== #
 #                         SHOP INTERACTIONS                           #
 # =================================================================== #
