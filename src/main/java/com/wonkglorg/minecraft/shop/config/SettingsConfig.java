@@ -169,6 +169,9 @@ public class SettingsConfig extends Config{
 	private double maxShopDisplayDistance;
 	@Getter
 	private double displayProcessInterval;
+	
+	private ShopSettings shopSettings;
+	
 	/**
 	 * Gets the radius (in chunks) around a player to search for shops.
 	 * Each increment searches exponentially more chunks (1=3x3 area, 2=5x5 area, 3=7x7 area).
@@ -252,7 +255,6 @@ public class SettingsConfig extends Config{
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.OPEN_SETTINGS);
 		}
 		
-		
 		allowCreateMethodSign = getBoolean("creationMethod.placeSign");
 		allowCreateMethodCommand = getBoolean("creationMethod.placeSign");
 		
@@ -299,5 +301,27 @@ public class SettingsConfig extends Config{
 	public void setMigrateOldData(boolean migrateOldData) {
 		this.migrateOldData = migrateOldData;
 		set("debug.migrateOldData", migrateOldData);
+	}
+	
+	public class ShopSettings{
+		@Getter
+		private boolean transactionLimitEnabled;
+		@Getter
+		private int transactionLimitDefault;
+		@Getter
+		private boolean transactionCooldownEnabled;
+		@Getter
+		private long transactionCooldownDefault;
+		@Getter
+		private boolean outOfStockNotificationEnabled;
+		@Getter
+		private boolean isOutOfStockNotificationDefault;
+		@Getter
+		private boolean transactionNotificationEnabled;
+		@Getter
+		private boolean transactionNotificationDefault;
+		
+		public ShopSettings() {
+		}
 	}
 }

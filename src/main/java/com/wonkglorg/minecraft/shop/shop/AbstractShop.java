@@ -348,18 +348,9 @@ public abstract class AbstractShop{
 			}
 		}
 		
-		// Force sign lines to refresh on load.
-		signLinesRequireRefresh = true;
-		
 		// Now that the world/container data is valid, refresh stock and state.
 		updateStock();
-		
-		//if the stock update did not already change the sign do it now (mostly needed when running a plugin reload to update all shop signs to the new lang entries)
-		if(signLinesRequireRefresh){
-			updateSign(true);
-			signLinesRequireRefresh = false;
-		}
-		
+
 		isLoaded = true;
 		return true;
 	}
@@ -567,87 +558,6 @@ public abstract class AbstractShop{
 	}
 	
 	/**
-	 * Requests a sign update
-	 */
-	public void updateSign() {this.updateSign(false);}
-	
-	/**
-	 * Requests a sign update
-	 *
-	 * @param forceUpdate if the update should be force applied even if no outstanding line change is pending
-	 */
-	public void updateSign(boolean forceUpdate) {
-		// If we don't need to update the lines, then don't update them!
-		if(!signLinesRequireRefresh && !forceUpdate){
-			return;
-		}
-		// Do not trigger the sign update if the chunk has not been loaded yet
-		if(!this.isChunkLoaded()){
-			if(forceUpdate){
-				signLinesRequireRefresh = true;
-			}
-			return;
-		}
-		// Immediately set to false to prevent multiple calls to updateSign overlapping
-		signLinesRequireRefresh = false;
-		signLines = ShopSignUtil.getSignLines(this);
-		
-		// Use the sign's location to ensure the update runs in the correct region in Folia
-		Main.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(signLocation, _ -> {
-			// Update the GUI Icon since the sign needs an update.
-			if(!(signLocation.getBlock().getState() instanceof Sign sign)){
-				Main.getPlugin().logger().warning("Error attempting to update Shop sign! Sign Block for Shop is not a Sign (detected: " +
-												  signLocation.getBlock().getType() +
-												  "), deleting shop: " +
-												  this);
-				return;
-			}
-			
-			SignSide frontSideSign = sign.getSide(Side.FRONT);
-			List<Component> oldLines = frontSideSign.lines();
-			boolean hasSignUpdate = false;
-			// If the sign lines are the same, don't update them!
-			//@formatter:off
-			boolean linesMatch = signLines.get(0).equals(oldLines.get(0)) &&
-			                     signLines.get(1).equals(oldLines.get(1)) &&
-			                     signLines.get(2).equals(oldLines.get(2)) &&
-			                     signLines.get(3).equals(oldLines.get(3));
-			
-			if(!isInitialized()){
-				hasSignUpdate = true; // force update the sign
-				TextColor red = TextColor.color(255,0,0);
-				frontSideSign.line(0, signLines.get(0).color(red));
-				frontSideSign.line(1, signLines.get(1).color(red));
-				frontSideSign.line(2, signLines.get(2).color(red));
-				frontSideSign.line(3, signLines.get(3).color(red));
-			} else if(!linesMatch){
-				hasSignUpdate = true; // force update the sign
-				frontSideSign.line(0, signLines.get(0));
-				frontSideSign.line(1, signLines.get(1));
-				frontSideSign.line(2, signLines.get(2));
-				frontSideSign.line(3, signLines.get(3));
-			}
-			//@formatter:on
-			// If the sign is glowing, update it if the setting has changed
-			boolean shouldGlow = Main.getPlugin().getSettingsConfig().isSetGlowingSignText();
-			if(shouldGlow != frontSideSign.isGlowingText()){
-				hasSignUpdate = true;
-				frontSideSign.setGlowingText(shouldGlow);
-			}
-			boolean shouldWax = Main.getPlugin().getSettingsConfig().isSetWaxedSign();
-			if(shouldWax != sign.isWaxed()){
-				hasSignUpdate = true;
-				sign.setWaxed(shouldWax);
-			}
-			
-			// Update the sign if it has changed
-			if(hasSignUpdate){
-				sign.update(true);
-			}
-		}, 2);
-	}
-	
-	/**
 	 * Sets a new shop state and refreshes sign if shop state changed
 	 */
 	public void setShopState(ShopState state, boolean updateSign) {
@@ -658,7 +568,7 @@ public abstract class AbstractShop{
 		}
 		
 		if(shopState != oldState){
-			updateSign(true);
+			updateSign(true); //todo update sign for every player seeing this shop
 		}
 	}
 	
@@ -723,6 +633,15 @@ public abstract class AbstractShop{
 			}else{
 				request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem));
 			}
+		}
+		
+		if(transaction amount is enabled and exists...){
+			request.replace("%");
+			//replace placeholders
+		}
+		
+		if(transaction timeout is enabled and exists){
+		
 		}
 		//@formatter:on
 	}

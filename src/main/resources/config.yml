@@ -188,11 +188,11 @@ playEffects: true
 shop:
   settings:
     # how often a player can purchase from a given shop (each player has their own counter)
-    purchase-limit:
+    transaction-limit:
       enabled: true
       default-value: 10
     # how long the player needs to wait between purchases to buy again from this shop
-    purchase-cooldown:
+    transaction-cooldown:
       enabled: true
       default-value: 1d
     # if the shop should notify the owner when someone tries to transact and the shop ran out of stock.
@@ -200,7 +200,7 @@ shop:
       enabled: true
       default-value: true
     # if the shop should notify its owner over every transaction
-    purchased-notification:
+    transaction-notification:
       enabled: true
       default-value: true
 
