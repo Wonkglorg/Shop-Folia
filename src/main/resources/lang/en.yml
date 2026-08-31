@@ -308,84 +308,64 @@ sign:
         4: "<red>%owner%"
       # when the shop is in stock and has a display rendered
       in-stock:
-        1:
-        2:
-        3:
-        4:
+        1: "%in-stock-color%<bold>[shop]"
+        2: "<white>Buying: <bold>%amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is in stock and has no display rendered
       in-stock-no-display:
-        1:
-        2:
-        3:
-        4:
+        1: "%in-stock-color%<bold>[buy shop]"
+        2: "<white>%item%<white>: %amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is not in stock and has a display rendered
       out-of-stock:
-        1:
-        2:
-        3:
-        4:
+        1: "%out-of-stock-color%<bold>[shop]"
+        2: "<white>Buying: <bold>%amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is not in stock and has no display rendered
       out-of-stock-no-display:
-        1:
-        2:
-        3:
-        4:
+        1: "%out-of-stock-color%<bold>[buy shop]"
+        2: "<white>%item%<white>: %amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is in stock and has a display rendered
       overfilled:
-        1:
-        2:
-        3:
-        4:
+        1: "%overfilled-stock-color%<bold>[shop]"
+        2: "<white>Buying: <bold>%amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is in stock and has no display rendered
-      overfilled-no-stock:
-        1:
-        2:
-        3:
-        4:
+      overfilled-no-display:
+        1: "%overfilled-stock-color%<bold>[buy shop]"
+        2: "<white>%item%<white>: %amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
       transaction-cooldown:
-        1:
-        2:
-        3:
-        4:
+        1: "%overfilled-stock-color%<bold>[shop]"
+        2: "<white>Buying: <bold>%amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
       transaction-cooldown-no-display:
-        1:
-        2:
-        3:
-        4:
+        1: "%overfilled-stock-color%<bold>[buy shop]"
+        2: "<white>%item%<white>: %amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop reached its transaction limit for the player viewing it and has a display rendered
       transaction-limit:
-        1:
-        2:
-        3:
-        4:
+        1: "%overfilled-stock-color%<bold>[shop]"
+        2: "<white>Buying: <bold>%amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
       # when the shop reached its transaction limit for the player viewing it and has no display rendered
       transaction-limit-no-display:
-        1:
-        2:
-        3:
-        4:
-      normal:
-        1: "%stock-color%<bold>[shop]"
-        2: "<white>Buying: %amount%"
+        1: "%overfilled-stock-color%<bold>[buy shop]"
+        2: "<white>%item%<white>: %amount%"
         3: "%shop-price-display%"
         4: "<white>%owner%"
-      normal_no_display:
-        1: "%stock-color%<bold>[buy shop]"
-        2: "%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      admin:
-        1: "%in-stock-color%<bold>[shop]"
-        2: "<white>Buying: %amount%"
-        3: "%shop-price-display%"
-        4: "%server-display-name%"
-      admin_no_display:
-        1: "%in-stock-color%<bold>[buy shop]"
-        2: "%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "%server-display-name%"
     barter:
       initialise:
         1: "<red><bold>[barter shop]"
@@ -394,151 +374,109 @@ sign:
         4: "<red>%owner%"
       # when the shop is in stock and has a display rendered
       in-stock:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is in stock and has no display rendered
-      in-stock-no-display:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is not in stock and has a display rendered
-      out-of-stock:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is not in stock and has no display rendered
-      out-of-stock-no-display:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is in stock and has a display rendered
-      overfilled:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is in stock and has no display rendered
-      overfilled-no-stock:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
-      transaction-cooldown:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
-      transaction-cooldown-no-display:
-        1:
-        2:
-        3:
-        4:
-      # when the shop reached its transaction limit for the player viewing it and has a display rendered
-      transaction-limit:
-        1:
-        2:
-        3:
-        4:
-      # when the shop reached its transaction limit for the player viewing it and has no display rendered
-      transaction-limit-no-display:
-        1:
-        2:
-        3:
-        4:
-      normal:
         1: "%stock-color%<bold>[shop]"
         2: "<white>Bartering: "
         3: "<white>%amount%   for   %shop-price-display%"
         4: "<white>%owner%"
-      normal_no_display:
+      # when the shop is in stock and has no display rendered
+      in-stock-no-display:
         1: "%stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
         3: "%barter-item%<white>:   %shop-price-display%"
         4: "<white>%owner%"
-      admin:
-        1: "%in-stock-color%<bold>[shop]"
-        2: "<white>Bartering;"
-        3: "<white>%amount%   for   %shop-price-display%"
-        4: "%server-display-name%"
-      admin_no_display:
-        1: "%in-stock-color%<bold>[barter shop]"
-        2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>:  %shop-price-display%"
-        4: "%server-display-name%"
-    gamble:
-      # when the shop is in stock and has a display rendered
-      in-stock:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is in stock and has no display rendered
-      in-stock-no-display:
-        1:
-        2:
-        3:
-        4:
       # when the shop is not in stock and has a display rendered
       out-of-stock:
-        1:
-        2:
-        3:
-        4:
+        1: "%stock-color%<bold>[shop]"
+        2: "<white>Bartering: "
+        3: "<white>%amount%   for   %shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is not in stock and has no display rendered
       out-of-stock-no-display:
-        1:
-        2:
-        3:
-        4:
+        1: "%stock-color%<bold>[barter shop]"
+        2: "%item%<white>: %amount%"
+        3: "%barter-item%<white>:   %shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is in stock and has a display rendered
       overfilled:
-        1:
-        2:
-        3:
-        4:
+        1: "%stock-color%<bold>[shop]"
+        2: "<white>Bartering: "
+        3: "<white>%amount%   for   %shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is in stock and has no display rendered
       overfilled-no-stock:
-        1:
-        2:
-        3:
-        4:
+        1: "%stock-color%<bold>[barter shop]"
+        2: "%item%<white>: %amount%"
+        3: "%barter-item%<white>:   %shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
       transaction-cooldown:
-        1:
-        2:
-        3:
-        4:
+        1: "%stock-color%<bold>[shop]"
+        2: "<white>Bartering: "
+        3: "<white>%amount%   for   %shop-price-display%"
+        4: "<white>%owner%"
       # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
       transaction-cooldown-no-display:
-        1:
-        2:
-        3:
-        4:
+        1: "%stock-color%<bold>[barter shop]"
+        2: "%item%<white>: %amount%"
+        3: "%barter-item%<white>:   %shop-price-display%"
+        4: "<white>%owner%"
       # when the shop reached its transaction limit for the player viewing it and has a display rendered
       transaction-limit:
-        1:
-        2:
-        3:
-        4:
+        1: "%stock-color%<bold>[shop]"
+        2: "<white>Bartering: "
+        3: "<white>%amount%   for   %shop-price-display%"
+        4: "<white>%owner%"
       # when the shop reached its transaction limit for the player viewing it and has no display rendered
       transaction-limit-no-display:
-        1:
-        2:
-        3:
-        4:
-      admin:
+        1: "%stock-color%<bold>[barter shop]"
+        2: "%item%<white>: %amount%"
+        3: "%barter-item%<white>:   %shop-price-display%"
+        4: "<white>%owner%"
+    gamble:
+      # when the shop has items in it and has a display rendered
+      in-stock:
+        1: "%in-stock-color%<bold>[shop]"
+        2: "<light_purple>Gambling"
+        3: "%shop-price-display%"
+        4: "%server-display-name%"
+      # when the shop has items in it and has no display rendered
+      in-stock-no-display:
+        1: "%stock-color%<bold>[gamble-shop]"
+        2: "<light_purple>Random Item"
+        3: "%shop-price-display%"
+        4: "%server-display-name%"
+      # when the shop has no items in it and has a display rendered
+      out-of-stock:
         1: "%stock-color%<bold>[shop]"
         2: "<light_purple>Gambling"
         3: "%shop-price-display%"
         4: "%server-display-name%"
-      admin_no_display:
+      # when the shop has no items in it and has no display rendered
+      out-of-stock-no-display:
+        1: "%stock-color%<bold>[gamble-shop]"
+        2: "<light_purple>Random Item"
+        3: "%shop-price-display%"
+        4: "%server-display-name%"
+      # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
+      transaction-cooldown:
+        1: "%stock-color%<bold>[shop]"
+        2: "<light_purple>Gambling"
+        3: "%shop-price-display%"
+        4: "%server-display-name%"
+      # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
+      transaction-cooldown-no-display:
+        1: "%stock-color%<bold>[gamble-shop]"
+        2: "<light_purple>Random Item"
+        3: "%shop-price-display%"
+        4: "%server-display-name%"
+      # when the shop reached its transaction limit for the player viewing it and has a display rendered
+      transaction-limit:
+        1: "%stock-color%<bold>[shop]"
+        2: "<light_purple>Gambling"
+        3: "%shop-price-display%"
+        4: "%server-display-name%"
+      # when the shop reached its transaction limit for the player viewing it and has no display rendered
+      transaction-limit-no-display:
         1: "%stock-color%<bold>[gamble-shop]"
         2: "<light_purple>Random Item"
         3: "%shop-price-display%"
