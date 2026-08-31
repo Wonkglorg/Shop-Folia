@@ -51,6 +51,9 @@ public abstract class PlayerProfile{
 	@Getter
 	private final Map<ShopType, List<AbstractShop>> ownedShops = new ConcurrentHashMap<>();
 	
+	private Map<Uuid,Integer> totalPurchasesPerShop = new ConcurrentHashMap<>();
+	private Map<Uuid,Long> lastPurchaseTimePerShop = new ConcurrentHashMap<>();
+	
 	protected PlayerProfile(OfflinePlayer offlinePlayer) {
 		for(var type : ShopType.values()){
 			ownedShops.put(type, new ArrayList<>());
@@ -62,6 +65,7 @@ public abstract class PlayerProfile{
 			ownedShops.get(shop.getType()).add(shop);
 		}
 		loadFromFile(this);
+		Main.getPlugin().getShopmanager().getDatabase().loadShopPurchaseStats(uuid,totalPurchasesPerShop,lastPurchaseTimePerShop)
 	}
 	
 	/**
@@ -298,5 +302,11 @@ public abstract class PlayerProfile{
 	@Internal
 	public void setExperience(int experience) {
 		this.experience = experience;
+	}
+	
+	
+	public void recordPurchase(UUID shopId, long timestamp) {
+		totalPurchasesPerShop.merge(shopId, 1, Integer::sum);
+		lastPurchaseTimePerShop.put(shopId, timestamp);
 	}
 }

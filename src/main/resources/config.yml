@@ -163,6 +163,8 @@ actionMappings:
   #cycle displays on a shop
   cycleShopDisplay:
     - SHIFT_RIGHT_CLICK_CHEST
+  openShopSettings:
+    - SHIFT_LEFT_CLICK_CHEST
 
 # These are the methods players are able to use to create shops #
 # placeSign - players can place signs on chests and fill out the info on the sign itself #
@@ -181,6 +183,26 @@ destroyShopRequiresSneak: false
 # These will need to be set to false if your server is running anything less than Minecraft 1.9 #
 playSounds: true
 playEffects: true
+
+# Shop settings, their default values and if they should be enabled
+shop:
+  settings:
+    # how often a player can purchase from a given shop (each player has their own counter)
+    purchase-limit:
+      enabled: true
+      default-value: 10
+    # how long the player needs to wait between purchases to buy again from this shop
+    purchase-cooldown:
+      enabled: true
+      default-value: 1d
+    # if the shop should notify the owner when someone tries to transact and the shop ran out of stock.
+    out-of-stock-notification:
+      enabled: true
+      default-value: true
+    # if the shop should notify its owner over every transaction
+    purchased-notification:
+      enabled: true
+      default-value: true
 
 # =================================================================== #
 #                                FILTERS                              #

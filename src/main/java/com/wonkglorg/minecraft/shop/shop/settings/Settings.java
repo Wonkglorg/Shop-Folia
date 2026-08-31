@@ -1,4 +1,7 @@
 public final class Settings{
+	//todo allow setting default values via config that all shops inherit.
+	
+	
 	/**
 	 * Cooldown applied after each purchase (per player)
 	 */

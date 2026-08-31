@@ -248,6 +248,9 @@ public class SettingsConfig extends Config{
 		for(var action : getStringList("actionMappings.cycleShopDisplay")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.CYCLE_DISPLAY);
 		}
+		for(var action : getStringList("actionMappings.openShopSettings")){
+			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.OPEN_SETTINGS);
+		}
 		
 		
 		allowCreateMethodSign = getBoolean("creationMethod.placeSign");

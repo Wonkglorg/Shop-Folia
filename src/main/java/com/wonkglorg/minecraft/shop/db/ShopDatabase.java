@@ -398,6 +398,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			} catch(SQLException e){
 				PluginLogger.error("Error while adding transaction to shop", e);
 			}
+			var profileIfLoaded = PlayerManager.getProfileIfLoaded(purchaserId);
+			if(profileIfLoaded != null){
+				//update cached values for the online player
+				profileIfLoaded.recordPurchase(shopId,timestamp);
+			}
 		});
 		
 	}
@@ -614,5 +619,56 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setInt(15, signLocation.getBlockY());
 		ps.setInt(16, signLocation.getBlockZ());
 		ps.setString(17, shop.getId().toString());
+	}
+	
+	/**
+	 * Loads player specific shop data
+	 * @param playerUuid
+	 * @param totalPurchasesPerShop
+	 * @param lastPurchaseTimePerShop
+	 * @return
+	 */
+	public CompletableFuture<Void> loadShopPurchaseStats(
+			UUID playerUuid,
+			Map<UUID, Integer> totalPurchasesPerShop,
+			Map<UUID, Long> lastPurchaseTimePerShop
+														) {
+		return CompletableFuture.runAsync(() -> {
+			try (var ps = getConnection().prepareStatement("""
+                SELECT
+                    shop_uuid,
+                    SUM(transaction_count) AS total_purchases,
+                    MAX(timestamp) AS last_purchase
+                FROM transactions
+                WHERE purchaser_uuid = ?
+                GROUP BY shop_uuid
+                """)) {
+				
+				ps.setString(1, playerUuid.toString());
+				
+				try (var resultSet = ps.executeQuery()) {
+					while (resultSet.next()) {
+						UUID shopUuid = UUID.fromString(
+								resultSet.getString("shop_uuid")
+													   );
+						
+						totalPurchasesPerShop.put(
+								shopUuid,
+								resultSet.getInt("total_purchases")
+												 );
+						
+						lastPurchaseTimePerShop.put(
+								shopUuid,
+								resultSet.getLong("last_purchase")
+												   );
+					}
+				}
+			} catch (SQLException e) {
+				PluginLogger.error(
+						"Error while loading player shop purchase statistics",
+						e
+								  );
+			}
+		});
 	}
 }

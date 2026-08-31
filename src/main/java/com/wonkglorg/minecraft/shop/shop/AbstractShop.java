@@ -191,7 +191,7 @@ public abstract class AbstractShop{
 	/**
 	 * Custom settings this shop has defined.
 	 */
-	private final Map<Settings<?>,Object> shopSettings = new ConcurrentHashMap<>();
+	private final Map<Settings<?>, Object> settings = new ConcurrentHashMap<>();
 	/**
 	 * If the sign used for creation was spawned by the plugin or not, used to determine if the sign drops when the shop is destroyed
 	 */
@@ -548,12 +548,32 @@ public abstract class AbstractShop{
 		this.secondaryItem.setAmount(1);
 	}
 	
-	
-	public void getClientShopState(OnlinePlayerProfile profile){
+	/**
+	 * Evalutes the shop state this player should see this shop as (this differs from {@link #shopState} when either a purchaselimit or a purchase cooldown is defined
+	 *
+	 * @param profile the profile of te player
+	 */
+	public ClientShopState getClientShopState(OnlinePlayerProfile profile) {
 		
 		//todo compute what state the client should see the shop as.
 		
+		if(limit setting is enabled){
+			getSetting(Settings.PURCHASE_LIMIT > 0) {
+				if(profile.getPurchases(this) <= Settings.PURCHASE_LIMIT){
+					return ClientShopState.LIMIT_REACHED;
+				}
+			}
+		}
 		
+		if( if cooldown setting is enabled){
+			getSetting(Settings.PURCHASE_COOLDOWN > 0) {
+				if(profile.getLastPurchase(this) <= Settings.PURCHASE_COOLDOWN){
+					return ClientShopState.ON_COOLDOWN;
+				}
+			}
+		}
+		
+		return shopState.getClientShopState();
 	}
 	
 	/**
@@ -1083,7 +1103,7 @@ public abstract class AbstractShop{
 		return formatPrice(price);
 	}
 	
-	public void setSetting(Settings<T> setting, T value){
+	public void setSetting(Settings<T> setting, T value) {
 		if(value == null){
 			setting.remove(setting);
 		}
@@ -1098,12 +1118,13 @@ public abstract class AbstractShop{
 	
 	/**
 	 * Gets a shops defined setting or the default value if not present
+	 *
 	 * @param setting the setting to get its value of
 	 */
 	public <T> T getSetting(Setting<T> setting) {
 		Object value = shopSettings.get(setting);
 		
-		if (value == null) {
+		if(value == null){
 			return setting.getDefaultValue();
 		}
 		

@@ -70,30 +70,12 @@ transaction:
       owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
     gamble:
       user: '<gray>You gambled %shop-price-display% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
-
-    OFFLINE_TRANSACTIONS_NOTIFICATION:
-      itemRow: '<light_purple>| <white> - <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'
-      outOfStockShop: '<light_purple>| <gold>Out Of Stock Shop: <aqua>%item% <gold>at <aqua>%location%'
-      moreOutOfStock: '<light_purple>| <aqua>%out-of-stock-remaining% <gold>more Shops Out Of Stock...'
-      summary:
-        - '<light_purple>+---------------------------------------------------+'
-        - '<light_purple>| <aqua>Shop Sales <gray>(while offline):'
-        - '<light_purple>|'
-        - '<light_purple>| <gray>Transactions: <aqua>%offline-transactions% <gray>(hover for details)'
-        - '<light_purple>| <gray>Profits: <green>%offline-profit%'
-        - '<light_purple>| <gray>Spent: <gold>%offline-spent%'
-        - '<light_purple>|'
-        - '<light_purple>| <gray>Items Sold: '
-        - '%offline-items-sold%'
-        - '<light_purple>| <gray>Items Bought: '
-        - '%offline-items-bought%'
-        - '<light_purple>|'
-        - '%shops-out-of-stock%'
-        - '<light_purple>+---------------------------------------------------+'
   issue:
     sell:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
+      playerCooldown: "<red>You can't trade with this shop for another %duration%!"
+      playerTransactionLimit: "<red>You reached your trading limit with this shop (%current-trade-count%/%total-trade-count%)!"
       cancelledExternal: "<gray>Transaction cancelled."
       shopNoStock: "<red>This shop is out of stock."
       ownerNoStock: "<red>[Shop] Your selling shop at %location% is out of stock."
@@ -104,6 +86,8 @@ transaction:
     buy:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
+      playerCooldown: "<red>You can't trade with this shop for another %duration%!"
+      playerTransactionLimit: "<red>You reached your trading limit with this shop (%current-trade-count%/%total-trade-count%)!"
       cancelledExternal: "<gray>Transaction cancelled."
       shopNoStock: "<red>This shop is out of funds."
       ownerNoStock: "<red>[Shop] Your buying shop at %location% is out of funds."
@@ -114,6 +98,8 @@ transaction:
     barter:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
+      playerCooldown: "<red>You can't trade with this shop for another %duration%!"
+      playerTransactionLimit: "<red>You reached your trading limit with this shop (%current-trade-count%/%total-trade-count%)!"
       cancelledExternal: "<gray>Transaction cancelled."
       shopNoStock: "<red>This shop is out of stock."
       ownerNoStock: "<red>[Shop] Your barter shop at %location% is out of stock."
@@ -124,6 +110,8 @@ transaction:
     gamble:
       useOwnShop: "<gray>You cannot use your own shop."
       shopPerformingTransaction: "<red>Shop is transacting with another player."
+      playerCooldown: "<red>You can't trade with this shop for another %duration%!"
+      playerTransactionLimit: "<red>You reached your trading limit with this shop (%current-trade-count%/%total-trade-count%)!"
       cancelledExternal: "<gray>Transaction cancelled."
       shopNoStock: "<red>This shop does not have items to gamble."
       playerNoStock: "<red>You do not have sufficient funds to gamble with this shop."

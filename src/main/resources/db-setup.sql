@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS transactions
     -- if the transaction was gambling shows the reward the user got from gambling
     gamble_reward  TEXT NULL,
     -- How many trades were done within this one transaction with the shop
-    transaction_count INTEGER NOT NULL,
+    transaction_count INTEGER NOT NULL  DEFAULT 1,
 
     FOREIGN KEY (shop_uuid)
         REFERENCES shops (shop_uuid)
@@ -68,12 +68,12 @@ CREATE TABLE IF NOT EXISTS transactions
 );
 
 --lookups for the purchaser
-CREATE INDEX IF NOT EXISTS idx_transactions_shop_purchaser
-    ON transactions (shop_uuid, purchaser_uuid);
+CREATE INDEX IF NOT EXISTS idx_transactions_purchaser_shop
+    ON transactions (purchaser_uuid, shop_uuid);
 
 --lookups for latest time
-CREATE INDEX IF NOT EXISTS idx_transactions_shop_purchaser_timestamp
-    ON transactions (shop_uuid, purchaser_uuid, timestamp);
+CREATE INDEX IF NOT EXISTS idx_transactions_purchaser_shop_timestamp
+    ON transactions (purchaser_uuid, shop_uuid, timestamp);
 
 CREATE TABLE IF NOT EXISTS shop_actions
 (

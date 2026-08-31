@@ -6,20 +6,23 @@ public enum ShopState{
 	/**
 	 * Shop is fine to use
 	 */
-	OK(0),
+	OK(0,ClientShopState.OK),
 	/**
 	 * Shop has no empty spaces left to accept exchange
 	 */
-	OVERFILLED(1),
+	OVERFILLED(1,ClientShopState.OVERFILLED),
 	/**
 	 * Shop has no stock
 	 */
-	EMPTY(2);
+	EMPTY(2,ClientShopState.EMPTY);
 	
 	@Getter
 	private final int weight;
 	
-	ShopState(int weight) {
+	@Getter
+	private final ClientShopState clientShopState;
+	
+	ShopState(int weight, ClientShopState state) {
 		this.weight = weight;
 	}
 	

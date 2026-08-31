@@ -16,6 +16,7 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	@Getter
 	private final Player player;
 	
+	
 	public OnlinePlayerProfile(Player player) {
 		super(player);
 		this.player = player;
@@ -108,6 +109,14 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	@Override
 	public int getExperience() {
 		return ExpirienceUtils.getTotalExperience(player);
+	}
+	
+	public int getPurchaseCount(AbstractShop shop){
+	
+	}
+	
+	public long getLastPurchaseTime(AbstractShop shop){
+	
 	}
 	
 }
