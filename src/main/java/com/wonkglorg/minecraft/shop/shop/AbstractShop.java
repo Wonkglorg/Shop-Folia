@@ -191,7 +191,7 @@ public abstract class AbstractShop{
 	/**
 	 * Custom settings this shop has defined.
 	 */
-	private final Map<Settings,Object> shopSettings = new HashMap<>();
+	private final Map<Settings<?>,Object> shopSettings = new ConcurrentHashMap<>();
 	/**
 	 * If the sign used for creation was spawned by the plugin or not, used to determine if the sign drops when the shop is destroyed
 	 */
@@ -546,6 +546,14 @@ public abstract class AbstractShop{
 		}
 		this.secondaryItem = is.clone();
 		this.secondaryItem.setAmount(1);
+	}
+	
+	
+	public void getClientShopState(OnlinePlayerProfile profile){
+		
+		//todo compute what state the client should see the shop as.
+		
+		
 	}
 	
 	/**
