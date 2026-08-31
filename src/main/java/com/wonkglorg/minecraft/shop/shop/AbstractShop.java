@@ -174,15 +174,6 @@ public abstract class AbstractShop{
 	@Getter
 	protected ShopType type;
 	/**
-	 * Cached lines this shop uses for its sign.
-	 */
-	@Getter
-	protected List<Component> signLines;
-	/**
-	 * If the sign requires a refresh
-	 */
-	protected boolean signLinesRequireRefresh;
-	/**
 	 * If the shop is currently performing a transaction
 	 */
 	@Getter
@@ -244,7 +235,6 @@ public abstract class AbstractShop{
 		this.facing = facing;
 		this.creationDate = creationDate;
 		this.display = AbstractDisplay.createDisplay(displayType, this);
-		this.signLinesRequireRefresh = true; // Reload signs on load in case config changed!
 		
 		//infer the container location where it should be
 		this.containerLocation = new Location(signLoc.getWorld(),
