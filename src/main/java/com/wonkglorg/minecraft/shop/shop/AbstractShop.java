@@ -187,6 +187,11 @@ public abstract class AbstractShop{
 	 */
 	@Getter
 	protected boolean isPerformingTransaction;
+	
+	/**
+	 * Custom settings this shop has defined.
+	 */
+	private final Map<Settings,Object> shopSettings = new HashMap<>();
 	/**
 	 * If the sign used for creation was spawned by the plugin or not, used to determine if the sign drops when the shop is destroyed
 	 */
