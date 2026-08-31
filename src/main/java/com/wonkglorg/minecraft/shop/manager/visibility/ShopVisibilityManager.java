@@ -371,6 +371,16 @@ public class ShopVisibilityManager{
 		return players;
 	}
 	
+	public <T extends ShopVisibilityListener>  @NotNull T getListener(Class<T> listenerClass) {
+		for(ShopVisibilityListener listener : listeners){
+			if(listenerClass.isInstance(listener)){
+				return listenerClass.cast(listener);
+			}
+		}
+		
+		throw new IllegalStateException("No ShopVisibilityListener registered for " + listenerClass.getName());
+	}
+	
 	private record PlayerPosition(UUID worldId, double x, double y, double z){
 		double distanceSquared(Location location) {
 			double dx = x - location.getX();

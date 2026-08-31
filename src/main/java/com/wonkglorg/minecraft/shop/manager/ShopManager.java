@@ -49,7 +49,7 @@ public class ShopManager{
 	private final ShopDatabase database;
 	private final SettingsConfig settingsConfig;
 	@Getter
-	private final DisplayManager displayManager;
+	private final ShopVisibilityManager visibilityManager;
 	//todo:mjd for any shop with a hopper feeding it periodically update the shop sign to reflect the current fill.
 	/**
 	 * All registered shops
@@ -97,6 +97,9 @@ public class ShopManager{
 		this.displayManager = new DisplayManager(plugin, this);
 		
 		database = new ShopDatabase(plugin);
+		
+		visibilityManager.addListener(new SignUpdateHandler());
+		visibilityManager.addListener( new DisplayUpdateHandler());
 	}
 	
 	private void migrateData(Main plugin) {

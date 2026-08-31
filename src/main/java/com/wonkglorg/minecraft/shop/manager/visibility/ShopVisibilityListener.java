@@ -9,4 +9,9 @@ public interface ShopVisibilityListener{
 	 * Called when a shop is no longer visible to a player.
 	 */
 	void onShopLeave(Player player, AbstractShop shop);
+	
+	
+	default List<UUID> getPlayersSeeingShop(AbstratShop shop){
+		return Main.getPlugin().getShopManager().getShopDisplayManager().getPlayersSeeingShop(shop);
+	}
 }
