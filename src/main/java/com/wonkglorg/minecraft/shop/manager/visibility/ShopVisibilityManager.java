@@ -1,7 +1,8 @@
-package com.wonkglorg.minecraft.shop.manager;
+package com.wonkglorg.minecraft.shop.manager.visibility;
 
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
@@ -10,6 +11,7 @@ import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -60,7 +62,7 @@ public class ShopVisibilityManager{
 	 */
 	private final Set<ShopVisibilityListener> listeners = ConcurrentHashMap.newKeySet();
 	
-	public DisplayManager(Main plugin, ShopManager shopManager) {
+	public ShopVisibilityManager(Main plugin, ShopManager shopManager) {
 		this.plugin = plugin;
 		this.shopManager = shopManager;
 		
@@ -70,7 +72,7 @@ public class ShopVisibilityManager{
 			}
 			
 			for(Player player : Bukkit.getOnlinePlayers()){
-				processShopDisplaysNearPlayer(player, false);
+				processShopsNearPlayer(player, false);
 			}
 		}, 30, 200);
 	}
@@ -130,7 +132,7 @@ public class ShopVisibilityManager{
 	 * @param force if true, forces processing even if the player has not
 	 * moved far enough since the previous check
 	 */
-	public void processShopDisplaysNearPlayer(Player player, boolean force) {
+	public void processShopsNearPlayer(Player player, boolean force) {
 		UUID playerId = player.getUniqueId();
 		
 		if(!playersBeingProcessed.add(playerId)){
@@ -209,7 +211,7 @@ public class ShopVisibilityManager{
 		if(nowVisible.isEmpty()){
 			visibleShopsByPlayer.remove(playerId);
 		} else {
-			visibleShopsByPlayer.put(playerId, Collections.unmodifiableSet(new HashSet<>(nowVisible)));
+			visibleShopsByPlayer.put(playerId, Set.copyOf(nowVisible));
 		}
 	}
 	
@@ -282,14 +284,6 @@ public class ShopVisibilityManager{
 	}
 	
 	/**
-	 * Returns the maximum shop visibility distance squared.
-	 */
-	public double getMaxVisibilityDistanceSquared() {
-		double distance = getMaxVisibilityDistance();
-		return distance * distance;
-	}
-	
-	/**
 	 * Checks whether the player has moved far enough to warrant another
 	 * visibility calculation.
 	 */
@@ -324,7 +318,7 @@ public class ShopVisibilityManager{
 	 */
 	public void reload() {
 		for(Player player : Bukkit.getOnlinePlayers()){
-			processShopDisplaysNearPlayer(player, true);
+			processShopsNearPlayer(player, true);
 		}
 	}
 	
@@ -371,7 +365,7 @@ public class ShopVisibilityManager{
 		return players;
 	}
 	
-	public <T extends ShopVisibilityListener>  @NotNull T getListener(Class<T> listenerClass) {
+	public <T extends ShopVisibilityListener> @NotNull T getListener(Class<T> listenerClass) {
 		for(ShopVisibilityListener listener : listeners){
 			if(listenerClass.isInstance(listener)){
 				return listenerClass.cast(listener);

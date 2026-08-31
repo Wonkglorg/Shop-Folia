@@ -2,6 +2,7 @@ package com.wonkglorg.minecraft.shop.util;
 
 import com.wonkglorg.minecraft.shop.Main;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
+import com.wonkglorg.minecraft.util.roman.ConverterRoman;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
@@ -81,18 +82,6 @@ public class UtilMethods{
 		}
 	}
 	
-	public static String formatRomanNumerals(int number) {
-		// only format 2-5, after that just show the number
-		if(number < 2){
-			return ""; // dont return on 1
-		}
-		if(number > 5){
-			return " " + String.valueOf(number);
-		}
-		String[] romanNumerals = {"I", "II", "III", "IV", "V"};
-		return " " + romanNumerals[number - 1];
-	}
-	
 	public static Component getEnchantmentsComponent(ItemStack item) {
 		Component message = Component.text("");
 		
@@ -112,7 +101,7 @@ public class UtilMethods{
 			int i = 0;
 			for(Map.Entry<Enchantment, Integer> entry : enchantsMap.entrySet()){
 				message = message.append(ItemNameUtil.getEnchantmentTranslatable(entry.getKey()));
-				message = message.append(Component.text(formatRomanNumerals(entry.getValue())));
+				message = message.append(Component.text(ConverterRoman.toRoman(entry.getValue())));
 				i++;
 				if(i != enchantsMap.size()){
 					message = message.append(Component.text(", "));
@@ -165,44 +154,33 @@ public class UtilMethods{
 			
 			// Add support for displaying bee hive/nest information
 			else if(itemType.equals("BEE_NEST") || itemType.equals("BEEHIVE")){
-				try{
-					if(item.getItemMeta() instanceof BlockStateMeta blockStateMeta){
-						if(blockStateMeta.hasBlockState() && blockStateMeta.getBlockState() instanceof org.bukkit.block.Beehive){
-							var beehive = (org.bukkit.block.Beehive) blockStateMeta.getBlockState();
-							
-							int honeyLevel = 0;
-							int beeCount = 0;
-							
-							// Get honey level (this is from BlockData)
-							try{
-								var beehiveData = (org.bukkit.block.data.type.Beehive) beehive.getBlockData();
-								honeyLevel = beehiveData.getHoneyLevel();
-							} catch(Exception e){
-							}
-							// Get bee count (this is from the entity storage)
-							try{
-								beeCount = beehive.getEntityCount();
-							} catch(Exception e){
-							}
-							
-							// Format the message
-							if(honeyLevel > 0 || beeCount > 0){
-								StringBuilder beeInfo = new StringBuilder(" [");
-								if(honeyLevel > 0){
-									beeInfo.append("Honey: ").append(honeyLevel).append("/5");
-									if(beeCount > 0){
-										beeInfo.append(", ");
-									}
-								}
+				if(item.getItemMeta() instanceof BlockStateMeta blockStateMeta){
+					if(blockStateMeta.hasBlockState() && blockStateMeta.getBlockState() instanceof org.bukkit.block.Beehive beehive){
+						int honeyLevel = 0;
+						int beeCount = 0;
+						
+						// Get honey level (this is from BlockData)
+						var beehiveData = (org.bukkit.block.data.type.Beehive) beehive.getBlockData();
+						honeyLevel = beehiveData.getHoneyLevel();
+						// Get bee count (this is from the entity storage)
+						beeCount = beehive.getEntityCount();
+						// Format the message
+						if(honeyLevel > 0 || beeCount > 0){
+							StringBuilder beeInfo = new StringBuilder(" [");
+							if(honeyLevel > 0){
+								beeInfo.append("Honey: ").append(honeyLevel).append("/5");
 								if(beeCount > 0){
-									beeInfo.append("Bees: ").append(beeCount);
+									beeInfo.append(", ");
 								}
-								beeInfo.append("]");
-								message = message.append(Component.text(beeInfo.toString()));
 							}
+							if(beeCount > 0){
+								beeInfo.append("Bees: ").append(beeCount);
+							}
+							beeInfo.append("]");
+							message = message.append(Component.text(beeInfo.toString()));
 						}
 					}
-				} catch(Exception e){ /* Silently handle any exceptions for backward compatibility */ }
+				}
 			}
 		}
 		
@@ -210,7 +188,7 @@ public class UtilMethods{
 		if(item.getItemMeta() != null && item.getItemMeta() instanceof org.bukkit.inventory.meta.OminousBottleMeta){
 			org.bukkit.inventory.meta.OminousBottleMeta ominousMeta = (org.bukkit.inventory.meta.OminousBottleMeta) item.getItemMeta();
 			int level = ominousMeta.hasAmplifier() ? ominousMeta.getAmplifier() + 1 : 1; // zero based
-			message = message.append(Component.text(" [Bad Omen" + formatRomanNumerals(level) + "]"));
+			message = message.append(Component.text(" [Bad Omen" + ConverterRoman.toRoman(level) + "]"));
 		}
 		
 		// Add custom potion formatting
@@ -247,7 +225,7 @@ public class UtilMethods{
 				
 				// Display effects
 				List<FireworkEffect> effects = fireworkMeta.getEffects();
-				if(effects != null && !effects.isEmpty()){
+				if(!effects.isEmpty()){
 					int effectCount = effects.size();
 					if(effectCount <= 2){
 						// If there's only one-two effects, show their details
@@ -279,7 +257,7 @@ public class UtilMethods{
 			// Show level for all potions, not just those with amplifier > 0
 			// For potions with amplifier 0, we don't add any suffix (it's the base level)
 			if(effect.getAmplifier() > 0){
-				formattedEffects = formattedEffects.append(Component.text(formatRomanNumerals(effect.getAmplifier() +
+				formattedEffects = formattedEffects.append(Component.text(ConverterRoman.toRoman(effect.getAmplifier() +
 																							  1))); // +1 because amplifier is 0-based
 			}
 			

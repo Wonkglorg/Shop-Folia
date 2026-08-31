@@ -3,13 +3,15 @@ package com.wonkglorg.minecraft.shop.manager;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
+import com.wonkglorg.minecraft.shop.manager.visibility.DisplayUpdateHandler;
+import com.wonkglorg.minecraft.shop.manager.visibility.ShopVisibilityManager;
+import com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB;
 import com.wonkglorg.minecraft.shop.migrate.PlayerShopsConfig;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
-import com.wonkglorg.minecraft.shop.util.ShopSignUtil;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -94,12 +96,12 @@ public class ShopManager{
 		this.plugin = plugin;
 		this.settingsConfig = plugin.getSettingsConfig();
 		this.logger = plugin.logger();
-		this.displayManager = new DisplayManager(plugin, this);
+		this.visibilityManager = new ShopVisibilityManager(plugin, this);
 		
 		database = new ShopDatabase(plugin);
 		
 		visibilityManager.addListener(new SignUpdateHandler());
-		visibilityManager.addListener( new DisplayUpdateHandler());
+		visibilityManager.addListener(new DisplayUpdateHandler());
 	}
 	
 	private void migrateData(Main plugin) {
@@ -202,11 +204,10 @@ public class ShopManager{
 	}
 	
 	public void reload() {
-		displayManager.setLoadingShops(true);
 		if(!allShops.isEmpty()){
 			//if shops already exist save them before doing a reload
 			saveAllShops();
-			displayManager.reload();
+			visibilityManager.reload();
 		}
 		allShops.clear();
 		shopsBySign.clear();
@@ -231,7 +232,7 @@ public class ShopManager{
 			for(var hook : plugin.getShopServiceProvider().getShopLoadHooks()){
 				hook.accept(allShops.values());
 			}
-			displayManager.setLoadingShops(false);
+			visibilityManager.setLoadingShops(false);
 		});
 	}
 	
@@ -326,7 +327,7 @@ public class ShopManager{
 			Sign sign = process.getSign();
 			plugin.getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
 				if(sign.getBlockData() instanceof WallSign){
-					List<Component> lines = ShopSignUtil.getSignLinesTimeout();
+					List<Component> lines = SignUpdateHandler.getSignLinesTimeout();
 					SignSide side = sign.getSide(Side.FRONT);
 					side.line(0, lines.get(0));
 					side.line(1, lines.get(1));
@@ -481,36 +482,7 @@ public class ShopManager{
 	}
 	
 	public boolean passesItemListCheck(ItemStack itemStack) {
-		return plugin.getItemConfig().isValidItem(itemStack);
-	}
-	
-	/**
-	 * Checks for any outdated shops and removes them.
-	 */
-	public void removeOutdatedShops() {
-		//delete all shops from players that have not played in X amount of hours (if configured)
-		int hoursOfflineToRemoveShops = plugin.getSettingsConfig().getHoursOfflineToRemoveShops();
-		if(hoursOfflineToRemoveShops != 0){
-			for(var owner : plugin.getShopmanager().getShopOwners().entrySet()){
-				OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner.getKey());
-				if(offlinePlayer.getName() != null){
-					long msSinceLastPlayed = System.currentTimeMillis() - offlinePlayer.getLastLogin();
-					long hoursSinceLastPlayed = TimeUnit.MILLISECONDS.toHours(msSinceLastPlayed);
-					
-					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
-						for(AbstractShop shop : plugin.getShopmanager().getShops(offlinePlayer.getUniqueId())){
-							plugin.logger().info("Deleting Shop because player " +
-												 offlinePlayer.getName() +
-												 " has not logged in within the required " +
-												 (int) hoursSinceLastPlayed +
-												 " hours! " +
-												 shop);
-							plugin.getShopmanager().unregisterShop(shop);
-						}
-					}
-				}
-			}
-		}
+		return plugin.getSettingsConfig().isValidItem(itemStack);
 	}
 	
 	public record BlockKey(UUID worldId, int x, int y, int z){

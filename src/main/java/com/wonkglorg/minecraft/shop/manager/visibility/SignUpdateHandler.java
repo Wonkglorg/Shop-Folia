@@ -1,15 +1,34 @@
+package com.wonkglorg.minecraft.shop.manager.visibility;
+
+import com.wonkglorg.minecraft.config.LangManager;
+import com.wonkglorg.minecraft.config.lang.LangRequest;
+import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.shop.AbstractShop;
+import static com.wonkglorg.minecraft.shop.shop.AbstractShop.formatPrice;
+import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
+import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
+import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.block.Sign;
+import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 /**
  * Handles player-specific sign updating and changes.
  */
 public class SignUpdateHandler implements ShopVisibilityListener{
-	
-	private final Main plugin;
-	
-	private final Map<UUID, Map<UUID, List<Component>>> displayedSignLines = new ConcurrentHashMap<>();
-	
-	public SignVisibilityHandler(Main plugin) {
-		this.plugin = plugin;
-	}
+	private static final LangManager lang = Main.getPlugin().getLangManager();
 	
 	@Override
 	public void onShopEnter(Player player, AbstractShop shop) {
@@ -26,43 +45,43 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 		updateSign(player, shop);
 	}
 	
-	//todo how to best cache values
-	//todo how do I force refresh the shop sign for everyone
 	private void updateSign(Player player, AbstractShop shop) {
 		if(!player.isOnline()){
 			return;
 		}
 		
-		Location location = shop.getContainerLocation();
-		
-		if(location == null || location.getWorld() == null){
-			return;
-		}
-		
-		// Build the text specifically for this player.
-		String[] lines = getSignLines(player, shop);
-		
-		sendSignUpdate(player, location, lines);
-	}
-	
-	private String[] getSignLines(Player player, AbstractShop shop) {
-		PlayerProfile profile = PlayerManager.getProfile(player.getUniqueId());
-		
-		shop.getClientShopState();
-		
-		int purchases = profile.getPurchaseCount(shop.getUuid());
-		
-		long lastPurchase = profile.getLastPurchaseTime(shop.getUuid());
-		
-		return new String[]{shop.getItem(), "Price: " + shop.getPrice(), "Bought: " + purchases, "Last: " + lastPurchase};
-	}
-	
-	private void sendSignUpdate(Player player, Location location, String[] lines) {
-		// Paper/client-specific implementation
+		Location location = shop.getSignLocation();
+		Main.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(location, () -> {
+			List<Component> lines = getSignLines(player, shop);
+			if(!player.isOnline()){
+				return;
+			}
+			WallSign realSign = shop.getSign();
+			
+			if(realSign == null){
+				return;
+			}
+			
+			// Create a virtual TileState from the actual block's data.
+			if(!(realSign.createBlockState() instanceof Sign sign)){
+				return;
+			}
+			
+			SignSide front = sign.getSide(Side.FRONT);
+			
+			for(int i = 0; i < 4; i++){
+				front.line(i, lines.get(i));
+			}
+			
+			front.setGlowingText(Main.getPlugin().getSettingsConfig().isSignGlowingSignText());
+			sign.setWaxed(Main.getPlugin().getSettingsConfig().isSignGlowingSignText());
+			
+			player.sendBlockUpdate(location, sign);
+		}, 1);
 	}
 	
 	public void refreshShop(AbstractShop shop) {
-		for(UUID playerId : visibilityManager.getPlayersSeeingShop(shop)){
+		for(UUID playerId : getPlayersSeeingShop(shop)){
 			
 			Player player = Bukkit.getPlayer(playerId);
 			
@@ -72,58 +91,101 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 		}
 	}
 	
-	public void updateSign(Player player, AbstractShop shop, boolean forceUpdate) {
-		if(!player.isOnline()){
-			return;
+	//      # %amount% : The amount of items the shop is selling/buying/bartering #
+	//      # %price% : The price of the items the shop is selling (adjusted to match virtual or physical currency) #
+	//      # %owner% : The name of the shop owner #
+	public static List<Component> getSignLines(Player player, AbstractShop shop) {
+		String langKey = "sign.text." + shop.getType().toString().toLowerCase() + ".";
+		langKey += switch(shop.getClientShopState(player)) {
+			case OK -> "in-stock";
+			case OVERFILLED -> "overfilled";
+			case ON_COOLDOWN -> "transaction-cooldown";
+			case LIMIT_REACHED -> "transaction-limit";
+			case EMPTY -> "out-of-stock";
+		};
+		
+		DisplayType displayType = shop.getDisplay().getType();
+		
+		if(displayType == DisplayType.NONE){
+			langKey += "-no-display";
 		}
 		
-		Location location = shop.getSignLocation();
-		
-		if(location == null || location.getWorld() == null){
-			return;
-		}
-		
-		if(!location.getChunk().isLoaded()){
-			return;
-		}
-		
-		List<Component> newLines = getSignLines(player, shop);
-		
-		UUID playerId = player.getUniqueId();
-		UUID shopId = shop.getUuid();
-		
-		Map<UUID, List<Component>> playerCache = displayedSignLines.computeIfAbsent(playerId, ignored -> new ConcurrentHashMap<>());
-		
-		List<Component> oldLines = playerCache.get(shopId);
-		
-		if(!forceUpdate && newLines.equals(oldLines)){
-			return;
-		}
-		
-		playerCache.put(shopId, List.copyOf(newLines));
-		
-		sendSignUpdate(player, location, newLines);
+		return getComponents(shop, langKey);
 	}
 	
-	private void sendSignUpdate(Player player, Location location, RenderedSign state) {
-		if(!(location.getBlock().getState() instanceof Sign realSign)){
-			return;
+	private static @NonNull List<Component> getComponents(AbstractShop shop, String langKey) {
+		List<Component> lines = new ArrayList<>(4);
+		for(var i = 1; i < 5; i++){
+			//@formatter:off
+			LangRequest request = lang.request(langKey + "." + i);
+			
+			request.replace("%item%",() -> ItemNameUtil.getName(shop.getItemStack()))
+				   .replace("%stock-state%",shop.getShopState())
+				   .replace("%amount%",shop.getAmount())
+				   .replace("%price%",shop.getPriceFormatted())
+				   .replace("%owner%",shop::getOwnerNameFormatted)
+				   .replace("%stock%",shop.getStock());
+			
+			ItemStack barterStack = shop.getSecondaryItemStack();
+			if(barterStack!=null){
+				request.replace("%barter-item%",() -> ItemNameUtil.getName(shop.getSecondaryItemStack()));
+			}
+			lines.add(request.toSingleComponent());
+			//@formatter:on
 		}
-		
-		Sign virtualSign = (Sign) location.getBlock().getBlockData().createBlockState();
-		
-		virtualSign.setWaxed(state.waxed());
-		
-		SignSide realFront = realSign.getSide(Side.FRONT);
-		SignSide virtualFront = virtualSign.getSide(Side.FRONT);
-		
-		virtualFront.setColor(state.color());
-		virtualFront.setGlowingText(state.glowing());
-		
-		for(int i = 0; i < 4; i++){
-			virtualFront.line(i, state.lines().get(i));
+		return lines;
+	}
+	
+	/**
+	 * Gets the initialize context sign lines
+	 */
+	public static List<Component> getSignLines(ShopCreationProcess context) {
+		List<Component> lines = new ArrayList<>(4);
+		for(var i = 1; i < 5; i++){
+			//@formatter:off
+			LangRequest request = lang.request("sign.text." + context.getType() + ".initialise." + i);
+			
+			if(context.getItemStack() != null){
+				request.replace("%item%",() -> ItemNameUtil.getName(context.getItemStack()));
+			}else{
+				request.replace("%item%","");
+			}
+			
+			if(context.getSecondaryStack() != null){
+				request.replace("%barter-item%",()->ItemNameUtil.getName(context.getSecondaryStack()));
+			}else{
+				request.replace("%barter-item%","");
+			}
+			
+			request.replace("%amount%",context.getAmount())
+				   .replace("%stock-state%",OK)
+				   .replace("%price%",formatPrice(context.getPrice()))
+				   .replace("%owner%",context.getPlayer().getName())
+				   .replace("%stock%",0);
+			lines.add(request.toSingleComponent());
+			//@formatter:on
 		}
+		return lines;
+	}
+	
+	/**
+	 * The shop lines defined in the lang config
+	 *
+	 * @return a list with a capacity of 4
+	 */
+	public static List<Component> getSignLinesTimeout() {
+		List<Component> lines = new ArrayList<>(4);
 		
-		player.sendBlockUpdate(location, virtualSign);
+		for(var i = 1; i < 5; i++){
+			lines.add(lang.request("sign.text.timeout." + i).toSingleComponent());
+		}
+		return lines;
+	}
+	
+	/**
+	 * @return a default set of sign text to assign when a shop loads so the shop sign looks similar to what the clients state would be in case something loads slow.
+	 */
+	public static List<Component> getDefaultSignLines(AbstractShop shop) {
+		return getComponents(shop, "sign.text." + shop.getType().toString() + ".in-stock");
 	}
 }

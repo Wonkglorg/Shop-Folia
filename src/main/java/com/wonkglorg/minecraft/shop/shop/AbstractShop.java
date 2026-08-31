@@ -5,16 +5,22 @@ import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
+import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.ShopManager.BlockKey;
+import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplay;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplayOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.offline;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.online;
+import com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import com.wonkglorg.minecraft.shop.shop.settings.Setting;
+import static com.wonkglorg.minecraft.shop.shop.settings.Settings.PURCHASE_COOLDOWN;
+import static com.wonkglorg.minecraft.shop.shop.settings.Settings.PURCHASE_LIMIT;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.TransactionResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
@@ -24,14 +30,14 @@ import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
-import com.wonkglorg.minecraft.shop.util.ShopSignUtil;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
+import com.wonkglorg.minecraft.util.date.DateType;
+import com.wonkglorg.minecraft.util.date.DurationBuilder;
 import it.unimi.dsi.fastutil.Pair;
 import static it.unimi.dsi.fastutil.Pair.of;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
@@ -58,10 +64,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "UnknownLangKey"})
 public abstract class AbstractShop{
@@ -182,7 +192,7 @@ public abstract class AbstractShop{
 	/**
 	 * Custom settings this shop has defined.
 	 */
-	private final Map<Settings<?>, Object> settings = new ConcurrentHashMap<>();
+	private final Map<Setting<?>, Object> settings = new ConcurrentHashMap<>();
 	/**
 	 * If the sign used for creation was spawned by the plugin or not, used to determine if the sign drops when the shop is destroyed
 	 */
@@ -348,11 +358,30 @@ public abstract class AbstractShop{
 			}
 		}
 		
+		//set the default sign data on join before stock gets calculated and per client sign packets get sent
+		setDefaultSignData(signBlock);
+		
 		// Now that the world/container data is valid, refresh stock and state.
 		updateStock();
-
+		
 		isLoaded = true;
 		return true;
+	}
+	
+	/**
+	 * Sets the default data of a sign (this will not be seen by the client usually unless their client packet is slow at being sent or otherwise fails)
+	 */
+	private void setDefaultSignData(Block signBlock) {
+		List<Component> lines = SignUpdateHandler.getDefaultSignLines(this);
+		Sign sign = (Sign) signBlock.getBlockData();
+		SignSide front = sign.getSide(Side.FRONT);
+		
+		for(int i = 0; i < 4; i++){
+			front.line(i, lines.get(i));
+		}
+		
+		front.setGlowingText(Main.getPlugin().getSettingsConfig().isSignGlowingSignText());
+		sign.setWaxed(Main.getPlugin().getSettingsConfig().isSignGlowingSignText());
 	}
 	
 	/**
@@ -530,31 +559,40 @@ public abstract class AbstractShop{
 	}
 	
 	/**
-	 * Evalutes the shop state this player should see this shop as (this differs from {@link #shopState} when either a purchaselimit or a purchase cooldown is defined
+	 * Evaluates the shop state this player should see this shop as (this differs from {@link #shopState} when either a purchase limit or a purchase cooldown is defined
 	 *
 	 * @param profile the profile of te player
 	 */
-	public ClientShopState getClientShopState(OnlinePlayerProfile profile) {
-		
-		//todo compute what state the client should see the shop as.
-		
-		if(limit setting is enabled){
-			getSetting(Settings.PURCHASE_LIMIT > 0) {
-				if(profile.getPurchases(this) <= Settings.PURCHASE_LIMIT){
-					return ClientShopState.LIMIT_REACHED;
+	public ShopStateClient getClientShopState(OnlinePlayerProfile profile) {
+		if(PURCHASE_LIMIT.isEnabled()){
+			int purchaseLimit = getSetting(PURCHASE_LIMIT);
+			if(purchaseLimit > 0){
+				if(profile.getPurchaseCount(this) > purchaseLimit){
+					return ShopStateClient.LIMIT_REACHED;
 				}
 			}
 		}
 		
-		if( if cooldown setting is enabled){
-			getSetting(Settings.PURCHASE_COOLDOWN > 0) {
-				if(profile.getLastPurchase(this) <= Settings.PURCHASE_COOLDOWN){
-					return ClientShopState.ON_COOLDOWN;
+		if(PURCHASE_COOLDOWN.isEnabled()){
+			long purchaseCooldown = getSetting(PURCHASE_COOLDOWN);
+			if(purchaseCooldown > 0){
+				if((profile.getLastPurchaseTime(this) + purchaseCooldown) < System.currentTimeMillis()){
+					return ShopStateClient.ON_COOLDOWN;
 				}
 			}
+			
 		}
 		
-		return shopState.getClientShopState();
+		return shopState.getClientState();
+	}
+	
+	/**
+	 * Evaluates the shop state this player should see this shop as (this differs from {@link #shopState} when either a purchase limit or a purchase cooldown is defined
+	 *
+	 * @param player the player
+	 */
+	public ShopStateClient getClientShopState(Player player) {
+		return getClientShopState(PlayerManager.getOnlineProfileIfCached(player.getUniqueId()));
 	}
 	
 	/**
@@ -568,7 +606,7 @@ public abstract class AbstractShop{
 		}
 		
 		if(shopState != oldState){
-			updateSign(true); //todo update sign for every player seeing this shop
+			updateSign();
 		}
 	}
 	
@@ -600,6 +638,7 @@ public abstract class AbstractShop{
 			}
 		}
 		
+		OnlinePlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
 		request.replace("%owner%", shop::getOwnerNameFormatted)
 			   .replace("%stock-state%",shop.getShopState().toString())
 			   .replace("%price%",shop.getPriceFormatted())
@@ -609,6 +648,18 @@ public abstract class AbstractShop{
 			   .replace("%price-per-item%",shop.price / shop.amount)
 			   .replace("%world%",shop.getSignLocation().getWorld().getName())
                .replace("%item-amount%",shop.getAmount());
+		
+		if(profile != null){
+			if(PURCHASE_COOLDOWN.isEnabled()){
+				DurationBuilder durationBuilder = DurationBuilder.create(Duration.ofMillis(Math.max(0,shop.getSetting(PURCHASE_COOLDOWN) - profile.getLastPurchaseTime(shop)))).typesToShow(DateType.DAY,DateType.HOUR,DateType.MINUTE,DateType.SECOND).noDecimals();
+				request.replace("%cooldown%",durationBuilder.toTimeString());
+			}
+			if(PURCHASE_LIMIT.isEnabled()){
+				request.replace("%current-purchase-limit%", profile.getPurchaseCount(shop))
+						.replace("%total-purchase-limit%",shop.getSetting(PURCHASE_LIMIT));
+			}
+		}
+		
 		
 		if(item != null){
 			request.replace("%item-enchants%",()->UtilMethods.getEnchantmentsComponent(item))
@@ -633,15 +684,6 @@ public abstract class AbstractShop{
 			}else{
 				request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem));
 			}
-		}
-		
-		if(transaction amount is enabled and exists...){
-			request.replace("%");
-			//replace placeholders
-		}
-		
-		if(transaction timeout is enabled and exists){
-		
 		}
 		//@formatter:on
 	}
@@ -669,7 +711,7 @@ public abstract class AbstractShop{
 		isPerformingTransaction = true;
 		logger.debug("====STARTING SHOP TRANSACTION====");
 		
-		if(party.getPlayer().getUniqueId().equals(owner) && !Main.getPlugin().getSettingsConfig().isDebugAllowUseOwnShop()){
+		if(party.getPlayer().getUniqueId().equals(owner) && !Main.getPlugin().getSettingsConfig().isAllowUseOwnShop()){
 			logger.debug("Owner is trying to transact their own shop while this debug feature is disabled in the config");
 			logger.debug("===CANCEL SHOP TRANSACTION====");
 			isPerformingTransaction = false;
@@ -919,9 +961,17 @@ public abstract class AbstractShop{
 		for(var nearbyPlayer : nearbyPlayers){
 			display.spawn(nearbyPlayer);
 		}
-		updateSign(true);
+		//refresh the display for all users that can see it
+		updateSign();
 		setNeedsSave(true);
 		logger.debug("===FINISHED DISPLAY CYCLE===");
+	}
+	
+	/**
+	 * Refreshes the sign for every player who cna currently see it
+	 */
+	public void updateSign() {
+		Main.getPlugin().getShopmanager().getVisibilityManager().getListener(SignUpdateHandler.class).refreshShop(this);
 	}
 	
 	/**
@@ -1012,26 +1062,32 @@ public abstract class AbstractShop{
 		return formatPrice(price);
 	}
 	
-	public void setSetting(Settings<T> setting, T value) {
+	/**
+	 * Sets the settings value for this shop
+	 *
+	 * @param setting the setting to set
+	 * @param value the value to set it to
+	 */
+	public <T> void setSetting(Setting<T> setting, T value) {
+		T currentValue = getSetting(setting);
+		if(Objects.equals(value, currentValue)){
+			return;
+		}
 		if(value == null){
-			setting.remove(setting);
+			settings.remove(setting);
+		} else {
+			settings.put(setting, value);
 		}
-		//if old value == new value do nothing
-		if(setting.getDefaultValue().equals(value)){
-			setting.remove(setting);
-		}
-		
-		setting.put(setting, value);
-		//save to database unless value is equal to default then remove it.
+		Main.getPlugin().getShopmanager().getDatabase().addSetting(this, setting, value);
 	}
 	
 	/**
-	 * Gets a shops defined setting or the default value if not present
+	 * Gets a shops defined settings value or the default value if not present
 	 *
 	 * @param setting the setting to get its value of
 	 */
 	public <T> T getSetting(Setting<T> setting) {
-		Object value = shopSettings.get(setting);
+		Object value = settings.get(setting);
 		
 		if(value == null){
 			return setting.getDefaultValue();

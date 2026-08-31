@@ -62,6 +62,7 @@ cost:
   return-creation-cost: false
 # shop display related settings
 display:
+  # default display for new shops
   type: NONE
   # This will change the order that display types are cycled in #
   # To remove a display type as a cycle option, remove it from this list #
@@ -92,27 +93,25 @@ sign:
   # todo use regex?
   creation-layout:
     sell:
-      1: 'shop'
-      2: '%amount%'
-      3: '%price%'
-      4:
-        - 'sell'
-        - ''
+      1: [ "shop" ]
+      2: [ "%amount%" ]
+      3: [ "%price%" ]
+      4: [ "sell", "" ]
     buy:
-      1: 'shop'
-      2: '%amount%'
-      3: '%price%'
-      4: 'buy'
+      1: [ "shop" ]
+      2: [ "%amount%" ]
+      3: [ "%price%" ]
+      4: [ "buy" ]
     barter:
-      1: 'shop'
-      2: '%amount%'
-      3: '%price%'
-      4: 'barter'
+      1: [ "shop" ]
+      2: [ "%amount%" ]
+      3: [ "%price%" ]
+      4: [ "barter" ]
     gamble:
-      1: 'shop'
-      2: ''
-      3: '%price%'
-      4: 'gamble'
+      1: [ "shop" ]
+      2: [ "" ]
+      3: [ "%price%" ]
+      4: [ "gamble" ]
 # =================================================================== #
 #                         SHOP INTERACTIONS                           #
 # =================================================================== #
@@ -134,7 +133,7 @@ mappings:
   transact-with-shop-full-stack:
     - SHIFT_RIGHT_CLICK_SIGN
   #view details about a shop
-  viewShopDetails:
+  view-shop-details:
     - LEFT_CLICK_CHEST
   #cycle displays on a shop
   cycle-shop-display:

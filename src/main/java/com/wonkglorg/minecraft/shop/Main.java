@@ -57,7 +57,7 @@ public class Main extends JavaPlugin{
 	
 	@Override
 	public void onLoad() {
-		plugin = this;
+		Main.plugin = this;
 		settingsConfig = new SettingsConfig();
 		itemConfig = new ItemConfig();
 		logger.setLogLevel(settingsConfig.getLogLevel());
@@ -67,7 +67,7 @@ public class Main extends JavaPlugin{
 	
 	@Override
 	public void onEnable() {
-		floodGateEnabled = Bukkit.getPluginManager().getPlugin("floodgate") != null;
+		Main.floodGateEnabled = Bukkit.getPluginManager().getPlugin("floodgate") != null;
 		if(itemConfig.getGambleDisplayItem() == null){
 			itemConfig.setGambleDisplayItem(new ItemStack(Material.DIAMOND));
 		}
@@ -76,7 +76,7 @@ public class Main extends JavaPlugin{
 		CurrencyType currencyType = settingsConfig.getCurrencyType();
 		if(currencyType == CurrencyType.VAULT){
 			if(setupEconomy()){
-				this.logger().info("Shops will use the Vault economy (" + settingsConfig.getCurrencyName() + ") as currency on the server.");
+				this.logger().info("Shops will use the Vault economy as currency on the server.");
 			} else {
 				this.logger().severe("Unable to connect to Vault Economy! Are both Vault AND an Economy plugin installed?");
 				this.logger().severe(

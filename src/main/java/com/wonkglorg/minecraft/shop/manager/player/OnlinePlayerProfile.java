@@ -2,6 +2,7 @@ package com.wonkglorg.minecraft.shop.manager.player;
 
 import com.wonkglorg.minecraft.shop.Main;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
+import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ExpirienceUtils;
@@ -110,13 +111,4 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	public int getExperience() {
 		return ExpirienceUtils.getTotalExperience(player);
 	}
-	
-	public int getPurchaseCount(AbstractShop shop){
-	
-	}
-	
-	public long getLastPurchaseTime(AbstractShop shop){
-	
-	}
-	
 }

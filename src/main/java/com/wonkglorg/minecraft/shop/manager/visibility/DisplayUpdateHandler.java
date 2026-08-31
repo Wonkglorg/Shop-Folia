@@ -1,3 +1,8 @@
+package com.wonkglorg.minecraft.shop.manager.visibility;
+
+import com.wonkglorg.minecraft.shop.shop.AbstractShop;
+import org.bukkit.entity.Player;
+
 /**
  * Handles display visibility
  */

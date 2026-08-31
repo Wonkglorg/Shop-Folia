@@ -32,10 +32,6 @@ public enum ShopType{
 		};
 	}
 	
-	public String toCreationWord() {
-		return Main.getPlugin().getSettingsConfig().getCreationWord(creationWord);
-	}
-	
 	public static ShopType from(String input) {
 		for(var value : ShopType.values()){
 			if(value.toString().equalsIgnoreCase(input)){

@@ -2,19 +2,22 @@ package com.wonkglorg.minecraft.shop.config;
 
 import com.wonkglorg.minecraft.config.types.Config;
 import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.shop.CreationWord;
 import com.wonkglorg.minecraft.shop.shop.ShopAction;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
+import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import lombok.Getter;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,9 +84,7 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private DisplayType displayTypeDefault;
-	/**
-	 * The cycle order of shop displays
-	 */
+	
 	/**
 	 * The cycling order of displays
 	 */
@@ -105,9 +106,6 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private boolean signGlowingSignText;
-	/**
-	 * If the sign should be waxed
-	 */
 	/**
 	 * If the shop sign should be auto waxed
 	 */
@@ -163,7 +161,6 @@ public class SettingsConfig extends Config{
 	@Getter
 	private List<Material> whitelistMaterials = new ArrayList<>();
 	
-	
 	// =================================================================== //
 	//                   SHOP PERFORMANCE OPTIMIZATIONS                    //
 	// =================================================================== //
@@ -182,9 +179,9 @@ public class SettingsConfig extends Config{
 	@Getter
 	private double maxShopDisplayDistance;
 	
-	 // =================================================================== //
-	 //                               MIGRATION                             //
-	 // =================================================================== //
+	// =================================================================== //
+	//                               MIGRATION                             //
+	// =================================================================== //
 	
 	/**
 	 * If data from the old shop plugin should be migrated on the next startup
@@ -192,7 +189,6 @@ public class SettingsConfig extends Config{
 	@Getter
 	private boolean migrateOldData;
 	
-
 	public SettingsConfig() {
 		super(Main.getPlugin(), Path.of("config.yml"));
 		reload();
@@ -201,34 +197,29 @@ public class SettingsConfig extends Config{
 	public void reload() {
 		silentLoad();
 		logLevel = getString("log-level");
-		hoursOfflineToRemoveShops = getInt("deletePlayerShopsAfterXHoursOffline");
 		//todo:mjd compare the current currency to the one last logged in the db and update the action if it differs.
 		currencyType = CurrencyType.fromValue(getString("currency.type", "ITEM"));
 		
-		for(var word : CreationWord.values()){
-			signCreationWords.put(word, getString("sign.creation." + word, word.getDefaultWord()));
-		}
-		
-		creationCost = getDouble("cost.shop.creation");
-		destructionCost = getDouble("cost.shop.destruction");
-		returnCreationCost = getBoolean("cost.returnCreationCosat");
-		
 		priceSuffixes = new TreeMap<>();
-		for(String suffixKey : getConfigurationSection("priceSuffixes").getKeys(false)){
-			if(suffixKey.equals("minimumValue")){
-				priceSuffixMinimumValue = getDouble("priceSuffixes.minimumValue");
-			} else {
-				boolean enabled = getBoolean("priceSuffixes." + suffixKey + ".enabled");
-				if(enabled){
-					Double suffixValue = getDouble("priceSuffixes." + suffixKey + ".value");
-					priceSuffixes.put(suffixValue, suffixKey);
-				}
+		for(String suffixKey : getConfigurationSection("price-suffixes").getKeys(false)){
+			boolean enabled = getBoolean("price-suffixes." + suffixKey + ".enabled");
+			if(enabled){
+				Double suffixValue = getDouble("price-suffixes." + suffixKey + ".value");
+				priceSuffixes.put(suffixValue, suffixKey);
 			}
 		}
 		
-		displayTypeDefault = DisplayType.fromValue(getString("displayType"));
+		useLocalizedMaterials = getBoolean("use-localized-material-names");
+		allowUseOwnShop = getBoolean("allow-use-own-shop");
+		destroyShopRequiresSneak = getBoolean("destroy-shop-requires-sneak");
 		
-		List<String> cycle = getStringList("displayCycle");
+		creationCost = getDouble("cost.create");
+		destructionCost = getDouble("cost.destroy");
+		returnCreationCost = getBoolean("cost.return-creation-cost");
+		
+		displayTypeDefault = DisplayType.fromValue(getString("display.type"));
+		
+		List<String> cycle = getStringList("display.cycle");
 		if(cycle.isEmpty()){
 			for(DisplayType dt : DisplayType.values()){
 				cycle.add(dt.name());
@@ -240,44 +231,38 @@ public class SettingsConfig extends Config{
 			displayCycle[i] = DisplayType.fromValue(cycle.get(i));
 		}
 		
-		displayLightLevel = getInt("displayLightLevel");
-		setGlowingItemFrame = getBoolean("setGlowingItemFrame");
-		setGlowingSignText = getBoolean("setGlowingSignText");
-		setWaxedSign = getBoolean("setWaxedSign");
-		useLocalizedMaterials = getBoolean("useLocalizedMaterialNames");
+		displayLightLevel = getInt("display.light-level");
+		displayGlowingItemFrame = getBoolean("display.glowing-item-frame");
+		signGlowingSignText = getBoolean("sign.glowing-sign-text");
+		signWaxed = getBoolean("sign.waxed-sign");
 		
-		for(var action : getStringList("actionMappings.transactWithShop")){
+		for(var action : getStringList("mappings.transact-with-shop")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT);
 		}
-		for(var action : getStringList("actionMappings.transactWithShopFullStack")){
+		for(var action : getStringList("mappings. transact-with-shop-full-stack")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT_FULL_STACK);
 		}
 		
-		for(var action : getStringList("actionMappings.viewShopDetails")){
+		for(var action : getStringList("mappings.view-shop-details")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.VIEW_DETAILS);
 		}
-		for(var action : getStringList("actionMappings.cycleShopDisplay")){
+		for(var action : getStringList("mappings.cycle-shop-display")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.CYCLE_DISPLAY);
 		}
-		for(var action : getStringList("actionMappings.openShopSettings")){
+		for(var action : getStringList("mappings.open-shop-settings")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.OPEN_SETTINGS);
 		}
 		
-		allowCreateMethodSign = getBoolean("creationMethod.placeSign");
-		allowCreateMethodCommand = getBoolean("creationMethod.placeSign");
+		playSounds = getBoolean("play-sounds");
+		playEffects = getBoolean("play-effects");
 		
-		playSounds = getBoolean("playSounds");
-		playEffects = getBoolean("playEffects");
+		ConfigurationSection section = getConfigurationSection("shop.settings");
+		shopSettings = new ShopSettings(section);
 		
-		destroyShopRequiresSneak = getBoolean("destroyShopRequiresSneak");
-		
-		offlinePurchaseNotificationsEnabled = getBoolean("offlinePurchaseNotifications.enabled");
-		
-		currencyName = getString("currency.name");
-		currencyFormat = getString("currency.format", "");
+		worldBlackList.addAll(getStringList("world-blacklist"));
 		
 		enabledContainers = new HashSet<>();
-		for(String materialString : getStringList("enabledContainers")){
+		for(String materialString : getStringList("enabled-containers")){
 			try{
 				enabledContainers.add(Material.valueOf(materialString));
 			} catch(IllegalArgumentException e){
@@ -285,22 +270,10 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
-		worldBlackList.addAll(getStringList("worldBlacklist"));
-		
-		// Load shop display optimization settings
-		displayProcessInterval = getDouble("displayProcessInterval");
-		displayMovementThreshold = getDouble("displayMovementThreshold");
-		maxShopDisplayDistance = getDouble("maxShopDisplayDistance");
-		shopSearchRadius = getInt("shopSearchRadius");
-		
-		debugAllowUseOwnShop = getBoolean("debug.allowUseOwnShop");
-		debugForceResaveAll = getBoolean("debug.forceResaveAll");
-		migrateOldData = getBoolean("debug.migrateOldData");
-		
 		blacklistMaterials.clear();
 		whitelistMaterials.clear();
-		if(contains("blacklist.materials")){
-			for(var material : getStringList("blacklist.materials")){
+		if(contains("material-blacklist")){
+			for(var material : getStringList("material-blacklist")){
 				try{
 					blacklistMaterials.add(Material.valueOf(material));
 				} catch(IllegalArgumentException e){
@@ -309,8 +282,8 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
-		if(contains("whitelist.materials")){
-			for(var material : getStringList("whitelist.materials")){
+		if(contains("material-whitelist")){
+			for(var material : getStringList("material-whitelist")){
 				try{
 					whitelistMaterials.add(Material.valueOf(material));
 				} catch(IllegalArgumentException e){
@@ -319,6 +292,14 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
+		// Load shop display optimization settings
+		displayProcessInterval = getDouble("display-process-interval");
+		
+		displayMovementThreshold = getDouble("display-movement-threshold");
+		
+		maxShopDisplayDistance = getDouble("max-shop-display-distance");
+		
+		migrateOldData = getBoolean("migrate-old-data");
 	}
 	
 	/**
@@ -340,10 +321,6 @@ public class SettingsConfig extends Config{
 		return true;
 	}
 	
-	public String getCreationWord(CreationWord wordKey) {
-		return signCreationWords.get(wordKey);
-	}
-	
 	public ShopAction getShopAction(ShopClickType type) {
 		return clickTypeActionMap.get(type);
 	}
@@ -353,7 +330,7 @@ public class SettingsConfig extends Config{
 		set("debug.migrateOldData", migrateOldData);
 	}
 	
-	public class ShopSettings{
+	public static class ShopSettings{
 		@Getter
 		private boolean transactionLimitEnabled;
 		@Getter
@@ -371,7 +348,18 @@ public class SettingsConfig extends Config{
 		@Getter
 		private boolean transactionNotificationDefault;
 		
-		public ShopSettings() {
+		public ShopSettings(ConfigurationSection section) {
+			transactionLimitEnabled = section.getBoolean("transaction-limit.enabled");
+			transactionLimitDefault = section.getInt("transaction-limit.default-value");
+			
+			transactionCooldownEnabled = section.getBoolean("transaction-cooldown.enabled");
+			transactionCooldownDefault = section.getLong("transaction-cooldown.default-value");
+			
+			outOfStockNotificationEnabled = section.getBoolean("out-of-stock-notification.enabled");
+			isOutOfStockNotificationDefault = section.getBoolean("out-of-stock-notification.default-value");
+			
+			transactionNotificationEnabled = section.getBoolean("transaction-notification.enabled");
+			transactionNotificationDefault = section.getBoolean("transaction-notification.default-value");
 		}
 	}
 }

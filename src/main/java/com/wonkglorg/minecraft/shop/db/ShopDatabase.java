@@ -6,12 +6,14 @@ import com.wonkglorg.database.databases.SqliteDatabase;
 import com.wonkglorg.database.datasources.FileDataSource;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB.ShopHistoryEntry;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.ShopState;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import com.wonkglorg.minecraft.shop.shop.settings.Setting;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.PluginLogger;
@@ -66,6 +68,20 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			ON CONFLICT(shop_uuid, owner_uuid) DO NOTHING;
 			""";
 	
+	private static final String PURCHASE_STATS_SQL = """
+			SELECT
+			    shop_uuid,
+			    SUM(transaction_count) AS total_purchases,
+			    MAX(timestamp) AS last_purchase
+			FROM transactions
+			WHERE purchaser_uuid = ?
+			GROUP BY shop_uuid
+			""";
+	
+	private static final String INSERT_SHOP_SETTING = """
+			INSERT INTO shop_settings(shop_uuid,setting_key,value) VALUES(?,?,?)
+			""";
+	
 	private final Main plugin;
 	private final PlatformScheduler scheduler;
 	
@@ -87,8 +103,8 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				insertShopValues(shop, ps);
 				if(shop.getFacing() == null){
 					PluginLogger.error("Shop " +
-					                   shop +
-					                   "is missing a facing direction if this happens during migration the error can be ignored. marking as invalid and setting default direction for insertion!");
+									   shop +
+									   "is missing a facing direction if this happens during migration the error can be ignored. marking as invalid and setting default direction for insertion!");
 					removeShop(shop);
 				}
 				ps.executeUpdate();
@@ -398,10 +414,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			} catch(SQLException e){
 				PluginLogger.error("Error while adding transaction to shop", e);
 			}
-			var profileIfLoaded = PlayerManager.getProfileIfLoaded(purchaserId);
+			var profileIfLoaded = PlayerManager.getOnlineProfileIfCached(purchaserId);
 			if(profileIfLoaded != null){
 				//update cached values for the online player
-				profileIfLoaded.recordPurchase(shopId,timestamp);
+				profileIfLoaded.recordPurchase(shopId, timestamp);
 			}
 		});
 		
@@ -503,35 +519,35 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	public void logAction(OfflinePlayer player, AbstractShop shop, ShopActionType actionType) {
 		if(actionType == ShopActionType.INIT){
 			plugin.logger().debug(player.getName() +
-			                      " created a " +
-			                      shop.getType().name().toUpperCase() +
-			                      " shop at (" +
-			                      "x: " +
-			                      shop.getContainerLocation().getBlockX() +
-			                      " y: " +
-			                      shop.getContainerLocation().getBlockY() +
-			                      " z: " +
-			                      shop.getContainerLocation().getBlockZ() +
-			                      ") item: " +
-			                      ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
-			                      (shop.getSecondaryItemStack() != null ? " barterItem: " +
-			                                                              ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
+								  " created a " +
+								  shop.getType().name().toUpperCase() +
+								  " shop at (" +
+								  "x: " +
+								  shop.getContainerLocation().getBlockX() +
+								  " y: " +
+								  shop.getContainerLocation().getBlockY() +
+								  " z: " +
+								  shop.getContainerLocation().getBlockZ() +
+								  ") item: " +
+								  ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
+								  (shop.getSecondaryItemStack() != null ? " barterItem: " +
+																		  ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
 		}
 		if(actionType == ShopActionType.DESTROY){
 			plugin.logger().debug(player.getName() +
-			                      " destroyed a " +
-			                      shop.getType().name().toUpperCase() +
-			                      " shop at (" +
-			                      "x: " +
-			                      shop.getContainerLocation().getBlockX() +
-			                      " y: " +
-			                      shop.getContainerLocation().getBlockY() +
-			                      " z: " +
-			                      shop.getContainerLocation().getBlockZ() +
-			                      ") item: " +
-			                      ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
-			                      (shop.getSecondaryItemStack() != null ? " barterItem: " +
-			                                                              ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
+								  " destroyed a " +
+								  shop.getType().name().toUpperCase() +
+								  " shop at (" +
+								  "x: " +
+								  shop.getContainerLocation().getBlockX() +
+								  " y: " +
+								  shop.getContainerLocation().getBlockY() +
+								  " z: " +
+								  shop.getContainerLocation().getBlockZ() +
+								  ") item: " +
+								  ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
+								  (shop.getSecondaryItemStack() != null ? " barterItem: " +
+																		  ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
 		}
 		logAction(player, shop.getOwnerUUID(), shop.getId(), actionType);
 	}
@@ -623,51 +639,44 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	/**
 	 * Loads player specific shop data
+	 *
 	 * @param playerUuid
 	 * @param totalPurchasesPerShop
 	 * @param lastPurchaseTimePerShop
 	 * @return
 	 */
-	public CompletableFuture<Void> loadShopPurchaseStats(
-			UUID playerUuid,
-			Map<UUID, Integer> totalPurchasesPerShop,
-			Map<UUID, Long> lastPurchaseTimePerShop
-														) {
+	public CompletableFuture<Void> loadShopPurchaseStats(UUID playerUuid,
+														 Map<UUID, Integer> totalPurchasesPerShop,
+														 Map<UUID, Long> lastPurchaseTimePerShop) {
 		return CompletableFuture.runAsync(() -> {
-			try (var ps = getConnection().prepareStatement("""
-                SELECT
-                    shop_uuid,
-                    SUM(transaction_count) AS total_purchases,
-                    MAX(timestamp) AS last_purchase
-                FROM transactions
-                WHERE purchaser_uuid = ?
-                GROUP BY shop_uuid
-                """)) {
-				
+			try(var ps = getConnection().prepareStatement(PURCHASE_STATS_SQL)){
 				ps.setString(1, playerUuid.toString());
 				
-				try (var resultSet = ps.executeQuery()) {
-					while (resultSet.next()) {
-						UUID shopUuid = UUID.fromString(
-								resultSet.getString("shop_uuid")
-													   );
+				try(var resultSet = ps.executeQuery()){
+					while(resultSet.next()){
+						UUID shopUuid = UUID.fromString(resultSet.getString("shop_uuid"));
 						
-						totalPurchasesPerShop.put(
-								shopUuid,
-								resultSet.getInt("total_purchases")
-												 );
+						totalPurchasesPerShop.put(shopUuid, resultSet.getInt("total_purchases"));
 						
-						lastPurchaseTimePerShop.put(
-								shopUuid,
-								resultSet.getLong("last_purchase")
-												   );
+						lastPurchaseTimePerShop.put(shopUuid, resultSet.getLong("last_purchase"));
 					}
 				}
-			} catch (SQLException e) {
-				PluginLogger.error(
-						"Error while loading player shop purchase statistics",
-						e
-								  );
+			} catch(SQLException e){
+				PluginLogger.error("Error while loading player shop purchase statistics", e);
+			}
+		});
+	}
+	
+	public <T> void addSetting(AbstractShop abstractShop, Setting<T> setting, T value) {
+		scheduler.runAsync(_ -> {
+			try(var ps = getConnection().prepareStatement(INSERT_SHOP_SETTING)){
+				ps.setString(1, abstractShop.getId().toString());
+				ps.setString(2, setting.getKey());
+				ps.setString(3, value == null ? null : value.toString());
+				ps.execute();
+			} catch(SQLException e){
+				PluginLogger.error("Error while loading player shop purchase statistics", e);
+				
 			}
 		});
 	}

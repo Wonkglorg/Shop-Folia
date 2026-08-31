@@ -51,8 +51,8 @@ public abstract class PlayerProfile{
 	@Getter
 	private final Map<ShopType, List<AbstractShop>> ownedShops = new ConcurrentHashMap<>();
 	
-	private Map<Uuid,Integer> totalPurchasesPerShop = new ConcurrentHashMap<>();
-	private Map<Uuid,Long> lastPurchaseTimePerShop = new ConcurrentHashMap<>();
+	private Map<UUID, Integer> totalPurchasesPerShop = new ConcurrentHashMap<>();
+	private Map<UUID, Long> lastPurchaseTimePerShop = new ConcurrentHashMap<>();
 	
 	protected PlayerProfile(OfflinePlayer offlinePlayer) {
 		for(var type : ShopType.values()){
@@ -65,7 +65,7 @@ public abstract class PlayerProfile{
 			ownedShops.get(shop.getType()).add(shop);
 		}
 		loadFromFile(this);
-		Main.getPlugin().getShopmanager().getDatabase().loadShopPurchaseStats(uuid,totalPurchasesPerShop,lastPurchaseTimePerShop)
+		Main.getPlugin().getShopmanager().getDatabase().loadShopPurchaseStats(uuid, totalPurchasesPerShop, lastPurchaseTimePerShop);
 	}
 	
 	/**
@@ -184,11 +184,14 @@ public abstract class PlayerProfile{
 	/**
 	 * If the user is allowed to cycle shop displays of their own shops
 	 */
-	public static boolean isAllowedToCycleDisplay(Permissible player){return isOperator(player) || player.hasPermission("shop.setdisplay");}
+	public static boolean isAllowedToCycleDisplay(Permissible player) {return isOperator(player) || player.hasPermission("shop.setdisplay");}
+	
 	/**
 	 * If the user is allowed to cycle shop displays of other players shops
 	 */
-	public static boolean isAllowedToCycleDisplayOther(Permissible player){return isOperator(player) || player.hasPermission("shop.setdisplay.other");}
+	public static boolean isAllowedToCycleDisplayOther(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.setdisplay.other");
+	}
 	
 	private static boolean hasActionPermission(String permissionBase, Permissible player) {
 		if(isOperator(player)){
@@ -304,9 +307,16 @@ public abstract class PlayerProfile{
 		this.experience = experience;
 	}
 	
-	
 	public void recordPurchase(UUID shopId, long timestamp) {
 		totalPurchasesPerShop.merge(shopId, 1, Integer::sum);
 		lastPurchaseTimePerShop.put(shopId, timestamp);
+	}
+	
+	public int getPurchaseCount(AbstractShop shop) {
+		return totalPurchasesPerShop.getOrDefault(shop.getId(), 0);
+	}
+	
+	public long getLastPurchaseTime(AbstractShop abstractShop) {
+		return lastPurchaseTimePerShop.getOrDefault(abstractShop.getId(), 0L);
 	}
 }

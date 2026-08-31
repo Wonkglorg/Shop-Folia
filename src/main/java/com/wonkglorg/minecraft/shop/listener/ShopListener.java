@@ -87,12 +87,6 @@ public class ShopListener implements Listener{
 		logger.debug("====POTENTIAL SHOP CREATION START====");
 		logger.debug("Player " + player.getName() + " writing on sign");
 		
-		if(!settingsConfig.isAllowCreateMethodSign()){
-			logger.debug("Shop Create Method Sign not allowed");
-			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
-			return;
-		}
-		
 		if(!(block.getBlockData() instanceof WallSign wallSign)){
 			logger.debug("Sign is not a wall sign");
 			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
@@ -129,7 +123,7 @@ public class ShopListener implements Listener{
 		if(shopManager.getShopByContainer(chest.getLocation()) != null){
 			logger.debug("Container is already a registered shop");
 			logger.debug("====SHOP CREATION CANCEL====");
-			Main.getPlugin().getLangManager().request("interaction_issue.createOtherShop").sendToAudience(player);
+			Main.getPlugin().getLangManager().request("interaction.issues.create.initialize-chest-other").sendToAudience(player);
 			event.setCancelled(true);
 			return;
 		}
