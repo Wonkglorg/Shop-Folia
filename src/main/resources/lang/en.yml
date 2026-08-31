@@ -1,47 +1,6 @@
 # THIS FILE IS USED TO CONFIGURE WHAT MESSAGES ARE DISPLAYED #
 # ================================================================== #
 # Config supports mini message
-
-# %item% : The name of the item in the transaction, supports hovering #
-# %item amount% : The amount of the item #
-# %item type% : The material type of the item in the transaction #
-# %item lore% : The lore (description) of the item in the transaction #
-# %item enchants% : The enchantments of the item in the transaction #
-# %barter item% : The name of the barter item in the transaction, supports hovering #
-# %barter item amount% : The amount of the barter item #
-# %barter item type% : The material type of the barter item in the transaction #
-# %barter item lore% : The lore (description) of the barter item in the transaction #
-# %barter item enchants% : The enchantments of the barter item in the transaction #
-# %price% : The price of the items (adjusted to match virtual or physical currency) #
-# %price combo% : The full combo price string (adjusted to match virtual or physical currency) #
-# %price per item% : The price of 1 individual item (calculated from total price and adjusted to match virtual or physical currency) #
-# %price sell per item% : The price of selling 1 individual item (combo shops) (calculated from total price and adjusted to match virtual or physical currency) #
-# %stock% : The number of stacks of items that a shop/shop owner is able to provide to other players (calculated) #
-# %stock color% : Changes text to GREEN if shop has stock and DARK_RED when out of stock #
-# %user% : The name of the player who used the shop #
-# %owner% : The name of the shop owner #
-# %server name% : The name of the server #
-# %shop type% : The type of the shop (sell, buy, barter) #
-# %shop types% : A list of available shop types a player can create #
-# %location% : The x,y,z coordinates of the shop sign, displays hover text showing info about the shop #
-# %world% : The name of the world the shop is in #
-# %plugin% : The main command of the plugin (default is 'shop') #
-# %total shops% : The total amount of shops registered on the server #
-# %user amount% : The total amount of shops a specific player has registered on the server #
-# %build limit% : The total amount of shops a specific player is allowed to have registered on the server #
-# %currency name% : The name of the currency on the server #
-# %currency item% : The currency item on the server (only applicable if using an item economy)#
-# %notify user% : The on/off value of how the player has their user notifications set #
-# %notify owner% : The on/off value of how the player has their owner notifications set #
-# %notify stock% : The on/off value of how the player has their stock notifications set #
-# %offline transactions%: The number of transactions that took place at a players shop while a player was offline
-# %offline profit%: The amount of currency that was earned while a player was offline
-# %offline spent%: The amount of currency that was spent while a player was offline
-# %offline items sold%: Offline Purchase item sold row
-# %offline items bought%: Offline Purchase item bought row
-# %shops out of stock%: (Offline Notification) List rows of shops that are out of stock
-# %out of stock remaining%: (Offline Notification) Remaining number of rows not displayed
-# %tp time remaining%: The amount of seconds remaining on a players teleport to shop cooldown timer
 placeholders:
   currency-name: "<aqua>Diamond(s)"
   in-stock-color: "<green>"
@@ -53,7 +12,6 @@ placeholders:
   shop-owner-name-color: "<white>"
   closed-shop: "<red>CLOSED"
 templates:
-  stock-color: "[if:%stock-state%==EMPTY]%out-of-stock-color%[else-if:%stock-state%==OK]%in-stock-color%[else]%overfilled-stock-color%[/if]"
   shop-price-display: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
 
 ##Shop transaction related messages
@@ -284,84 +242,64 @@ sign:
         4: "<red>%owner%"
       # when the shop is in stock and has a display rendered
       in-stock:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is in stock and has no display rendered
-      in-stock-no-display:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is not in stock and has a display rendered
-      out-of-stock:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is not in stock and has no display rendered
-      out-of-stock-no-display:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is in stock and has a display rendered
-      overfilled:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is in stock and has no display rendered
-      overfilled-no-stock:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
-      transaction-cooldown:
-        1:
-        2:
-        3:
-        4:
-      # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
-      transaction-cooldown-no-display:
-        1:
-        2:
-        3:
-        4:
-      # when the shop reached its transaction limit for the player viewing it and has a display rendered
-      transaction-limit:
-        1:
-        2:
-        3:
-        4:
-      # when the shop reached its transaction limit for the player viewing it and has no display rendered
-      transaction-limit-no-display:
-        1:
-        2:
-        3:
-        4:
-      normal:
-        1: "%stock-color%<bold>[shop]"
+        1: "%in-stock-color%<bold>[shop]"
         2: "<white>Selling: <bold>%amount%"
         3: "%shop-price-display%"
         4: "<white>%owner%"
-      normal_no_display:
-        1: "%stock-color%<bold>[sell shop]"
+      # when the shop is in stock and has no display rendered
+      in-stock-no-display:
+        1: "%in-stock-color%<bold>[sell shop]"
         2: "<white>%item%<white>: %amount%"
         3: "%shop-price-display%"
         4: "<white>%owner%"
-      admin:
-        1: "%in-stock-color%<bold>[shop]"
-        2: "<white>Selling: %amount%"
+      # when the shop is not in stock and has a display rendered
+      out-of-stock:
+        1: "%out-of-stock-color%<bold>[shop]"
+        2: "<white>Selling: <bold>%amount%"
         3: "%shop-price-display%"
-        4: "%server-display-name%"
-      admin_no_display:
-        1: "%in-stock-color%[sell shop]"
-        2: "%item%<white>: %amount%"
+        4: "<white>%owner%"
+      # when the shop is not in stock and has no display rendered
+      out-of-stock-no-display:
+        1: "%out-of-stock-color%<bold>[sell shop]"
+        2: "<white>%item%<white>: %amount%"
         3: "%shop-price-display%"
-        4: "%server-display-name%"
+        4: "<white>%owner%"
+      # when the shop is in stock and has a display rendered
+      overfilled:
+        1: "%overfilled-stock-color%<bold>[shop]"
+        2: "<white>Selling: <bold>%amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
+      # when the shop is in stock and has no display rendered
+      overfilled-no-display:
+        1: "%overfilled-stock-color%<bold>[sell shop]"
+        2: "<white>%item%<white>: %amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
+      # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
+      transaction-cooldown:
+        1: "%overfilled-stock-color%<bold>[shop]"
+        2: "<white>Selling: <bold>%amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
+      # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
+      transaction-cooldown-no-display:
+        1: "%overfilled-stock-color%<bold>[sell shop]"
+        2: "<white>%item%<white>: %amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
+      # when the shop reached its transaction limit for the player viewing it and has a display rendered
+      transaction-limit:
+        1: "%overfilled-stock-color%<bold>[shop]"
+        2: "<white>Selling: <bold>%amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
+      # when the shop reached its transaction limit for the player viewing it and has no display rendered
+      transaction-limit-no-display:
+        1: "%overfilled-stock-color%<bold>[sell shop]"
+        2: "<white>%item%<white>: %amount%"
+        3: "%shop-price-display%"
+        4: "<white>%owner%"
     buy:
       initialise:
         1: "<red><bold>[buy shop]"
