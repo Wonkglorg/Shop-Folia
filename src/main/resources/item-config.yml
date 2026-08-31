@@ -11,10 +11,3 @@ currency-item:
   id: minecraft:diamond
   count: 1
   schema_version: 1
-
-shop:
-  blacklist:
-    materials: COMMAND_BLOCK
-
-  whitelist:
-    materials:
