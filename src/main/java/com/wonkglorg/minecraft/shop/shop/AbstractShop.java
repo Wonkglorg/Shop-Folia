@@ -1075,6 +1075,33 @@ public abstract class AbstractShop{
 		return formatPrice(price);
 	}
 	
+	public void setSetting(Settings<T> setting, T value){
+		if(value == null){
+			setting.remove(setting);
+		}
+		//if old value == new value do nothing
+		if(setting.getDefaultValue().equals(value)){
+			setting.remove(setting);
+		}
+		
+		setting.put(setting, value);
+		//save to database unless value is equal to default then remove it.
+	}
+	
+	/**
+	 * Gets a shops defined setting or the default value if not present
+	 * @param setting the setting to get its value of
+	 */
+	public <T> T getSetting(Setting<T> setting) {
+		Object value = shopSettings.get(setting);
+		
+		if (value == null) {
+			return setting.getDefaultValue();
+		}
+		
+		return setting.getType().cast(value);
+	}
+	
 	@Override
 	public String toString() {
 		return "AbstractShop{" +
