@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 
+//todo reimplement sign creation process and allow more dynamic parsing as defined in the config.
 public class SignCreationProcess extends ShopCreationProcess{
 	
 	public SignCreationProcess(Player player, Sign sign, Block container, BlockFace signDirection) {
