@@ -23,17 +23,6 @@ public class ItemConfig extends Config{
 	@Getter
 	private ItemStack gambleDisplayItem;
 	
-	/**
-	 * No shop can be created with this material
-	 */
-	@Getter
-	private List<Material> blacklistMaterials = new ArrayList<>();
-	/**
-	 * Only shops with this material can be created
-	 */
-	@Getter
-	private List<Material> whitelistMaterials = new ArrayList<>();
-	
 	public ItemConfig() {
 		super(Main.getPlugin(), Path.of("item-config.yml"));
 		reload();
@@ -44,47 +33,7 @@ public class ItemConfig extends Config{
 		currencyItem = getItemStack("currency-item", new ItemStack(Material.DIAMOND));
 		currencyItem.setAmount(1);
 		gambleDisplayItem = getItemStack("gamble-display-item", new ItemStack(Material.DIAMOND));
-		blacklistMaterials.clear();
-		whitelistMaterials.clear();
 		
-		if(contains("blacklist.materials")){
-			for(var material : getStringList("blacklist.materials")){
-				try{
-					blacklistMaterials.add(Material.valueOf(material));
-				} catch(IllegalArgumentException e){
-					logger.warning("Invalid blacklist material:" + material);
-				}
-			}
-		}
-		
-		if(contains("whitelist.materials")){
-			for(var material : getStringList("whitelist.materials")){
-				try{
-					whitelistMaterials.add(Material.valueOf(material));
-				} catch(IllegalArgumentException e){
-					logger.warning("Invalid whitelist material:" + material);
-				}
-			}
-		}
-	}
-	
-	/**
-	 * If the item is allowed by the black / whitelist
-	 */
-	public boolean isValidItem(ItemStack itemStack) {
-		if(itemStack == null || itemStack.getType().isAir()){
-			return false;
-		}
-		
-		if(!blacklistMaterials.isEmpty() && blacklistMaterials.contains(itemStack.getType())){
-			return false;
-		}
-		
-		if(!whitelistMaterials.isEmpty() && !whitelistMaterials.contains(itemStack.getType())){
-			return false;
-		}
-		
-		return true;
 	}
 	
 	public void setCurrencyItem(ItemStack currencyItem) {

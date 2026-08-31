@@ -20,7 +20,6 @@ currency:
 # This formats suffixes for large numbers like (5,000 = 5k) or (5,000,000 = 5M) #
 # minimumValue = minimum value to start formatting strings #
 price-suffixes:
-  minimum-value: 10000
   k:
     enabled: true
     value: 1000
@@ -54,6 +53,13 @@ allow-use-own-shop: false
 # If this is set to true, shops will require you to be sneaking (holding 'shift') to destroy them
 destroy-shop-requires-sneak: false
 
+cost:
+  # cost of destroying a shop
+  destroy: 0
+  # cost of creating a shop
+  create: 0
+  # if creation cost should be returned when shop destroyed
+  return-creation-cost: false
 # shop display related settings
 display:
   type: NONE
@@ -83,6 +89,7 @@ sign:
   #the line format shops need to abide by when being created every line can be a list of possible options of multiple permutations are allowed, placeholders:
   # %price% - the price to pay (positive value including 0)
   # %amount% - the item amount being given (positive value above 0)
+  # todo use regex?
   creation-layout:
     sell:
       1: 'shop'

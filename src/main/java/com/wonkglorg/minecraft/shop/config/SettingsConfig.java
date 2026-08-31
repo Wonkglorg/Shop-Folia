@@ -27,21 +27,39 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private @Nullable String logLevel;
-	/***
-	 * How many hours a player can be offline before their shops get deleted
-	 */
-	@Getter
-	private int hoursOfflineToRemoveShops;
+	// =================================================================== //
+	//                      CURRENCY AND ECONOMY                           //
+	// =================================================================== //
 	/**
 	 * The type of currency to use on the server
 	 */
 	@Getter
 	private CurrencyType currencyType;
 	/**
-	 * Words used to create shops with
+	 * Price suffix mappings
 	 */
 	@Getter
-	private Map<CreationWord, String> signCreationWords = new EnumMap<>(CreationWord.class);
+	private TreeMap<Double, String> priceSuffixes = new TreeMap<>();
+	// =================================================================== //
+	//                           SHOP                                      //
+	// =================================================================== //
+	/**
+	 * If the materials should be displayed in the clients language
+	 */
+	@Getter
+	private boolean useLocalizedMaterials;
+	/**
+	 * Allows for shop owners to use their own shops
+	 */
+	@Getter
+	private boolean allowUseOwnShop;
+	
+	/**
+	 * If sneaking is required to destroy a shop
+	 */
+	@Getter
+	private boolean destroyShopRequiresSneak;
+	
 	/**
 	 * The currency cost when creating a shop
 	 */
@@ -57,13 +75,7 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private boolean returnCreationCost;
-	/**
-	 * Price suffix mappings
-	 */
-	@Getter
-	private TreeMap<Double, String> priceSuffixes = new TreeMap<>();
-	@Getter
-	private double priceSuffixMinimumValue;
+	
 	/**
 	 * The default display new shops spawn with
 	 */
@@ -72,18 +84,47 @@ public class SettingsConfig extends Config{
 	/**
 	 * The cycle order of shop displays
 	 */
+	/**
+	 * The cycling order of displays
+	 */
 	@Getter
 	private DisplayType[] displayCycle;
 	/**
-	 * If signs can be used to create a chest shop
+	 * Light level the display emits when placed
 	 */
 	@Getter
-	private boolean allowCreateMethodSign;
+	private int displayLightLevel;
+	
 	/**
-	 * If commands can be used to create a chest shop
+	 * If the itemframe should glow on shop displays
 	 */
 	@Getter
-	private boolean allowCreateMethodCommand;
+	private boolean displayGlowingItemFrame;
+	/**
+	 * If the shop sign should be made glowing
+	 */
+	@Getter
+	private boolean signGlowingSignText;
+	/**
+	 * If the sign should be waxed
+	 */
+	/**
+	 * If the shop sign should be auto waxed
+	 */
+	@Getter
+	private boolean signWaxed;
+	
+	@Getter
+	private Map<ShopType, List<String>> signCreationLayout = new HashMap<>();
+	
+	// =================================================================== //
+	//                         SHOP INTERACTIONS                           //
+	// =================================================================== //
+	/**
+	 * Mappings for actions on a shop
+	 */
+	@Getter
+	private Map<ShopClickType, ShopAction> clickTypeActionMap = new EnumMap<>(ShopClickType.class);
 	/**
 	 * Play sounds on shop interactions
 	 */
@@ -94,68 +135,41 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private boolean playEffects;
-	/**
-	 * If the itemframe should glow on shop displays
-	 */
-	@Getter
-	private boolean setGlowingItemFrame;
-	/**
-	 * If the sign text should glow
-	 */
-	@Getter
-	private boolean setGlowingSignText;
-	/**
-	 * If the sign should be waxed
-	 */
-	@Getter
-	private boolean setWaxedSign;
 	
-	/**
-	 * If the materials should be displayed in the clients language
-	 */
 	@Getter
-	private boolean useLocalizedMaterials;
-	/**
-	 * If sneaking is required to destroy a shop
-	 */
-	@Getter
-	private boolean destroyShopRequiresSneak;
-	/**
-	 * Light level the display emits when placed
-	 */
-	@Getter
-	private int displayLightLevel;
-	/**
-	 * If offline purchases should be logged when owner joins
-	 */
-	@Getter
-	private boolean offlinePurchaseNotificationsEnabled;
-	/**
-	 * Name of the currency to be displayed
-	 */
-	@Getter
-	private String currencyName;
-	/**
-	 * Currency format
-	 */
-	@Getter
-	private String currencyFormat;
-	/**
-	 * What containers are valid shop containers
-	 */
-	@Getter
-	private Set<Material> enabledContainers;
+	private ShopSettings shopSettings;
+	// =================================================================== //
+	//                                FILTERS                              //
+	// =================================================================== //
 	/**
 	 * No shops can be created in these worlds
 	 */
 	@Getter
 	private @NotNull List<String> worldBlackList = new ArrayList<>();
 	/**
-	 * Mappings for actions on a shop
+	 * What containers are valid shop containers
 	 */
 	@Getter
-	private Map<ShopClickType, ShopAction> clickTypeActionMap = new EnumMap<>(ShopClickType.class);
+	private Set<Material> enabledContainers;
 	
+	/**
+	 * No shop can be created with this material
+	 */
+	@Getter
+	private List<Material> blacklistMaterials = new ArrayList<>();
+	/**
+	 * Only shops with this material can be created
+	 */
+	@Getter
+	private List<Material> whitelistMaterials = new ArrayList<>();
+	
+	
+	// =================================================================== //
+	//                   SHOP PERFORMANCE OPTIMIZATIONS                    //
+	// =================================================================== //
+	
+	@Getter
+	private double displayProcessInterval;
 	/**
 	 * How far a player has to move before display recalculations can happen
 	 */
@@ -167,24 +181,18 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private double maxShopDisplayDistance;
-	@Getter
-	private double displayProcessInterval;
 	
-	private ShopSettings shopSettings;
+	 // =================================================================== //
+	 //                               MIGRATION                             //
+	 // =================================================================== //
 	
 	/**
-	 * Gets the radius (in chunks) around a player to search for shops.
-	 * Each increment searches exponentially more chunks (1=3x3 area, 2=5x5 area, 3=7x7 area).
+	 * If data from the old shop plugin should be migrated on the next startup
 	 */
-	@Getter
-	private int shopSearchRadius;
-	@Getter
-	private boolean debugAllowUseOwnShop;
-	@Getter
-	private boolean debugForceResaveAll;
 	@Getter
 	private boolean migrateOldData;
 	
+
 	public SettingsConfig() {
 		super(Main.getPlugin(), Path.of("config.yml"));
 		reload();
@@ -192,7 +200,7 @@ public class SettingsConfig extends Config{
 	
 	public void reload() {
 		silentLoad();
-		logLevel = getString("logLevel");
+		logLevel = getString("log-level");
 		hoursOfflineToRemoveShops = getInt("deletePlayerShopsAfterXHoursOffline");
 		//todo:mjd compare the current currency to the one last logged in the db and update the action if it differs.
 		currencyType = CurrencyType.fromValue(getString("currency.type", "ITEM"));
@@ -288,6 +296,48 @@ public class SettingsConfig extends Config{
 		debugAllowUseOwnShop = getBoolean("debug.allowUseOwnShop");
 		debugForceResaveAll = getBoolean("debug.forceResaveAll");
 		migrateOldData = getBoolean("debug.migrateOldData");
+		
+		blacklistMaterials.clear();
+		whitelistMaterials.clear();
+		if(contains("blacklist.materials")){
+			for(var material : getStringList("blacklist.materials")){
+				try{
+					blacklistMaterials.add(Material.valueOf(material));
+				} catch(IllegalArgumentException e){
+					logger.warning("Invalid blacklist material:" + material);
+				}
+			}
+		}
+		
+		if(contains("whitelist.materials")){
+			for(var material : getStringList("whitelist.materials")){
+				try{
+					whitelistMaterials.add(Material.valueOf(material));
+				} catch(IllegalArgumentException e){
+					logger.warning("Invalid whitelist material:" + material);
+				}
+			}
+		}
+		
+	}
+	
+	/**
+	 * If the item is allowed by the black / whitelist
+	 */
+	public boolean isValidItem(ItemStack itemStack) {
+		if(itemStack == null || itemStack.getType().isAir()){
+			return false;
+		}
+		
+		if(!blacklistMaterials.isEmpty() && blacklistMaterials.contains(itemStack.getType())){
+			return false;
+		}
+		
+		if(!whitelistMaterials.isEmpty() && !whitelistMaterials.contains(itemStack.getType())){
+			return false;
+		}
+		
+		return true;
 	}
 	
 	public String getCreationWord(CreationWord wordKey) {

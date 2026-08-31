@@ -18,7 +18,4 @@ public final class Settings{
 	 * If the shop owner should be notified about this shop doing transaction
 	 */
 	public static final Setting<Boolean> TRANSACTION_NOTIFICATION= new Setting<>(Integer.class, Integer::parseInt, 0);
-	
-	
-	public static
 }
