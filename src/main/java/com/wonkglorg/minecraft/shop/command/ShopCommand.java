@@ -37,15 +37,6 @@ public class ShopCommand extends AbstractCommand{
 		return literal(SHOP_COMMAND)
 				.requires(permissions(SHOP_PERMISSION_USER))
 				.executes(this::usageMessage)
-				//todo:mjd implement create shop
-				.then(literal("create")
-						.then(literal("BUY")
-								.then(argument("amount",IntegerArgumentType.integer(1))
-										.then(argument("price",IntegerArgumentType.integer(0))
-												//.then(argument("item"))))) //todo:mjd generate all possible items that work take inspiration from marketmanager
-						.then(literal("SELL"))
-						.then(literal("BARTER"))
-						.then(literal("GAMBLE"))))))
 				.then(literal("list").executes(this::list))
 				.then(literal("currency").executes(this::currency))
 				.then(literal("notify")

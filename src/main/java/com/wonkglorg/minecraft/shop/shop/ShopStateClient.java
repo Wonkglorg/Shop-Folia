@@ -5,7 +5,7 @@ import lombok.Getter;
 /**
  * The Shopstate specific to a player
  */
-public enum ClientShopState{
+public enum ShopStateClient{
 	/**
 	 * Shop is fine to use
 	 */
@@ -31,12 +31,12 @@ public enum ClientShopState{
 	@Getter
 	private final int weight;
 	
-	ClientShopState(int weight) {
+	ShopStateClient(int weight) {
 		this.weight = weight;
 	}
 	
-	public static ClientShopState from(String value) {
-		for(var state : ClientShopState.values()){
+	public static ShopStateClient from(String value) {
+		for(var state : ShopStateClient.values()){
 			if(state.toString().equalsIgnoreCase(value)){
 				return state;
 			}
