@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS players
 
 CREATE TABLE IF NOT EXISTS shops
 (
-    shop_uuid               TEXT    NOT NULL,
+    shop_uuid               TEXT    NOT NULL PRIMARY KEY ,
     owner_uuid              TEXT    NOT NULL,
     item                    TEXT    NOT NULL,
     price                   REAL    NOT NULL,
@@ -25,10 +25,27 @@ CREATE TABLE IF NOT EXISTS shops
     shop_world              TEXT    NOT NULL,
     shop_x                  INTEGER NOT NULL,
     shop_y                  INTEGER NOT NULL,
-    shop_z                  INTEGER NOT NULL,
-    PRIMARY KEY (shop_uuid, owner_uuid)
+    shop_z                  INTEGER NOT NULL
 );
 
+--settings a shop can have, such as a limit to how many times it can be used per player or a cooldown
+CREATE TABLE IF NOT EXISTS shop_settings
+(
+    -- the shop the setting applies to
+    shop_uuid   TEXT NOT NULL,
+    -- the unique key of the setting
+    setting_key TEXT NOT NULL,
+    -- the value of the setting
+    value       TEXT,
+
+    PRIMARY KEY (shop_uuid, setting_key),
+
+    FOREIGN KEY (shop_uuid)
+        REFERENCES shops (shop_uuid)
+        ON DELETE CASCADE
+);
+
+--this table stores every transaction a player has done with a shop
 CREATE TABLE IF NOT EXISTS transactions
 (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,14 +58,22 @@ CREATE TABLE IF NOT EXISTS transactions
     -- if the value is set to one show it as an offline purchase the next time they log in
     cache_offline  INTEGER NOT NULL DEFAULT 0,
     -- if the transaction was gambling shows the reward the user got from gambling
-    gamble_reward  TEXT,
-    -- How many trades were done within this one transactions with the shop
-    transaction_count INTEGER,
+    gamble_reward  TEXT NULL,
+    -- How many trades were done within this one transaction with the shop
+    transaction_count INTEGER NOT NULL,
 
     FOREIGN KEY (shop_uuid)
         REFERENCES shops (shop_uuid)
         ON DELETE CASCADE
 );
+
+--lookups for the purchaser
+CREATE INDEX IF NOT EXISTS idx_transactions_shop_purchaser
+    ON transactions (shop_uuid, purchaser_uuid);
+
+--lookups for latest time
+CREATE INDEX IF NOT EXISTS idx_transactions_shop_purchaser_timestamp
+    ON transactions (shop_uuid, purchaser_uuid, timestamp);
 
 CREATE TABLE IF NOT EXISTS shop_actions
 (
