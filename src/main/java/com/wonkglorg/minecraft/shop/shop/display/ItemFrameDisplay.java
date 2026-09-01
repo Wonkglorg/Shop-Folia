@@ -34,7 +34,7 @@ public class ItemFrameDisplay extends AbstractDisplay{
 				shop.getDisplayItem(),
 				validLocation,
 				shop.getFacing(),
-				Main.getPlugin().getSettingsConfig().isSetGlowingItemFrame());
+				Main.getPlugin().getSettingsConfig().isDisplayGlowingItemFrame());
 		
 		ItemStack secondaryStack = shop.getSecondaryDisplayItem();
 		if(secondaryStack != null){
@@ -51,7 +51,7 @@ public class ItemFrameDisplay extends AbstractDisplay{
 					secondaryStack,
 					secondaryValidLocation,
 					shop.getFacing(),
-					Main.getPlugin().getSettingsConfig().isSetGlowingItemFrame());
+					Main.getPlugin().getSettingsConfig().isDisplayGlowingItemFrame());
 		}
 		
 	}

@@ -75,8 +75,8 @@ sign:
   waxed-sign: true
 
   #the line format shops need to abide by when being created every line can be a list of possible options of multiple permutations are allowed, placeholders:
-  # %price% - the price to pay (positive value including 0) needs to be standalone on a sign line
-  # %amount% - the item amount being given (positive value above 0) needs to be standalone on a sign line
+  # %price% - the price to pay (positive value including 0) needs to be standalone on a sign line and cannot be used in the first line
+  # %amount% - the item amount being given (positive value above 0) needs to be standalone on a sign line and cannot be used in the first line
 creation-layout:
   # Each shop type can have multiple layouts that are "valid".
   sell:

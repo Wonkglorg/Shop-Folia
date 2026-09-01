@@ -56,7 +56,7 @@ public class ShopServiceProvider implements ShopService{
 		main.getShopmanager().registerShop(shop);
 	}
 	
-	public removeShop(AbstractShop shop) {
-		main.getShopmanager().unRegisterShop(shop);
+	public void removeShop(AbstractShop shop) {
+		main.getShopmanager().unregisterShop(shop);
 	}
 }

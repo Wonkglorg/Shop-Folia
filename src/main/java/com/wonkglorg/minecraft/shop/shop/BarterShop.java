@@ -105,27 +105,29 @@ public class BarterShop extends AbstractShop{
 					ownerRequest.sendToAudience(online.getPlayer());
 				}
 			}
-			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.barter.shopPerformingTransaction").sendToAudience(player);
-			case CANCELLED -> lang.request("transaction.issue.barter.cancelledExternal").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.barter.playerNoStock").sendToAudience(player);
+			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.barter.shop-performing-transaction").sendToAudience(player);
+			case CANCELLED -> lang.request("transaction.issue.barter.cancelled-external").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.barter.player-no-stock").sendToAudience(player);
 			case INSUFFICIENT_FUNDS_SELLER -> {
-				lang.request("transaction.issue.barter.shopNoStock").sendToAudience(player);
+				lang.request("transaction.issue.barter.shop-no-stock").sendToAudience(player);
 				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.barter.ownerNoStock");
+					LangRequest ownerRequest = lang.request("transaction.issue.barter.owner-no-stock");
 					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
 					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
 				}
 			}
-			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.barter.playerNoSpace").sendToAudience(player);
+			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.barter.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_SELLER -> {
-				lang.request("transaction.issue.barter.shopNoSpace").sendToAudience(player);
+				lang.request("transaction.issue.barter.shop-no-space").sendToAudience(player);
 				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.barter.ownerNoSpace");
+					LangRequest ownerRequest = lang.request("transaction.issue.barter.owner-no-space");
 					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
 					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
 				}
 			}
-			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.barter.useOwnShop").sendToAudience(player);
+			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.barter.use-own-shop").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.barter.player-cooldown").sendToAudience(player);
+			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.barter.player-transaction-limit-reached").sendToAudience(player);
 		}
 		
 	}

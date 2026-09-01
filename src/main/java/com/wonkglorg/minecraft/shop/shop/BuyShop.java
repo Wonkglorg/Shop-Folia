@@ -120,6 +120,8 @@ public class BuyShop extends AbstractShop{
 				}
 			}
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.buy.useOwnShop").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.buy.playerCooldown").sendToAudience(player);
+			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.buy.playerTransactionLimit").sendToAudience(player);
 		}
 		
 	}

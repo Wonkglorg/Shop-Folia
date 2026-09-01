@@ -5,6 +5,7 @@ import com.wonkglorg.minecraft.shop.Main;
 import com.wonkglorg.minecraft.shop.shop.ShopAction;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
+import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import lombok.Getter;
@@ -289,7 +290,7 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
-		SignCreationProcess.reloadLayouts();
+		SignCreationLayoutParser.reload(getConfigurationSection("creation-layout"));
 		
 		// Load shop display optimization settings
 		displayProcessInterval = getDouble("display-process-interval");

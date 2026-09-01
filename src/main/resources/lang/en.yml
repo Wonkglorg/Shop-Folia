@@ -80,69 +80,69 @@ transaction:
 
     buy:
       # called when the user tries to transact with their own shop while this feature is disabled
-      useOwnShop: "<gray>You cannot use your own shop."
+      use-own-shop: "<gray>You cannot use your own shop."
       # called when 2 players try to transact with a shop at the same time
-      shopPerformingTransaction: "<red>Shop is transacting with another player."
+      shop-performing-transaction: "<red>Shop is transacting with another player."
       # called when a player tries to transact with a shop that is currently on cooldown for them
-      playerCooldown: "<red>You can't trade with this shop for another %duration%!"
+      player-cooldown: "<red>You can't trade with this shop for another %duration%!"
       # called when a player tries to transact with a shop where they already reached their limit on possible transacts
-      playerTransactionLimit: "<red>You reached your trading limit with this shop (%current-trade-count%/%total-trade-count%)!"
+      player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
       # called when an external plugin listens to the shop transaction event and cancels it
-      cancelledExternal: "<gray>Transaction cancelled."
+      cancelled-external: "<gray>Transaction cancelled."
       # called when the shop has insufficient funds to buy the items from the player
-      shopNoStock: "<red>This shop is out of funds."
+      shop-no-stock: "<red>This shop is out of funds."
       # called when the shop has insufficient funds to buy the items from the player and the owner opted into being notified about it
-      ownerNoStock: "<red>[Shop] Your buying shop at %location% is out of funds."
+      owner-no-stock: "<red>[Shop] Your buying shop at %location% is out of funds."
       # called when the shop does not have enough inventory space to accept the items being sold by the player
-      shopNoSpace: "<red>This shop does not have enough space in its inventory for your items."
+      shop-no-space: "<red>This shop does not have enough space in its inventory for your items."
       # called when the shop does not have enough inventory space and the owner opted into being notified about it
-      ownerNoSpace: "<red>[Shop] Your buying shop at %location% is full."
+      owner-no-space: "<red>[Shop] Your buying shop at %location% is full."
       # called when the player tries to sell to the shop but does not have enough of the required item
-      playerNoStock: "<red>You do not have enough items to sell to this shop."
-      # called when the player tries to sell to the shop but does not have enough inventory space to receive the payment
-      playerNoSpace: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+      player-no-stock: "<red>You do not have enough items to sell to this shop."
+      # called when the player tries to sell to the shop but does not have enough inventory space to receive the payment from the shop
+      player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
 
     barter:
       # called when the user tries to transact with their own shop while this feature is disabled
-      useOwnShop: "<gray>You cannot use your own shop."
+      use-own-shop: "<gray>You cannot use your own shop."
       # called when 2 players try to transact with a shop at the same time
-      shopPerformingTransaction: "<red>Shop is transacting with another player."
+      shop-performing-transaction: "<red>Shop is transacting with another player."
       # called when a player tries to transact with a shop that is currently on cooldown for them
-      playerCooldown: "<red>You can't trade with this shop for another %duration%!"
+      player-cooldown: "<red>You can't trade with this shop for another %duration%!"
       # called when a player tries to transact with a shop where they already reached their limit on possible transacts
-      playerTransactionLimit: "<red>You reached your trading limit with this shop (%current-trade-count%/%total-trade-count%)!"
+      player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
       # called when an external plugin listens to the shop transaction event and cancels it
-      cancelledExternal: "<gray>Transaction cancelled."
+      cancelled-external: "<gray>Transaction cancelled."
       # called when the shop has insufficient stock of the item being offered for barter
-      shopNoStock: "<red>This shop is out of stock."
+      shop-no-stock: "<red>This shop is out of stock."
       # called when the shop has insufficient stock and the owner opted into being notified about it
-      ownerNoStock: "<red>[Shop] Your barter shop at %location% is out of stock."
+      owner-no-stock: "<red>[Shop] Your barter shop at %location% is out of stock."
       # called when the shop does not have enough inventory space to accept the player's barter items
-      shopNoSpace: "<red>This shop does not have enough space in its inventory to barter with you."
+      shop-no-space: "<red>This shop does not have enough space in its inventory to barter with you."
       # called when the shop does not have enough inventory space and the owner opted into being notified about it
-      ownerNoSpace: "<red>[Shop] Your barter shop at %location% is full."
+      owner-no-space: "<red>Your barter shop at %location% is full."
       # called when the player does not have enough of the required barter item
-      playerNoStock: "<red>You do not have sufficient items to barter with this shop."
+      player-no-stock: "<red>You do not have sufficient items to barter with this shop."
       # called when the player does not have enough inventory space to receive the items from the barter
-      playerNoSpace: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+      player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
 
     gamble:
       # called when the user tries to transact with their own shop while this feature is disabled
-      useOwnShop: "<gray>You cannot use your own shop."
+      use-own-shop: "<gray>You cannot use your own shop."
       # called when 2 players try to transact with a shop at the same time
-      shopPerformingTransaction: "<red>Shop is transacting with another player."
+      shop-performing-transaction: "<red>Shop is transacting with another player."
       # called when a player tries to transact with a shop that is currently on cooldown for them
-      playerCooldown: "<red>You can't trade with this shop for another %duration%!"
+      player-cooldown: "<red>You can't trade with this shop for another %duration%!"
       # called when a player tries to transact with a shop where they already reached their limit on possible transacts
-      playerTransactionLimit: "<red>You reached your trading limit with this shop (%current-trade-count%/%total-trade-count%)!"
+      player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
       # called when an external plugin listens to the shop transaction event and cancels it
-      cancelledExternal: "<gray>Transaction cancelled."
+      cancelled-external: "<gray>Transaction cancelled."
       # called when the shop does not have any items available to use as gambling rewards
-      shopNoStock: "<red>This shop does not have items to gamble."
+      shop-no-stock: "<red>This shop does not have items to gamble."
       # called when the player does not have enough currency to gamble with the shop
-      playerNoStock: "<red>You do not have sufficient funds to gamble with this shop."
+      player-no-stock: "<red>You do not have sufficient funds to gamble with this shop."
       # called when the player does not have enough inventory space to receive the gambling reward
-      playerNoSpace: "<red>You do not have enough space in your inventory to accept the gambling reward from this shop."
+      player-no-space: "<red>You do not have enough space in your inventory to accept the gambling reward from this shop."
 
 
 ##Shop interaction related messages

@@ -22,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -542,7 +543,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	/**
 	 * Logs a shop action
 	 * @param player the player doing the action
-	 * @param shopOwner the owner of the shop
 	 * @param shopUuid the shop id
 	 * @param actionType the action
 	 */

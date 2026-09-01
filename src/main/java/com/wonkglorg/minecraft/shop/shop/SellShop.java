@@ -60,7 +60,7 @@ public class SellShop extends AbstractShop{
 		}
 		
 		if(price == 0){
-			setShopState(OK,true);
+			setShopState(OK, true);
 			return;
 		}
 		//start a test transaction to see if the shop can accept payment
@@ -100,27 +100,29 @@ public class SellShop extends AbstractShop{
 					ownerRequest.sendToAudience(online.getPlayer());
 				}
 			}
-			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.sell.shopPerformingTransaction").sendToAudience(player);
-			case CANCELLED -> lang.request("transaction.issue.sell.cancelledExternal").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.sell.playerNoStock").sendToAudience(player);
+			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.sell.shop-performing-transaction").sendToAudience(player);
+			case CANCELLED -> lang.request("transaction.issue.sell.cancelled-external").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.sell.player-no-stock").sendToAudience(player);
 			case INSUFFICIENT_FUNDS_SELLER -> {
-				lang.request("transaction.issue.sell.shopNoStock").sendToAudience(player);
+				lang.request("transaction.issue.sell.shop-no-stock").sendToAudience(player);
 				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.sell.ownerNoStock");
+					LangRequest ownerRequest = lang.request("transaction.issue.sell.owner-no-stock");
 					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
 					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
 				}
 			}
-			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.sell.playerNoSpace").sendToAudience(player);
+			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.sell.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_SELLER -> {
-				lang.request("transaction.issue.sell.shopNoSpace").sendToAudience(player);
+				lang.request("transaction.issue.sell.shop-no-space").sendToAudience(player);
 				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.sell.ownerNoSpace");
+					LangRequest ownerRequest = lang.request("transaction.issue.sell.owner-no-space");
 					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
 					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
 				}
 			}
-			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.sell.useOwnShop").sendToAudience(player);
+			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.sell.use-own-shop").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.sell.player-cooldown").sendToAudience(player);
+			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.sell.player-transaction-limit-reached").sendToAudience(player);
 		}
 		
 	}

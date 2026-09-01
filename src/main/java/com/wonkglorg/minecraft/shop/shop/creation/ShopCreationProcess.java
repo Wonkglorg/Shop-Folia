@@ -126,7 +126,7 @@ public abstract class ShopCreationProcess{
 		Main plugin = Main.getPlugin();
 		if(!isAllowedInDimension()){
 			plugin.logger().debug("Dimension check failed");
-			plugin.getLangManager().request("interaction.issues.worldBlacklist").sendToAudience(player);
+			plugin.getLangManager().request("interaction.issues.create.world-blacklist").sendToAudience(player);
 			return false;
 		}
 		

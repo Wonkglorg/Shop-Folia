@@ -74,14 +74,16 @@ public class GambleShop extends AbstractShop{
 				userRequest.replace("%item-amount%", amount * multiplier);
 				userRequest.sendToAudience(player);
 			}
-			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.gamble.shopPerformingTransaction").sendToAudience(player);
-			case CANCELLED -> lang.request("transaction.issue.gamble.cancelledExternal").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.gamble.playerNoStock").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_SELLER -> {
+			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.gamble.shop-performing-transaction").sendToAudience(player);
+			case CANCELLED -> lang.request("transaction.issue.gamble.cancelled-external").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.gamble.player-no-stock").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_SELLER -> { // can't happen for gamble shops
 			}
-			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.gamble.playerNoSpace").sendToAudience(player);
-			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.gamble.shopNoStock").sendToAudience(player);
-			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.gamble.useOwnShop").sendToAudience(player);
+			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.gamble.player-no-space").sendToAudience(player);
+			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.gamble.shop-no-stock").sendToAudience(player);
+			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.gamble.use-own-shop").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.gamble.player-cooldown").sendToAudience(player);
+			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.gamble.player-transaction-limit-reached").sendToAudience(player);
 		}
 		
 	}

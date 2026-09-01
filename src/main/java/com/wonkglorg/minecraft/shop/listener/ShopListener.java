@@ -15,12 +15,13 @@ import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShop;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
+import com.wonkglorg.minecraft.shop.manager.visibility.DisplayUpdateHandler;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
-import com.wonkglorg.minecraft.shop.shop.CreationWord;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
+import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
@@ -113,9 +114,8 @@ public class ShopListener implements Listener{
 		
 		//no creation word is present not a shop creation.
 		String firstLine = Components.toPlainText(event.line(0)).toLowerCase();
-		String creationWord = plugin.getSettingsConfig().getCreationWord(CreationWord.SHOP).toLowerCase();
-		if(!firstLine.contains(creationWord)){
-			logger.debug("Creation " + creationWord + " word is not present in '" + firstLine + "'");
+		if(SignCreationLayoutParser.hasFirstLine(firstLine)){
+			logger.debug("Sign Text first line does not match any valid permutation defined");
 			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
@@ -145,13 +145,13 @@ public class ShopListener implements Listener{
 		logger.debug("Sending Shop Creation Event");
 		PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, process.toImmutableProgress());
 		Main.getPlugin().getServer().getPluginManager().callEvent(e);
-		if(event.isCancelled()){
+		if(e.isCancelled()){
 			logger.debug("Event was cancelled by third party plugin");
 			logger.debug("====SHOP CREATION CANCEL====");
 			e.setCancelled(true);
 			return;
 		}
-		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
+		shopManager.getDatabase().logAction(player, process.getShopId(), ShopActionType.CREATE);
 		
 		if(process.getType() == ShopType.GAMBLE){
 			shopManager.addPlayerShopCreation(player, process);
@@ -178,10 +178,6 @@ public class ShopListener implements Listener{
 		}
 		
 		if(event.getAction() != Action.LEFT_CLICK_BLOCK){
-			return;
-		}
-		if(!settingsConfig.isAllowCreateMethodSign()){
-			logger.debug("Sign Create Method not allowed for initialisation");
 			return;
 		}
 		
@@ -254,11 +250,11 @@ public class ShopListener implements Listener{
 		Bukkit.getPluginManager().callEvent(shopEvent);
 		if(shopEvent.isCancelled()){
 			logger.debug("Event was cancelled by third party plugin");
-			lang.request("interaction.issues.createCancel").sendToAudience(player);
+			lang.request("interaction.issues.create.cancel").sendToAudience(player);
 			return false;
 		}
 		
-		AbstractShop shop = null;
+		AbstractShop shop;
 		event.setCancelled(true); //cancel event otherwise 1 tick breaking and creative mode destroy the shop sign while clicking on it
 		
 		if(process.getType() != ShopType.BARTER){
@@ -489,19 +485,11 @@ public class ShopListener implements Listener{
 		PlayerManager.loadProfile(player);
 		PlayerNameCache.cacheName(player.getUniqueId(), player.getName());
 		
-		shopManager.removeOutdatedShops();
-		
 		if(!player.hasPlayedBefore()){
 			return;
 		}
 		
-		shopManager.getDisplayManager().processShopDisplaysNearPlayer(player, false);
-		
-		//todo:mjd properly implement offline handling.
-		//if(plugin.getSettingsConfig().isOfflinePurchaseNotificationsEnabled()){
-		//	OfflineTransactions offlineTransactions = new OfflineTransactions(player.getUniqueId(), player.getLastLogin());
-		//	transactionsWhileOffline.put(player.getUniqueId(), offlineTransactions);
-		//}
+		shopManager.getVisibilityManager().processShopsNearPlayer(player, false);
 	}
 	
 	@EventHandler
@@ -509,7 +497,7 @@ public class ShopListener implements Listener{
 		Player player = event.getPlayer();
 		PlayerManager.removeProfile(player);
 		
-		shopManager.getDisplayManager().clearDisplaysForPlayer(player);
+		shopManager.getVisibilityManager().getListener(DisplayUpdateHandler.class).clearDisplaysForPlayer(player);
 	}
 	
 	@EventHandler

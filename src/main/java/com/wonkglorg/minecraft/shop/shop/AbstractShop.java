@@ -7,6 +7,7 @@ import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
+import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager.BlockKey;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
@@ -15,6 +16,7 @@ import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowe
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.offline;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.online;
 import com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler;
+import static com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler.getComponents;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
@@ -37,6 +39,7 @@ import it.unimi.dsi.fastutil.Pair;
 import static it.unimi.dsi.fastutil.Pair.of;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -73,6 +76,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @SuppressWarnings({"unused"})
 public abstract class AbstractShop{
 	/**
@@ -373,7 +377,7 @@ public abstract class AbstractShop{
 	 */
 	private void setDefaultSignData(Block signBlock) {
 		List<Component> lines = SignUpdateHandler.getDefaultSignLines(this);
-		Sign sign = (Sign) signBlock.getBlockData();
+		Sign sign = (Sign) signBlock.getState();
 		SignSide front = sign.getSide(Side.FRONT);
 		
 		for(int i = 0; i < 4; i++){
@@ -392,24 +396,24 @@ public abstract class AbstractShop{
 	}
 	
 	/**
-	 * Deletes the shop, same as calling {@link ShopManager#unregister()}
+	 * Deletes the shop, same as calling {@link ShopManager#unregisterShop(AbstractShop)}
 	 */
 	public void delete() {
-		Main.getPlugin().getShopManager().unregisterShop(this);
+		Main.getPlugin().getShopmanager().unregisterShop(this);
 	}
 	
 	/**
 	 * How often the given player has used this shop
 	 */
 	public int usageTimes(PlayerProfile player) {
-		return player.getUsageTimes(this);
+		return player.getPurchaseCount(this);
 	}
 	
 	/**
 	 * When the player has last used the shop, provided in millisecond timestamp
 	 */
 	public long lastUsedTime(PlayerProfile player) {
-		return player.getLastUsed(this);
+		return player.getLastPurchaseTime(this);
 	}
 	
 	/**
@@ -584,7 +588,7 @@ public abstract class AbstractShop{
 	 *
 	 * @param profile the profile of te player
 	 */
-	public ShopStateClient getClientShopState(OnlinePlayerProfile profile) {
+	public ShopStateClient getClientShopState(PlayerProfile profile) {
 		if(PURCHASE_LIMIT.isEnabled()){
 			int purchaseLimit = getSetting(PURCHASE_LIMIT);
 			if(purchaseLimit > 0){
@@ -737,6 +741,32 @@ public abstract class AbstractShop{
 			logger.debug("===CANCEL SHOP TRANSACTION====");
 			isPerformingTransaction = false;
 			return of(TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP, 0);
+		}
+		
+		OfflinePlayer player = party.getPlayer();
+		PlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
+		if(profile != null){
+			if(PURCHASE_LIMIT.isEnabled()){
+				logger.debug("Purchase limit is enabled!");
+				int purchaseLimit = getSetting(PURCHASE_LIMIT);
+				if(purchaseLimit > 0){
+					logger.debug("Shop has a purchase limit setting defined!");
+					if(profile.getPurchaseCount(this) > purchaseLimit){
+						return of(TransactionResult.PURCHASE_LIMIT_REACHED, 0);
+					}
+				}
+			}
+			
+			if(PURCHASE_COOLDOWN.isEnabled()){
+				logger.debug("Purchase cooldown is enabled!");
+				long purchaseCooldown = getSetting(PURCHASE_COOLDOWN);
+				if(purchaseCooldown > 0){
+					logger.debug("Shop has a purchase cooldown setting defined!");
+					if((profile.getLastPurchaseTime(this) + purchaseCooldown) < System.currentTimeMillis()){
+						return of(TransactionResult.PURCHASE_COOLDOWN, 0);
+					}
+				}
+			}
 		}
 		
 		logger.debug("Transaction with shop " + this + " and party " + party);
@@ -997,26 +1027,27 @@ public abstract class AbstractShop{
 	
 	/**
 	 * Gets this shops calculated sign lines for the given player
+	 *
 	 * @param player the player viewing the shop
 	 * @return constructed component list with a lnegth of 4 entries
 	 */
-	public static List<Component> getSignLines(PlayerProfile player) {
-		String langKey = "sign.text." + shop.getType().toString().toLowerCase() + ".";
-		langKey += switch(shop.getClientShopState(player)) {
-			case OK -> "in-stock";
-			case OVERFILLED -> "overfilled";
-			case ON_COOLDOWN -> "transaction-cooldown";
-			case LIMIT_REACHED -> "transaction-limit";
-			case EMPTY -> "out-of-stock";
+	public List<Component> getSignLines(PlayerProfile player) {
+		String langKey = "sign.text." + type.toString().toLowerCase() + ".";
+		langKey += switch(getClientShopState(player)) {
+			case ShopStateClient.OK -> "in-stock";
+			case ShopStateClient.OVERFILLED -> "overfilled";
+			case ShopStateClient.ON_COOLDOWN -> "transaction-cooldown";
+			case ShopStateClient.LIMIT_REACHED -> "transaction-limit";
+			case ShopStateClient.EMPTY -> "out-of-stock";
 		};
 		
-		DisplayType displayType = shop.getDisplay().getType();
+		DisplayType displayType = display.getType();
 		
 		if(displayType == DisplayType.NONE){
 			langKey += "-no-display";
 		}
 		
-		return getComponents(shop, langKey);
+		return getComponents(this, langKey);
 	}
 	
 	/**
