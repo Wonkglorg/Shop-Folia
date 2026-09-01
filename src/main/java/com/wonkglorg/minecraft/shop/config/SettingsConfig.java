@@ -289,6 +289,8 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
+		SignCreationProcess.reloadLayouts();
+		
 		// Load shop display optimization settings
 		displayProcessInterval = getDouble("display-process-interval");
 		
@@ -324,7 +326,7 @@ public class SettingsConfig extends Config{
 	
 	public void setMigrateOldData(boolean migrateOldData) {
 		this.migrateOldData = migrateOldData;
-		set("debug.migrateOldData", migrateOldData);
+		set("migrate-old-data", migrateOldData);
 	}
 	
 	public static class ShopSettings{

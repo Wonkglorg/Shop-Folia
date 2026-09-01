@@ -392,6 +392,27 @@ public abstract class AbstractShop{
 	}
 	
 	/**
+	 * Deletes the shop, same as calling {@link ShopManager#unregister()}
+	 */
+	public void delete(){
+		Main.getPlugin().getShopManager().unregisterShop(this);
+	}
+	
+	/**
+	 * How often the given player has used this shop
+	 */
+	public int usageTimes(PlayerProfile player){
+		return player.getUsageTimes(this);
+	}
+	
+	/**
+	 * When the player has last used the shop, provided in millisecond timestamp
+	 */
+	public long lastUsedTime(PlayerProfile player){
+		return player.getLastUsed(this);
+	}
+	
+	/**
 	 * Calculates the stock amount of the shop
 	 */
 	protected abstract void calculateStock();

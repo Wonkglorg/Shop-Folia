@@ -10,6 +10,9 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
 
+/**
+ * Helper class to convert itemstacks from and to json
+ */
 public final class ItemStackJsonCodec{
 	
 	private static final Gson GSON = new GsonBuilder().create();
@@ -17,13 +20,20 @@ public final class ItemStackJsonCodec{
 	private ItemStackJsonCodec() {
 	}
 	
-	public static String serialize(ItemStack itemStack) {
+	/**
+	 * Serializes the itemstack
+	 * @param itemStack the itemstack
+	 * @param normalizeAmount if the amount should be normalized to 1 before saving
+	 */
+	public static String serialize(ItemStack itemStack, boolean normalizeAmount) {
 		if (itemStack == null) {
 			return null;
 		}
 		
 		ItemStack item = itemStack.clone();
-		item.setAmount(1);
+		if(normalizeAmount) {
+			item.setAmount(1);
+		}
 		
 		JsonObject json = Bukkit.getUnsafe().serializeItemAsJson(item);
 		return GSON.toJson(json);

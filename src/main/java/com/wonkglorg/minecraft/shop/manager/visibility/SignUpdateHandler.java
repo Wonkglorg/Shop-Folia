@@ -28,6 +28,10 @@ import java.util.UUID;
  * Handles player-specific sign updating and changes.
  */
 public class SignUpdateHandler implements ShopVisibilityListener{
+	private final Map<UUID, Map<UUID, SignState>> lastSignStates = new HashMap<>();
+	
+	private record SignState(ShopStateClient state, int usage, long lastUsed){}
+	
 	private static final LangManager lang = Main.getPlugin().getLangManager();
 	
 	@Override
@@ -180,6 +184,23 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 			lines.add(lang.request("sign.text.timeout." + i).toSingleComponent());
 		}
 		return lines;
+	}
+	
+	private boolean hasSignStateChanged(Player player, AbstractShop shop) {
+		UUID playerId = player.getUniqueId();
+		UUID shopId = shop.getShopId();
+		
+		ShopStateClient state = shop.getClientShopState(player);
+		int usage = shop.getUsage(player);
+		long lastUsed = shop.getLastUsed(player);
+		
+		SignState current = new SignState(state, usage, lastUsed);
+		
+		Map<UUID, SignState> playerStates = lastSignStates.computeIfAbsent(playerId, _ -> new HashMap<>());
+		
+		SignState previous = playerStates.put(shopId, current);
+		
+		return !current.equals(previous);
 	}
 	
 	/**

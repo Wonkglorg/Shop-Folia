@@ -44,7 +44,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			INSERT INTO shops
 			(shop_uuid, owner_uuid, item, price, amount,last_known_stock_count, last_known_stock_status, shop_type,sign_facing, display_type,fake_sign, barter_item, creation_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
 			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-			ON CONFLICT(shop_uuid, owner_uuid) DO NOTHING;
+			ON CONFLICT(shop_uuid) DO NOTHING;
 			""";
 	
 	private static final String SHOP_SELECT_SQL = """
@@ -65,7 +65,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			INSERT INTO shops
 			(shop_uuid, owner_uuid, item, price, amount,last_known_stock_count, last_known_stock_status, shop_type,sign_facing, display_type,fake_sign, barter_item, creation_time,destroy_time, item_type, item_barter_type, shop_world, shop_x, shop_y, shop_z)
 			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-			ON CONFLICT(shop_uuid, owner_uuid) DO NOTHING;
+			ON CONFLICT(shop_uuid) DO NOTHING;
 			""";
 	
 	private static final String PURCHASE_STATS_SQL = """
@@ -97,16 +97,15 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		loadSqlStatements(plugin.getResource("db-setup.sql"), "");
 	}
 	
+	/**
+	 * Adds a new shop to the database, if a shop with this uuid already exists do nothing
+	 *
+	 * @param shop the shop to insert
+	 */
 	public void addShop(AbstractShop shop) {
 		scheduler.runAsync(_ -> {
 			try(var ps = getConnection().prepareStatement(SHOP_INSERT_SQL)){
 				insertShopValues(shop, ps);
-				if(shop.getFacing() == null){
-					PluginLogger.error("Shop " +
-									   shop +
-									   "is missing a facing direction if this happens during migration the error can be ignored. marking as invalid and setting default direction for insertion!");
-					removeShop(shop);
-				}
 				ps.executeUpdate();
 			} catch(SQLException e){
 				PluginLogger.error("Error while creating shop chest", e);
@@ -114,6 +113,13 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 	}
 	
+	/**
+	 * Method to import legacy shops, should not be used by any other caller outside of migration purposes
+	 *
+	 * @param shops the shops to add
+	 * @param deletionTimes shops and their deletion time
+	 */
+	@Internal
 	public void addLegacyShops(Map<UUID, AbstractShop> shops, Map<UUID, Long> deletionTimes) {
 		if(shops == null || shops.isEmpty()){
 			return;
@@ -133,7 +139,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					Location signLocation = shop.getSignLocation();
 					ps.setString(1, shop.getId().toString());
 					ps.setString(2, shop.getOwnerUUID().toString());
-					ps.setString(3, ItemStackJsonCodec.serialize(mainStack));
+					ps.setString(3, ItemStackJsonCodec.serialize(mainStack,true));
 					ps.setDouble(4, shop.getPrice());
 					ps.setInt(5, shop.getAmount());
 					ps.setInt(6, shop.getStock());
@@ -149,7 +155,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 							? shop.getDisplay().getType().toString()
 							: DisplayType.NONE.toString());
 					ps.setInt(11, shop.isFakeSign() ? 1 : 0);
-					ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+					ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack,true) : null);
 					ps.setLong(13, shop.getCreationDate());
 					ps.setLong(14, deletionTimes.getOrDefault(shop.getId(), 0L));
 					ps.setString(15, mainStack.getType().toString());
@@ -177,6 +183,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		}
 	}
 	
+	/**
+	 * All shops known to the shops plugin
+	 *
+	 * @param includeDeleted if already deleted shops should be included
+	 */
 	public CompletableFuture<List<AbstractShop>> getShops(boolean includeDeleted) {
 		CompletableFuture<List<AbstractShop>> future = new CompletableFuture<>();
 		scheduler.runAsync(t -> {
@@ -196,6 +207,9 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		return future;
 	}
 	
+	/**
+	 * Caches the shops current stock state and stock amount, used when shutting down the plugin to have a somwhat up to date initial value for shop stock before the chunk is loaded
+	 */
 	public void cacheStockValues(Collection<AbstractShop> shops) {
 		if(shops == null || shops.isEmpty()){
 			return;
@@ -274,7 +288,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		Location signLocation = shop.getSignLocation();
 		ps.setString(1, shop.getId().toString());
 		ps.setString(2, shop.getOwnerUUID().toString());
-		ps.setString(3, ItemStackJsonCodec.serialize(mainStack));
+		ps.setString(3, ItemStackJsonCodec.serialize(mainStack,true));
 		ps.setDouble(4, shop.getPrice());
 		ps.setInt(5, shop.getAmount());
 		ps.setInt(6, shop.getStock());
@@ -290,7 +304,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				? shop.getDisplay().getType().toString()
 				: DisplayType.NONE.toString());
 		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
-		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack,true) : null);
 		ps.setLong(13, shop.getCreationDate());
 		ps.setString(14, mainStack.getType().toString());
 		ps.setString(15, barterStack != null ? barterStack.getType().toString() : null);
@@ -300,6 +314,12 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setInt(19, signLocation.getBlockZ());
 	}
 	
+	/**
+	 * Adds a player to the player name cache
+	 *
+	 * @param uuid the uuid of the player
+	 * @param name the name of the player
+	 */
 	public void addPlayer(UUID uuid, String name) {
 		scheduler.runAsync(_ -> {
 			try(var ps = getConnection().prepareStatement("""
@@ -318,6 +338,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 	}
 	
+	/**
+	 * Data migration helper method to add players to the known names
+	 *
+	 * @param players
+	 */
 	public void addLegacyPlayers(Map<UUID, String> players) {
 		if(players == null || players.isEmpty()){
 			return;
@@ -331,7 +356,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			try(var ps = connection.prepareStatement("""
 					INSERT INTO players (uuid, name)
 					VALUES (?, ?)
-					ON CONFLICT(uuid) DO UPDATE SET name = excluded.name
+					ON CONFLICT(uuid) DO NOTHING
 					""")){
 				
 				for(var player : players.entrySet()){
@@ -381,6 +406,9 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		return names;
 	}
 	
+	/**
+	 * Marks a shop as being destroyed in the database
+	 */
 	public void removeShop(AbstractShop shop) {
 		scheduler.runAsync(_ -> {
 			try(var ps = getConnection().prepareStatement("""
@@ -399,6 +427,15 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 	}
 	
+	/**
+	 * Logs a transaction to the database and records the purchase to the player profile if they are online
+	 *
+	 * @param shopId the id of the shop
+	 * @param timestamp when the transaction happened
+	 * @param purchaserId the id of the purchaser
+	 * @param gambleReward the reward given out from gambling
+	 * @param multiplier how often the transaction happened
+	 */
 	public void logTransaction(UUID shopId, long timestamp, UUID purchaserId, @Nullable ItemStack gambleReward, int multiplier) {
 		scheduler.runAsync(_ -> {
 			try(var preparedStatement = getConnection().prepareStatement("""
@@ -408,7 +445,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				preparedStatement.setLong(2, timestamp);
 				preparedStatement.setString(3, purchaserId.toString());
 				preparedStatement.setInt(4, 0); //todo:mjd impplement offline caching for players to get stats when they login next time.
-				preparedStatement.setString(5, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward) : null);
+				preparedStatement.setString(5, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward,false) : null);
 				preparedStatement.setInt(6, multiplier);
 				preparedStatement.execute();
 			} catch(SQLException e){
@@ -417,12 +454,15 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			var profileIfLoaded = PlayerManager.getOnlineProfileIfCached(purchaserId);
 			if(profileIfLoaded != null){
 				//update cached values for the online player
-				profileIfLoaded.recordPurchase(shopId, timestamp);
+				profileIfLoaded.recordPurchase(shopId, timestamp, multiplier);
 			}
 		});
 		
 	}
 	
+	/**
+	 * Logs a transaction for migration tasks to the database and records the purchase to the player profile if they are online
+	 */
 	public void logLegacyTransactions(List<ShopHistoryEntry> entries) {
 		if(entries == null || entries.isEmpty()){
 			return;
@@ -478,6 +518,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		}
 	}
 	
+	/**
+	 * Logs a change in currency
+	 * @param type the type of the currency
+	 * @param currency if its an itemstack the stack
+	 */
 	public void logCurrencyChange(CurrencyType type, @Nullable ItemStack currency) {
 		scheduler.runAsync(_ -> {
 			try(var preparedStatement = getConnection().prepareStatement("""
@@ -485,7 +530,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					""");){//SQLITE auto increments primary keys, message here is false!
 				preparedStatement.setLong(1, System.currentTimeMillis());
 				preparedStatement.setString(2, type.toString());
-				preparedStatement.setString(3, currency != null ? ItemStackJsonCodec.serialize(currency) : null);
+				preparedStatement.setString(3, currency != null ? ItemStackJsonCodec.serialize(currency,false) : null);
 				preparedStatement.execute();
 			} catch(SQLException e){
 				PluginLogger.error("Error while adding transaction to shop", e);
@@ -494,20 +539,22 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		
 	}
 	
-	public void logAction(OfflinePlayer player, UUID shopOwner, UUID shopUuid, ShopActionType actionType) {
+	/**
+	 * Logs a shop action
+	 * @param player the player doing the action
+	 * @param shopOwner the owner of the shop
+	 * @param shopUuid the shop id
+	 * @param actionType the action
+	 */
+	public void logAction(OfflinePlayer player, UUID shopUuid, ShopActionType actionType) {
 		scheduler.runAsync(_ -> {
 			// Connect to datasource & create statement in "try" to handle automatically closing the connection!
 			try(Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(
-					"INSERT INTO shop_actions(timestamp, player_uuid, owner_uuid, shop_uuid, player_action) VALUES(?, ?, ?, ?, ?);");){
+					"INSERT INTO shop_actions(timestamp, player_uuid, shop_uuid, player_action) VALUES(?,  ?, ?, ?);");){
 				stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
 				stmt.setString(2, player.getUniqueId().toString());
-				if(AdminOfflinePlayer.getAdminUUID().equals(shopOwner)){
-					stmt.setString(3, "admin");
-				} else {
-					stmt.setString(3, shopOwner.toString());
-				}
-				stmt.setString(4, shopUuid.toString());
-				stmt.setString(5, actionType.toString());
+				stmt.setString(3, shopUuid.toString());
+				stmt.setString(4, actionType.toString());
 				stmt.execute();
 			} catch(SQLException e){
 				plugin.logger().log(Level.WARNING, "SQL error occurred while trying to log player action.");
@@ -549,9 +596,13 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 								  (shop.getSecondaryItemStack() != null ? " barterItem: " +
 																		  ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
 		}
-		logAction(player, shop.getOwnerUUID(), shop.getId(), actionType);
+		logAction(player, shop.getId(), actionType);
 	}
 	
+	/**
+	 * update all shops
+	 * @param shops
+	 */
 	public void updateShops(Collection<? extends AbstractShop> shops) {
 		if(shops == null || shops.isEmpty() || plugin.isImmediateShutdown()){
 			return;
@@ -616,7 +667,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		Location signLocation = shop.getSignLocation();
 		
 		ps.setString(1, shop.getOwnerUUID().toString());
-		ps.setString(2, ItemStackJsonCodec.serialize(mainStack));
+		ps.setString(2, ItemStackJsonCodec.serialize(mainStack,true));
 		ps.setDouble(3, shop.getPrice());
 		ps.setInt(4, shop.getAmount());
 		ps.setInt(5, shop.getStock());
@@ -627,7 +678,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				? shop.getDisplay().getType().toString()
 				: DisplayType.NONE.toString());
 		ps.setInt(9, shop.isFakeSign() ? 1 : 0);
-		ps.setString(10, barterStack != null ? ItemStackJsonCodec.serialize(barterStack) : null);
+		ps.setString(10, barterStack != null ? ItemStackJsonCodec.serialize(barterStack,true) : null);
 		ps.setString(11, mainStack.getType().toString());
 		ps.setString(12, barterStack != null ? barterStack.getType().toString() : null);
 		ps.setString(13, signLocation.getWorld().getName());

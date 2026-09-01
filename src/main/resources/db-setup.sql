@@ -79,7 +79,6 @@ CREATE TABLE IF NOT EXISTS shop_actions
 (
     timestamp     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     player_uuid   TEXT NOT NULL,
-    owner_uuid    TEXT NOT NULL,
     shop_uuid     TEXT NOT NULL,
     player_action TEXT NOT NULL,
 

@@ -44,6 +44,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+/**
+ * Keeps track of all shops and related functionality
+ */
 public class ShopManager{
 	private final Main plugin;
 	private final ShopLogger logger;

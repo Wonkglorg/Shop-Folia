@@ -25,7 +25,7 @@ public final class Settings{
 			shopSettings()::getTransactionLimitDefault,
 			shopSettings()::isTransactionLimitEnabled);
 	/**
-	 * If the shop owner should inform the shop owner if the shop is out of stock
+	 * If the shop should inform the shop owner if it is out of stock
 	 */
 	public static final Setting<Boolean> OUT_OF_STOCK_NOTIFICATION = new Setting<>("out-of-stock-notification",
 			Boolean.class,

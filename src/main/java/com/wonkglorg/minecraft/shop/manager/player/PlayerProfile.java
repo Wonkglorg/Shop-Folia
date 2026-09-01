@@ -307,8 +307,8 @@ public abstract class PlayerProfile{
 		this.experience = experience;
 	}
 	
-	public void recordPurchase(UUID shopId, long timestamp) {
-		totalPurchasesPerShop.merge(shopId, 1, Integer::sum);
+	public void recordPurchase(UUID shopId, long timestamp, int multiplier) {
+		totalPurchasesPerShop.merge(shopId, multiplier, Integer::sum);
 		lastPurchaseTimePerShop.put(shopId, timestamp);
 	}
 	
