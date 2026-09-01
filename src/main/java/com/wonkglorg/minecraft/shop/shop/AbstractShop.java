@@ -73,7 +73,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings({"unused", "UnknownLangKey"})
+@SuppressWarnings({"unused"})
 public abstract class AbstractShop{
 	/**
 	 * Static reference used for all admin shop owners
@@ -993,6 +993,30 @@ public abstract class AbstractShop{
 	 */
 	public void updateSign() {
 		Main.getPlugin().getShopmanager().getVisibilityManager().getListener(SignUpdateHandler.class).refreshShop(this);
+	}
+	
+	/**
+	 * Gets this shops calculated sign lines for the given player
+	 * @param player the player viewing the shop
+	 * @return constructed component list with a lnegth of 4 entries
+	 */
+	public static List<Component> getSignLines(PlayerProfile player) {
+		String langKey = "sign.text." + shop.getType().toString().toLowerCase() + ".";
+		langKey += switch(shop.getClientShopState(player)) {
+			case OK -> "in-stock";
+			case OVERFILLED -> "overfilled";
+			case ON_COOLDOWN -> "transaction-cooldown";
+			case LIMIT_REACHED -> "transaction-limit";
+			case EMPTY -> "out-of-stock";
+		};
+		
+		DisplayType displayType = shop.getDisplay().getType();
+		
+		if(displayType == DisplayType.NONE){
+			langKey += "-no-display";
+		}
+		
+		return getComponents(shop, langKey);
 	}
 	
 	/**

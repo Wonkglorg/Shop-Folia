@@ -28,6 +28,7 @@ import java.util.UUID;
  * Handles player-specific sign updating and changes.
  */
 public class SignUpdateHandler implements ShopVisibilityListener{
+	//todo think about how to best optimize this for memory allocations
 	private final Map<UUID, Map<UUID, SignState>> lastSignStates = new HashMap<>();
 	
 	private record SignState(ShopStateClient state, int usage, long lastUsed){}
@@ -84,6 +85,23 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 		}, 1);
 	}
 	
+	//todo use something close to that for storing sign states, takes less memory than storing all fields
+	private static long encodeSignState(ShopStateClient state, int usage, long lastUsedSeconds) {
+		return ((long) state.ordinal() << 56) | ((long) usage << 32) | (lastUsedSeconds & 0xFFFFFFFFL);
+	}
+	
+	private static ShopStateClient getState(long value) {
+		return ShopStateClient.values()[(int) (value >>> 56)];
+	}
+	
+	private static int getUsage(long value) {
+		return (int) (value >>> 32);
+	}
+	
+	private static long getLastUsed(long value) {
+		return value & 0xFFFFFFFFL;
+	}
+	
 	public void refreshShop(AbstractShop shop) {
 		for(UUID playerId : getPlayersSeeingShop(shop)){
 			
@@ -93,28 +111,6 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 				updateSign(player, shop);
 			}
 		}
-	}
-	
-	//      # %amount% : The amount of items the shop is selling/buying/bartering #
-	//      # %price% : The price of the items the shop is selling (adjusted to match virtual or physical currency) #
-	//      # %owner% : The name of the shop owner #
-	public static List<Component> getSignLines(Player player, AbstractShop shop) {
-		String langKey = "sign.text." + shop.getType().toString().toLowerCase() + ".";
-		langKey += switch(shop.getClientShopState(player)) {
-			case OK -> "in-stock";
-			case OVERFILLED -> "overfilled";
-			case ON_COOLDOWN -> "transaction-cooldown";
-			case LIMIT_REACHED -> "transaction-limit";
-			case EMPTY -> "out-of-stock";
-		};
-		
-		DisplayType displayType = shop.getDisplay().getType();
-		
-		if(displayType == DisplayType.NONE){
-			langKey += "-no-display";
-		}
-		
-		return getComponents(shop, langKey);
 	}
 	
 	private static @NonNull List<Component> getComponents(AbstractShop shop, String langKey) {
