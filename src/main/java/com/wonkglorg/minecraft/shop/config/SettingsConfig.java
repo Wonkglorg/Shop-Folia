@@ -202,11 +202,8 @@ public class SettingsConfig extends Config{
 		
 		priceSuffixes = new TreeMap<>();
 		for(String suffixKey : getConfigurationSection("price-suffixes").getKeys(false)){
-			boolean enabled = getBoolean("price-suffixes." + suffixKey + ".enabled");
-			if(enabled){
-				Double suffixValue = getDouble("price-suffixes." + suffixKey + ".value");
-				priceSuffixes.put(suffixValue, suffixKey);
-			}
+			double suffixValue = getDouble("price-suffixes." + suffixKey + "");
+			priceSuffixes.put(suffixValue, suffixKey);
 		}
 		
 		useLocalizedMaterials = getBoolean("use-localized-material-names");

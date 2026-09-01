@@ -17,27 +17,14 @@ currency:
   #the type of currency to use (name for currencies is defined in the specific lang file of the plugin
   type: ITEM
 
-# This formats suffixes for large numbers like (5,000 = 5k) or (5,000,000 = 5M) #
-# minimumValue = minimum value to start formatting strings #
+# This formats suffixes for large numbers like (5,000 = 5k) or (5,000,000 = 5M)
 price-suffixes:
-  k:
-    enabled: true
-    value: 1000
-  M:
-    enabled: true
-    value: 1000000
-  B:
-    enabled: true
-    value: 1000000000
-  T:
-    enabled: true
-    value: 1000000000000
-  P:
-    enabled: true
-    value: 1000000000000000
-  E:
-    enabled: true
-    value: 1000000000000000000
+  k: 1000
+  M: 1000000
+  B: 1000000000
+  T: 1000000000000
+  P: 1000000000000000
+  E: 1000000000000000000
 
 # =================================================================== #
 #                           SHOP                                      #
@@ -88,30 +75,94 @@ sign:
   waxed-sign: true
 
   #the line format shops need to abide by when being created every line can be a list of possible options of multiple permutations are allowed, placeholders:
-  # %price% - the price to pay (positive value including 0)
-  # %amount% - the item amount being given (positive value above 0)
-  # todo use regex?
-  creation-layout:
-    sell:
-      1: [ "shop" ]
-      2: [ "%amount%" ]
-      3: [ "%price%" ]
-      4: [ "sell", "" ]
-    buy:
-      1: [ "shop" ]
-      2: [ "%amount%" ]
-      3: [ "%price%" ]
-      4: [ "buy" ]
-    barter:
-      1: [ "shop" ]
-      2: [ "%amount%" ]
-      3: [ "%price%" ]
-      4: [ "barter" ]
-    gamble:
-      1: [ "shop" ]
-      2: [ "" ]
-      3: [ "%price%" ]
-      4: [ "gamble" ]
+  # %price% - the price to pay (positive value including 0) needs to be standalone on a sign line
+  # %amount% - the item amount being given (positive value above 0) needs to be standalone on a sign line
+creation-layout:
+  # Each shop type can have multiple layouts that are "valid".
+  sell:
+    # Declarations for normal shops.
+    normal:
+      # Multiple values can be defined per line, making them alternatives.
+      - 1: [ "shop", "[shop]" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "sell" ]
+
+      - 1: [ "shop", "[shop]", "sell shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+    # Declarations for admin shops.
+    admin:
+      - 1: [ "shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "sell admin" ]
+
+      - 1: [ "admin sell shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+  buy:
+    normal:
+      - 1: [ "shop", "[shop]", "buy shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "buy" ]
+
+      - 1: [ "buy shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+    admin:
+      - 1: [ "shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "buy admin" ]
+
+      - 1: [ "admin buy shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+  barter:
+    normal:
+      - 1: [ "shop", "[shop]", "barter shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "barter" ]
+
+      - 1: [ "barter shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+    admin:
+      - 1: [ "shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "barter admin" ]
+
+      - 1: [ "admin barter shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+  # Gamble shops are always admin shops.
+  gamble:
+    admin:
+      - 1: [ "shop", "[shop]" ]
+        2: [ "" ]
+        3: [ "%price%" ]
+        4: [ "gamble" ]
+
+      - 1: [ "gamble shop" ]
+        2: [ "" ]
+        3: [ "%price%" ]
+        4: [ "" ]
 # =================================================================== #
 #                         SHOP INTERACTIONS                           #
 # =================================================================== #

@@ -1,9 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop.creation;
 
 import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler;
-import com.wonkglorg.minecraft.shop.shop.CreationWord;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
@@ -17,180 +15,489 @@ import org.bukkit.block.sign.Side;
 import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 
-//todo reimplement sign creation process and allow more dynamic parsing as defined in the config.
 public class SignCreationProcess extends ShopCreationProcess{
+	
+	private static final String AMOUNT = "%amount%";
+	private static final String PRICE = "%price%";
+	
+	/*
+	 * Replaced whenever the configuration is reloaded.
+	 *
+	 * The map is indexed by literal first-line values:
+	 *
+	 * "shop"      -> layouts beginning with "shop"
+	 * "[shop]"    -> layouts beginning with "[shop]"
+	 * "sell shop" -> layouts beginning with "sell shop"
+	 */
+	private static volatile LayoutIndex LAYOUT_INDEX = LayoutIndex.EMPTY;
 	
 	public SignCreationProcess(Player player, Sign sign, Block container, BlockFace signDirection) {
 		super(player, sign, container, signDirection);
-		isFakeSign = false; //its a sign shop creation a real sign already exists
+		isFakeSign = false;
 	}
 	
 	/**
-	 * Read sign lines and populates process,
+	 * Reads and validates the four sign lines.
 	 */
-	public boolean readSignLines(List<Component> lines) {
+	public boolean readSignLines(List<Component> components) {
+		if(components.size() < 4){
+			return false;
+		}
 		
-		String line3 = Components.toPlainText(lines.get(3));
-		type = getShopType(line3);
+		/*
+		 * Convert components to plain text exactly once.
+		 */
+		String[] lines = new String[4];
+		
+		for(int i = 0; i < 4; i++){
+			lines[i] = Components.toPlainText(components.get(i)).trim();
+		}
+		
+		/*
+		 * First-line lookup.
+		 *
+		 * This avoids checking every configured layout.
+		 */
+		List<Layout> layouts = LAYOUT_INDEX.byFirstLine.get(lines[0].toLowerCase(Locale.ROOT));
+		
+		if(layouts == null){
+			layouts = LAYOUT_INDEX.dynamicFirstLineLayouts;
+		} else if(!LAYOUT_INDEX.dynamicFirstLineLayouts.isEmpty()){
+			for(Layout layout : layouts){
+				if(layout.matches(lines)){
+					return applyMatch(layout, lines);
+				}
+			}
+			
+			for(Layout layout : LAYOUT_INDEX.dynamicFirstLineLayouts){
+				if(layout.matches(lines)){
+					return applyMatch(layout, lines);
+				}
+			}
+			
+			return false;
+		}
+		
+		for(Layout layout : layouts){
+			if(layout.matches(lines)){
+				return applyMatch(layout, lines);
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Applies the values extracted from a matched layout.
+	 */
+	private boolean applyMatch(Layout layout, String[] lines) {
+		this.type = layout.type;
+		this.adminShop = layout.admin;
+		
+		this.amount = parseAmount(lines[layout.amountLine]);
+		
+		if(this.amount < 1){
+			Main.getPlugin().logger().debug("Invalid shop amount: " + lines[layout.amountLine]);
+			return false;
+		}
+		
+		Double parsedPrice = parsePrice(lines[layout.priceLine], type);
+		
+		if(parsedPrice == null){
+			Main.getPlugin().logger().debug("Invalid shop price: " + lines[layout.priceLine]);
+			return false;
+		}
+		
+		this.price = parsedPrice;
+		
+		Main.getPlugin().logger().debug("Matched shop creation layout: type=" +
+										type +
+										", admin=" +
+										adminShop +
+										", amount=" +
+										amount +
+										", price=" +
+										price);
+		
 		if(!isAllowedToCreateShop()){
 			Main.getPlugin().logger().debug("Player is not allowed to build shop of type " + type);
 			return false;
 		}
-		adminShop = readShopAdmin(line3);
-		Main.getPlugin().logger().debug("Is Admin shop: " + adminShop);
 		
-		Integer amountRead = readAmount(lines.get(1));
-		if(amountRead == null){
-			Main.getPlugin().logger().debug("Malformed shop line 2");
-			lang.request("interaction.issues.createLine2").sendToAudience(player);
-			lang.request("interaction.issues.createCancel").sendToAudience(player);
-			return false;
-		} else {
-			amount = amountRead;
-		}
-		
-		if(!readPrice(Components.toPlainText(lines.get(2)), type)){
-			Main.getPlugin().logger().debug("Malformed shop line 3");
-			lang.request("interaction.issues.createLine3").sendToAudience(player);
-			return false;
-		}
-		
-		Main.getPlugin().logger().debug("Shop type: " + type);
 		return true;
 	}
 	
-	private Integer readAmount(Component component) {
+	private int parseAmount(String input) {
 		try{
-			String line2 = UtilMethods.cleanNumberText(Components.toPlainText(component));
-			amount = Integer.parseInt(line2);
-			if(amount < 1){
-				Main.getPlugin().logger().debug("Amount can't be 0");
+			return Integer.parseInt(UtilMethods.cleanNumberText(input));
+		} catch(NumberFormatException ignored){
+			return -1;
+		}
+	}
+	
+	private Double parsePrice(String input, ShopType shopType) {
+		String cleaned = UtilMethods.cleanNumberText(input);
+		
+		try{
+			if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.VAULT){
+				
+				double multiplier = getMultiplyValue(cleaned);
+				
+				String[] parts = cleaned.split(" ");
+				
+				if(parts.length == 0 || parts[0].isEmpty()){
+					return null;
+				}
+				
+				double price = Double.parseDouble(parts[0]);
+				price *= multiplier;
+				
+				if(price < 0){
+					return null;
+				}
+				
+				if(price == 0 && shopType == ShopType.BARTER){
+					return null;
+				}
+				
+				return price;
+			}
+			
+			String[] parts = cleaned.split(" ");
+			
+			if(parts.length == 0 || parts[0].isEmpty()){
 				return null;
 			}
-			Main.getPlugin().logger().debug("Amount:" + amount);
-			return amount;
-		} catch(NumberFormatException _){
-			Main.getPlugin().logger().debug("Not a valid integer");
+			
+			long price = Long.parseLong(parts[0]);
+			
+			if(price < 0){
+				return null;
+			}
+			
+			if(price == 0 && shopType == ShopType.BARTER){
+				return null;
+			}
+			
+			return (double) price;
+			
+		} catch(NumberFormatException ignored){
 			return null;
 		}
 	}
 	
-	private boolean readShopAdmin(String input) {
-		return input.toLowerCase().contains(Main.getPlugin().getSettingsConfig().getCreationWord(CreationWord.ADMIN));
+	private double getMultiplyValue(String text) {
+		String priceString = text.replace(" ", "").toLowerCase(Locale.ROOT);
+		
+		String priceSuffix = priceString.replaceAll("[0-9.]", "");
+		
+		NavigableMap<Double, String> suffixes = Main.getPlugin().getSettingsConfig().getPriceSuffixes();
+		
+		for(Map.Entry<Double, String> entry : suffixes.entrySet()){
+			if(priceSuffix.equals(entry.getValue().toLowerCase(Locale.ROOT))){
+				return entry.getKey();
+			}
+		}
+		
+		return 1;
 	}
 	
 	/**
-	 * Reads in the price values
+	 * Reloads all creation layouts from the current configuration.
+	 *
+	 * Call this after the settings/configuration has been reloaded.
 	 */
-	public boolean readPrice(String input, ShopType shopType) {
-		double price = 0;
-		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.VAULT){
-			Main.getPlugin().logger().debug("Reading Vault currency");
+	public static void reloadLayouts() {
+		Map<String, List<Layout>> byFirstLine = new HashMap<>();
+		List<Layout> dynamicFirstLine = new ArrayList<>();
+		
+		Map<String, Object> config = Main.getPlugin().getSettingsConfig().getCreationLayout();
+		
+		for(Map.Entry<String, Object> shopTypeEntry : config.entrySet()){
+			
+			ShopType shopType;
+			
 			try{
-				double multiplyValue = getMultiplyValue(input);
-				Main.getPlugin().logger().debug("Multiplier: " + multiplyValue);
-				String line3 = UtilMethods.cleanNumberText(input);
-				
-				String[] multiplePrices = line3.split(" ");
-				if(multiplePrices.length > 1){
-					if(multiplePrices[0].contains(".")){
-						price = Double.parseDouble(multiplePrices[0]);
-					} else {
-						price = Long.parseLong(multiplePrices[0]);
-					}
-				} else {
-					if(line3.contains(".")){
-						price = Double.parseDouble(line3);
-					} else {
-						price = Long.parseLong(line3);
-					}
-				}
-				
-				price *= multiplyValue;
-				Main.getPlugin().logger().debug("Price: " + price);
-			} catch(NumberFormatException _){
-				return false;
+				shopType = ShopType.valueOf(shopTypeEntry.getKey().toUpperCase(Locale.ROOT));
+			} catch(IllegalArgumentException ignored){
+				Main.getPlugin().logger().warning("Unknown shop type in creation-layout: " + shopTypeEntry.getKey());
+				continue;
 			}
-		} else {
-			Main.getPlugin().logger().debug("Reading non fractional currency " + Main.getPlugin().getSettingsConfig().getCurrencyType());
-			try{
-				String line3 = UtilMethods.cleanNumberText(input);
+			
+			if(!(shopTypeEntry.getValue() instanceof Map<?, ?> categoryMap)){
+				Main.getPlugin().logger().warning("Creation layout for " + shopType + " must contain normal/admin categories.");
+				continue;
+			}
+			
+			parseCategory(shopType, categoryMap, "normal", false, byFirstLine, dynamicFirstLine);
+			
+			/*
+			 * Gamble is always admin, but using the config category
+			 * keeps the parser generic.
+			 */
+			parseCategory(shopType, categoryMap, "admin", true, byFirstLine, dynamicFirstLine);
+		}
+		
+		LAYOUT_INDEX = new LayoutIndex(byFirstLine, dynamicFirstLine);
+	}
+	
+	/**
+	 * Parses either the normal or admin section.
+	 */
+	private static void parseCategory(ShopType shopType,
+									  Map<?, ?> categoryMap,
+									  String categoryName,
+									  boolean admin,
+									  Map<String, List<Layout>> byFirstLine,
+									  List<Layout> dynamicFirstLine) {
+		Object raw = categoryMap.get(categoryName);
+		
+		if(raw == null){
+			return;
+		}
+		
+		if(!(raw instanceof List<?> declarations)){
+			Main.getPlugin().logger().warning("Creation layout " + shopType + "." + categoryName + " must be a list.");
+			return;
+		}
+		
+		for(Object rawDeclaration : declarations){
+			
+			if(!(rawDeclaration instanceof Map<?, ?> declaration)){
+				Main.getPlugin().logger().warning("Invalid creation layout declaration for " + shopType + "." + categoryName);
+				continue;
+			}
+			
+			String[][] lines = new String[4][];
+			
+			boolean valid = true;
+			
+			for(int line = 1; line <= 4; line++){
+				Object rawLine = declaration.get(line);
 				
-				String[] multiplePrices = line3.split(" ");
-				if(multiplePrices.length > 1){
-					price = Long.parseLong(multiplePrices[0]);
-					Main.getPlugin().logger().debug("Price: " + price);
-				} else {
-					price = Long.parseLong(line3);
-					Main.getPlugin().logger().debug("Price: " + price);
+				if(rawLine == null){
+					rawLine = declaration.get(String.valueOf(line));
 				}
-			} catch(NumberFormatException _){
-				Main.getPlugin().logger().debug("Malformed Price Number");
-				return false;
+				
+				String[] options = parseOptions(rawLine, shopType, categoryName, line);
+				
+				if(options == null){
+					valid = false;
+					break;
+				}
+				
+				lines[line - 1] = options;
+			}
+			
+			if(!valid){
+				continue;
+			}
+			
+			Layout layout = new Layout(shopType, admin, lines);
+			
+			/*
+			 * Index the declaration using literal first-line options.
+			 */
+			boolean hasLiteralFirstLine = false;
+			
+			for(String option : lines[0]){
+				if(!isDynamic(option)){
+					hasLiteralFirstLine = true;
+					
+					byFirstLine.computeIfAbsent(option.toLowerCase(Locale.ROOT), ignored -> new ArrayList<>()).add(layout);
+				}
+			}
+			
+			/*
+			 * If the first line only contains %amount%/%price%,
+			 * it cannot use the literal lookup index.
+			 */
+			if(!hasLiteralFirstLine){
+				dynamicFirstLine.add(layout);
 			}
 		}
-		//only allow price to be zero if the type is selling
-		if(price < 0 || (price == 0 && shopType == ShopType.BARTER)){
+	}
+	
+	/**
+	 * Converts one YAML line into its list of alternatives.
+	 *
+	 * Supports both:
+	 *
+	 * 1: "shop"
+	 *
+	 * and:
+	 *
+	 * 1: [ "shop", "[shop]" ]
+	 */
+	private static String[] parseOptions(Object raw, ShopType shopType, String category, int line) {
+		if(raw instanceof String string){
+			return new String[]{string.trim()};
+		}
+		
+		if(raw instanceof List<?> list){
+			if(list.isEmpty()){
+				Main.getPlugin().getLogger().warning("Empty creation layout options for " + shopType + "." + category + " line " + line);
+				return null;
+			}
+			
+			String[] options = new String[list.size()];
+			
+			for(int i = 0; i < list.size(); i++){
+				Object value = list.get(i);
+				
+				if(!(value instanceof String string)){
+					Main.getPlugin().getLogger().warning("Non-string creation layout option for " + shopType + "." + category + " line " + line);
+					return null;
+				}
+				
+				options[i] = string.trim();
+			}
+			
+			return options;
+		}
+		
+		Main.getPlugin().getLogger().warning("Invalid creation layout value for " + shopType + "." + category + " line " + line);
+		
+		return null;
+	}
+	
+	private static boolean isDynamic(String value) {
+		return AMOUNT.equalsIgnoreCase(value) || PRICE.equalsIgnoreCase(value);
+	}
+	
+	/**
+	 * One compiled creation declaration.
+	 */
+	private static final class Layout{
+		
+		private final ShopType type;
+		private final boolean admin;
+		
+		private final String[][] lines;
+		
+		private final int amountLine;
+		private final int priceLine;
+		
+		private Layout(ShopType type, boolean admin, String[][] lines) {
+			this.type = type;
+			this.admin = admin;
+			this.lines = lines;
+			
+			this.amountLine = findLine(lines, AMOUNT);
+			this.priceLine = findLine(lines, PRICE);
+			
+			if(amountLine < 0){
+				throw new IllegalArgumentException("Creation layout for " + type + " does not contain %amount%");
+			}
+			
+			if(priceLine < 0){
+				throw new IllegalArgumentException("Creation layout for " + type + " does not contain %price%");
+			}
+		}
+		
+		private boolean matches(String[] input) {
+			for(int line = 0; line < 4; line++){
+				
+				if(!matchesLine(lines[line], input[line])){
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		
+		private boolean matchesLine(String[] options, String input) {
+			for(String option : options){
+				
+				if(AMOUNT.equalsIgnoreCase(option)){
+					if(isAmount(input)){
+						return true;
+					}
+					
+					continue;
+				}
+				
+				if(PRICE.equalsIgnoreCase(option)){
+					if(isPrice(input)){
+						return true;
+					}
+					
+					continue;
+				}
+				
+				if(option.equalsIgnoreCase(input)){
+					return true;
+				}
+			}
+			
 			return false;
 		}
-		super.price = price;
-		return true;
-	}
-	
-	private ShopType getShopType(String input) {
-		SettingsConfig config = Main.getPlugin().getSettingsConfig();
-		input = input.toLowerCase();
-		if(input.contains(config.getCreationWord(CreationWord.BUY))){
-			return ShopType.BUY;
-		} else if(input.contains(config.getCreationWord(CreationWord.BARTER))){
-			return ShopType.BARTER;
-		} else if(input.contains(config.getCreationWord(CreationWord.GAMBLE))){
-			return ShopType.GAMBLE;
-		} else if(input.contains(config.getCreationWord(CreationWord.SELL))){
-			return ShopType.SELL;
-		}
-		return ShopType.SELL;
-	}
-	
-	//this takes a dirty (pre-cleaned) string and finds how much to multiply the final by
-	//this utility allows the input of numbers like 1.2k (1200)
-	private double getMultiplyValue(String text) {
-		// Remove color formatting, whitespace, and make sure the string is lowercase for matching our suffixes below
-		String priceString = text.replaceAll("\\s", "").toLowerCase();
-		// Get just the suffix from the price string, remove all numbers and decimals
-		String priceSuffix = priceString.replaceAll("[0-9.]", "");
 		
-		// Load the suffixes from the config values
-		NavigableMap<Double, String> configPriceSuffixes = Main.getPlugin().getSettingsConfig().getPriceSuffixes();
-		
-		// Search for a suffix match
-		for(Map.Entry<Double, String> entry : configPriceSuffixes.entrySet()){
-			Double configPriceValue = entry.getKey();
-			String configSuffix = entry.getValue().toLowerCase();
+		private static int findLine(String[][] lines, String value) {
+			for(int line = 0; line < lines.length; line++){
+				for(String option : lines[line]){
+					if(value.equalsIgnoreCase(option)){
+						return line;
+					}
+				}
+			}
 			
-			if(priceSuffix.equals(configSuffix)){
-				// Return the value for the suffix from the config
-				return configPriceValue;
+			return -1;
+		}
+		
+		private static boolean isAmount(String value) {
+			try{
+				return Integer.parseInt(UtilMethods.cleanNumberText(value)) > 0;
+			} catch(NumberFormatException ignored){
+				return false;
 			}
 		}
 		
-		// No match so our multiplier is just 1
-		return 1;
+		private static boolean isPrice(String value) {
+			try{
+				return Double.parseDouble(UtilMethods.cleanNumberText(value)) >= 0;
+			} catch(NumberFormatException ignored){
+				return false;
+			}
+		}
+	}
+	
+	/**
+	 * Runtime lookup structure.
+	 */
+	private static final class LayoutIndex{
+		
+		private static final LayoutIndex EMPTY = new LayoutIndex(Map.of(), List.of());
+		
+		private final Map<String, List<Layout>> byFirstLine;
+		private final List<Layout> dynamicFirstLineLayouts;
+		
+		private LayoutIndex(Map<String, List<Layout>> byFirstLine, List<Layout> dynamicFirstLineLayouts) {
+			this.byFirstLine = Map.copyOf(byFirstLine);
+			this.dynamicFirstLineLayouts = List.copyOf(dynamicFirstLineLayouts);
+		}
 	}
 	
 	public void updateSignText() {
 		Main.getPlugin().getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
+			
 			if(sign.getBlockData() instanceof WallSign){
+				
 				List<Component> signLines = SignUpdateHandler.getSignLines(this);
+				
 				SignSide signSide = sign.getSide(Side.FRONT);
-				signSide.line(0, signLines.get(0));
-				signSide.line(1, signLines.get(1));
-				signSide.line(2, signLines.get(2));
-				signSide.line(3, signLines.get(3));
+				
+				for(int i = 0; i < 4; i++){
+					signSide.line(i, signLines.get(i));
+				}
+				
 				sign.update(true);
 			}
 		});
