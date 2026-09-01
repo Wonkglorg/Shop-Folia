@@ -31,4 +31,14 @@ public interface ShopService{
 	OfflinePlayerProfile getProfile(OfflinePlayer player);
 	
 	OnlinePlayerProfile getProfile(Player player);
+	
+	/**
+	 * Adds a new shop and writes it to the database
+	 */
+	void addShop(AbstractShop shop);
+	
+	/**
+	 * Removes a shop and marks it as delete in the database
+	 */
+	void removeShop(AbstractShop shop);
 }

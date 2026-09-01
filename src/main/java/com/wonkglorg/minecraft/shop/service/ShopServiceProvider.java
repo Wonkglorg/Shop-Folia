@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 public class ShopServiceProvider implements ShopService{
 	
 	private final Main main;
+	
 	@Getter
 	private final List<Consumer<Collection<AbstractShop>>> shopLoadHooks = new ArrayList<>();
 	
@@ -49,5 +50,13 @@ public class ShopServiceProvider implements ShopService{
 	@Override
 	public OnlinePlayerProfile getProfile(Player player) {
 		return PlayerManager.getOnlineProfile(player);
+	}
+	
+	public void addShop(AbstractShop shop) {
+		main.getShopmanager().registerShop(shop);
+	}
+	
+	public removeShop(AbstractShop shop) {
+		main.getShopmanager().unRegisterShop(shop);
 	}
 }
