@@ -18,14 +18,13 @@ import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplay;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplayOther;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.offline;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.online;
 import com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler.getComponents;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.settings.Setting;
+import com.wonkglorg.minecraft.shop.shop.settings.Settings;
 import static com.wonkglorg.minecraft.shop.shop.settings.Settings.PURCHASE_COOLDOWN;
 import static com.wonkglorg.minecraft.shop.shop.settings.Settings.PURCHASE_LIMIT;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
@@ -71,6 +70,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static java.lang.Boolean.TRUE;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.Arrays;
@@ -78,6 +78,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -657,7 +658,7 @@ public abstract class AbstractShop{
 	 * @param includeHover if items should contain hover components
 	 * @param player the player this will be sent to (used for floodgate integration)
 	 */
-	public static void shopPlaceholders(LangRequest request, AbstractShop shop, boolean includeHover, Player player) {
+	public static void shopPlaceholders(LangRequest request, AbstractShop shop, boolean includeHover, OfflinePlayer player) {
 		//@formatter:off
 		ItemStack item = shop.item;
 		
@@ -716,6 +717,66 @@ public abstract class AbstractShop{
 			}
 		}
 		//@formatter:on
+	}
+	
+	/**
+	 * Notifies both parties about the transaction
+	 *
+	 * @param purchaser the player transacting with the shop
+	 * @param multiplier how many instances were transacted
+	 */
+	protected void notifyTransaction(Player purchaser, int multiplier) {
+		LangRequest userRequest = langManager().request("transaction.success." + type + ".user");
+		shopPlaceholders(userRequest, this, false, purchaser);
+		userRequest.replace("%price%", formatPrice(price * multiplier));
+		userRequest.replace("%item-amount%", amount * multiplier);
+		userRequest.sendToAudience(purchaser);
+		OfflinePlayer shopOwner = getOwner();
+		if(getSetting(Settings.TRANSACTION_NOTIFICATION) == TRUE && shopOwner.isOnline()){
+			LangRequest ownerRequest = langManager().request("transaction.success." + type + ".owner").replace("%user%", purchaser.getName());
+			shopPlaceholders(ownerRequest, this, false, shopOwner);
+			ownerRequest.replace("%price%", formatPrice(price * multiplier));
+			ownerRequest.replace("%item-amount%", amount * multiplier);
+			ownerRequest.sendToAudience(requireNonNull(shopOwner.getPlayer()));
+		}
+	}
+	
+	/**
+	 * Notifies both parties about the transaction
+	 *
+	 * @param purchaser the player transacting with the shop
+	 * @param multiplier how many instances were transacted
+	 */
+	protected void notifyNoSpace(Player purchaser, int multiplier) {
+		langManager().request("transaction.issue." + type + ".shop-no-space").sendToAudience(purchaser);
+		OfflinePlayer shopOwner = getOwner();
+		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE && shopOwner.isOnline()){
+			LangRequest ownerRequest = langManager().request("transaction.success." + type + ".owner-no-space").replace("%user%",
+					purchaser.getName());
+			ownerRequest.replace("%location%", UtilMethods.getCleanLocation(getSignLocation(), false));
+			ownerRequest.replace("%price%", formatPrice(price * multiplier));
+			ownerRequest.replace("%item-amount%", amount * multiplier);
+			ownerRequest.sendToAudience(requireNonNull(shopOwner.getPlayer()));
+		}
+	}
+	
+	/**
+	 * Notifies both parties about the transaction
+	 *
+	 * @param purchaser the player transacting with the shop
+	 * @param multiplier how many instances were transacted
+	 */
+	protected void notifyNoStock(Player purchaser, int multiplier) {
+		langManager().request("transaction.issue." + type + ".shop-no-stock").sendToAudience(purchaser);
+		OfflinePlayer shopOwner = getOwner();
+		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE && shopOwner.isOnline()){
+			LangRequest ownerRequest = langManager().request("transaction.success." + type + ".owner-no-stock").replace("%user%",
+					purchaser.getName());
+			ownerRequest.replace("%location%", UtilMethods.getCleanLocation(getSignLocation(), false));
+			ownerRequest.replace("%price%", formatPrice(price * multiplier));
+			ownerRequest.replace("%item-amount%", amount * multiplier);
+			ownerRequest.sendToAudience(requireNonNull(shopOwner.getPlayer()));
+		}
 	}
 	
 	/**
@@ -890,8 +951,7 @@ public abstract class AbstractShop{
 				var resultPair = executeTransaction(new PlayerTransactionParty(player), action == ShopAction.TRANSACT_FULL_STACK);
 				TransactionResult result = resultPair.first();
 				int multiplier = resultPair.right();
-				OfflinePlayer shopOwner = getOwner();
-				sendTransactionMessage(result, multiplier, player, shopOwner.isConnected() ? online(shopOwner.getPlayer()) : offline(shopOwner));
+				sendTransactionMessage(result, multiplier, player);
 				sendEffects(result == TransactionResult.OK, player);
 				return true;
 			case VIEW_DETAILS:
@@ -925,9 +985,8 @@ public abstract class AbstractShop{
 	 * @param result the result of the transaction
 	 * @param multiplier how many times this item was traded in this transaction
 	 * @param player the player transacting with the shop
-	 * @param owner the shop owners profile
 	 */
-	protected abstract void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner);
+	protected abstract void sendTransactionMessage(TransactionResult result, int multiplier, Player player);
 	
 	/**
 	 * @return the currency type being used by the server

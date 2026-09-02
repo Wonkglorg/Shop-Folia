@@ -4,7 +4,6 @@ import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
-import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
@@ -62,7 +61,7 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
-	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
+	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player) {
 		var lang = langManager();
 		switch(result) {
 			case OK -> {
