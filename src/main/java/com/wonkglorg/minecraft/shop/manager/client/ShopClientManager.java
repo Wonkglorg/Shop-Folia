@@ -251,10 +251,27 @@ public class ShopClientManager{
 	
 	/**
 	 * Finds all shops currently visible from the supplied location.
+	 * Visible means within the configured {@link SettingsConfig#getMaxShopProcessingDistanceBlocks()} x} radius
 	 */
 	private Set<AbstractShop> findVisibleShops(Location playerLocation) {
 		int chunkRadius = plugin.getSettingsConfig().getMaxShopProcessingDistanceChunks();
-		return shopManager.getShopsNearLocation(playerLocation, chunkRadius);
+		double maxDistance = plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks();
+		double maxDistanceSquared = maxDistance * maxDistance;
+		
+		Set<AbstractShop> nearLocation = shopManager.getShopsNearLocation(playerLocation, chunkRadius);
+		
+		//the above just gives all shops within the chunk radius but we don't want to calculate shop client views for shops that are at y20 while the user is at y190
+		nearLocation.removeIf(shop -> {
+			Location shopLocation = shop.getSignLocation();
+			
+			if(shopLocation == null || shopLocation.getWorld() == null || !shopLocation.getWorld().equals(playerLocation.getWorld())){
+				return true;
+			}
+			
+			return shopLocation.distanceSquared(playerLocation) > maxDistanceSquared;
+		});
+		
+		return nearLocation;
 	}
 	
 	/**
