@@ -57,6 +57,12 @@ permissions:
   shop.setdisplay.other:
     description: Allows player to set the display type on other shops (allows shop display cycling, see actionMappings in config.yml).
     default: op
+  shop.settings:
+    description: Allows player to change settings of their shop (allows shop display cycling, see actionMappings in config.yml).
+    default: op
+  shop.settings.other:
+    description: Allows player to change settings on other shops (allows shop display cycling, see actionMappings in config.yml).
+    default: op
   shop.user:
     description: Allows users to access the /shop command with basic access to informational commands
     default: op

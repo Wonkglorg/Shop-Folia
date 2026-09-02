@@ -5,9 +5,9 @@ import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
-import com.wonkglorg.minecraft.shop.manager.visibility.DisplayUpdateHandler;
-import com.wonkglorg.minecraft.shop.manager.visibility.ShopVisibilityManager;
-import com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler;
+import com.wonkglorg.minecraft.shop.manager.client.DisplayUpdateHandler;
+import com.wonkglorg.minecraft.shop.manager.client.ShopClientManager;
+import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB;
 import com.wonkglorg.minecraft.shop.migrate.PlayerShopsConfig;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -54,7 +54,7 @@ public class ShopManager{
 	private final ShopDatabase database;
 	private final SettingsConfig settingsConfig;
 	@Getter
-	private final ShopVisibilityManager visibilityManager;
+	private final ShopClientManager visibilityManager;
 	//todo:mjd for any shop with a hopper feeding it periodically update the shop sign to reflect the current fill.
 	/**
 	 * All registered shops
@@ -99,7 +99,7 @@ public class ShopManager{
 		this.plugin = plugin;
 		this.settingsConfig = plugin.getSettingsConfig();
 		this.logger = logger();
-		this.visibilityManager = new ShopVisibilityManager(plugin, this);
+		this.visibilityManager = new ShopClientManager(plugin, this);
 		
 		database = new ShopDatabase(plugin);
 		

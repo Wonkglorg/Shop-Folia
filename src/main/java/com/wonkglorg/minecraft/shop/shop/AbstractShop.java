@@ -9,17 +9,20 @@ import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.visibilityManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
+import static com.wonkglorg.minecraft.shop.dialogs.ShopSettingsDialog.openShopSettings;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager.BlockKey;
+import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
+import static com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler.getComponents;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplay;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplayOther;
-import com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler;
-import static com.wonkglorg.minecraft.shop.manager.visibility.SignUpdateHandler.getComponents;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToOpenShopSettings;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToOpenShopSettingsOther;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
@@ -74,7 +77,6 @@ import static java.lang.Boolean.TRUE;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -390,7 +392,7 @@ public abstract class AbstractShop{
 		}
 		
 		front.setGlowingText(ShopPlugin.getPlugin().getSettingsConfig().isSignGlowingSignText());
-		sign.setWaxed(ShopPlugin.getPlugin().getSettingsConfig().isSignGlowingSignText());
+		sign.setWaxed(ShopPlugin.getPlugin().getSettingsConfig().isSignWaxed());
 		sign.update(true);
 	}
 	
@@ -763,7 +765,7 @@ public abstract class AbstractShop{
 		assert ownerPlayer != null;
 		OnlinePlayerProfile ownerProfile = PlayerManager.getOnlineProfile(ownerPlayer);
 		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE || ownerProfile.isNotifyStock()){
-			var ownerRequest = langManager().request("transaction.success." + type + ".owner-no-space").replace("%user%", purchaser.getName());
+			var ownerRequest = langManager().request("transaction.issue." + type + ".owner-no-space").replace("%user%", purchaser.getName());
 			ownerRequest.replace("%location%", UtilMethods.getCleanLocation(getSignLocation(), false));
 			ownerRequest.replace("%price%", formatPrice(price * multiplier));
 			ownerRequest.replace("%item-amount%", amount * multiplier);
@@ -787,7 +789,7 @@ public abstract class AbstractShop{
 		assert ownerPlayer != null;
 		OnlinePlayerProfile ownerProfile = PlayerManager.getOnlineProfile(ownerPlayer);
 		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE || ownerProfile.isNotifyStock()){
-			var ownerRequest = langManager().request("transaction.success." + type + ".owner-no-stock").replace("%user%", purchaser.getName());
+			var ownerRequest = langManager().request("transaction.issue." + type + ".owner-no-stock").replace("%user%", purchaser.getName());
 			ownerRequest.replace("%location%", UtilMethods.getCleanLocation(getSignLocation(), false));
 			ownerRequest.replace("%price%", formatPrice(price * multiplier));
 			ownerRequest.replace("%item-amount%", amount * multiplier);
@@ -989,6 +991,21 @@ public abstract class AbstractShop{
 				}
 				this.cycleDisplay();
 				break;
+			case OPEN_SETTINGS:
+				//player clicked another player's shop sign
+				if(!this.getOwnerUUID().equals(player.getUniqueId())){
+					//player has permission to change another player's shop display
+					if((isAllowedToOpenShopSettingsOther(player))){
+						logger().debug("Open settings Dialog for player " + player.getName());
+						openShopSettings(player, this);
+					}
+				} else {
+					if(isAllowedToOpenShopSettings(player)){
+						logger().debug("Open settings Dialog for player " + player.getName());
+						openShopSettings(player, this);
+					}
+				}
+				return true;
 			default:
 				return true;
 		}
@@ -1081,23 +1098,10 @@ public abstract class AbstractShop{
 		
 		logger.debug("Next Display " + nextType);
 		logger.debug("Removing old displays");
-		Collection<Player> nearbyPlayers = this.getSignLocation().getNearbyPlayers(ShopPlugin.getPlugin()
-																							 .getSettingsConfig()
-																							 .getMaxShopProcessingDistanceChunks());
-		
-		//remove display from all players nearby
-		for(var nearbyPlayer : nearbyPlayers){
-			this.display.remove(nearbyPlayer);
-		}
+		visibilityManager().cleanupShop(this);
 		this.display = AbstractDisplay.createDisplay(nextType, this);
 		logger.debug("Sending shop display update to nearby players");
-		
-		//refresh the shop display for all players within range of the shop
-		for(var nearbyPlayer : nearbyPlayers){
-			display.spawn(nearbyPlayer);
-		}
-		//refresh the display for all users that can see it
-		updateSign();
+		visibilityManager().addShop(this);
 		setNeedsSave(true);
 		logger.debug("===FINISHED DISPLAY CYCLE===");
 	}
@@ -1220,6 +1224,14 @@ public abstract class AbstractShop{
 	 */
 	public @NotNull String getPriceFormatted() {
 		return formatPrice(price);
+	}
+	
+	/**
+	 * Used to initialize settings on shop loading DO NOT USE THIS FOR CHANGIFN SETTINGS use {@link #setSetting(Setting, Object)} instead
+	 */
+	@Internal
+	public void initializeSetting(Setting<?> setting, Object value) {
+		settings.put(setting, value);
 	}
 	
 	/**

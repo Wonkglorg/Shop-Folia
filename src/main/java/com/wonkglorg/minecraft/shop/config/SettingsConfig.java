@@ -5,7 +5,6 @@ import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.shop.ShopAction;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
-import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -19,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -114,9 +112,6 @@ public class SettingsConfig extends Config{
 	@Getter
 	private boolean signWaxed;
 	
-	@Getter
-	private Map<ShopType, List<String>> signCreationLayout = new HashMap<>();
-	
 	// =================================================================== //
 	//                         SHOP INTERACTIONS                           //
 	// =================================================================== //
@@ -137,7 +132,7 @@ public class SettingsConfig extends Config{
 	private boolean playEffects;
 	
 	@Getter
-	private ShopSettings shopSettings;
+	private ShopSettings shopSettings = new ShopSettings();
 	// =================================================================== //
 	//                                FILTERS                              //
 	// =================================================================== //
@@ -259,8 +254,7 @@ public class SettingsConfig extends Config{
 		playSounds = getBoolean("play-sounds");
 		playEffects = getBoolean("play-effects");
 		
-		ConfigurationSection section = getConfigurationSection("shop.settings");
-		shopSettings = new ShopSettings(section);
+		shopSettings.reload(getConfigurationSection("shop.settings"));
 		
 		worldBlackList.addAll(getStringList("world-blacklist"));
 		
@@ -358,7 +352,7 @@ public class SettingsConfig extends Config{
 		@Getter
 		private boolean customItemUpdaterDefault;
 		
-		public ShopSettings(ConfigurationSection section) {
+		public void reload(ConfigurationSection section) {
 			transactionLimitEnabled = section.getBoolean("transaction-limit.enabled");
 			transactionLimitDefault = section.getInt("transaction-limit.default-value");
 			

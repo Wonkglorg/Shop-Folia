@@ -3,10 +3,14 @@ package com.wonkglorg.minecraft.shop.shop.settings;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Settings each {@link com.wonkglorg.minecraft.shop.shop.AbstractShop} can define
  */
 public final class Settings{
+	public static final Map<String, Setting<?>> ALL_SETTINGS = new ConcurrentHashMap<>();
 	
 	private Settings() {
 		//DATA STORAGE CLASS
@@ -15,7 +19,7 @@ public final class Settings{
 	/**
 	 * Cooldown applied after each purchase (per player)
 	 */
-	public static final Setting<Long> PURCHASE_COOLDOWN = new Setting<>("purchase-cooldown",
+	public static final Setting<Long> PURCHASE_COOLDOWN = new Setting<>("purchase_cooldown",
 			Long.class,
 			Long::parseLong,
 			shopSettings()::getTransactionCooldownDefault,
@@ -23,7 +27,7 @@ public final class Settings{
 	/**
 	 * Limit on how often a player can buy from this shop before permanently being unavailable
 	 */
-	public static final Setting<Integer> PURCHASE_LIMIT = new Setting<>("purchase-limit",
+	public static final Setting<Integer> PURCHASE_LIMIT = new Setting<>("purchase_limit",
 			Integer.class,
 			Integer::parseInt,
 			shopSettings()::getTransactionLimitDefault,
@@ -31,7 +35,7 @@ public final class Settings{
 	/**
 	 * If the shop should inform the shop owner if it is out of stock
 	 */
-	public static final Setting<Boolean> OUT_OF_STOCK_NOTIFICATION = new Setting<>("out-of-stock-notification",
+	public static final Setting<Boolean> OUT_OF_STOCK_NOTIFICATION = new Setting<>("out_of_stock_notification",
 			Boolean.class,
 			Boolean::parseBoolean,
 			shopSettings()::isOutOfStockNotificationDefault,
@@ -39,7 +43,7 @@ public final class Settings{
 	/**
 	 * If the shop owner should be notified about this shop doing transaction
 	 */
-	public static final Setting<Boolean> TRANSACTION_NOTIFICATION = new Setting<>("transaction-notification",
+	public static final Setting<Boolean> TRANSACTION_NOTIFICATION = new Setting<>("transaction_notification",
 			Boolean.class,
 			Boolean::parseBoolean,
 			shopSettings()::isTransactionNotificationDefault,

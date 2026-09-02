@@ -1,11 +1,11 @@
-package com.wonkglorg.minecraft.shop.manager.visibility;
+package com.wonkglorg.minecraft.shop.manager.client;
 
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public interface ShopVisibilityListener{
+public interface ShopClientListener{
 	
 	/**
 	 * Called when a shop becomes visible to a player.

@@ -6,7 +6,6 @@ import com.wonkglorg.database.databases.SqliteDatabase;
 import com.wonkglorg.database.datasources.FileDataSource;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
-import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB.ShopHistoryEntry;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
@@ -14,6 +13,7 @@ import com.wonkglorg.minecraft.shop.shop.ShopState;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.settings.Setting;
+import static com.wonkglorg.minecraft.shop.shop.settings.Settings.ALL_SETTINGS;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.PluginLogger;
@@ -79,8 +79,13 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			GROUP BY shop_uuid
 			""";
 	
-	private static final String INSERT_SHOP_SETTING = """
+	private static final String INSERT_SHOP_SETTING_SQL = """
 			INSERT INTO shop_settings(shop_uuid,setting_key,value) VALUES(?,?,?)
+			""";
+	
+	private static final String SELECT_SHOP_SETTING_SQL = """
+			SELECT * FROm shop_settings
+			WHERE shop_uuid = ?
 			""";
 	
 	private final ShopPlugin plugin;
@@ -140,7 +145,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					Location signLocation = shop.getSignLocation();
 					ps.setString(1, shop.getId().toString());
 					ps.setString(2, shop.getOwnerUUID().toString());
-					ps.setString(3, ItemStackJsonCodec.serialize(mainStack,true));
+					ps.setString(3, ItemStackJsonCodec.serialize(mainStack, true));
 					ps.setDouble(4, shop.getPrice());
 					ps.setInt(5, shop.getAmount());
 					ps.setInt(6, shop.getStock());
@@ -156,7 +161,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 							? shop.getDisplay().getType().toString()
 							: DisplayType.NONE.toString());
 					ps.setInt(11, shop.isFakeSign() ? 1 : 0);
-					ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack,true) : null);
+					ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
 					ps.setLong(13, shop.getCreationDate());
 					ps.setLong(14, deletionTimes.getOrDefault(shop.getId(), 0L));
 					ps.setString(15, mainStack.getType().toString());
@@ -267,7 +272,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		shop.setShopState(state, false);
 		shop.setItemStack(stack);
 		if(shop.getType() == ShopType.BARTER){
-			ItemStack barterItem = ItemStackJsonCodec.deserialize(set.getString("barter_item"));
+			ItemStack barterItem = ItemStackJsonCodec.deserialize(set.getString("secondary_item"));
 			shop.setSecondaryItemStack(barterItem);
 		}
 		
@@ -275,6 +280,21 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		if(isFakeSign){
 			shop.setFakeSign(true);
 		}
+		
+		try(var ps = getConnection().prepareStatement(SELECT_SHOP_SETTING_SQL)){
+			ps.setString(1, id.toString());
+			ResultSet resultSet = ps.executeQuery();
+			while(resultSet.next()){
+				String settingKey = resultSet.getString("setting_key");
+				Setting<?> setting = ALL_SETTINGS.get(settingKey);
+				if(settingKey == null){
+					logger.warning("Shop setting with key: " + settingKey + " not valid!");
+					continue;
+				}
+				shop.initializeSetting(setting, setting.parse(resultSet.getString("value")));
+			}
+		}
+		
 		return shop;
 	}
 	
@@ -289,7 +309,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		Location signLocation = shop.getSignLocation();
 		ps.setString(1, shop.getId().toString());
 		ps.setString(2, shop.getOwnerUUID().toString());
-		ps.setString(3, ItemStackJsonCodec.serialize(mainStack,true));
+		ps.setString(3, ItemStackJsonCodec.serialize(mainStack, true));
 		ps.setDouble(4, shop.getPrice());
 		ps.setInt(5, shop.getAmount());
 		ps.setInt(6, shop.getStock());
@@ -305,7 +325,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				? shop.getDisplay().getType().toString()
 				: DisplayType.NONE.toString());
 		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
-		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack,true) : null);
+		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
 		ps.setLong(13, shop.getCreationDate());
 		ps.setString(14, mainStack.getType().toString());
 		ps.setString(15, barterStack != null ? barterStack.getType().toString() : null);
@@ -446,7 +466,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				preparedStatement.setLong(2, timestamp);
 				preparedStatement.setString(3, purchaserId.toString());
 				preparedStatement.setInt(4, 0); //todo:mjd impplement offline caching for players to get stats when they login next time.
-				preparedStatement.setString(5, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward,false) : null);
+				preparedStatement.setString(5, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward, false) : null);
 				preparedStatement.setInt(6, multiplier);
 				preparedStatement.execute();
 			} catch(SQLException e){
@@ -516,6 +536,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	/**
 	 * Logs a change in currency
+	 *
 	 * @param type the type of the currency
 	 * @param currency if its an itemstack the stack
 	 */
@@ -526,7 +547,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					""");){//SQLITE auto increments primary keys, message here is false!
 				preparedStatement.setLong(1, System.currentTimeMillis());
 				preparedStatement.setString(2, type.toString());
-				preparedStatement.setString(3, currency != null ? ItemStackJsonCodec.serialize(currency,false) : null);
+				preparedStatement.setString(3, currency != null ? ItemStackJsonCodec.serialize(currency, false) : null);
 				preparedStatement.execute();
 			} catch(SQLException e){
 				PluginLogger.error("Error while adding transaction to shop", e);
@@ -537,6 +558,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	/**
 	 * Logs a shop action
+	 *
 	 * @param player the player doing the action
 	 * @param shopUuid the shop id
 	 * @param actionType the action
@@ -596,6 +618,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	/**
 	 * update all shops
+	 *
 	 * @param shops
 	 */
 	public void updateShops(Collection<? extends AbstractShop> shops) {
@@ -662,7 +685,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		Location signLocation = shop.getSignLocation();
 		
 		ps.setString(1, shop.getOwnerUUID().toString());
-		ps.setString(2, ItemStackJsonCodec.serialize(mainStack,true));
+		ps.setString(2, ItemStackJsonCodec.serialize(mainStack, true));
 		ps.setDouble(3, shop.getPrice());
 		ps.setInt(4, shop.getAmount());
 		ps.setInt(5, shop.getStock());
@@ -673,7 +696,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				? shop.getDisplay().getType().toString()
 				: DisplayType.NONE.toString());
 		ps.setInt(9, shop.isFakeSign() ? 1 : 0);
-		ps.setString(10, barterStack != null ? ItemStackJsonCodec.serialize(barterStack,true) : null);
+		ps.setString(10, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
 		ps.setString(11, mainStack.getType().toString());
 		ps.setString(12, barterStack != null ? barterStack.getType().toString() : null);
 		ps.setString(13, signLocation.getWorld().getName());
@@ -715,7 +738,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	public <T> void addSetting(AbstractShop abstractShop, Setting<T> setting, T value) {
 		scheduler.runAsync(_ -> {
-			try(var ps = getConnection().prepareStatement(INSERT_SHOP_SETTING)){
+			try(var ps = getConnection().prepareStatement(INSERT_SHOP_SETTING_SQL)){
 				ps.setString(1, abstractShop.getId().toString());
 				ps.setString(2, setting.getKey());
 				ps.setString(3, value == null ? null : value.toString());

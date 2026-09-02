@@ -1,4 +1,4 @@
-package com.wonkglorg.minecraft.shop.manager.visibility;
+package com.wonkglorg.minecraft.shop.manager.client;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
@@ -27,7 +27,7 @@ import java.util.UUID;
 /**
  * Handles player-specific sign updating and changes.
  */
-public class SignUpdateHandler implements ShopVisibilityListener{
+public class SignUpdateHandler implements ShopClientListener{
 	private final Map<UUID, Map<UUID, SignState>> lastSignStates = new HashMap<>();
 	
 	private record SignState(ShopStateClient state, int usage, long lastUsed){}
@@ -99,10 +99,8 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 				front.line(i, lines.get(i));
 			}
 			
-			boolean glowing = ShopPlugin.getPlugin().getSettingsConfig().isSignGlowingSignText();
-			
-			front.setGlowingText(glowing);
-			sign.setWaxed(glowing);
+			front.setGlowingText(ShopPlugin.getPlugin().getSettingsConfig().isSignGlowingSignText());
+			sign.setWaxed(ShopPlugin.getPlugin().getSettingsConfig().isSignWaxed());
 			
 			player.sendBlockUpdate(location, sign);
 		}, 1);

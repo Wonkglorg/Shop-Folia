@@ -20,6 +20,7 @@ public final class Setting<T>{
 		this.parser = parser;
 		this.defaultValue = defaultValue;
 		this.enabled = enabled;
+		Settings.ALL_SETTINGS.put(key, this);
 	}
 	
 	public T parse(String value) {

@@ -10,7 +10,7 @@ import com.wonkglorg.minecraft.shop.listener.DisplayListener;
 import com.wonkglorg.minecraft.shop.listener.ShopListener;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
-import com.wonkglorg.minecraft.shop.manager.visibility.ShopVisibilityManager;
+import com.wonkglorg.minecraft.shop.manager.client.ShopClientManager;
 import com.wonkglorg.minecraft.shop.service.ShopService;
 import com.wonkglorg.minecraft.shop.service.ShopServiceProvider;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -182,7 +182,7 @@ public class ShopPlugin extends JavaPlugin{
 		return shopmanager.getDatabase();
 	}
 	
-	public static ShopVisibilityManager visibilityManager() {
+	public static ShopClientManager visibilityManager() {
 		return shopmanager.getVisibilityManager();
 	}
 }

@@ -178,6 +178,18 @@ public abstract class PlayerProfile{
 		return isOperator(player) || player.hasPermission("shop.setdisplay.other");
 	}
 	
+	/**
+	 * If the user is allowed to cycle shop displays of their own shops
+	 */
+	public static boolean isAllowedToOpenShopSettings(Permissible player) {return isOperator(player) || player.hasPermission("shop.settings");}
+	
+	/**
+	 * If the user is allowed to cycle shop displays of other players shops
+	 */
+	public static boolean isAllowedToOpenShopSettingsOther(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.settings.other");
+	}
+	
 	private static boolean hasActionPermission(String permissionBase, Permissible player) {
 		if(isOperator(player)){
 			return true;
@@ -250,7 +262,7 @@ public abstract class PlayerProfile{
 			int value = 0;
 			try{
 				value = Integer.parseInt(perm.substring(perm.lastIndexOf(".") + 1));
-			} catch(NumberFormatException e){
+			} catch(NumberFormatException _){
 				continue;
 			}
 			if(perm.startsWith("shop.buildlimit.")){

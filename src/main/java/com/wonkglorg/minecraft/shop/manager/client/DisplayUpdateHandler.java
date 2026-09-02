@@ -1,4 +1,4 @@
-package com.wonkglorg.minecraft.shop.manager.visibility;
+package com.wonkglorg.minecraft.shop.manager.client;
 
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import org.bukkit.entity.Player;
@@ -8,7 +8,7 @@ import java.util.UUID;
 /**
  * Handles display visibility
  */
-public class DisplayUpdateHandler implements ShopVisibilityListener{
+public class DisplayUpdateHandler implements ShopClientListener{
 	
 	@Override
 	public void onShopEnter(Player player, AbstractShop shop) {

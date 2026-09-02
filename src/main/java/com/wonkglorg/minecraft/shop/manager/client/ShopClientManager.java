@@ -1,4 +1,4 @@
-package com.wonkglorg.minecraft.shop.manager.visibility;
+package com.wonkglorg.minecraft.shop.manager.client;
 
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>This class is responsible only for visibility tracking. Listeners are
  * responsible for deciding what to do when a shop becomes visible.</p>
  */
-public class ShopVisibilityManager{
+public class ShopClientManager{
 	
 	@Setter
 	private boolean isLoadingShops = true;
@@ -59,9 +59,9 @@ public class ShopVisibilityManager{
 	/**
 	 * Objects interested in shop visibility changes.
 	 */
-	private final Set<ShopVisibilityListener> listeners = ConcurrentHashMap.newKeySet();
+	private final Set<ShopClientListener> listeners = ConcurrentHashMap.newKeySet();
 	
-	public ShopVisibilityManager(ShopPlugin plugin, ShopManager shopManager) {
+	public ShopClientManager(ShopPlugin plugin, ShopManager shopManager) {
 		this.plugin = plugin;
 		this.shopManager = shopManager;
 		
@@ -79,19 +79,19 @@ public class ShopVisibilityManager{
 	/**
 	 * Registers a listener for shop visibility changes.
 	 */
-	public void addListener(ShopVisibilityListener listener) {
+	public void addListener(ShopClientListener listener) {
 		listeners.add(listener);
 	}
 	
 	/**
 	 * Removes a previously registered visibility listener.
 	 */
-	public void removeListener(ShopVisibilityListener listener) {
+	public void removeListener(ShopClientListener listener) {
 		listeners.remove(listener);
 	}
 	
 	/**
-	 * Forces an update to this shop for all players in range of {@link SettingsConfig#getMaxShopProcessingDistanceChunks()}, In all {@link ShopVisibilityListener} registered to this manager
+	 * Forces an update to this shop for all players in range of {@link SettingsConfig#getMaxShopProcessingDistanceChunks()}, In all {@link ShopClientListener} registered to this manager
 	 */
 	public void updateShop(AbstractShop shop) {
 		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
@@ -104,12 +104,36 @@ public class ShopVisibilityManager{
 	}
 	
 	/**
+	 * Forces a cleanup for this shop for all players in view
+	 */
+	public void cleanupShop(AbstractShop shop) {
+		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
+		for(var player : nearbyPlayers){
+			for(var listener : listeners){
+				listener.onShopCleanup(player, shop);
+			}
+		}
+	}
+	
+	/**
+	 * Forces the shop to be added as if it was just entering the players radius, this will call {@link ShopClientListener#onShopEnter(Player, AbstractShop)}, make sure the shop is cleaned up beforehand otherwise client packets might be leftover
+	 */
+	public void addShop(AbstractShop shop) {
+		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
+		for(var player : nearbyPlayers){
+			for(var listener : listeners){
+				listener.onShopEnter(player, shop);
+			}
+		}
+	}
+	
+	/**
 	 * Forces an update to this shop for all players in range of {@link SettingsConfig#getMaxShopProcessingDistanceChunks()}, In only for the provided service listener registered to this manager
 	 *
 	 * @param service the service to call the update for
 	 * @param shop the shop to update
 	 */
-	public <T extends ShopVisibilityListener> void updateShop(Class<T> service, AbstractShop shop) {
+	public <T extends ShopClientListener> void updateShop(Class<T> service, AbstractShop shop) {
 		T listener = getListener(service);
 		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
 		for(var player : nearbyPlayers){
@@ -276,7 +300,7 @@ public class ShopVisibilityManager{
 	}
 	
 	private void notifyShopEntered(Player player, AbstractShop shop) {
-		for(ShopVisibilityListener listener : listeners){
+		for(ShopClientListener listener : listeners){
 			try{
 				listener.onShopEnter(player, shop);
 			} catch(Exception e){
@@ -286,7 +310,7 @@ public class ShopVisibilityManager{
 	}
 	
 	private void notifyShopLeft(Player player, AbstractShop shop) {
-		for(ShopVisibilityListener listener : listeners){
+		for(ShopClientListener listener : listeners){
 			try{
 				listener.onShopLeave(player, shop);
 			} catch(Exception e){
@@ -302,7 +326,7 @@ public class ShopVisibilityManager{
 	 * @param shop the shop to cleanup
 	 */
 	private void notifyShopCleanup(Player player, AbstractShop shop) {
-		for(ShopVisibilityListener listener : listeners){
+		for(ShopClientListener listener : listeners){
 			try{
 				listener.onShopCleanup(player, shop);
 			} catch(Exception e){
@@ -311,8 +335,8 @@ public class ShopVisibilityManager{
 		}
 	}
 	
-	public <T extends ShopVisibilityListener> @NotNull T getListener(Class<T> listenerClass) {
-		for(ShopVisibilityListener listener : listeners){
+	public <T extends ShopClientListener> @NotNull T getListener(Class<T> listenerClass) {
+		for(ShopClientListener listener : listeners){
 			if(listenerClass.isInstance(listener)){
 				return listenerClass.cast(listener);
 			}
