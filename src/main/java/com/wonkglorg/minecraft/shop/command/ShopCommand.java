@@ -40,8 +40,7 @@ public class ShopCommand extends AbstractCommand{
 				.then(literal("currency").executes(this::currency))
 				.then(literal("notify")
 						.executes(this::usageNotify)
-						.then(literal("user").executes(this::notifyUser))
-						.then(literal("owner").executes(this::notifyOwner))
+						.then(literal("transaction").executes(this::notifyTransaction))
 						.then(literal("stock").executes(this::notifyStock))
 					 )
 				.then(literal("reload").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::reload))
@@ -55,14 +54,14 @@ public class ShopCommand extends AbstractCommand{
 		return 0;
 	}
 	
-	private int notifyOwner(CommandContext<CommandSourceStack> ctx) {
+	private int notifyTransaction(CommandContext<CommandSourceStack> ctx) {
 		
 		if(!(ctx.getSource().getSender() instanceof Player player)){
 			return -1;
 		}
 		
-		String state = PlayerManager.getOnlineProfile(player).toggleNotifyOwner() ? "<green>On" : "<red>Off";
-		lang.request("command.notify.owner.success").replace("%notify-state%", state).sendToAudience(ctx.getSource().getSender());
+		String state = PlayerManager.getOnlineProfile(player).toggleNotifyTransaction() ? "<green>On" : "<red>Off";
+		lang.request("command.notify.transaction.success").replace("%notify-state%", state).sendToAudience(ctx.getSource().getSender());
 		return 0;
 	}
 	
@@ -73,16 +72,6 @@ public class ShopCommand extends AbstractCommand{
 		
 		String state = PlayerManager.getOnlineProfile(player).toggleNotifyStock() ? "<green>On" : "<red>Off";
 		lang.request("command.notify.stock.success").replace("%notify-state%", state).sendToAudience(ctx.getSource().getSender());
-		return 0;
-	}
-	
-	private int notifyUser(CommandContext<CommandSourceStack> ctx) {
-		if(!(ctx.getSource().getSender() instanceof Player player)){
-			return -1;
-		}
-		
-		String state = PlayerManager.getOnlineProfile(player).toggleNotifyUser() ? "<green>On" : "<red>Off";
-		lang.request("command.notify.user.success").replace("%notify-state%", state).sendToAudience(ctx.getSource().getSender());
 		return 0;
 	}
 	

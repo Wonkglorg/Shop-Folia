@@ -732,7 +732,13 @@ public abstract class AbstractShop{
 		userRequest.replace("%item-amount%", amount * multiplier);
 		userRequest.sendToAudience(purchaser);
 		OfflinePlayer shopOwner = getOwner();
-		if(getSetting(Settings.TRANSACTION_NOTIFICATION) == TRUE && shopOwner.isOnline()){
+		if(!shopOwner.isOnline()){
+			return;
+		}
+		Player ownerPlayer = shopOwner.getPlayer();
+		assert ownerPlayer != null;
+		OnlinePlayerProfile ownerProfile = PlayerManager.getOnlineProfile(ownerPlayer);
+		if(getSetting(Settings.TRANSACTION_NOTIFICATION) == TRUE || ownerProfile.isNotifyTransaction()){
 			LangRequest ownerRequest = langManager().request("transaction.success." + type + ".owner").replace("%user%", purchaser.getName());
 			shopPlaceholders(ownerRequest, this, false, shopOwner);
 			ownerRequest.replace("%price%", formatPrice(price * multiplier));
@@ -750,13 +756,18 @@ public abstract class AbstractShop{
 	protected void notifyNoSpace(Player purchaser, int multiplier) {
 		langManager().request("transaction.issue." + type + ".shop-no-space").sendToAudience(purchaser);
 		OfflinePlayer shopOwner = getOwner();
-		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE && shopOwner.isOnline()){
-			LangRequest ownerRequest = langManager().request("transaction.success." + type + ".owner-no-space").replace("%user%",
-					purchaser.getName());
+		if(!shopOwner.isOnline()){
+			return;
+		}
+		Player ownerPlayer = shopOwner.getPlayer();
+		assert ownerPlayer != null;
+		OnlinePlayerProfile ownerProfile = PlayerManager.getOnlineProfile(ownerPlayer);
+		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE || ownerProfile.isNotifyStock()){
+			var ownerRequest = langManager().request("transaction.success." + type + ".owner-no-space").replace("%user%", purchaser.getName());
 			ownerRequest.replace("%location%", UtilMethods.getCleanLocation(getSignLocation(), false));
 			ownerRequest.replace("%price%", formatPrice(price * multiplier));
 			ownerRequest.replace("%item-amount%", amount * multiplier);
-			ownerRequest.sendToAudience(requireNonNull(shopOwner.getPlayer()));
+			ownerRequest.sendToAudience(requireNonNull(ownerPlayer));
 		}
 	}
 	
@@ -769,9 +780,14 @@ public abstract class AbstractShop{
 	protected void notifyNoStock(Player purchaser, int multiplier) {
 		langManager().request("transaction.issue." + type + ".shop-no-stock").sendToAudience(purchaser);
 		OfflinePlayer shopOwner = getOwner();
-		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE && shopOwner.isOnline()){
-			LangRequest ownerRequest = langManager().request("transaction.success." + type + ".owner-no-stock").replace("%user%",
-					purchaser.getName());
+		if(!shopOwner.isOnline()){
+			return;
+		}
+		Player ownerPlayer = shopOwner.getPlayer();
+		assert ownerPlayer != null;
+		OnlinePlayerProfile ownerProfile = PlayerManager.getOnlineProfile(ownerPlayer);
+		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE || ownerProfile.isNotifyStock()){
+			var ownerRequest = langManager().request("transaction.success." + type + ".owner-no-stock").replace("%user%", purchaser.getName());
 			ownerRequest.replace("%location%", UtilMethods.getCleanLocation(getSignLocation(), false));
 			ownerRequest.replace("%price%", formatPrice(price * multiplier));
 			ownerRequest.replace("%item-amount%", amount * multiplier);

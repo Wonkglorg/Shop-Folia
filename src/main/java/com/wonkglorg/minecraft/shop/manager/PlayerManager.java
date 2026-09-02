@@ -74,9 +74,8 @@ public class PlayerManager{
 	 */
 	public static void saveToFile(PlayerProfile profile) {
 		String basePath = "player." + profile.getUuid();
-		setOrRemove(basePath + ".notify-owner", profile.isNotifyOwner());
+		setOrRemove(basePath + ".notify-transaction", profile.isNotifyTransaction());
 		setOrRemove(basePath + ".notify-stock", profile.isNotifyStock());
-		setOrRemove(basePath + ".notify-user", profile.isNotifyUser());
 		if(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE){
 			PLAYER_DATA.set(basePath + ".experience", profile.getExperience());
 		} else {
@@ -101,9 +100,8 @@ public class PlayerManager{
 	public static void loadFromFile(PlayerProfile profile) {
 		String basePath = "player." + profile.getUuid();
 		
-		profile.setNotifyOwner(PLAYER_DATA.getBoolean(basePath + ".notify-owner", false));
+		profile.setNotifyTransaction(PLAYER_DATA.getBoolean(basePath + ".notify-transaction", false));
 		profile.setNotifyStock(PLAYER_DATA.getBoolean(basePath + ".notify-stock", false));
-		profile.setNotifyUser(PLAYER_DATA.getBoolean(basePath + ".notify-user", false));
 		profile.setExperience(PLAYER_DATA.getInt(basePath + ".experience", -1));
 	}
 	

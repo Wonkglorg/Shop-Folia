@@ -33,10 +33,7 @@ public abstract class PlayerProfile{
 	protected final OfflinePlayer offlinePlayer;
 	@Getter
 	@Setter
-	private boolean notifyUser;
-	@Getter
-	@Setter
-	private boolean notifyOwner;
+	private boolean notifyTransaction;
 	@Getter
 	@Setter
 	private boolean notifyStock;
@@ -68,25 +65,14 @@ public abstract class PlayerProfile{
 	}
 	
 	/**
-	 * Toggles user notifications
-	 *
-	 * @return the value it toggled to
-	 */
-	public boolean toggleNotifyUser() {
-		notifyUser = !notifyUser;
-		saveToFile(this);
-		return notifyUser;
-	}
-	
-	/**
 	 * Toggles owner notifications
 	 *
 	 * @return the value it toggled to
 	 */
-	public boolean toggleNotifyOwner() {
-		notifyOwner = !notifyOwner;
+	public boolean toggleNotifyTransaction() {
+		notifyTransaction = !notifyTransaction;
 		saveToFile(this);
-		return notifyOwner;
+		return notifyTransaction;
 	}
 	
 	/**

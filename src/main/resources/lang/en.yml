@@ -309,12 +309,9 @@ command:
     success: "<green>Reloaded Shops!"
   notify:
     usage:
-      -"<blue>/shop notify user<gray>- shows transaction notifications when you interact with other shops"
-      -"<blue>/shop notify owner<gray>- shows transaction notifications when players interact with your shops"
+      -"<blue>/shop notify transaction<gray>- shows transaction notifications when players interact with your shops"
       -"<blue>/shop notify stock<gray>- shows notifications when your shop runs out of stock"
-    user:
-      success: "<gray>Your notifications for your own transactions with shops are now %notify-state%"
-    owner:
+    transaction:
       success: "<gray>Your notifications for players transacting with your shops are now %notify-state%"
     stock:
       success: "<gray>Your notifications for your shops running out of stock are now %notify-state%"
