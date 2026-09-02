@@ -1,8 +1,8 @@
 package com.wonkglorg.minecraft.shop.manager.player;
 
 import com.wonkglorg.minecraft.shop.Constants;
-import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.manager.PlayerManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.loadFromFile;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -15,7 +15,6 @@ import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,8 +50,8 @@ public abstract class PlayerProfile{
 	@Getter
 	private final Map<ShopType, List<AbstractShop>> ownedShops = new ConcurrentHashMap<>();
 	
-	private Map<UUID, Integer> totalPurchasesPerShop = new ConcurrentHashMap<>();
-	private Map<UUID, Long> lastPurchaseTimePerShop = new ConcurrentHashMap<>();
+	private final Map<UUID, Integer> totalPurchasesPerShop = new ConcurrentHashMap<>();
+	private final Map<UUID, Long> lastPurchaseTimePerShop = new ConcurrentHashMap<>();
 	
 	protected PlayerProfile(OfflinePlayer offlinePlayer) {
 		for(var type : ShopType.values()){
@@ -65,7 +64,7 @@ public abstract class PlayerProfile{
 			ownedShops.get(shop.getType()).add(shop);
 		}
 		loadFromFile(this);
-		Main.getPlugin().getShopmanager().getDatabase().loadShopPurchaseStats(uuid, totalPurchasesPerShop, lastPurchaseTimePerShop);
+		shopDatabase().loadShopPurchaseStats(uuid, totalPurchasesPerShop, lastPurchaseTimePerShop);
 	}
 	
 	/**
@@ -287,19 +286,7 @@ public abstract class PlayerProfile{
 	 * Get all shops this player owns
 	 */
 	public static List<AbstractShop> getShops(UUID uuid) {
-		return Main.getPlugin().getShopmanager().getShops(uuid);
-	}
-	
-	public static Duration getTeleportCooldownRemaining(UUID uuid) {
-		return PlayerManager.getTeleportCooldownRemaining(uuid);
-	}
-	
-	public static boolean canTeleport(UUID uuid) {
-		return PlayerManager.canTeleport(uuid);
-	}
-	
-	public static void addTeleportCooldown(UUID uuid) {
-		PlayerManager.addTeleportCooldown(uuid);
+		return shopManager().getShops(uuid);
 	}
 	
 	@Internal

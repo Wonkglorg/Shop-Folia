@@ -1,11 +1,10 @@
 package com.wonkglorg.minecraft.shop.manager.visibility;
 
 import com.tcoded.folialib.wrapper.task.WrappedTask;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
-import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
-import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -14,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -32,7 +30,7 @@ public class ShopVisibilityManager{
 	@Setter
 	private boolean isLoadingShops = true;
 	
-	private final Main plugin;
+	private final ShopPlugin plugin;
 	private final ShopManager shopManager;
 	
 	@Getter
@@ -62,7 +60,7 @@ public class ShopVisibilityManager{
 	 */
 	private final Set<ShopVisibilityListener> listeners = ConcurrentHashMap.newKeySet();
 	
-	public ShopVisibilityManager(Main plugin, ShopManager shopManager) {
+	public ShopVisibilityManager(ShopPlugin plugin, ShopManager shopManager) {
 		this.plugin = plugin;
 		this.shopManager = shopManager;
 		
@@ -92,19 +90,27 @@ public class ShopVisibilityManager{
 	}
 	
 	/**
-	 * Returns the shops currently considered visible to the player.
-	 *
-	 * <p>The returned set is a snapshot and can therefore safely be used
-	 * outside of the internal visibility tracking.</p>
+	 * Forces an update to this shop for all players in range of {@link SettingsConfig#getMaxShopProcessingDistanceChunks()}, In all {@link ShopVisibilityListener} registered to this manager
 	 */
-	public Set<AbstractShop> getVisibleShops(Player player) {
-		Set<AbstractShop> visible = visibleShopsByPlayer.get(player.getUniqueId());
-		
-		if(visible == null || visible.isEmpty()){
-			return Collections.emptySet();
+	public void updateShop(AbstractShop shop) {
+		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
+		for(var player : nearbyPlayers){
+			notifyShopRefreshed(player, shop);
 		}
-		
-		return Set.copyOf(visible);
+	}
+	
+	/**
+	 * Forces an update to this shop for all players in range of {@link SettingsConfig#getMaxShopProcessingDistanceChunks()}, In only for the provided service listener registered to this manager
+	 *
+	 * @param service the service to call the update for
+	 * @param shop the shop to update
+	 */
+	public <T extends ShopVisibilityListener> void updateShop(Class<T> service, AbstractShop shop) {
+		T listener = getListener(service);
+		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
+		for(var player : nearbyPlayers){
+			listener.onShopRefresh(player, shop);
+		}
 	}
 	
 	/**
@@ -122,15 +128,13 @@ public class ShopVisibilityManager{
 			}
 		}
 		
-		lastProcessedPosition.remove(playerId);
-		playersBeingProcessed.remove(playerId);
+		clearPlayerState(player.getUniqueId());
 	}
 	
 	/**
 	 * Processes shops around a player.
 	 *
-	 * @param force if true, forces processing even if the player has not
-	 * moved far enough since the previous check
+	 * @param force if true, forces processing for alls hops around the player even if cached data already exists
 	 */
 	public void processShopsNearPlayer(Player player, boolean force) {
 		UUID playerId = player.getUniqueId();
@@ -155,24 +159,37 @@ public class ShopVisibilityManager{
 				lastProcessedPosition.put(playerId,
 						new PlayerPosition(location.getWorld().getUID(), location.getX(), location.getY(), location.getZ()));
 				
-				updateVisibleShops(player, location, force);
+				updateVisibleShops(player, force);
 				
 			} catch(Exception e){
 				plugin.logger().severe("Error processing shop visibility for player " + player.getName(), e);
 			} finally{
 				playersBeingProcessed.remove(playerId);
 			}
-		}, 1);
+		}, 5);
 	}
 	
 	/**
 	 * Determines which shops are currently visible and notifies listeners
 	 * about changes.
 	 */
-	private void updateVisibleShops(Player player, Location playerLocation, boolean force) {
+	private void updateVisibleShops(Player player, boolean force) {
 		UUID playerId = player.getUniqueId();
 		
-		Set<AbstractShop> nowVisible = findVisibleShops(playerLocation);
+		Set<AbstractShop> nowVisible = findVisibleShops(player.getLocation());
+		
+		//directly take all visible shops and refresh them no other checks
+		if(force){
+			if(nowVisible.isEmpty()){
+				visibleShopsByPlayer.remove(playerId);
+			} else {
+				visibleShopsByPlayer.put(playerId, nowVisible);
+			}
+			for(var shop : nowVisible){
+				notifyShopRefreshed(player, shop);
+			}
+			return;
+		}
 		
 		Set<AbstractShop> previouslyVisible = visibleShopsByPlayer.get(playerId);
 		
@@ -180,38 +197,22 @@ public class ShopVisibilityManager{
 			previouslyVisible = Collections.emptySet();
 		}
 		
-		/*
-		 * Shops that are no longer visible.
-		 */
 		for(AbstractShop shop : previouslyVisible){
 			if(!nowVisible.contains(shop)){
 				notifyShopLeft(player, shop);
 			}
 		}
 		
-		/*
-		 * Shops that have become visible.
-		 */
 		for(AbstractShop shop : nowVisible){
 			if(!previouslyVisible.contains(shop)){
 				notifyShopEntered(player, shop);
-			} else if(force){
-				/*
-				 * The shop was already visible, but something requested
-				 * a forced refresh.
-				 */
-				notifyShopRefreshed(player, shop);
 			}
 		}
 		
-		/*
-		 * Store a new snapshot rather than allowing callers/listeners
-		 * to mutate the internal set.
-		 */
 		if(nowVisible.isEmpty()){
 			visibleShopsByPlayer.remove(playerId);
 		} else {
-			visibleShopsByPlayer.put(playerId, Set.copyOf(nowVisible));
+			visibleShopsByPlayer.put(playerId, nowVisible);
 		}
 	}
 	
@@ -219,68 +220,8 @@ public class ShopVisibilityManager{
 	 * Finds all shops currently visible from the supplied location.
 	 */
 	private Set<AbstractShop> findVisibleShops(Location playerLocation) {
-		double maxDistance = getMaxVisibilityDistance();
-		double maxDistanceSquared = maxDistance * maxDistance;
-		
-		int chunkRadius = (int) Math.ceil(maxDistance / 16.0);
-		
-		Set<AbstractShop> visible = new HashSet<>();
-		
-		UUID playerWorldId = playerLocation.getWorld().getUID();
-		
-		for(AbstractShop shop : shopManager.getShopsNearLocation(playerLocation, chunkRadius)){
-			
-			if(!isShopVisible(shop, playerWorldId, playerLocation, maxDistanceSquared)){
-				continue;
-			}
-			
-			visible.add(shop);
-		}
-		
-		return visible;
-	}
-	
-	/**
-	 * Determines whether a shop is eligible to be considered visible.
-	 *
-	 * <p>Currently this contains the requirements used by the existing
-	 * display system. If signs later have different requirements, this
-	 * method can be made generic and display-specific checks can be moved
-	 * into the relevant listener.</p>
-	 */
-	private boolean isShopVisible(AbstractShop shop, UUID playerWorldId, Location playerLocation, double maxDistanceSquared) {
-		if(!shop.isLoaded()){
-			return false;
-		}
-		
-		AbstractDisplay display = shop.getDisplay();
-		
-		if(display.getType() == DisplayType.NONE){
-			return false;
-		}
-		
-		Location containerLocation = shop.getContainerLocation();
-		
-		if(containerLocation == null || containerLocation.getWorld() == null){
-			return false;
-		}
-		
-		if(!containerLocation.getWorld().getUID().equals(playerWorldId)){
-			return false;
-		}
-		
-		if(!display.isChunkLoaded()){
-			return false;
-		}
-		
-		return containerLocation.distanceSquared(playerLocation) <= maxDistanceSquared;
-	}
-	
-	/**
-	 * Returns the configured maximum shop visibility distance.
-	 */
-	public double getMaxVisibilityDistance() {
-		return plugin.getSettingsConfig().getMaxShopDisplayDistance();
+		int chunkRadius = plugin.getSettingsConfig().getMaxShopProcessingDistanceChunks();
+		return shopManager.getShopsNearLocation(playerLocation, chunkRadius);
 	}
 	
 	/**
@@ -302,7 +243,7 @@ public class ShopVisibilityManager{
 	}
 	
 	/**
-	 * Clears internal state without notifying listeners.
+	 * Clears internal state without sending shop leave events to listeners
 	 *
 	 * <p>Used when the player is already offline and therefore cannot
 	 * safely receive visibility callbacks.</p>
@@ -311,6 +252,9 @@ public class ShopVisibilityManager{
 		visibleShopsByPlayer.remove(playerId);
 		lastProcessedPosition.remove(playerId);
 		playersBeingProcessed.remove(playerId);
+		for(var listener : listeners){
+			listener.clearData(playerId);
+		}
 	}
 	
 	/**
@@ -350,19 +294,6 @@ public class ShopVisibilityManager{
 				plugin.logger().severe("Error notifying shop refresh listener for " + player.getName(), e);
 			}
 		}
-	}
-	
-	public Set<UUID> getPlayersSeeingShop(AbstractShop shop) {
-		Set<UUID> players = new HashSet<>();
-		
-		for(Map.Entry<UUID, Set<AbstractShop>> entry : visibleShopsByPlayer.entrySet()){
-			
-			if(entry.getValue().contains(shop)){
-				players.add(entry.getKey());
-			}
-		}
-		
-		return players;
 	}
 	
 	public <T extends ShopVisibilityListener> @NotNull T getListener(Class<T> listenerClass) {

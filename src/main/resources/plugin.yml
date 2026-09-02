@@ -1,4 +1,4 @@
-main: com.wonkglorg.minecraft.shop.Main
+main: com.wonkglorg.minecraft.shop.ShopPlugin
 name: ${name}
 description: ${description}
 author: ${author}

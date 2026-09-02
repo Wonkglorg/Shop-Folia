@@ -2,7 +2,12 @@ package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.visibilityManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
@@ -314,15 +319,15 @@ public abstract class AbstractShop{
 	public boolean load() {
 		Block signBlock = signLocation.getBlock();
 		if(signBlock.getType() == Material.AIR){
-			Main.getPlugin().logger().warning("Error attempting to load shop! No sign found for Shop (detected: AIR), deleting shop: " + this);
+			logger().warning("Error attempting to load shop! No sign found for Shop (detected: AIR), deleting shop: " + this);
 			return false;
 		}
 		
 		if(!(signBlock.getBlockData() instanceof WallSign wallSign)){
-			Main.getPlugin().logger().warning("Error attempting to load shop! Sign Block for Shop is not a WallSign (detected: " +
-											  signBlock.getType() +
-											  "), deleting shop: " +
-											  this);
+			logger().warning("Error attempting to load shop! Sign Block for Shop is not a WallSign (detected: " +
+							 signBlock.getType() +
+							 "), deleting shop: " +
+							 this);
 			return false;
 		}
 		
@@ -332,12 +337,11 @@ public abstract class AbstractShop{
 		// The primary container is directly behind the sign.
 		Block containerBlock = signBlock.getRelative(facing.getOppositeFace());
 		
-		if(!Main.getPlugin().getShopmanager().isAllowedContainer(containerBlock)){
-			Main.getPlugin().logger().warning(
-					"Error attempting to load shop! Invalid block type detected when trying to load Shop Container (detected: " +
-					containerBlock.getType() +
-					"), deleting shop: " +
-					this);
+		if(!shopManager().isAllowedContainer(containerBlock)){
+			logger().warning("Error attempting to load shop! Invalid block type detected when trying to load Shop Container (detected: " +
+							 containerBlock.getType() +
+							 "), deleting shop: " +
+							 this);
 			return false;
 		}
 		
@@ -384,8 +388,9 @@ public abstract class AbstractShop{
 			front.line(i, lines.get(i));
 		}
 		
-		front.setGlowingText(Main.getPlugin().getSettingsConfig().isSignGlowingSignText());
-		sign.setWaxed(Main.getPlugin().getSettingsConfig().isSignGlowingSignText());
+		front.setGlowingText(ShopPlugin.getPlugin().getSettingsConfig().isSignGlowingSignText());
+		sign.setWaxed(ShopPlugin.getPlugin().getSettingsConfig().isSignGlowingSignText());
+		sign.update(true);
 	}
 	
 	/**
@@ -399,7 +404,7 @@ public abstract class AbstractShop{
 	 * Deletes the shop, same as calling {@link ShopManager#unregisterShop(AbstractShop)}
 	 */
 	public void delete() {
-		Main.getPlugin().getShopmanager().unregisterShop(this);
+		shopManager().unregisterShop(this);
 	}
 	
 	/**
@@ -502,13 +507,12 @@ public abstract class AbstractShop{
 	 */
 	public @NotNull Component getOwnerNameFormatted() {
 		if(this.isAdmin){
-			return Main.getPlugin().getLangManager().request("placeholders.server-display-name").toSingleComponent();
+			//noinspection UnknownLangKey
+			return langManager().request("placeholders.server-display-name").toSingleComponent();
 		}
-		// Use cache first - this avoids expensive disk I/O
-		return MiniMessage.miniMessage().deserialize(Main.getPlugin()
-														 .getLangManager()
-														 .request("placeholders.shop-owner-name-color")
-														 .toSingleStringResult() + PlayerNameCache.getName(this.getOwnerUUID()));
+		//noinspection UnknownLangKey
+		return MiniMessage.miniMessage().deserialize(langManager().request("placeholders.shop-owner-name-color").toSingleStringResult() +
+													 PlayerNameCache.getName(this.getOwnerUUID()));
 	}
 	
 	/**
@@ -630,7 +634,8 @@ public abstract class AbstractShop{
 			return;
 		}
 		
-		if(shopState != oldState){
+		//shop needs to be fully loaded first before sending sign updates to players this otherwise causes issues when a player logs into the server and in the processs of joining loads a shopp which gets sent to them too early
+		if(shopState != oldState && isLoaded){
 			updateSign();
 		}
 	}
@@ -639,7 +644,7 @@ public abstract class AbstractShop{
 	 * Prints Shop info about the shop to the player in chat
 	 */
 	public void printSalesInfo(Player player) {
-		LangRequest request = Main.getPlugin().getLangManager().request("description." + this.getType());
+		LangRequest request = langManager().request("description." + this.getType());
 		shopPlaceholders(request, this, true, player);
 		request.sendToAudience(player);
 	}
@@ -656,7 +661,7 @@ public abstract class AbstractShop{
 		//@formatter:off
 		ItemStack item = shop.item;
 		
-		if(includeHover && Main.floodGateEnabled){
+		if(includeHover && ShopPlugin.floodGateEnabled){
 			FloodgateApi api = FloodgateApi.getInstance();
 			if(api != null && api.isFloodgateId(player.getUniqueId())){
 				includeHover = false;
@@ -732,11 +737,11 @@ public abstract class AbstractShop{
 		if(isPerformingTransaction){
 			return of(TransactionResult.SHOP_IS_PERFORMING_TRANSACTION, 0);
 		}
-		ShopLogger logger = Main.getPlugin().logger();
+		ShopLogger logger = logger();
 		isPerformingTransaction = true;
 		logger.debug("====STARTING SHOP TRANSACTION====");
 		
-		if(party.getPlayer().getUniqueId().equals(owner) && !Main.getPlugin().getSettingsConfig().isAllowUseOwnShop()){
+		if(party.getPlayer().getUniqueId().equals(owner) && !ShopPlugin.getPlugin().getSettingsConfig().isAllowUseOwnShop()){
 			logger.debug("Owner is trying to transact their own shop while this debug feature is disabled in the config");
 			logger.debug("===CANCEL SHOP TRANSACTION====");
 			isPerformingTransaction = false;
@@ -853,11 +858,13 @@ public abstract class AbstractShop{
 	 * Logs the transaction between the shop and the party
 	 */
 	protected void logTransaction(TransactionParty party, int multiplier) {
-		Main.getPlugin().getShopmanager().getDatabase().logTransaction(id,
-				System.currentTimeMillis(),
-				party.getPlayer().getUniqueId(),
-				null,
-				multiplier);
+		shopDatabase().logTransaction(id, System.currentTimeMillis(), party.getPlayer().getUniqueId(), null, multiplier);
+		
+		var profileIfLoaded = PlayerManager.getOnlineProfileIfCached(party.getPlayer().getUniqueId());
+		if(profileIfLoaded != null){
+			//update cached values for the online player
+			profileIfLoaded.recordPurchase(id, System.currentTimeMillis(), multiplier);
+		}
 	}
 	
 	/**
@@ -873,7 +880,7 @@ public abstract class AbstractShop{
 	 * @return true if something was done false if nothing happened
 	 */
 	public boolean executeClickAction(Player player, ShopClickType clickType) {
-		ShopAction action = Main.getPlugin().getSettingsConfig().getShopAction(clickType);
+		ShopAction action = ShopPlugin.getPlugin().getSettingsConfig().getShopAction(clickType);
 		if(action == null){
 			return false; //there is no action mapped to this click type
 		}
@@ -926,14 +933,14 @@ public abstract class AbstractShop{
 	 * @return the currency type being used by the server
 	 */
 	public static @NotNull CurrencyType getCurrencyType() {
-		return Main.getPlugin().getSettingsConfig().getCurrencyType();
+		return ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType();
 	}
 	
 	/**
-	 * @return the item being used for currency or null if not defined, this value is present as long as its defined in the config, use {@link #getCurrencyType()} first to confirm what currency type is currently active on the server
+	 * @return the item being used for currency or null if not defined, this value is present as long as it's defined in the config, use {@link #getCurrencyType()} first to confirm what currency type is currently active on the server
 	 */
 	public static @Nullable ItemStack getCurrencyItem() {
-		return Main.getPlugin().getItemConfig().getCurrencyItem();
+		return ShopPlugin.getPlugin().getItemConfig().getCurrencyItem();
 	}
 	
 	/**
@@ -950,9 +957,9 @@ public abstract class AbstractShop{
 		if(facing == null){
 			return;
 		}
-		ShopLogger logger = Main.getPlugin().logger();
+		ShopLogger logger = logger();
 		logger.debug("===STARTING DISPLAY CYCLE===");
-		DisplayType[] cycle = Main.getPlugin().getSettingsConfig().getDisplayCycle();
+		DisplayType[] cycle = ShopPlugin.getPlugin().getSettingsConfig().getDisplayCycle();
 		
 		if(cycle.length == 0){
 			logger.debug("Cycle list is empty cannot cycle");
@@ -999,7 +1006,9 @@ public abstract class AbstractShop{
 		
 		logger.debug("Next Display " + nextType);
 		logger.debug("Removing old displays");
-		Collection<Player> nearbyPlayers = this.getSignLocation().getNearbyPlayers(Main.getPlugin().getSettingsConfig().getMaxShopDisplayDistance());
+		Collection<Player> nearbyPlayers = this.getSignLocation().getNearbyPlayers(ShopPlugin.getPlugin()
+																							 .getSettingsConfig()
+																							 .getMaxShopProcessingDistanceChunks());
 		
 		//remove display from all players nearby
 		for(var nearbyPlayer : nearbyPlayers){
@@ -1019,10 +1028,10 @@ public abstract class AbstractShop{
 	}
 	
 	/**
-	 * Refreshes the sign for every player who cna currently see it
+	 * Refreshes the sign for every player who can currently see it
 	 */
 	public void updateSign() {
-		Main.getPlugin().getShopmanager().getVisibilityManager().getListener(SignUpdateHandler.class).refreshShop(this);
+		visibilityManager().getListener(SignUpdateHandler.class).refreshShop(this);
 	}
 	
 	/**
@@ -1057,7 +1066,7 @@ public abstract class AbstractShop{
 	 * @param player the player to send it to
 	 */
 	public void sendEffects(boolean success, Player player) {
-		SettingsConfig settingsConfig = Main.getPlugin().getSettingsConfig();
+		SettingsConfig settingsConfig = ShopPlugin.getPlugin().getSettingsConfig();
 		if(success){
 			if(settingsConfig.isPlaySounds()){
 				player.playSound(signLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
@@ -1086,7 +1095,7 @@ public abstract class AbstractShop{
 			removeSecondaryContainerLocation();
 		}
 		secondaryContainerLocation = location;
-		Main.getPlugin().getShopmanager().addSecondaryShopLocation(location, this);
+		shopManager().addSecondaryShopLocation(location, this);
 	}
 	
 	/**
@@ -1095,7 +1104,7 @@ public abstract class AbstractShop{
 	@Internal
 	public void removeSecondaryContainerLocation() {
 		if(secondaryContainerLocation != null){
-			Main.getPlugin().getShopmanager().removeSecondaryChestLocation(secondaryContainerLocation, this);
+			shopManager().removeSecondaryChestLocation(secondaryContainerLocation, this);
 		}
 		secondaryContainerLocation = null;
 	}
@@ -1154,7 +1163,7 @@ public abstract class AbstractShop{
 		} else {
 			settings.put(setting, value);
 		}
-		Main.getPlugin().getShopmanager().getDatabase().addSetting(this, setting, value);
+		shopDatabase().addSetting(this, setting, value);
 	}
 	
 	/**

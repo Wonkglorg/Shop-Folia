@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Main;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import com.wonkglorg.minecraft.util.roman.ConverterRoman;
 import io.papermc.paper.registry.RegistryAccess;
@@ -258,7 +258,7 @@ public class UtilMethods{
 			// For potions with amplifier 0, we don't add any suffix (it's the base level)
 			if(effect.getAmplifier() > 0){
 				formattedEffects = formattedEffects.append(Component.text(ConverterRoman.toRoman(effect.getAmplifier() +
-																							  1))); // +1 because amplifier is 0-based
+																								 1))); // +1 because amplifier is 0-based
 			}
 			
 			// Only add duration for non-instant effects
@@ -393,7 +393,7 @@ public class UtilMethods{
 	 * @return Formatted color name
 	 */
 	private static String formatFireworkColor(Color color) {
-		Main.getPlugin().logger().debug("[formatFireworkColor]     color: " + color.toString());
+		logger().debug("[formatFireworkColor]     color: " + color.toString());
 		
 		// Map common RGB values to color names
 		if(color.equals(Color.WHITE)){

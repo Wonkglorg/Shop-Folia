@@ -1,7 +1,9 @@
 package com.wonkglorg.minecraft.shop.shop.creation;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import static com.wonkglorg.minecraft.shop.shop.AbstractShop.formatPrice;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser.CreationMatch;
@@ -40,12 +42,18 @@ public class SignCreationProcess extends ShopCreationProcess{
 		
 		CreationMatch match = SignCreationLayoutParser.match(lines);
 		if(match == null){
-			Main.getPlugin().logger().debug("No match Found for lines!");
+			logger().debug("No match Found for lines!");
 			return false;
 		}
 		amount = match.amount();
 		price = match.price();
 		adminShop = match.admin();
+		type = match.shopType();
+		
+		if(!isAllowedToCreateShop()){
+			logger().debug("Player is not allowed to create a shop of this type!");
+			return false;
+		}
 		
 		return true;
 	}
@@ -57,7 +65,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 		List<Component> lines = new ArrayList<>(4);
 		for(var i = 1; i < 5; i++){
 			//@formatter:off
-			LangRequest request = Main.getPlugin().getLangManager().request("sign.text." + context.getType() + ".initialise." + i);
+			LangRequest request = langManager().request("sign.text." + context.getType() + ".initialise." + i);
 			
 			if(context.getItemStack() != null){
 				request.replace("%item%",() -> ItemNameUtil.getName(context.getItemStack()));
@@ -79,16 +87,28 @@ public class SignCreationProcess extends ShopCreationProcess{
 			lines.add(request.toSingleComponent());
 			//@formatter:on
 		}
+		
 		return lines;
 	}
 	
 	public void updateSignText() {
-		sign.setWaxed(true);
-		SignSide side = sign.getSide(Side.FRONT);
-		int i = 0;
-		for(var line : getSignLines(this)){
-			side.line(i++, line);
-		}
+		//schedule one tick later, otherwise sign change event can overwrite the text
+		ShopPlugin.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(sign.getLocation(), () -> {
+			if(!(sign.getBlock().getState() instanceof Sign currentSign)){
+				return;
+			}
+			
+			currentSign.setWaxed(true);
+			
+			SignSide side = currentSign.getSide(Side.FRONT);
+			List<Component> lines = getSignLines(this);
+			
+			for(int i = 0; i < 4; i++){
+				side.line(i, lines.get(i));
+			}
+			
+			currentSign.update(true);
+		}, 1);
 	}
 	
 	@Override

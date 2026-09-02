@@ -1,9 +1,9 @@
 package com.wonkglorg.minecraft.shop.shop.transaction.party;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import static com.wonkglorg.minecraft.shop.util.ExpirienceUtils.getTotalExperience;
+import static com.wonkglorg.minecraft.shop.util.ExperienceUtils.getTotalExperience;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -40,7 +40,7 @@ public class TransactionParty{
 	 * @param itemStack the currency item if {@link CurrencyType#ITEM}
 	 */
 	public double getAvailableFunds(ItemStack itemStack) {
-		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case ITEM -> getAvailableItemFunds(itemStack);
 			case VAULT -> getAvailableVaultFunds();
 			case EXPERIENCE -> getAvailableExperienceFunds();
@@ -63,7 +63,7 @@ public class TransactionParty{
 	 * The funds available to the party when using {@link CurrencyType#VAULT}
 	 */
 	public double getAvailableVaultFunds() {
-		return Main.getPlugin().getEconomy().getBalance(player);
+		return ShopPlugin.getPlugin().getEconomy().getBalance(player);
 	}
 	
 	/**
@@ -90,7 +90,7 @@ public class TransactionParty{
 	 * @return if the party can accept this payment
 	 */
 	public boolean canAcceptPayment(ItemStack itemStack, double amount) {
-		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case ITEM -> canAcceptItemPayment(itemStack, (int) amount);
 			case VAULT -> canAcceptVaultPayment(amount);
 			case EXPERIENCE -> canAcceptExperiencePayment(amount);
@@ -136,7 +136,7 @@ public class TransactionParty{
 	 * @param amount the amount to add
 	 */
 	public void add(ItemStack stack, double amount) {
-		switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+		switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case ITEM -> addItem(stack, (int) amount);
 			case VAULT -> addCurrency(amount);
 			case EXPERIENCE -> addExperience((int) amount);
@@ -179,7 +179,7 @@ public class TransactionParty{
 	 * @param amount the amount to add
 	 */
 	public void addCurrency(double amount) {
-		Main.getPlugin().getEconomy().depositPlayer(player, amount);
+		ShopPlugin.getPlugin().getEconomy().depositPlayer(player, amount);
 	}
 	
 	/**
@@ -189,7 +189,7 @@ public class TransactionParty{
 	 * @param amount the amount to remove
 	 */
 	public void remove(ItemStack stack, double amount) {
-		switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+		switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case ITEM -> removeItem(stack, (int) amount);
 			case VAULT -> removeCurrency(amount);
 			case EXPERIENCE -> removeExperience((int) amount);
@@ -202,7 +202,7 @@ public class TransactionParty{
 	 * @param amount the amount to remove
 	 */
 	public void removeCurrency(double amount) {
-		Main.getPlugin().getEconomy().withdrawPlayer(player, amount);
+		ShopPlugin.getPlugin().getEconomy().withdrawPlayer(player, amount);
 	}
 	
 	/**

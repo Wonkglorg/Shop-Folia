@@ -38,7 +38,7 @@ use-localized-material-names: false
 allow-use-own-shop: false
 
 # If this is set to true, shops will require you to be sneaking (holding 'shift') to destroy them
-destroy-shop-requires-sneak: false
+destroy-shop-requires-sneak: true
 
 cost:
   # cost of destroying a shop
@@ -217,6 +217,11 @@ shop:
       enabled: true
       default-value: true
 
+    #if shop items tagged with custom item id's by other plugins such as "Nexo items" should update their item definitions alongside the plugin
+    custom-item-updater:
+      enabled: true
+      default-value: true
+
 # =================================================================== #
 #                                FILTERS                              #
 # =================================================================== #
@@ -271,13 +276,9 @@ display-process-interval: 1
 # Recommended range: 1-4, default: 1.0
 display-movement-threshold: 1.0
 
-# Maximum distance (in blocks) at which shop displays will be shown to players.
-# Mainly affects player performance, not server performance.
-# Recommended range: 16-32, default: 20.0
-# For an extra smooth experience, you can set this higher to around 32 (radius 2), but this will also increase resource usage on the server.
-# NOTE: Default "Entity Render Distance" settings for the Minecraft client is 20 blocks,
-#       so setting this higher than 20 will only "preload" shop displays for players beyond this distance.
-max-shop-display-distance: 20.0
+# Maximum distance (in chunks) at which shop displays will be shown to players.
+# affects when shop displays are shown and when shop signs send updated text to each player
+max-shop-processing-distance-chunks: 1
 
 # =================================================================== #
 #                               MIGRATION                             #

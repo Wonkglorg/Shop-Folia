@@ -6,26 +6,28 @@ CREATE TABLE IF NOT EXISTS players
 
 CREATE TABLE IF NOT EXISTS shops
 (
-    shop_uuid               TEXT    NOT NULL PRIMARY KEY ,
-    owner_uuid              TEXT    NOT NULL,
-    item                    TEXT    NOT NULL,
-    price                   REAL    NOT NULL,
-    amount                  INTEGER NOT NULL,
-    last_known_stock_count  INTEGER NOT NULL,
-    last_known_stock_status TEXT    NOT NULL,
-    shop_type               TEXT    NOT NULL,
-    sign_facing             TEXT    NOT NULL,
-    display_type            TEXT    NULL     DEFAULT NULL,
-    fake_sign               INTEGER          DEFAULT 0,
-    barter_item             TEXT    NULL     DEFAULT NULL,
-    creation_time           INTEGER NOT NULL,
-    destroy_time            INTEGER NOT NULL DEFAULT 0,
-    item_type               TEXT    NOT NULL,
-    item_barter_type        TEXT    NULL     DEFAULT NULL,
-    shop_world              TEXT    NOT NULL,
-    shop_x                  INTEGER NOT NULL,
-    shop_y                  INTEGER NOT NULL,
-    shop_z                  INTEGER NOT NULL
+    shop_uuid                TEXT    NOT NULL PRIMARY KEY ,
+    owner_uuid               TEXT    NOT NULL,
+    item                     TEXT    NOT NULL,
+    price                    REAL    NOT NULL,
+    amount                   INTEGER NOT NULL,
+    last_known_stock_count   INTEGER NOT NULL,
+    last_known_stock_status  TEXT    NOT NULL,
+    shop_type                TEXT    NOT NULL,
+    sign_facing              TEXT    NOT NULL,
+    display_type             TEXT    NULL     DEFAULT NULL,
+    fake_sign                INTEGER          DEFAULT 0,
+    secondary_item           TEXT    NULL     DEFAULT NULL,
+    creation_time            INTEGER NOT NULL,
+    destroy_time             INTEGER NOT NULL DEFAULT 0,
+    item_type                TEXT    NOT NULL,
+    secondary_item_type      TEXT    NULL     DEFAULT NULL,
+    custom_item_id           TEXT    NULL DEFAULT NULL,
+    custom_secondary_item_id TEXT    NULL DEFAULT NULL,
+    shop_world               TEXT    NOT NULL,
+    shop_x                   INTEGER NOT NULL,
+    shop_y                   INTEGER NOT NULL,
+    shop_z                   INTEGER NOT NULL
 );
 
 --settings a shop can have, such as a limit to how many times it can be used per player or a cooldown

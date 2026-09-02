@@ -3,7 +3,7 @@ package com.wonkglorg.minecraft.shop.migrate;
 import com.wonkglorg.database.DatabaseType;
 import com.wonkglorg.database.databases.SqliteDatabase;
 import com.wonkglorg.database.datasources.FileDataSource;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class MarketManagerDB extends SqliteDatabase<FileDataSource>{
 	
-	public static final Path DBPATH = Main.getPlugin().getDataPath().getParent().resolve(Path.of("MarketManager", "shopStats.db"));
+	public static final Path DBPATH = ShopPlugin.getPlugin().getDataPath().getParent().resolve(Path.of("MarketManager", "shopStats.db"));
 	
 	public static final String SHOP_TRANSACTIONS_SQL = """
 			SELECT shopUuid, timestamp, purchaserUuid
@@ -43,11 +43,11 @@ public class MarketManagerDB extends SqliteDatabase<FileDataSource>{
 			FROM shops
 			""";
 	
-	public MarketManagerDB(Plugin plugin) {
+	public MarketManagerDB() {
 		super(new FileDataSource(DatabaseType.SQLITE, DBPATH));
 	}
 	
-	public static boolean containsDb(Main plugin) {
+	public static boolean containsDb() {
 		return Files.exists(DBPATH);
 	}
 	
@@ -68,7 +68,7 @@ public class MarketManagerDB extends SqliteDatabase<FileDataSource>{
 	
 	/**
 	 * @return a map where the key is the shop and the value indicates
-	 *         whether the shop is active (true) or destroyed (false)
+	 * whether the shop is active (true) or destroyed (false)
 	 */
 	public Map<AbstractShop, Boolean> getShops() {
 		try(var ps = getConnection().prepareStatement(SHOP_SELECT_SQL)){

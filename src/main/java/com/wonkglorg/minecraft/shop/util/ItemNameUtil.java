@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.util;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.util.Components.toPlainText;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
@@ -18,14 +18,14 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 public class ItemNameUtil{
 	
-	public ItemNameUtil() { /* utility class */ }
+	private ItemNameUtil() { /* utility class */ }
 	
 	public static String getNameAsPlainText(ItemStack item) {
 		return toPlainText(getName(item));
 	}
 	
 	public static Component formatMaterialName(Material material) {
-		if(Main.getPlugin().getSettingsConfig().isUseLocalizedMaterials()){
+		if(ShopPlugin.getPlugin().getSettingsConfig().isUseLocalizedMaterials()){
 			return Component.translatable(material.translationKey());
 		}
 		

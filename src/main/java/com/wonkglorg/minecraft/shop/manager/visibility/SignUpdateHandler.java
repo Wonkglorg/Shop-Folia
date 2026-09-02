@@ -1,8 +1,8 @@
 package com.wonkglorg.minecraft.shop.manager.visibility;
 
-import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -32,8 +32,6 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 	
 	private record SignState(ShopStateClient state, int usage, long lastUsed){}
 	
-	private static final LangManager lang = Main.getPlugin().getLangManager();
-	
 	@Override
 	public void onShopEnter(Player player, AbstractShop shop) {
 		updateSign(player, shop, false);
@@ -47,6 +45,11 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 	@Override
 	public void onShopRefresh(Player player, AbstractShop shop) {
 		updateSign(player, shop, true);
+	}
+	
+	@Override
+	public void clearData(UUID player) {
+		lastSignStates.remove(player);
 	}
 	
 	private void updateSign(Player player, AbstractShop shop, boolean force) {
@@ -69,7 +72,7 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 		
 		Location location = shop.getSignLocation();
 		
-		Main.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(location, () -> {
+		ShopPlugin.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(location, () -> {
 			if(!player.isOnline()){
 				return;
 			}
@@ -92,7 +95,7 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 				front.line(i, lines.get(i));
 			}
 			
-			boolean glowing = Main.getPlugin().getSettingsConfig().isSignGlowingSignText();
+			boolean glowing = ShopPlugin.getPlugin().getSettingsConfig().isSignGlowingSignText();
 			
 			front.setGlowingText(glowing);
 			sign.setWaxed(glowing);
@@ -113,7 +116,7 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 		List<Component> lines = new ArrayList<>(4);
 		for(var i = 1; i < 5; i++){
 			//@formatter:off
-			LangRequest request = lang.request(langKey + "." + i);
+			LangRequest request = langManager().request(langKey + "." + i);
 			
 			request.replace("%item%",() -> ItemNameUtil.getName(shop.getItemStack()))
 				   .replace("%stock-state%",shop.getShopState())
@@ -141,7 +144,7 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 		List<Component> lines = new ArrayList<>(4);
 		
 		for(var i = 1; i < 5; i++){
-			lines.add(lang.request("sign.text.timeout." + i).toSingleComponent());
+			lines.add(langManager().request("sign.text.timeout." + i).toSingleComponent());
 		}
 		return lines;
 	}

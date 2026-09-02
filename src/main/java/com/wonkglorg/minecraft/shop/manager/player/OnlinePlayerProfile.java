@@ -1,29 +1,26 @@
 package com.wonkglorg.minecraft.shop.manager.player;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
-import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.ExpirienceUtils;
+import com.wonkglorg.minecraft.shop.util.ExperienceUtils;
 import lombok.Getter;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permissible;
 
-import java.time.Duration;
 import java.util.List;
 
 public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	@Getter
 	private final Player player;
 	
-	
 	public OnlinePlayerProfile(Player player) {
 		super(player);
 		this.player = player;
 		//if the currency is experience and a value was saved set it to the current players exp
-		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE && getExperience() != -1){
-			ExpirienceUtils.setTotalExperience(player, getExperience());
+		if(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.EXPERIENCE && getExperience() != -1){
+			ExperienceUtils.setTotalExperience(player, getExperience());
 		}
 	}
 	
@@ -75,15 +72,15 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	
 	@Override
 	public void removeExperienceAmount(int amount) {
-		ExpirienceUtils.setTotalExperience(player, ExpirienceUtils.getTotalExperience(player) - amount);
-		experience = ExpirienceUtils.getTotalExperience(player);
+		ExperienceUtils.setTotalExperience(player, ExperienceUtils.getTotalExperience(player) - amount);
+		experience = ExperienceUtils.getTotalExperience(player);
 		saveToFile(this);
 	}
 	
 	@Override
 	public void addExperienceAmount(int amount) {
-		ExpirienceUtils.setTotalExperience(player, ExpirienceUtils.getTotalExperience(player) + amount);
-		experience = ExpirienceUtils.getTotalExperience(player);
+		ExperienceUtils.setTotalExperience(player, ExperienceUtils.getTotalExperience(player) + amount);
+		experience = ExperienceUtils.getTotalExperience(player);
 		saveToFile(this);
 	}
 	
@@ -91,24 +88,12 @@ public class OnlinePlayerProfile extends OfflinePlayerProfile{
 	 *
 	 * @return all shop types the player is allowed to build
 	 */
-	private List<ShopType> getBuildableShopTypes() {
+	public List<ShopType> getBuildableShopTypes() {
 		return getBuildableShopTypes(player);
-	}
-	
-	public Duration getTeleportCooldownRemaining() {
-		return getTeleportCooldownRemaining(offlinePlayer.getUniqueId());
-	}
-	
-	public boolean canTeleport() {
-		return canTeleport(offlinePlayer.getUniqueId());
-	}
-	
-	public void addTeleportCooldown() {
-		addTeleportCooldown(offlinePlayer.getUniqueId());
 	}
 	
 	@Override
 	public int getExperience() {
-		return ExpirienceUtils.getTotalExperience(player);
+		return ExperienceUtils.getTotalExperience(player);
 	}
 }

@@ -1,6 +1,8 @@
 package com.wonkglorg.minecraft.shop.manager;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.manager.visibility.DisplayUpdateHandler;
@@ -17,7 +19,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.WallSign;
@@ -41,14 +42,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
  * Keeps track of all shops and related functionality
  */
 public class ShopManager{
-	private final Main plugin;
+	private final ShopPlugin plugin;
 	private final ShopLogger logger;
 	@Getter
 	private final ShopDatabase database;
@@ -95,10 +95,10 @@ public class ShopManager{
 	@Getter
 	private final Map<UUID, String> shopOwners = new ConcurrentHashMap<>();
 	
-	public ShopManager(Main plugin) throws SQLException, IOException {
+	public ShopManager(ShopPlugin plugin) throws SQLException, IOException {
 		this.plugin = plugin;
 		this.settingsConfig = plugin.getSettingsConfig();
-		this.logger = plugin.logger();
+		this.logger = logger();
 		this.visibilityManager = new ShopVisibilityManager(plugin, this);
 		
 		database = new ShopDatabase(plugin);
@@ -107,11 +107,11 @@ public class ShopManager{
 		visibilityManager.addListener(new DisplayUpdateHandler());
 	}
 	
-	private void migrateData(Main plugin) {
+	private void migrateData() {
 		if(!settingsConfig.isMigrateOldData()){
 			return;
 		}
-		Path playerNameCache = Main.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data", "playerNameCache.yml"));
+		Path playerNameCache = ShopPlugin.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data", "playerNameCache.yml"));
 		if(Files.exists(playerNameCache)){
 			logger.info("Loading legacy name cache from yml file...");
 			YamlConfiguration nameCache = YamlConfiguration.loadConfiguration(playerNameCache.toFile());
@@ -136,9 +136,9 @@ public class ShopManager{
 			shopDeletionTimes.put(shop.getId(), 0L);
 		}
 		
-		if(MarketManagerDB.containsDb(plugin)){
+		if(MarketManagerDB.containsDb()){
 			logger.info("Found market manager Database to migrate!");
-			MarketManagerDB managerDB = new MarketManagerDB(plugin);
+			MarketManagerDB managerDB = new MarketManagerDB();
 			Map<AbstractShop, Boolean> migrationDb = managerDB.getShops();
 			logger.info("Loaded market manager shop history!");
 			for(var shop : migrationDb.keySet()){
@@ -162,6 +162,9 @@ public class ShopManager{
 		settingsConfig.silentSave();
 	}
 	
+	/**
+	 * Gets all shops near the current location within the defined chunk radius
+	 */
 	public Set<AbstractShop> getShopsNearLocation(Location location, int chunkRadius) {
 		if(chunkRadius < 0){
 			throw new IllegalArgumentException("Chunk radius cannot be negative");
@@ -219,7 +222,7 @@ public class ShopManager{
 		unloadedShopsByChunk.clear();
 		shopOwners.clear();
 		
-		migrateData(plugin);
+		migrateData();
 		PlayerNameCache.initialize();
 		getDatabase().getShops(false).thenAccept(shops -> {
 			for(var shop : shops){
@@ -263,18 +266,18 @@ public class ShopManager{
 	
 	public void addPlayerShopCreation(Player player, ShopCreationProcess process) {
 		playersInShopCreation.put(player.getUniqueId(), process);
-		plugin.logger().debug("Shop Creation process started for: " + player.getName());
+		logger().debug("Shop Creation process started for: " + player.getName());
 		//give player a limited amount of time to finish creating the shop until it is deleted
 		plugin.getFoliaLib().getScheduler().runLater(() -> {
-			plugin.logger().debug("Shop Creation timeout handle for: " + player.getName());
+			logger().debug("Shop Creation timeout handle for: " + player.getName());
 			//already canceled by something else no need to od it again
 			if(process.isCancelled()){
-				plugin.logger().debug("Shop Creation already cancelled");
+				logger().debug("Shop Creation already cancelled");
 				return;
 			}
 			//the shop has still not been initialized with an item from a player
 			if(!process.isFinishedInitialisation()){
-				plugin.logger().debug("Shop Creation timed out for player: " + player.getName());
+				logger().debug("Shop Creation timed out for player: " + player.getName());
 				cancelShopCreationProcess(process.getPlayer());
 			}
 		}, 30 * 20); // 30 seconds * 20 ticks
@@ -289,9 +292,9 @@ public class ShopManager{
 	}
 	
 	public void finishShopCreation(Player player, AbstractShop shop) {
-		plugin.logger().debug("Removing player " + player.getName() + "from shop creation list");
+		logger().debug("Removing player " + player.getName() + "from shop creation list");
 		playersInShopCreation.remove(player.getUniqueId());
-		plugin.logger().debug("Registering shop: " + shop);
+		logger().debug("Registering shop: " + shop);
 		registerShop(shop);
 	}
 	
@@ -324,9 +327,9 @@ public class ShopManager{
 	 */
 	public void cancelShopCreationProcess(Player player) {
 		ShopCreationProcess process = playersInShopCreation.remove(player.getUniqueId());
-		plugin.logger().debug("Removing player " + player.getName() + "from shop creation list");
+		logger().debug("Removing player " + player.getName() + "from shop creation list");
 		if(process != null){
-			Main.getPlugin().getLangManager().request("interaction.issues.createCancel").sendToAudience(player);
+			langManager().request("interaction.issues.create.cancel").sendToAudience(player);
 			Sign sign = process.getSign();
 			plugin.getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
 				if(sign.getBlockData() instanceof WallSign){
@@ -409,10 +412,7 @@ public class ShopManager{
 			database.addShop(shop);
 			database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
 			//newly registered shop should be sent to all players, do this here or somewhere else?
-			var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopDisplayDistance());
-			for(var player : nearbyPlayers){
-				shop.getDisplay().spawn(player);
-			}
+			visibilityManager.updateShop(shop);
 		});
 	}
 	
@@ -422,6 +422,7 @@ public class ShopManager{
 	public void unregisterShop(AbstractShop shop) {
 		removeShop(shop);
 		database.removeShop(shop);
+		//todo replace with visibilitymanager cleanup if that becomes relevant in the future
 		shop.getDisplay().cleanup();
 		shop.getDisplay().remove();
 	}

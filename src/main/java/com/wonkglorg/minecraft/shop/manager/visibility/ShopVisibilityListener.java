@@ -1,10 +1,11 @@
 package com.wonkglorg.minecraft.shop.manager.visibility;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
+import java.util.UUID;
 
 public interface ShopVisibilityListener{
 	
@@ -26,7 +27,12 @@ public interface ShopVisibilityListener{
 	 */
 	void onShopRefresh(Player player, AbstractShop shop);
 	
+	/**
+	 * Requests a data clear for a player
+	 */
+	void clearData(UUID playerId);
+	
 	default Collection<Player> getPlayersSeeingShop(AbstractShop shop) {
-		return shop.getSignLocation().getNearbyPlayers(Main.getPlugin().getSettingsConfig().getMaxShopDisplayDistance());
+		return shop.getSignLocation().getNearbyPlayers(ShopPlugin.getPlugin().getSettingsConfig().getMaxShopProcessingDistanceChunks());
 	}
 }

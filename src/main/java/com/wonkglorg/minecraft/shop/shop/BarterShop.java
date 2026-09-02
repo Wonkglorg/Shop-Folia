@@ -1,7 +1,8 @@
 package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.EMPTY;
@@ -44,7 +45,7 @@ public class BarterShop extends AbstractShop{
 	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {
 		int calculatedAmount = amount * multiplier;
 		double calculatedPrice = price * multiplier;
-		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT -> new VaultTransaction(party, getParty(), calculatedAmount, calculatedPrice, item);
 			case ITEM -> new ItemTransaction(party, getParty(), calculatedAmount, calculatedPrice, item, secondaryItem);
 			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, calculatedAmount, calculatedPrice, item);
@@ -87,7 +88,7 @@ public class BarterShop extends AbstractShop{
 	
 	@Override
 	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
-		var lang = Main.getPlugin().getLangManager();
+		var lang = langManager();
 		switch(result) {
 			case OK -> {
 				LangRequest userRequest = lang.request("transaction.success.barter.user");

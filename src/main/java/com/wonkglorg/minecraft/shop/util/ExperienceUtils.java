@@ -2,7 +2,11 @@ package com.wonkglorg.minecraft.shop.util;
 
 import org.bukkit.entity.Player;
 
-public class ExpirienceUtils{
+public class ExperienceUtils{
+	private ExperienceUtils() {
+		// Utility class
+	}
+	
 	public static int getTotalExperience(Player player) {
 		int level = player.getLevel();
 		
@@ -44,14 +48,14 @@ public class ExpirienceUtils{
 		}
 		
 		if(experience < 352){
-			return (int) ((Math.sqrt(72 * experience + 81) - 9) / 2);
+			return (int) ((Math.sqrt(72 * experience + 81.0) - 9) / 2);
 		}
 		
 		if(experience < 1507){
-			return (int) ((Math.sqrt(40 * experience - 7839) + 81) / 10);
+			return (int) ((Math.sqrt(40 * experience - 7839.0) + 81) / 10);
 		}
 		
-		return (int) ((Math.sqrt(72 * experience - 54215) + 325) / 18);
+		return (int) ((Math.sqrt(72 * experience - 54215.0) + 325) / 18);
 	}
 	
 	public static int getExperienceAtLevel(int level) {

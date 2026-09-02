@@ -29,6 +29,10 @@ public class NativeJsonConverter{
 		}
 	}
 	
+	private NativeJsonConverter() {
+		//utility class
+	}
+	
 	public static JsonElement fromNative(Object nativeJsonElement) {
 		try{
 			String json = (String) nativeGSONToJsonMethod.invoke(nativeGSON, nativeJsonElement);

@@ -1,15 +1,14 @@
 package com.wonkglorg.minecraft.shop.config;
 
 import com.wonkglorg.minecraft.config.types.Config;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
+import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class ItemConfig extends Config{
 	/**
@@ -24,7 +23,7 @@ public class ItemConfig extends Config{
 	private ItemStack gambleDisplayItem;
 	
 	public ItemConfig() {
-		super(Main.getPlugin(), Path.of("item-config.yml"));
+		super(ShopPlugin.getPlugin(), Path.of("item-config.yml"));
 		reload();
 	}
 	
@@ -39,6 +38,7 @@ public class ItemConfig extends Config{
 	public void setCurrencyItem(ItemStack currencyItem) {
 		this.currencyItem = currencyItem;
 		set("currency-item", currencyItem);
+		shopDatabase().logCurrencyChange(CurrencyType.ITEM, currencyItem);
 		silentSave();
 	}
 	

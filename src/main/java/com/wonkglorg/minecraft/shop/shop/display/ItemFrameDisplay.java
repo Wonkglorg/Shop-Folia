@@ -1,10 +1,9 @@
 package com.wonkglorg.minecraft.shop.shop.display;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.decoration.GlowItemFrame;
@@ -17,6 +16,8 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+
+import static java.util.Objects.requireNonNull;
 
 public class ItemFrameDisplay extends AbstractDisplay{
 	protected ItemFrameDisplay(AbstractShop shop) {
@@ -34,11 +35,17 @@ public class ItemFrameDisplay extends AbstractDisplay{
 				shop.getDisplayItem(),
 				validLocation,
 				shop.getFacing(),
-				Main.getPlugin().getSettingsConfig().isDisplayGlowingItemFrame());
+				ShopPlugin.getPlugin().getSettingsConfig().isDisplayGlowingItemFrame());
+		
+		//only add secondary item for item frames if it is a double chest shop
+		if(shop.getSecondaryContainerLocation() == null){
+			return;
+		}
 		
 		ItemStack secondaryStack = shop.getSecondaryDisplayItem();
 		if(secondaryStack != null){
-			Location secondaryValidLocation = shop.getAboveContainer();
+			Location secondaryValidLocation = shop.getAboveSecondaryContainer();
+			assert secondaryValidLocation != null;
 			if(secondaryValidLocation.getBlock().getType() != Material.AIR){
 				Block relative = shop.getAboveSecondaryContainer().getBlock().getRelative(shop.getFacing());
 				if(relative.getType() != Material.AIR){
@@ -51,7 +58,7 @@ public class ItemFrameDisplay extends AbstractDisplay{
 					secondaryStack,
 					secondaryValidLocation,
 					shop.getFacing(),
-					Main.getPlugin().getSettingsConfig().isDisplayGlowingItemFrame());
+					ShopPlugin.getPlugin().getSettingsConfig().isDisplayGlowingItemFrame());
 		}
 		
 	}
@@ -76,8 +83,8 @@ public class ItemFrameDisplay extends AbstractDisplay{
 		itemFrame.setItem(itemStack);
 		itemFrame.setDirection(getMojangDirection(facing));
 		
-		ClientboundAddEntityPacket entitySpawnPacket = createEntity(player, itemFrame, itemFrame.getDirection().get3DDataValue());
-		ClientboundSetEntityDataPacket entityMetadataPacket = new ClientboundSetEntityDataPacket(entityID, itemFrame.getEntityData().packDirty());
+		var entitySpawnPacket = createEntity(player, itemFrame, itemFrame.getDirection().get3DDataValue());
+		var entityMetadataPacket = new ClientboundSetEntityDataPacket(entityID, requireNonNull(itemFrame.getEntityData().packDirty()));
 		
 		sendPacket(player, entitySpawnPacket);
 		sendPacket(player, entityMetadataPacket);

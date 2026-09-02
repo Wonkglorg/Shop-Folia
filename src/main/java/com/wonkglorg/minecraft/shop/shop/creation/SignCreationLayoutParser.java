@@ -1,6 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop.creation;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import org.bukkit.configuration.ConfigurationSection;
@@ -30,66 +31,33 @@ public final class SignCreationLayoutParser{
 	public static void reload(ConfigurationSection section) {
 		Map<String, List<Layout>> newLayouts = new HashMap<>();
 		
-		
-		for(var type: ShopType.values()){
-		
-		}
-		
-		for(Map.Entry<String, Object> typeEntry : config.entrySet()){
-			ShopType type;
+		for(ShopType type : ShopType.values()){
 			
-			try{
-				type = ShopType.valueOf(typeEntry.getKey().toUpperCase(Locale.ROOT));
-			} catch(IllegalArgumentException ignored){
-				continue;
-			}
+			String typePath = type.name().toLowerCase(Locale.ROOT);
 			
-			if(!(typeEntry.getValue() instanceof Map<?, ?> declarationMap)){
-				continue;
-			}
+			parseDeclarations(type, section.getList(typePath + ".normal"), false, newLayouts);
 			
-			parseDeclarations(type, declarationMap, newLayouts);
+			parseDeclarations(type, section.getList(typePath + ".admin"), true, newLayouts);
 		}
 		
 		layouts = freeze(newLayouts);
 	}
 	
-	private static void parseDeclarations(ShopType type, Map<?, ?> declarations, Map<String, List<Layout>> result) {
-		for(Map.Entry<?, ?> entry : declarations.entrySet()){
-			
-			String declarationType = String.valueOf(entry.getKey());
-			
-			if("normal".equalsIgnoreCase(declarationType)){
-				parseLayoutList(type, entry.getValue(), false, result);
-				continue;
-			}
-			
-			if("admin".equalsIgnoreCase(declarationType)){
-				parseLayoutList(type, entry.getValue(), true, result);
-			}
-		}
-	}
-	
-	private static void parseLayoutList(ShopType type, Object raw, boolean admin, Map<String, List<Layout>> result) {
-		if(!(raw instanceof List<?> declarationList)){
-			throw new IllegalArgumentException("Creation layouts for " + type + "/" + (admin ? "admin" : "normal") + " must be a list");
+	private static void parseDeclarations(ShopType type, List<?> declarations, boolean admin, Map<String, List<Layout>> result) {
+		if(declarations == null){
+			return;
 		}
 		
-		for(Object declaration : declarationList){
+		for(Object declaration : declarations){
+			
 			if(!(declaration instanceof Map<?, ?> lines)){
-				throw new IllegalArgumentException("Invalid creation layout declaration for " + type);
+				throw new IllegalArgumentException("Invalid creation layout declaration for " + type + "/" + (admin ? "admin" : "normal"));
 			}
 			
 			Layout layout = parseLayout(type, admin, lines);
 			
-			/*
-			 * Index the same layout under every possible first-line value.
-			 *
-			 * This is the important optimization. A sign beginning with
-			 * "shop" never needs to check a layout beginning with
-			 * "admin sell shop".
-			 */
 			for(String firstLine : layout.lines[0]){
+				
 				if(isDynamic(firstLine)){
 					throw new IllegalArgumentException("First line of a creation layout must be static: " + firstLine);
 				}
@@ -158,7 +126,7 @@ public final class SignCreationLayoutParser{
 	 */
 	public static CreationMatch match(String[] lines) {
 		if(lines == null || lines.length < 4){
-			Main.getPlugin().logger().debug("Not enough lines defined!");
+			logger().debug("Not enough lines defined!");
 			return null;
 		}
 		
@@ -168,7 +136,7 @@ public final class SignCreationLayoutParser{
 		List<Layout> candidates = layouts.get(normalize(lines[0]));
 		
 		if(candidates == null){
-			Main.getPlugin().logger().debug("No possible candidates found for first line lookup!");
+			logger().debug("No possible candidates found for first line lookup!");
 			return null;
 		}
 		
@@ -176,7 +144,7 @@ public final class SignCreationLayoutParser{
 			CreationMatch match = layout.match(lines);
 			
 			if(match != null){
-				Main.getPlugin().logger().debug("Found valid match for lines! " + match);
+				logger().debug("Found valid match for lines! " + match);
 				return match;
 			}
 		}

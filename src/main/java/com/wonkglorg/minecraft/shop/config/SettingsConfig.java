@@ -1,7 +1,8 @@
 package com.wonkglorg.minecraft.shop.config;
 
 import com.wonkglorg.minecraft.config.types.Config;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.shop.ShopAction;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
@@ -174,11 +175,15 @@ public class SettingsConfig extends Config{
 	@Getter
 	private double displayMovementThreshold;
 	/**
-	 * Gets the maximum distance at which shop displays will be shown to players.
-	 * Higher values will show shops from further away but may cause client lag.
+	 * Gets the maximum distance in chunks at which shops will send visual updates to players.
 	 */
 	@Getter
-	private double maxShopDisplayDistance;
+	private int maxShopProcessingDistanceChunks;
+	/**
+	 * Gets the maximum distance in blocks at which shops will send visual updates to players, inherited from {@link #maxShopProcessingDistanceChunks}.
+	 */
+	@Getter
+	private int maxShopProcessingDistanceBlocks;
 	
 	// =================================================================== //
 	//                               MIGRATION                             //
@@ -191,7 +196,7 @@ public class SettingsConfig extends Config{
 	private boolean migrateOldData;
 	
 	public SettingsConfig() {
-		super(Main.getPlugin(), Path.of("config.yml"));
+		super(ShopPlugin.getPlugin(), Path.of("config.yml"));
 		reload();
 	}
 	
@@ -264,7 +269,7 @@ public class SettingsConfig extends Config{
 			try{
 				enabledContainers.add(Material.valueOf(materialString));
 			} catch(IllegalArgumentException e){
-				Main.getPlugin().logger().warning("Invalid container material config definition " + materialString);
+				logger().warning("Invalid container material config definition " + materialString);
 			}
 		}
 		
@@ -297,7 +302,8 @@ public class SettingsConfig extends Config{
 		
 		displayMovementThreshold = getDouble("display-movement-threshold");
 		
-		maxShopDisplayDistance = getDouble("max-shop-display-distance");
+		maxShopProcessingDistanceChunks = getInt("max-shop-processing-distance-chunks");
+		maxShopProcessingDistanceBlocks = maxShopProcessingDistanceChunks * 16;
 		
 		migrateOldData = getBoolean("migrate-old-data");
 	}
@@ -347,6 +353,10 @@ public class SettingsConfig extends Config{
 		private boolean transactionNotificationEnabled;
 		@Getter
 		private boolean transactionNotificationDefault;
+		@Getter
+		private boolean customItemUpdaterEnabled;
+		@Getter
+		private boolean customItemUpdaterDefault;
 		
 		public ShopSettings(ConfigurationSection section) {
 			transactionLimitEnabled = section.getBoolean("transaction-limit.enabled");
@@ -360,6 +370,9 @@ public class SettingsConfig extends Config{
 			
 			transactionNotificationEnabled = section.getBoolean("transaction-notification.enabled");
 			transactionNotificationDefault = section.getBoolean("transaction-notification.default-value");
+			
+			customItemUpdaterEnabled = section.getBoolean("transaction-notification.enabled");
+			customItemUpdaterDefault = section.getBoolean("transaction-notification.default-value");
 		}
 	}
 }

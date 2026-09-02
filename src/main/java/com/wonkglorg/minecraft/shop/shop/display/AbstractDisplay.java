@@ -1,7 +1,8 @@
 package com.wonkglorg.minecraft.shop.shop.display;
 
 import com.mojang.datafixers.util.Pair;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.ArmorStandData;
@@ -43,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractDisplay{
 	
-	protected Main plugin;
+	protected ShopPlugin plugin;
 	@Getter
 	protected DisplayType type;
 	@Getter
@@ -52,7 +53,7 @@ public abstract class AbstractDisplay{
 	protected Map<UUID, List<Integer>> entityIDs = new ConcurrentHashMap<>(); //player UUID. display entities
 	
 	protected AbstractDisplay(AbstractShop shop, DisplayType type) {
-		this.plugin = Main.getPlugin();
+		this.plugin = ShopPlugin.getPlugin();
 		this.shop = shop;
 		this.type = type;
 	}
@@ -153,8 +154,7 @@ public abstract class AbstractDisplay{
 			}
 			
 		} catch(Exception e){
-			Main.getPlugin().getLogger().severe("Unknown error sending packet to player for Display (Item/Hologram text), error message: " +
-												e.getMessage());
+			logger().severe("Unknown error sending packet to player for Display (Item/Hologram text), error message: " + e.getMessage(), e);
 		}
 	}
 	
@@ -222,24 +222,6 @@ public abstract class AbstractDisplay{
 		entityIDs.computeIfAbsent(player.getUniqueId(), _ -> new ArrayList<>()).add(armorStand);
 	}
 	
-	public void setType(DisplayType type, boolean checkDisplayBlock) {
-		DisplayType oldType = this.type;
-		
-		if(checkDisplayBlock && getShop().getContainerLocation() != null){
-			if((oldType == DisplayType.NONE && type != DisplayType.ITEM_FRAME) || (oldType == DisplayType.ITEM_FRAME && type != DisplayType.NONE)){
-				if(this.isChunkLoaded()){
-					//make sure there is room above the shop for the display
-					Block aboveShop = this.getShop().getContainerLocation().getBlock().getRelative(BlockFace.UP);
-					if(aboveShop.getType() != Material.AIR){
-						return;
-					}
-				}
-			}
-		}
-		
-		this.type = type;
-	}
-	
 	private EquipmentSlot getMojangEquipmentSlot(org.bukkit.inventory.EquipmentSlot equipmentSlot) {
 		return switch(equipmentSlot) {
 			case HAND -> EquipmentSlot.MAINHAND;
@@ -277,7 +259,7 @@ public abstract class AbstractDisplay{
 		if(displayBlock.getType() == Material.AIR){
 			displayBlock.setType(Material.LIGHT);
 			Light data = (Light) displayBlock.getBlockData();
-			data.setLevel(Main.getPlugin().getSettingsConfig().getDisplayLightLevel());
+			data.setLevel(ShopPlugin.getPlugin().getSettingsConfig().getDisplayLightLevel());
 			displayBlock.setBlockData(data);
 		}
 	}
@@ -377,7 +359,7 @@ public abstract class AbstractDisplay{
 	/**
 	 * Cleanup all data for this display
 	 */
-	public void cleanup(){
+	public void cleanup() {
 		remove();
 		removeLight();
 	}

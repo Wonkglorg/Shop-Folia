@@ -47,6 +47,7 @@ public class AdminOfflinePlayer implements OfflinePlayer{
 		return adminUUID;
 	}
 	
+	@SuppressWarnings({"DataFlowIssue", "NullableProblems"})
 	@Override
 	public PlayerProfile getPlayerProfile() {
 		return null;

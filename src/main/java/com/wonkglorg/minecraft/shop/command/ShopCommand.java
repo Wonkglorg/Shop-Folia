@@ -1,6 +1,5 @@
 package com.wonkglorg.minecraft.shop.command;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.wonkglorg.minecraft.command.AbstractCommand;
@@ -8,13 +7,13 @@ import com.wonkglorg.minecraft.config.LangManager;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
@@ -23,12 +22,12 @@ import org.bukkit.inventory.ItemStack;
 
 public class ShopCommand extends AbstractCommand{
 	
-	private final Main plugin;
+	private final ShopPlugin plugin;
 	private final LangManager lang;
 	
 	public ShopCommand() {
-		this.plugin = Main.getPlugin();
-		this.lang = plugin.getLangManager();
+		this.plugin = ShopPlugin.getPlugin();
+		this.lang = ShopPlugin.langManager();
 	}
 	
 	@Override
@@ -103,8 +102,8 @@ public class ShopCommand extends AbstractCommand{
 		heldItem.setAmount(1);
 		plugin.getItemConfig().setGambleDisplayItem(player.getInventory().getItemInMainHand());
 		lang.request("command.set-gamble.success")
-		    .replace("%held-item%", ItemNameUtil.getName(plugin.getItemConfig().getGambleDisplayItem()))
-		    .sendToAudience(sender);
+			.replace("%held-item%", ItemNameUtil.getName(plugin.getItemConfig().getGambleDisplayItem()))
+			.sendToAudience(sender);
 		return 0;
 	}
 	
@@ -130,8 +129,8 @@ public class ShopCommand extends AbstractCommand{
 		//update all shop signs and log the change to the database
 		plugin.getItemConfig().setCurrencyItem(heldItem);
 		lang.request("command.set-currency.success")
-		    .replace("%held-item%", () -> ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))
-		    .sendToAudience(sender);
+			.replace("%held-item%", () -> ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))
+			.sendToAudience(sender);
 		return 0;
 	}
 	
@@ -165,13 +164,13 @@ public class ShopCommand extends AbstractCommand{
 		if(sender instanceof Player player){
 			//@formatter:off
 			lang.request("command.list.success-player")
-				.replace("%total-shops%", plugin.getShopmanager().getNumberOfShops())
-				.replace("%user-amount%", plugin.getShopmanager().getNumberOfShops(player.getUniqueId()))
+				.replace("%total-shops%", shopManager().getNumberOfShops())
+				.replace("%user-amount%", shopManager().getNumberOfShops(player.getUniqueId()))
 				.lazyReplace("%build-limit%",() -> String.valueOf(PlayerProfile.getShopBuildLimit(player)))
 				.sendToAudience(sender);
 			//@formatter:on
 		} else {
-			lang.request("command.list.success-console").replace("%total-shops%", plugin.getShopmanager().getNumberOfShops()).sendToAudience(sender);
+			lang.request("command.list.success-console").replace("%total-shops%", shopManager().getNumberOfShops()).sendToAudience(sender);
 		}
 		return 1;
 	}

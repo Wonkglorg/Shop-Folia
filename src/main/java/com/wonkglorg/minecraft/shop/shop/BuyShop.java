@@ -1,7 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.EMPTY;
@@ -83,7 +83,7 @@ public class BuyShop extends AbstractShop{
 	
 	@Override
 	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
-		var lang = Main.getPlugin().getLangManager();
+		var lang = langManager();
 		switch(result) {
 			case OK -> {
 				LangRequest userRequest = lang.request("transaction.success.buy.user");
@@ -99,29 +99,29 @@ public class BuyShop extends AbstractShop{
 					ownerRequest.sendToAudience(online.getPlayer());
 				}
 			}
-			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.buy.shopPerformingTransaction").sendToAudience(player);
-			case CANCELLED -> lang.request("transaction.issue.buy.cancelledExternal").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_SELLER -> lang.request("transaction.issue.buy.playerNoStock").sendToAudience(player);
+			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.buy.shop-performing-transaction").sendToAudience(player);
+			case CANCELLED -> lang.request("transaction.issue.buy.cancelled-external").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_SELLER -> lang.request("transaction.issue.buy.player-no-stock").sendToAudience(player);
 			case INSUFFICIENT_FUNDS_BUYER -> {
-				lang.request("transaction.issue.buy.shopNoStock").sendToAudience(player);
+				lang.request("transaction.issue.buy.shop-no-stock").sendToAudience(player);
 				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.buy.ownerNoStock");
+					LangRequest ownerRequest = lang.request("transaction.issue.buy.owner-no-stock");
 					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
 					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
 				}
 			}
-			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.buy.playerNoSpace").sendToAudience(player);
+			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.buy.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_BUYER -> {
-				lang.request("transaction.issue.buy.shopNoSpace").sendToAudience(player);
+				lang.request("transaction.issue.buy.shop-no-space").sendToAudience(player);
 				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.buy.ownerNoSpace");
+					LangRequest ownerRequest = lang.request("transaction.issue.buy.owner-no-space");
 					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
 					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
 				}
 			}
-			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.buy.useOwnShop").sendToAudience(player);
-			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.buy.playerCooldown").sendToAudience(player);
-			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.buy.playerTransactionLimit").sendToAudience(player);
+			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.buy.use-own-shop").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.buy.player-cooldown").sendToAudience(player);
+			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.buy.player-transaction-limit-reached").sendToAudience(player);
 		}
 		
 	}

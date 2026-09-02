@@ -5,7 +5,7 @@ import com.wonkglorg.database.DatabaseType;
 import com.wonkglorg.database.databases.SqliteDatabase;
 import com.wonkglorg.database.datasources.FileDataSource;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB.ShopHistoryEntry;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -83,10 +83,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			INSERT INTO shop_settings(shop_uuid,setting_key,value) VALUES(?,?,?)
 			""";
 	
-	private final Main plugin;
+	private final ShopPlugin plugin;
 	private final PlatformScheduler scheduler;
 	
-	public ShopDatabase(Main plugin) throws SQLException, IOException {
+	public ShopDatabase(ShopPlugin plugin) throws SQLException, IOException {
 		super(new FileDataSource(DatabaseType.SQLITE, plugin.getDataPath().resolve("data", "shop.db")));
 		this.plugin = plugin;
 		this.scheduler = plugin.getFoliaLib().getScheduler();
@@ -451,11 +451,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				preparedStatement.execute();
 			} catch(SQLException e){
 				PluginLogger.error("Error while adding transaction to shop", e);
-			}
-			var profileIfLoaded = PlayerManager.getOnlineProfileIfCached(purchaserId);
-			if(profileIfLoaded != null){
-				//update cached values for the online player
-				profileIfLoaded.recordPurchase(shopId, timestamp, multiplier);
 			}
 		});
 		

@@ -1,7 +1,9 @@
 package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
@@ -50,11 +52,7 @@ public class GambleShop extends AbstractShop{
 	
 	@Override
 	protected void logTransaction(TransactionParty party, int multiplier) {
-		Main.getPlugin().getShopmanager().getDatabase().logTransaction(id,
-				System.currentTimeMillis(),
-				party.getPlayer().getUniqueId(),
-				getItemStack(),
-				1);
+		shopDatabase().logTransaction(id, System.currentTimeMillis(), party.getPlayer().getUniqueId(), getItemStack(), 1);
 	}
 	
 	@Override
@@ -65,7 +63,7 @@ public class GambleShop extends AbstractShop{
 	
 	@Override
 	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
-		var lang = Main.getPlugin().getLangManager();
+		var lang = langManager();
 		switch(result) {
 			case OK -> {
 				LangRequest userRequest = lang.request("transaction.success.gamble.user");
@@ -99,7 +97,7 @@ public class GambleShop extends AbstractShop{
 	@Override
 	public ItemStack getDisplayItem() {
 		//todo:mjd allow for rotating display items when viewing the gamble shop.
-		return Main.getPlugin().getItemConfig().getGambleDisplayItem();
+		return ShopPlugin.getPlugin().getItemConfig().getGambleDisplayItem();
 	}
 	
 	@Override
@@ -154,9 +152,9 @@ public class GambleShop extends AbstractShop{
 		} else {
 			amount = itemStack.getAmount();
 		}
-		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT -> new VaultTransaction(party, getParty(), amount, price, itemStack);
-			case ITEM -> new ItemTransaction(party, getParty(), amount, price, itemStack, Main.getPlugin().getItemConfig().getCurrencyItem());
+			case ITEM -> new ItemTransaction(party, getParty(), amount, price, itemStack, ShopPlugin.getPlugin().getItemConfig().getCurrencyItem());
 			case EXPERIENCE -> new ExpirienceTransaction(party, getParty(), amount, price, itemStack);
 		};
 	}

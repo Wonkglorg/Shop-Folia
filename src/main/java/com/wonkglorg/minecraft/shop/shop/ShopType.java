@@ -1,6 +1,5 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.shop.Main;
 import lombok.Getter;
 
 public enum ShopType{

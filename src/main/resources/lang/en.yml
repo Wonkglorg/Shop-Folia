@@ -209,6 +209,7 @@ interaction:
       # Sent when the item being used to create the shop is blocked by the configured item filter.
       item-filter-deny: "<red>This item is disabled for shop usage!"
     destroy:
+      uninitialized-chest: "<red>Can't destroy sign currently in initialisation process."
       # Sent when the player does not have enough funds to pay the shop destruction cost.
       insufficient-funds: "<red>You do not have the funds required to destroy this shop."
       # Sent when the player attempts to destroy a shop sign without sneaking.

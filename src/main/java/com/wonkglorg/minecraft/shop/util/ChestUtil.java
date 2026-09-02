@@ -4,6 +4,10 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Chest;
 
 public class ChestUtil{
+	private ChestUtil() {
+		//utility class
+	}
+	
 	public static BlockFace getOtherChestDirection(Chest.Type chestType, BlockFace facing) {
 		return switch(chestType) {
 			case LEFT -> switch(facing) {
