@@ -1,12 +1,16 @@
 package com.wonkglorg.minecraft.shop.shop.settings;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 
 /**
  * Settings each {@link com.wonkglorg.minecraft.shop.shop.AbstractShop} can define
  */
 public final class Settings{
+	
+	private Settings() {
+		//DATA STORAGE CLASS
+	}
 	
 	/**
 	 * Cooldown applied after each purchase (per player)
@@ -41,7 +45,16 @@ public final class Settings{
 			shopSettings()::isTransactionNotificationDefault,
 			shopSettings()::isTransactionNotificationEnabled);
 	
+	/**
+	 * If shops should auto update custom item definitions made by other plugins such as "Nexo Items"
+	 */
+	public static final Setting<Boolean> ITEM_UPDATER = new Setting<>("item_updater",
+			Boolean.class,
+			Boolean::parseBoolean,
+			shopSettings()::isCustomItemUpdaterDefault,
+			shopSettings()::isCustomItemUpdaterEnabled);
+	
 	private static SettingsConfig.ShopSettings shopSettings() {
-		return Main.getPlugin().getSettingsConfig().getShopSettings();
+		return ShopPlugin.getPlugin().getSettingsConfig().getShopSettings();
 	}
 }
