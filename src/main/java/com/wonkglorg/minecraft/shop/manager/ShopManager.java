@@ -210,6 +210,7 @@ public class ShopManager{
 	}
 	
 	public void reload() {
+		visibilityManager.setLoadingShops(true);
 		if(!allShops.isEmpty()){
 			//if shops already exist save them before doing a reload
 			saveAllShops();
@@ -411,8 +412,8 @@ public class ShopManager{
 			addShop(shop);
 			database.addShop(shop);
 			database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
-			//newly registered shop should be sent to all players, do this here or somewhere else?
-			visibilityManager.updateShop(shop);
+			//schedules shop client updates one tick after creation, otherwise the initial "load" method of shops sometimes takes priority in showing the default shop state instead
+			plugin.getFoliaLib().getScheduler().runAtLocationLater(shop.getSignLocation(), _ -> visibilityManager.updateShop(shop), 1);
 		});
 	}
 	

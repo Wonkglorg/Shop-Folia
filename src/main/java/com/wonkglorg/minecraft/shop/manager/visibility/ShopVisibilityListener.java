@@ -1,10 +1,8 @@
 package com.wonkglorg.minecraft.shop.manager.visibility;
 
-import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import org.bukkit.entity.Player;
 
-import java.util.Collection;
 import java.util.UUID;
 
 public interface ShopVisibilityListener{
@@ -20,19 +18,15 @@ public interface ShopVisibilityListener{
 	void onShopLeave(Player player, AbstractShop shop);
 	
 	/**
-	 * Called when the shop plugin requests a complete refresh of all shops, this method runs once for every shop that is currently visible to anyone and for each person that can see it
-	 *
-	 * @param player player on the server that can currently see the shop
-	 * @param shop the shop
-	 */
-	void onShopRefresh(Player player, AbstractShop shop);
-	
-	/**
-	 * Requests a data clear for a player
+	 * Requests a data clear for a player, this does not undo packets sent to the client, use {@link #onShopCleanup(Player, AbstractShop)} to cleanup client data for a specific shop
 	 */
 	void clearData(UUID playerId);
 	
-	default Collection<Player> getPlayersSeeingShop(AbstractShop shop) {
-		return shop.getSignLocation().getNearbyPlayers(ShopPlugin.getPlugin().getSettingsConfig().getMaxShopProcessingDistanceChunks());
-	}
+	/**
+	 * Requests a cleanup for client side data for this shop, this happens as a result of the shop reloading its shop data and in turn should cleanup any client side shop related data
+	 *
+	 * @param player the player to clean data for
+	 * @param shop the shop to cleanup
+	 */
+	void onShopCleanup(Player player, AbstractShop shop);
 }

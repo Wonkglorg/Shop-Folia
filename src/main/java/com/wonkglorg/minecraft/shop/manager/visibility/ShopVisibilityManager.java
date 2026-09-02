@@ -2,6 +2,7 @@ package com.wonkglorg.minecraft.shop.manager.visibility;
 
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -95,7 +96,10 @@ public class ShopVisibilityManager{
 	public void updateShop(AbstractShop shop) {
 		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
 		for(var player : nearbyPlayers){
-			notifyShopRefreshed(player, shop);
+			for(var listener : listeners){
+				listener.onShopCleanup(player, shop);
+				listener.onShopEnter(player, shop);
+			}
 		}
 	}
 	
@@ -109,7 +113,8 @@ public class ShopVisibilityManager{
 		T listener = getListener(service);
 		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
 		for(var player : nearbyPlayers){
-			listener.onShopRefresh(player, shop);
+			listener.onShopCleanup(player, shop);
+			listener.onShopEnter(player, shop);
 		}
 	}
 	
@@ -162,7 +167,7 @@ public class ShopVisibilityManager{
 				updateVisibleShops(player, force);
 				
 			} catch(Exception e){
-				plugin.logger().severe("Error processing shop visibility for player " + player.getName(), e);
+				logger().severe("Error processing shop visibility for player " + player.getName(), e);
 			} finally{
 				playersBeingProcessed.remove(playerId);
 			}
@@ -177,21 +182,25 @@ public class ShopVisibilityManager{
 		UUID playerId = player.getUniqueId();
 		
 		Set<AbstractShop> nowVisible = findVisibleShops(player.getLocation());
-		
+		Set<AbstractShop> previouslyVisible = visibleShopsByPlayer.get(playerId);
 		//directly take all visible shops and refresh them no other checks
 		if(force){
+			clearPlayerState(playerId);
+			if(previouslyVisible != null){
+				for(var shop : previouslyVisible){
+					notifyShopCleanup(player, shop);
+				}
+			}
 			if(nowVisible.isEmpty()){
 				visibleShopsByPlayer.remove(playerId);
 			} else {
 				visibleShopsByPlayer.put(playerId, nowVisible);
 			}
 			for(var shop : nowVisible){
-				notifyShopRefreshed(player, shop);
+				notifyShopEntered(player, shop);
 			}
 			return;
 		}
-		
-		Set<AbstractShop> previouslyVisible = visibleShopsByPlayer.get(playerId);
 		
 		if(previouslyVisible == null){
 			previouslyVisible = Collections.emptySet();
@@ -271,7 +280,7 @@ public class ShopVisibilityManager{
 			try{
 				listener.onShopEnter(player, shop);
 			} catch(Exception e){
-				plugin.logger().severe("Error notifying shop enter listener for " + player.getName(), e);
+				logger().severe("Error notifying shop enter listener for " + player.getName(), e);
 			}
 		}
 	}
@@ -281,17 +290,23 @@ public class ShopVisibilityManager{
 			try{
 				listener.onShopLeave(player, shop);
 			} catch(Exception e){
-				plugin.logger().severe("Error notifying shop leave listener for " + player.getName(), e);
+				logger().severe("Error notifying shop leave listener for " + player.getName(), e);
 			}
 		}
 	}
 	
-	private void notifyShopRefreshed(Player player, AbstractShop shop) {
+	/**
+	 * Notifies a cleanup for this shop for the given player
+	 *
+	 * @param player the player to cleanup any client side data
+	 * @param shop the shop to cleanup
+	 */
+	private void notifyShopCleanup(Player player, AbstractShop shop) {
 		for(ShopVisibilityListener listener : listeners){
 			try{
-				listener.onShopRefresh(player, shop);
+				listener.onShopCleanup(player, shop);
 			} catch(Exception e){
-				plugin.logger().severe("Error notifying shop refresh listener for " + player.getName(), e);
+				logger().severe("Error notifying shop cleanup listener for " + player.getName(), e);
 			}
 		}
 	}

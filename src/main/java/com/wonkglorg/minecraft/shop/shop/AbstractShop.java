@@ -1106,7 +1106,7 @@ public abstract class AbstractShop{
 	 * Refreshes the sign for every player who can currently see it
 	 */
 	public void updateSign() {
-		visibilityManager().getListener(SignUpdateHandler.class).refreshShop(this);
+		visibilityManager().updateShop(this);
 	}
 	
 	/**

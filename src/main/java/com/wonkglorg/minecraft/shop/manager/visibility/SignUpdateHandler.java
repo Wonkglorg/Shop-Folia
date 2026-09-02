@@ -34,7 +34,7 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 	
 	@Override
 	public void onShopEnter(Player player, AbstractShop shop) {
-		updateSign(player, shop, false);
+		updateSign(player, shop);
 	}
 	
 	@Override
@@ -43,16 +43,22 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 	}
 	
 	@Override
-	public void onShopRefresh(Player player, AbstractShop shop) {
-		updateSign(player, shop, true);
-	}
-	
-	@Override
 	public void clearData(UUID player) {
 		lastSignStates.remove(player);
 	}
 	
-	private void updateSign(Player player, AbstractShop shop, boolean force) {
+	@Override
+	public void onShopCleanup(Player player, AbstractShop shop) {
+		//do nothing to save on packet sending, but if need be send original shop sign via method below
+		//player.sendBlockChange(shop.getSignLocation(), shop.getSignLocation().getBlock().getBlockData());
+		//clear user data so the shop will be properly reloaded when shopEnter is next caller
+		var map = lastSignStates.get(player.getUniqueId());
+		if(map != null){
+			map.remove(shop.getId());
+		}
+	}
+	
+	private void updateSign(Player player, AbstractShop shop) {
 		if(!player.isOnline()){
 			return;
 		}
@@ -64,10 +70,8 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 		}
 		
 		//if nothing changed about the state just return
-		if(!force){
-			if(!hasSignStateChanged(profile, shop)){
-				return;
-			}
+		if(!hasSignStateChanged(profile, shop)){
+			return;
 		}
 		
 		Location location = shop.getSignLocation();
@@ -102,14 +106,6 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 			
 			player.sendBlockUpdate(location, sign);
 		}, 1);
-	}
-	
-	public void refreshShop(AbstractShop shop) {
-		for(var player : getPlayersSeeingShop(shop)){
-			if(player != null && player.isOnline()){
-				updateSign(player, shop, true);
-			}
-		}
 	}
 	
 	public static @NonNull List<Component> getComponents(AbstractShop shop, String langKey) {
@@ -159,7 +155,7 @@ public class SignUpdateHandler implements ShopVisibilityListener{
 		UUID playerId = player.getUuid();
 		UUID shopId = shop.getId(); // use whatever your AbstractShop shop UUID getter is
 		
-		SignState previous = lastSignStates.computeIfAbsent(playerId, _ -> new HashMap<>()).put(shopId, current);
+		SignUpdateHandler.SignState previous = lastSignStates.computeIfAbsent(playerId, _ -> new HashMap<>()).put(shopId, current);
 		
 		return !current.equals(previous);
 	}

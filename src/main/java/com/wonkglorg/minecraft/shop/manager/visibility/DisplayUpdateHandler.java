@@ -17,17 +17,16 @@ public class DisplayUpdateHandler implements ShopVisibilityListener{
 	
 	@Override
 	public void onShopLeave(Player player, AbstractShop shop) {
-		shop.getDisplay().remove(player);
-	}
-	
-	@Override
-	public void onShopRefresh(Player player, AbstractShop shop) {
-		shop.getDisplay().remove(player);
-		shop.getDisplay().spawn(player);
+		onShopCleanup(player, shop);
 	}
 	
 	@Override
 	public void clearData(UUID player) {
 		//nothing
+	}
+	
+	@Override
+	public void onShopCleanup(Player player, AbstractShop shop) {
+		shop.getDisplay().remove(player);
 	}
 }
