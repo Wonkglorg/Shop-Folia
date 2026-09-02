@@ -182,7 +182,7 @@ public class ShopPlugin extends JavaPlugin{
 		return shopmanager.getDatabase();
 	}
 	
-	public static ShopClientManager visibilityManager() {
-		return shopmanager.getVisibilityManager();
+	public static ShopClientManager shopClientManager() {
+		return shopmanager.getShopClientManager();
 	}
 }

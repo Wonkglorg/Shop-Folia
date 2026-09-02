@@ -54,7 +54,7 @@ public class ShopManager{
 	private final ShopDatabase database;
 	private final SettingsConfig settingsConfig;
 	@Getter
-	private final ShopClientManager visibilityManager;
+	private final ShopClientManager shopClientManager;
 	//todo:mjd for any shop with a hopper feeding it periodically update the shop sign to reflect the current fill.
 	/**
 	 * All registered shops
@@ -99,12 +99,12 @@ public class ShopManager{
 		this.plugin = plugin;
 		this.settingsConfig = plugin.getSettingsConfig();
 		this.logger = logger();
-		this.visibilityManager = new ShopClientManager(plugin, this);
+		this.shopClientManager = new ShopClientManager(plugin, this);
 		
 		database = new ShopDatabase(plugin);
 		
-		visibilityManager.addListener(new SignUpdateHandler());
-		visibilityManager.addListener(new DisplayUpdateHandler());
+		shopClientManager.addListener(new SignUpdateHandler());
+		shopClientManager.addListener(new DisplayUpdateHandler());
 	}
 	
 	private void migrateData() {
@@ -210,11 +210,11 @@ public class ShopManager{
 	}
 	
 	public void reload() {
-		visibilityManager.setLoadingShops(true);
+		shopClientManager.setLoadingShops(true);
 		if(!allShops.isEmpty()){
 			//if shops already exist save them before doing a reload
 			saveAllShops();
-			visibilityManager.reload();
+			shopClientManager.reload();
 		}
 		allShops.clear();
 		shopsBySign.clear();
@@ -239,7 +239,7 @@ public class ShopManager{
 			for(var hook : plugin.getShopServiceProvider().getShopLoadHooks()){
 				hook.accept(allShops.values());
 			}
-			visibilityManager.setLoadingShops(false);
+			shopClientManager.setLoadingShops(false);
 		});
 	}
 	
@@ -413,7 +413,7 @@ public class ShopManager{
 			database.addShop(shop);
 			database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
 			//schedules shop client updates one tick after creation, otherwise the initial "load" method of shops sometimes takes priority in showing the default shop state instead
-			plugin.getFoliaLib().getScheduler().runAtLocationLater(shop.getSignLocation(), _ -> visibilityManager.updateShop(shop), 1);
+			plugin.getFoliaLib().getScheduler().runAtLocationLater(shop.getSignLocation(), _ -> shopClientManager.updateShop(shop), 1);
 		});
 	}
 	

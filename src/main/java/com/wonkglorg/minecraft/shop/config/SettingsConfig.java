@@ -162,13 +162,22 @@ public class SettingsConfig extends Config{
 	//                   SHOP PERFORMANCE OPTIMIZATIONS                    //
 	// =================================================================== //
 	
+	/**
+	 * How quick {@link com.wonkglorg.minecraft.shop.manager.client.ShopClientManager} shop checks should happen (in ticks)
+	 */
 	@Getter
-	private double displayProcessInterval;
+	private long shopProcessInterval;
+	
+	/**
+	 * How many players should be processed per {@link #shopProcessInterval} tick update
+	 */
+	@Getter
+	private int shopProcessBucketSize;
 	/**
 	 * How far a player has to move before display recalculations can happen
 	 */
 	@Getter
-	private double displayMovementThreshold;
+	private double shopProcessMovementThreshold;
 	/**
 	 * Gets the maximum distance in chunks at which shops will send visual updates to players.
 	 */
@@ -292,11 +301,12 @@ public class SettingsConfig extends Config{
 		SignCreationLayoutParser.reload(getConfigurationSection("creation-layout"));
 		
 		// Load shop display optimization settings
-		displayProcessInterval = getDouble("display-process-interval");
+		shopProcessInterval = getLong("shop-process-interval-ticks", 10);
+		shopProcessBucketSize = getInt("shop-process-bucket-size", 50);
 		
-		displayMovementThreshold = getDouble("display-movement-threshold");
+		shopProcessMovementThreshold = getDouble("shop-process-movement-threshold", 3.0);
 		
-		maxShopProcessingDistanceChunks = getInt("max-shop-processing-distance-chunks");
+		maxShopProcessingDistanceChunks = getInt("max-shop-processing-distance-chunks", 1);
 		maxShopProcessingDistanceBlocks = maxShopProcessingDistanceChunks * 16;
 		
 		migrateOldData = getBoolean("migrate-old-data");

@@ -487,18 +487,14 @@ public class ShopListener implements Listener{
 		PlayerManager.loadProfile(player);
 		PlayerNameCache.cacheName(player.getUniqueId(), player.getName());
 		
-		if(!player.hasPlayedBefore()){
-			return;
-		}
-		
-		shopManager.getVisibilityManager().processShopsNearPlayer(player, false);
+		shopManager.getShopClientManager().handlePlayerJoin(player);
 	}
 	
 	@EventHandler
 	public void onLogout(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		PlayerManager.removeProfile(player);
-		shopManager.getVisibilityManager().clearPlayer(player);
+		shopManager.getShopClientManager().handlePlayerQuit(player);
 	}
 	
 	@EventHandler

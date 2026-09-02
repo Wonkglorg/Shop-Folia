@@ -13,7 +13,9 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -35,8 +37,12 @@ public class ShopClientManager{
 	private final ShopManager shopManager;
 	
 	@Getter
-	private final WrappedTask displayTask;
+	private WrappedTask displayTask;
 	
+	/**
+	 * Queue of all online players to run bucket processing on
+	 */
+	private final Deque<UUID> playerProcessingQueue = new ArrayDeque<>();
 	/**
 	 * Players currently queued/being processed.
 	 */
@@ -64,16 +70,7 @@ public class ShopClientManager{
 	public ShopClientManager(ShopPlugin plugin, ShopManager shopManager) {
 		this.plugin = plugin;
 		this.shopManager = shopManager;
-		
-		displayTask = plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
-			if(isLoadingShops){
-				return;
-			}
-			
-			for(Player player : Bukkit.getOnlinePlayers()){
-				processShopsNearPlayer(player, false);
-			}
-		}, 30, 200);
+		reload();
 	}
 	
 	/**
@@ -289,7 +286,7 @@ public class ShopClientManager{
 			return true;
 		}
 		
-		return previous.distanceSquared(current) >= plugin.getSettingsConfig().getDisplayMovementThreshold();
+		return previous.distanceSquared(current) >= plugin.getSettingsConfig().getShopProcessMovementThreshold();
 	}
 	
 	/**
@@ -311,9 +308,54 @@ public class ShopClientManager{
 	 * Forces all online players to refresh their currently visible shops.
 	 */
 	public void reload() {
-		for(Player player : Bukkit.getOnlinePlayers()){
-			processShopsNearPlayer(player, true);
+		if(displayTask != null){
+			displayTask.cancel();
 		}
+		for(var shop : shopManager.getAllShops().values()){
+			shop.getDisplay().cleanup();
+		}
+		visibleShopsByPlayer.clear();
+		lastProcessedPosition.clear();
+		playersBeingProcessed.clear();
+		for(Player player : Bukkit.getOnlinePlayers()){
+			//clear all player data that needs clearing
+			for(var listener : listeners){
+				listener.clearData(player.getUniqueId());
+			}
+			playerProcessingQueue.add(player.getUniqueId());
+		}
+		displayTask = plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
+			if(isLoadingShops){
+				return;
+			}
+			processNextPlayerBucket();
+		}, 30, plugin.getSettingsConfig().getShopProcessInterval());
+	}
+	
+	private void processNextPlayerBucket() {
+		int bucketSize = plugin.getSettingsConfig().getShopProcessBucketSize();
+		
+		for(int i = 0; i < bucketSize && !playerProcessingQueue.isEmpty(); i++){
+			UUID playerId = playerProcessingQueue.pollFirst();
+			
+			Player player = Bukkit.getPlayer(playerId);
+			
+			if(player == null || !player.isOnline()){
+				continue;
+			}
+			
+			processShopsNearPlayer(player, false);
+			playerProcessingQueue.addLast(playerId);
+		}
+	}
+	
+	public void handlePlayerJoin(Player player) {
+		playerProcessingQueue.addLast(player.getUniqueId());
+	}
+	
+	public void handlePlayerQuit(Player player) {
+		playerProcessingQueue.remove(player.getUniqueId());
+		clearPlayerState(player.getUniqueId());
 	}
 	
 	private void notifyShopEntered(Player player, AbstractShop shop) {

@@ -266,17 +266,25 @@ material-whitelist:
 # You should not need to change these settings, we have tried to balance them for performance & experience. #
 # If you are experiencing performance issues however, you can try to tune them. #
 
-# How often (in seconds) to check for shop displays that need to be shown to players
-# Lower values make shop displays appear faster.
-# You can increase this if you are experiencing performance issues to reduce the number of checks.
-display-process-interval: 1
+# How often (in ticks) to check for shop updates that need to be shown to players.
+# Lower values make shop displays and signs appear faster when players move into view,
+# but increase the frequency of processing.
+# Shop processing is staggered across players using buckets.
+# This setting has no affect on immediate shop updates such as buying from a shop or a player refilling their shop, these changes will show immediately regardless of this setting
+shop-process-interval-ticks: 20
 
-# How far a player needs to move (in blocks) before shop display checks should be processed
+# How many players should be processed during each shop processing interval.
+# Players are split into buckets of this size and processed one bucket at a time.
+# Smaller values spread the workload more evenly but take longer to cycle through all players.
+# Larger values process more players at once but can create performance issues
+shop-process-bucket-size: 50
+
+# How far a player needs to move (in blocks) before shop checks should be processed for any nearby changes
 # This prevents unnecessary processing when players are standing still
-# Recommended range: 1-4, default: 1.0
-display-movement-threshold: 1.0
+# Recommended range: 2-4, default: 3
+shop-process-movement-threshold: 3.0
 
-# Maximum distance (in chunks) at which shop displays will be shown to players.
+# Maximum distance (in chunks) at which shops will be processed around the player.
 # affects when shop displays are shown and when shop signs send updated text to each player
 max-shop-processing-distance-chunks: 1
 

@@ -7,7 +7,7 @@ import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
-import static com.wonkglorg.minecraft.shop.ShopPlugin.visibilityManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopClientManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import static com.wonkglorg.minecraft.shop.dialogs.ShopSettingsDialog.openShopSettings;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
@@ -1098,10 +1098,10 @@ public abstract class AbstractShop{
 		
 		logger.debug("Next Display " + nextType);
 		logger.debug("Removing old displays");
-		visibilityManager().cleanupShop(this);
+		shopClientManager().cleanupShop(this);
 		this.display = AbstractDisplay.createDisplay(nextType, this);
 		logger.debug("Sending shop display update to nearby players");
-		visibilityManager().addShop(this);
+		shopClientManager().addShop(this);
 		setNeedsSave(true);
 		logger.debug("===FINISHED DISPLAY CYCLE===");
 	}
@@ -1110,7 +1110,7 @@ public abstract class AbstractShop{
 	 * Refreshes the sign for every player who can currently see it
 	 */
 	public void updateSign() {
-		visibilityManager().updateShop(this);
+		shopClientManager().updateShop(this);
 	}
 	
 	/**

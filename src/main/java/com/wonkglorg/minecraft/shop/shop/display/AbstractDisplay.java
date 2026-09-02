@@ -362,6 +362,7 @@ public abstract class AbstractDisplay{
 	public void cleanup() {
 		remove();
 		removeLight();
+		entityIDs.clear();
 	}
 	
 	@Override

@@ -1,6 +1,6 @@
 package com.wonkglorg.minecraft.shop.dialogs;
 
-import static com.wonkglorg.minecraft.shop.ShopPlugin.visibilityManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopClientManager;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.settings.Settings;
 import io.papermc.paper.dialog.Dialog;
@@ -125,7 +125,7 @@ public class ShopSettingsDialog{
 																						needsRefresh = true;
 																					}
 																					if(needsRefresh){
-																						visibilityManager().updateShop(shop);
+																						shopClientManager().updateShop(shop);
 																					}
 																				}, ClickCallback.Options.builder().uses(1).build()))
 																				.build()));
