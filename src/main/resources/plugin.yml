@@ -1,4 +1,4 @@
-main: com.wonkglorg.minecraft.shop.Main
+main: com.wonkglorg.minecraft.shop.ShopPlugin
 name: ${name}
 description: ${description}
 author: ${author}
@@ -8,6 +8,8 @@ folia-supported: true
 softdepend:
   - Vault
   - floodgate
+  - nexo
+  - HMCWraps
 permissions:
   shop.use:
     description: Allows player to use all shops.
@@ -56,6 +58,12 @@ permissions:
     default: op
   shop.setdisplay.other:
     description: Allows player to set the display type on other shops (allows shop display cycling, see actionMappings in config.yml).
+    default: op
+  shop.settings:
+    description: Allows player to change settings of their shop (allows shop display cycling, see actionMappings in config.yml).
+    default: op
+  shop.settings.other:
+    description: Allows player to change settings on other shops (allows shop display cycling, see actionMappings in config.yml).
     default: op
   shop.user:
     description: Allows users to access the /shop command with basic access to informational commands

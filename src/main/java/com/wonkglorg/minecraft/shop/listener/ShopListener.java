@@ -2,7 +2,10 @@ package com.wonkglorg.minecraft.shop.listener;
 
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.PlayerCreateShopEvent;
 import com.wonkglorg.minecraft.shop.event.PlayerDestroyShopEvent;
@@ -16,11 +19,11 @@ import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowe
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
-import com.wonkglorg.minecraft.shop.shop.CreationWord;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
+import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
@@ -41,7 +44,6 @@ import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Chest.Type;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -66,18 +68,18 @@ import java.util.Iterator;
 @Slf4j
 public class ShopListener implements Listener{
 	
-	private final Main plugin;
+	private final ShopPlugin plugin;
 	private final LangManager lang;
 	private final SettingsConfig settingsConfig;
 	private final ShopManager shopManager;
 	private final ShopLogger logger;
 	
-	public ShopListener(Main instance) {
+	public ShopListener(ShopPlugin instance) {
 		plugin = instance;
-		lang = plugin.getLangManager();
+		lang = langManager();
 		settingsConfig = plugin.getSettingsConfig();
-		shopManager = plugin.getShopmanager();
-		logger = plugin.logger();
+		shopManager = shopManager();
+		logger = logger();
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -86,12 +88,6 @@ public class ShopListener implements Listener{
 		final Player player = event.getPlayer();
 		logger.debug("====POTENTIAL SHOP CREATION START====");
 		logger.debug("Player " + player.getName() + " writing on sign");
-		
-		if(!settingsConfig.isAllowCreateMethodSign()){
-			logger.debug("Shop Create Method Sign not allowed");
-			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
-			return;
-		}
 		
 		if(!(block.getBlockData() instanceof WallSign wallSign)){
 			logger.debug("Sign is not a wall sign");
@@ -119,9 +115,8 @@ public class ShopListener implements Listener{
 		
 		//no creation word is present not a shop creation.
 		String firstLine = Components.toPlainText(event.line(0)).toLowerCase();
-		String creationWord = plugin.getSettingsConfig().getCreationWord(CreationWord.SHOP).toLowerCase();
-		if(!firstLine.contains(creationWord)){
-			logger.debug("Creation " + creationWord + " word is not present in '" + firstLine + "'");
+		if(!SignCreationLayoutParser.hasFirstLine(firstLine)){
+			logger.debug("Sign Text first line does not match any valid permutation defined");
 			logger.debug("====POTENTIAL SHOP CREATION CANCEL====");
 			return;
 		}
@@ -129,7 +124,7 @@ public class ShopListener implements Listener{
 		if(shopManager.getShopByContainer(chest.getLocation()) != null){
 			logger.debug("Container is already a registered shop");
 			logger.debug("====SHOP CREATION CANCEL====");
-			Main.getPlugin().getLangManager().request("interaction_issue.createOtherShop").sendToAudience(player);
+			lang.request("interaction.issues.create.initialize-chest-other").sendToAudience(player);
 			event.setCancelled(true);
 			return;
 		}
@@ -148,21 +143,23 @@ public class ShopListener implements Listener{
 			logger.debug("====SHOP CREATION CANCEL====");
 			return;
 		}
+		
 		logger.debug("Sending Shop Creation Event");
 		PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, process.toImmutableProgress());
-		Main.getPlugin().getServer().getPluginManager().callEvent(e);
-		if(event.isCancelled()){
+		ShopPlugin.getPlugin().getServer().getPluginManager().callEvent(e);
+		if(e.isCancelled()){
 			logger.debug("Event was cancelled by third party plugin");
 			logger.debug("====SHOP CREATION CANCEL====");
 			e.setCancelled(true);
 			return;
 		}
-		shopManager.getDatabase().logAction(player, process.getPlayerUUID(), process.getShopId(), ShopActionType.CREATE);
+		shopManager.getDatabase().logAction(player, process.getShopId(), ShopActionType.CREATE);
 		
 		if(process.getType() == ShopType.GAMBLE){
 			shopManager.addPlayerShopCreation(player, process);
 			process.updateSignText();
-			if(shopInitialisation(event, process, player, Main.getPlugin().getItemConfig().getGambleDisplayItem())){
+			event.setCancelled(true);
+			if(shopManager.shopInitialisation(process, player, ShopPlugin.getPlugin().getItemConfig().getGambleDisplayItem())){
 				logger.debug("=====SHOP CREATION SUCCESS====");
 			} else {
 				logger.debug("====SHOP CREATION CANCEL====");
@@ -184,10 +181,6 @@ public class ShopListener implements Listener{
 		}
 		
 		if(event.getAction() != Action.LEFT_CLICK_BLOCK){
-			return;
-		}
-		if(!settingsConfig.isAllowCreateMethodSign()){
-			logger.debug("Sign Create Method not allowed for initialisation");
 			return;
 		}
 		
@@ -237,64 +230,12 @@ public class ShopListener implements Listener{
 		}
 		
 		logger.debug("Clicked using " + item);
-		
-		if(!shopManager.passesItemListCheck(item)){
-			logger.debug("Item is not allowed to be set as a shop");
-			logger.debug("====SHOP INITIALISATION CANCEL====");
-			lang.request("interaction.issues.itemFilterDeny").sendToAudience(player);
-			return;
-		}
-		
-		logger.debug("Is allowed item");
-		
-		if(shopInitialisation(event, signProcess, player, item)){
+		event.setCancelled(true);
+		if(shopManager.shopInitialisation(signProcess, player, item)){
 			logger.debug("====SHOP INITIALISATION DONE====");
 		} else {
 			logger.debug("====SHOP INITIALISATION CANCEL====");
 		}
-	}
-	
-	private boolean shopInitialisation(Cancellable event, SignCreationProcess process, Player player, ItemStack item) {
-		logger.debug("Sending shop pre init event");
-		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
-		Bukkit.getPluginManager().callEvent(shopEvent);
-		if(shopEvent.isCancelled()){
-			logger.debug("Event was cancelled by third party plugin");
-			lang.request("interaction.issues.createCancel").sendToAudience(player);
-			return false;
-		}
-		
-		AbstractShop shop = null;
-		event.setCancelled(true); //cancel event otherwise 1 tick breaking and creative mode destroy the shop sign while clicking on it
-		
-		if(process.getType() != ShopType.BARTER){
-			process.setItemStack(item);
-			shop = process.createShop();
-			logger.debug("Setting item for shop: " + item);
-		} else {
-			if(process.getItemStack() == null){
-				process.setItemStack(item);
-				logger.debug("Setting first item for barter shop: " + item);
-				lang.request("interaction.success." + process.getType() + ".initializeBarter").sendToAudience(player);
-				process.updateSignText();
-				return false;
-			} else {
-				process.setSecondaryStack(item);
-				shop = process.createShop();
-				logger.debug("Setting second iem for barter shop " + item);
-			}
-		}
-		
-		if(shop != null){
-			shopManager.finishShopCreation(player, shop);
-			logger.debug("Sending Post init shop event");
-			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
-			LangRequest request = lang.request("interaction.success." + shop.getType() + ".create");
-			AbstractShop.shopPlaceholders(request, shop, false, player);
-			request.sendToAudience(player);
-			return true;
-		}
-		return true;
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
@@ -434,9 +375,8 @@ public class ShopListener implements Listener{
 		
 		if(isOperator(player)){
 			if(!shop.isAdmin()){
-				lang.request("interaction.success." + shop.getType() + ".opOpen")
-					.replace("%owner%", shop.getOwner().getName())
-					.sendToAudience(player);
+				lang.request("interaction.success." + shop.getType() + ".open-other").replace("%owner%", shop.getOwner().getName()).sendToAudience(
+						player);
 			}
 		} else {
 			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
@@ -495,27 +435,14 @@ public class ShopListener implements Listener{
 		PlayerManager.loadProfile(player);
 		PlayerNameCache.cacheName(player.getUniqueId(), player.getName());
 		
-		shopManager.removeOutdatedShops();
-		
-		if(!player.hasPlayedBefore()){
-			return;
-		}
-		
-		shopManager.getDisplayManager().processShopDisplaysNearPlayer(player, false);
-		
-		//todo:mjd properly implement offline handling.
-		//if(plugin.getSettingsConfig().isOfflinePurchaseNotificationsEnabled()){
-		//	OfflineTransactions offlineTransactions = new OfflineTransactions(player.getUniqueId(), player.getLastLogin());
-		//	transactionsWhileOffline.put(player.getUniqueId(), offlineTransactions);
-		//}
+		shopManager.getShopClientManager().handlePlayerJoin(player);
 	}
 	
 	@EventHandler
 	public void onLogout(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		PlayerManager.removeProfile(player);
-		
-		shopManager.getDisplayManager().clearDisplaysForPlayer(player);
+		shopManager.getShopClientManager().handlePlayerQuit(player);
 	}
 	
 	@EventHandler
@@ -542,6 +469,7 @@ public class ShopListener implements Listener{
 					logger.debug("Broken sign was in shop creation process by another player, cancelling");
 					event.setCancelled(true);
 				}
+				shopManager.cancelShopCreationProcess(player);
 				return;
 			}
 			breakShopSign(event, shop);
@@ -552,7 +480,7 @@ public class ShopListener implements Listener{
 			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
 			// protect shops that are in the middle of a shop creation process from being destroyed
 			if(shopManager.isContainerInShopCreationProcess(b.getLocation())){
-				lang.request("interaction.issues.destroyUninitializedChest").sendToAudience(player);
+				lang.request("interaction.issues.destroy.uninitialized-chest").sendToAudience(player);
 				event.setCancelled(true); // don't break chest
 				return;
 			}
@@ -634,13 +562,13 @@ public class ShopListener implements Listener{
 		Block b = event.getBlockClicked();
 		
 		if(b.getBlockData() instanceof WallSign){
-			AbstractShop shop = plugin.getShopmanager().getShopBySign(b.getLocation());
+			AbstractShop shop = shopManager.getShopBySign(b.getLocation());
 			if(shop != null){
 				event.setCancelled(true);
 			}
 		}
 		Block blockToFill = event.getBlockClicked().getRelative(event.getBlockFace());
-		AbstractShop shop = plugin.getShopmanager().getShopByContainer(blockToFill.getRelative(BlockFace.DOWN));
+		AbstractShop shop = shopManager.getShopByContainer(blockToFill.getRelative(BlockFace.DOWN));
 		if(shop != null){
 			event.setCancelled(true);
 		}
@@ -650,7 +578,7 @@ public class ShopListener implements Listener{
 	public void onShopInventoryClose(InventoryCloseEvent event) {
 		InventoryHolder holder = event.getInventory().getHolder();
 		if(holder instanceof Container container){
-			AbstractShop shop = plugin.getShopmanager().getShopByContainer(container.getBlock());
+			AbstractShop shop = shopManager.getShopByContainer(container.getBlock());
 			
 			if(shop == null){
 				return;
@@ -666,7 +594,7 @@ public class ShopListener implements Listener{
 			if(leftSide == null){
 				return;
 			}
-			AbstractShop shop = plugin.getShopmanager().getShopByContainer(leftSide.getInventory().getLocation());
+			AbstractShop shop = shopManager.getShopByContainer(leftSide.getInventory().getLocation());
 			
 			if(shop == null){
 				return;
@@ -711,7 +639,7 @@ public class ShopListener implements Listener{
 		if(settingsConfig.isDestroyShopRequiresSneak() && !player.isSneaking()){
 			event.setCancelled(true);
 			shop.updateSign();
-			lang.request("interaction.issues.destroySignRequiresSneak").sendToAudience(player);
+			lang.request("interaction.issues.destroy.sign-requires-sneak").sendToAudience(player);
 			return;
 		}
 		
@@ -727,20 +655,20 @@ public class ShopListener implements Listener{
 		PlayerTransactionParty party = new PlayerTransactionParty(player);
 		if(cost > 0){
 			// Check for funds
-			if(party.getAvailableFunds(Main.getPlugin().getItemConfig().getCurrencyItem()) < cost){
-				lang.request("interaction.issues.destroyInsufficientFunds").sendToAudience(player);
+			if(party.getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem()) < cost){
+				lang.request("interaction.issues.destroy.insufficient-funds").sendToAudience(player);
 				event.setCancelled(true);
 				return;
 			}
 			// Remove funds
-			party.remove(Main.getPlugin().getItemConfig().getCurrencyItem(), cost);
+			party.remove(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem(), cost);
 		}
 		
 		shopManager.getDatabase().logAction(player, shop, ShopActionType.DESTROY);
 		
 		if((!shop.isAdmin()) && settingsConfig.isReturnCreationCost() && settingsConfig.getCreationCost() > 0){
 			if(settingsConfig.getCurrencyType() != CurrencyType.ITEM){
-				party.add(Main.getPlugin().getItemConfig().getCurrencyItem(), settingsConfig.getCreationCost());
+				party.add(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem(), settingsConfig.getCreationCost());
 			} else {
 				ItemStack currencyDrop = plugin.getItemConfig().getCurrencyItem().clone();
 				currencyDrop.setAmount((int) settingsConfig.getCreationCost());
@@ -750,7 +678,7 @@ public class ShopListener implements Listener{
 		if(isOwner){
 			lang.request("interaction.success." + shop.getType().toString() + ".destroy").sendToAudience(player);
 		} else {
-			lang.request("interaction.success." + shop.getType().toString() + ".opDestroy")
+			lang.request("interaction.success." + shop.getType().toString() + ".destroy-other")
 				.replace("%owner%", shop.getOwner().getName())
 				.sendToAudience(player);
 		}
@@ -788,7 +716,7 @@ public class ShopListener implements Listener{
 		
 		if(shop.getContainerLocation().equals(blockLocation)){
 			logger.debug("Trying to break main shop container, only destroying sign is allowed");
-			lang.request("interaction.issues.destroyChest").sendToAudience(player);
+			lang.request("interaction.issues.destroy.chest").sendToAudience(player);
 			shop.sendEffects(false, player);
 			return;
 		}

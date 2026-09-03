@@ -3,12 +3,15 @@ package com.wonkglorg.minecraft.shop;
 import com.tcoded.folialib.FoliaLib;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.shop.command.ShopCommand;
+import com.wonkglorg.minecraft.shop.command.ShopInitializeCommand;
 import com.wonkglorg.minecraft.shop.config.ItemConfig;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
+import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.listener.DisplayListener;
 import com.wonkglorg.minecraft.shop.listener.ShopListener;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
+import com.wonkglorg.minecraft.shop.manager.client.ShopClientManager;
 import com.wonkglorg.minecraft.shop.service.ShopService;
 import com.wonkglorg.minecraft.shop.service.ShopServiceProvider;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -22,12 +25,15 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.geysermc.floodgate.api.FloodgateApi;
 
-public class Main extends JavaPlugin{
+import java.util.UUID;
+
+public class ShopPlugin extends JavaPlugin{
 	public static boolean floodGateEnabled = false;
 	@Getter
-	private static Main plugin;
-	private ShopLogger logger = new ShopLogger(this);
+	private static ShopPlugin plugin;
+	private static ShopLogger logger;
 	// Getter for FoliaLib
 	@Getter
 	private FoliaLib foliaLib;
@@ -35,8 +41,7 @@ public class Main extends JavaPlugin{
 	@Getter
 	private DisplayListener displayListener;
 	
-	@Getter
-	private ShopManager shopmanager;
+	private static ShopManager shopmanager;
 	@Getter
 	private String commandAlias;
 	private Economy econ = null;
@@ -45,29 +50,29 @@ public class Main extends JavaPlugin{
 	private SettingsConfig settingsConfig;
 	@Getter
 	private ItemConfig itemConfig;
-	@Getter
-	private LangManager langManager;
+	private static LangManager langManager;
 	@Getter
 	private ShopServiceProvider shopServiceProvider;
 	
 	@Getter
 	private boolean immediateShutdown = false;
 	
-	public ShopLogger logger() {return logger;}
+	public static ShopLogger logger() {return logger;}
 	
 	@Override
 	public void onLoad() {
-		plugin = this;
+		ShopPlugin.logger = new ShopLogger(this);
+		ShopPlugin.plugin = this;
 		settingsConfig = new SettingsConfig();
-		itemConfig = new ItemConfig();
 		logger.setLogLevel(settingsConfig.getLogLevel());
-		langManager = LangManager.getInstance(this);
+		ShopPlugin.langManager = LangManager.getInstance(this);
 		foliaLib = new FoliaLib(this);
 	}
 	
 	@Override
 	public void onEnable() {
-		floodGateEnabled = Bukkit.getPluginManager().getPlugin("floodgate") != null;
+		ShopPlugin.floodGateEnabled = Bukkit.getPluginManager().getPlugin("floodgate") != null;
+		itemConfig = new ItemConfig();
 		if(itemConfig.getGambleDisplayItem() == null){
 			itemConfig.setGambleDisplayItem(new ItemStack(Material.DIAMOND));
 		}
@@ -76,7 +81,7 @@ public class Main extends JavaPlugin{
 		CurrencyType currencyType = settingsConfig.getCurrencyType();
 		if(currencyType == CurrencyType.VAULT){
 			if(setupEconomy()){
-				this.logger().info("Shops will use the Vault economy (" + settingsConfig.getCurrencyName() + ") as currency on the server.");
+				this.logger().info("Shops will use the Vault economy as currency on the server.");
 			} else {
 				this.logger().severe("Unable to connect to Vault Economy! Are both Vault AND an Economy plugin installed?");
 				this.logger().severe(
@@ -90,9 +95,9 @@ public class Main extends JavaPlugin{
 		
 		getServer().getServicesManager().register(ShopService.class, shopServiceProvider, this, ServicePriority.Normal);
 		try{
-			shopmanager = new ShopManager(plugin);
+			ShopPlugin.shopmanager = new ShopManager(plugin);
 		} catch(Exception e){
-			logger.severe("Unable to load shop database " + e.getMessage(),e);
+			logger.severe("Unable to load shop database " + e.getMessage(), e);
 			logger.debug("Unable to load shop database", e);
 			immediateShutdown();
 		}
@@ -102,9 +107,12 @@ public class Main extends JavaPlugin{
 		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
 		
-		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
+		logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
 		
-		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> {
+			new ShopCommand().register(registrar);
+			new ShopInitializeCommand().register(registrar);
+		});
 	}
 	
 	/**
@@ -127,11 +135,15 @@ public class Main extends JavaPlugin{
 			shopmanager.saveAllShops();
 		}
 		
-		this.logger().info("Disabled Shop " + this.getPluginMeta().getVersion());
+		if(shopDatabase() != null){
+			shopDatabase().close();
+		}
+		
+		logger().info("Disabled Shop " + this.getPluginMeta().getVersion());
 	}
 	
 	public void reload() {
-		this.logger().info("Loading Shop " + this.getPluginMeta().getVersion());
+		logger().info("Loading Shop " + this.getPluginMeta().getVersion());
 		PlayerManager.reload();
 		settingsConfig.reload();
 		itemConfig.reload();
@@ -144,7 +156,7 @@ public class Main extends JavaPlugin{
 		if(getServer().getPluginManager().getPlugin("Vault") == null){
 			return false;
 		}
-		this.logger().info("Vault is installed, creating Vault integration for Economy support");
+		logger().info("Vault is installed, creating Vault integration for Economy support");
 		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
 		if(rsp == null){
 			return false;
@@ -160,5 +172,38 @@ public class Main extends JavaPlugin{
 		}
 		
 		return econ;
+	}
+	
+	/**
+	 * If the id belongs to a bedrock player
+	 *
+	 * @param uuid
+	 * @return true if it is a bedrock player false otherwise, also returns false if floodgate is not available on the server
+	 */
+	public static boolean isBedrockPlayer(UUID uuid) {
+		if(ShopPlugin.floodGateEnabled){
+			FloodgateApi api = FloodgateApi.getInstance();
+			return api != null && api.isFloodgateId(uuid);
+		}
+		return false;
+	}
+	
+	public static LangManager langManager() {
+		return langManager;
+	}
+	
+	public static ShopManager shopManager() {
+		return shopmanager;
+	}
+	
+	/**
+	 * !!Do not use try with resources on this database!!! only the shop plugin should handle closing the database!
+	 */
+	public static ShopDatabase shopDatabase() {
+		return shopmanager.getDatabase();
+	}
+	
+	public static ShopClientManager shopClientManager() {
+		return shopmanager.getShopClientManager();
 	}
 }

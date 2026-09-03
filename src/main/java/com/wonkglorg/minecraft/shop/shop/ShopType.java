@@ -1,6 +1,5 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.shop.Main;
 import lombok.Getter;
 
 public enum ShopType{
@@ -30,10 +29,6 @@ public enum ShopType{
 			case BARTER -> "barter";
 			default -> "gamble";
 		};
-	}
-	
-	public String toCreationWord() {
-		return Main.getPlugin().getSettingsConfig().getCreationWord(creationWord);
 	}
 	
 	public static ShopType from(String input) {

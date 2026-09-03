@@ -1,21 +1,30 @@
 package com.wonkglorg.minecraft.shop.manager;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.config.lang.LangRequest;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
+import com.wonkglorg.minecraft.shop.event.PlayerPostInitializeShopEvent;
+import com.wonkglorg.minecraft.shop.event.PlayerPreInitializeShopEvent;
+import com.wonkglorg.minecraft.shop.manager.client.DisplayUpdateHandler;
+import com.wonkglorg.minecraft.shop.manager.client.ShopClientManager;
+import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB;
 import com.wonkglorg.minecraft.shop.migrate.PlayerShopsConfig;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
+import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
+import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
-import com.wonkglorg.minecraft.shop.util.ShopSignUtil;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.WallSign;
@@ -39,17 +48,19 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+/**
+ * Keeps track of all shops and related functionality
+ */
 public class ShopManager{
-	private final Main plugin;
+	private final ShopPlugin plugin;
 	private final ShopLogger logger;
 	@Getter
 	private final ShopDatabase database;
 	private final SettingsConfig settingsConfig;
 	@Getter
-	private final DisplayManager displayManager;
+	private final ShopClientManager shopClientManager;
 	//todo:mjd for any shop with a hopper feeding it periodically update the shop sign to reflect the current fill.
 	/**
 	 * All registered shops
@@ -90,20 +101,23 @@ public class ShopManager{
 	@Getter
 	private final Map<UUID, String> shopOwners = new ConcurrentHashMap<>();
 	
-	public ShopManager(Main plugin) throws SQLException, IOException {
+	public ShopManager(ShopPlugin plugin) throws SQLException, IOException {
 		this.plugin = plugin;
 		this.settingsConfig = plugin.getSettingsConfig();
-		this.logger = plugin.logger();
-		this.displayManager = new DisplayManager(plugin, this);
+		this.logger = logger();
+		this.shopClientManager = new ShopClientManager(plugin, this);
 		
 		database = new ShopDatabase(plugin);
+		
+		shopClientManager.addListener(new SignUpdateHandler());
+		shopClientManager.addListener(new DisplayUpdateHandler());
 	}
 	
-	private void migrateData(Main plugin) {
+	private void migrateData() {
 		if(!settingsConfig.isMigrateOldData()){
 			return;
 		}
-		Path playerNameCache = Main.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data", "playerNameCache.yml"));
+		Path playerNameCache = ShopPlugin.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data", "playerNameCache.yml"));
 		if(Files.exists(playerNameCache)){
 			logger.info("Loading legacy name cache from yml file...");
 			YamlConfiguration nameCache = YamlConfiguration.loadConfiguration(playerNameCache.toFile());
@@ -128,9 +142,9 @@ public class ShopManager{
 			shopDeletionTimes.put(shop.getId(), 0L);
 		}
 		
-		if(MarketManagerDB.containsDb(plugin)){
+		if(MarketManagerDB.containsDb()){
 			logger.info("Found market manager Database to migrate!");
-			MarketManagerDB managerDB = new MarketManagerDB(plugin);
+			MarketManagerDB managerDB = new MarketManagerDB();
 			Map<AbstractShop, Boolean> migrationDb = managerDB.getShops();
 			logger.info("Loaded market manager shop history!");
 			for(var shop : migrationDb.keySet()){
@@ -154,6 +168,9 @@ public class ShopManager{
 		settingsConfig.silentSave();
 	}
 	
+	/**
+	 * Gets all shops near the current location within the defined chunk radius
+	 */
 	public Set<AbstractShop> getShopsNearLocation(Location location, int chunkRadius) {
 		if(chunkRadius < 0){
 			throw new IllegalArgumentException("Chunk radius cannot be negative");
@@ -199,11 +216,11 @@ public class ShopManager{
 	}
 	
 	public void reload() {
-		displayManager.setLoadingShops(true);
+		shopClientManager.setLoadingShops(true);
 		if(!allShops.isEmpty()){
 			//if shops already exist save them before doing a reload
 			saveAllShops();
-			displayManager.reload();
+			shopClientManager.reload();
 		}
 		allShops.clear();
 		shopsBySign.clear();
@@ -212,7 +229,7 @@ public class ShopManager{
 		unloadedShopsByChunk.clear();
 		shopOwners.clear();
 		
-		migrateData(plugin);
+		migrateData();
 		PlayerNameCache.initialize();
 		getDatabase().getShops(false).thenAccept(shops -> {
 			for(var shop : shops){
@@ -228,7 +245,7 @@ public class ShopManager{
 			for(var hook : plugin.getShopServiceProvider().getShopLoadHooks()){
 				hook.accept(allShops.values());
 			}
-			displayManager.setLoadingShops(false);
+			shopClientManager.setLoadingShops(false);
 		});
 	}
 	
@@ -256,18 +273,18 @@ public class ShopManager{
 	
 	public void addPlayerShopCreation(Player player, ShopCreationProcess process) {
 		playersInShopCreation.put(player.getUniqueId(), process);
-		plugin.logger().debug("Shop Creation process started for: " + player.getName());
+		logger().debug("Shop Creation process started for: " + player.getName());
 		//give player a limited amount of time to finish creating the shop until it is deleted
 		plugin.getFoliaLib().getScheduler().runLater(() -> {
-			plugin.logger().debug("Shop Creation timeout handle for: " + player.getName());
+			logger().debug("Shop Creation timeout handle for: " + player.getName());
 			//already canceled by something else no need to od it again
 			if(process.isCancelled()){
-				plugin.logger().debug("Shop Creation already cancelled");
+				logger().debug("Shop Creation already cancelled");
 				return;
 			}
 			//the shop has still not been initialized with an item from a player
 			if(!process.isFinishedInitialisation()){
-				plugin.logger().debug("Shop Creation timed out for player: " + player.getName());
+				logger().debug("Shop Creation timed out for player: " + player.getName());
 				cancelShopCreationProcess(process.getPlayer());
 			}
 		}, 30 * 20); // 30 seconds * 20 ticks
@@ -282,9 +299,9 @@ public class ShopManager{
 	}
 	
 	public void finishShopCreation(Player player, AbstractShop shop) {
-		plugin.logger().debug("Removing player " + player.getName() + "from shop creation list");
+		logger().debug("Removing player " + player.getName() + "from shop creation list");
 		playersInShopCreation.remove(player.getUniqueId());
-		plugin.logger().debug("Registering shop: " + shop);
+		logger().debug("Registering shop: " + shop);
 		registerShop(shop);
 	}
 	
@@ -317,13 +334,13 @@ public class ShopManager{
 	 */
 	public void cancelShopCreationProcess(Player player) {
 		ShopCreationProcess process = playersInShopCreation.remove(player.getUniqueId());
-		plugin.logger().debug("Removing player " + player.getName() + "from shop creation list");
+		logger().debug("Removing player " + player.getName() + "from shop creation list");
 		if(process != null){
-			Main.getPlugin().getLangManager().request("interaction.issues.createCancel").sendToAudience(player);
+			langManager().request("interaction.issues.create.cancel").sendToAudience(player);
 			Sign sign = process.getSign();
 			plugin.getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
 				if(sign.getBlockData() instanceof WallSign){
-					List<Component> lines = ShopSignUtil.getSignLinesTimeout();
+					List<Component> lines = SignUpdateHandler.getSignLinesTimeout();
 					SignSide side = sign.getSide(Side.FRONT);
 					side.line(0, lines.get(0));
 					side.line(1, lines.get(1));
@@ -401,11 +418,8 @@ public class ShopManager{
 			addShop(shop);
 			database.addShop(shop);
 			database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
-			//newly registered shop should be sent to all players, do this here or somewhere else?
-			var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopDisplayDistance());
-			for(var player : nearbyPlayers){
-				shop.getDisplay().spawn(player);
-			}
+			//schedules shop client updates one tick after creation, otherwise the initial "load" method of shops sometimes takes priority in showing the default shop state instead
+			plugin.getFoliaLib().getScheduler().runAtLocationLater(shop.getSignLocation(), _ -> shopClientManager.updateShop(shop), 1);
 		});
 	}
 	
@@ -415,8 +429,7 @@ public class ShopManager{
 	public void unregisterShop(AbstractShop shop) {
 		removeShop(shop);
 		database.removeShop(shop);
-		shop.getDisplay().cleanup();
-		shop.getDisplay().remove();
+		shopClientManager.cleanupShop(shop);
 	}
 	
 	public boolean isAllowedContainer(Block b) {
@@ -477,37 +490,57 @@ public class ShopManager{
 		}
 	}
 	
-	public boolean passesItemListCheck(ItemStack itemStack) {
-		return plugin.getItemConfig().isValidItem(itemStack);
-	}
-	
-	/**
-	 * Checks for any outdated shops and removes them.
-	 */
-	public void removeOutdatedShops() {
-		//delete all shops from players that have not played in X amount of hours (if configured)
-		int hoursOfflineToRemoveShops = plugin.getSettingsConfig().getHoursOfflineToRemoveShops();
-		if(hoursOfflineToRemoveShops != 0){
-			for(var owner : plugin.getShopmanager().getShopOwners().entrySet()){
-				OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner.getKey());
-				if(offlinePlayer.getName() != null){
-					long msSinceLastPlayed = System.currentTimeMillis() - offlinePlayer.getLastLogin();
-					long hoursSinceLastPlayed = TimeUnit.MILLISECONDS.toHours(msSinceLastPlayed);
-					
-					if(hoursSinceLastPlayed >= hoursOfflineToRemoveShops){
-						for(AbstractShop shop : plugin.getShopmanager().getShops(offlinePlayer.getUniqueId())){
-							plugin.logger().info("Deleting Shop because player " +
-												 offlinePlayer.getName() +
-												 " has not logged in within the required " +
-												 (int) hoursSinceLastPlayed +
-												 " hours! " +
-												 shop);
-							plugin.getShopmanager().unregisterShop(shop);
-						}
-					}
+	public boolean shopInitialisation(ShopCreationProcess process, Player player, ItemStack item) {
+		if(!shopManager().passesItemListCheck(item)){
+			logger().debug("Item is not allowed to be set as a shop");
+			langManager().request("interaction.issues.create.item-filter-deny").sendToAudience(player);
+			return false;
+		}
+		
+		logger.debug("Sending shop pre init event");
+		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
+		Bukkit.getPluginManager().callEvent(shopEvent);
+		if(shopEvent.isCancelled()){
+			logger.debug("Event was cancelled by third party plugin");
+			langManager().request("interaction.issues.create.cancel").sendToAudience(player);
+			return false;
+		}
+		
+		AbstractShop shop;
+		if(process.getType() != ShopType.BARTER){
+			process.setItemStack(item);
+			shop = process.createShop();
+			logger().debug("Setting item for shop: " + item);
+		} else {
+			if(process.getItemStack() == null){
+				process.setItemStack(item);
+				logger.debug("Setting first item for barter shop: " + item);
+				langManager().request("interaction.success." + process.getType() + ".initializeBarter").sendToAudience(player);
+				if(process instanceof SignCreationProcess signCreationProcess){
+					signCreationProcess.updateSignText();
 				}
+				return false;
+			} else {
+				process.setSecondaryStack(item);
+				shop = process.createShop();
+				logger.debug("Setting second iem for barter shop " + item);
 			}
 		}
+		
+		if(shop != null){
+			finishShopCreation(player, shop);
+			logger.debug("Sending Post init shop event");
+			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
+			LangRequest request = langManager().request("interaction.success." + shop.getType() + ".create");
+			AbstractShop.shopPlaceholders(request, shop, false, player);
+			request.sendToAudience(player);
+			return true;
+		}
+		return true;
+	}
+	
+	public boolean passesItemListCheck(ItemStack itemStack) {
+		return plugin.getSettingsConfig().isValidItem(itemStack);
 	}
 	
 	public record BlockKey(UUID worldId, int x, int y, int z){

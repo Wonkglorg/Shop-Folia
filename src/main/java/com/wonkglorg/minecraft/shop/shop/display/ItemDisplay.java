@@ -5,20 +5,25 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ItemDisplay extends AbstractDisplay{
 	public ItemDisplay(AbstractShop shop) {
 		super(shop, DisplayType.ITEM);
 	}
 	
 	@Override
-	public void onSpawn(@NonNull Player player) {
+	public List<Integer> spawn(@NonNull Player player) {
 		ItemStack stack = shop.getDisplayItem();
 		stack.setAmount(1);
-		spawnItemPacket(player, stack, this.getPrimaryLocation());
+		List<Integer> entityIds = new ArrayList<>();
+		entityIds.add(spawnItemPacket(player, stack, this.getPrimaryLocation()));
 		ItemStack secondaryStack = shop.getSecondaryDisplayItem();
 		if(secondaryStack != null){
 			secondaryStack.setAmount(1);
-			spawnItemPacket(player, secondaryStack, this.getBarterLocation());
+			entityIds.add(spawnItemPacket(player, secondaryStack, this.getBarterLocation()));
 		}
+		return entityIds;
 	}
 }

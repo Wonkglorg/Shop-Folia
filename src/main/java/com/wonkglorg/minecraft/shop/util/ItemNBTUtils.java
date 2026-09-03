@@ -20,8 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@SuppressWarnings({"PatternValidation", "DataFlowIssue", "unchecked", "rawtypes"})
+@SuppressWarnings({"PatternValidation", "unchecked", "rawtypes"})
 public class ItemNBTUtils{
+	
+	private ItemNBTUtils() {
+		//Utility class
+	}
 	
 	public static Map<Key, DataComponentValue> getNMSItemStackDataComponents(ItemStack itemStack) {
 		if(itemStack.getType().isAir()){
@@ -35,12 +39,13 @@ public class ItemNBTUtils{
 			DataComponentType<?> type = entry.getKey();
 			Optional<?> optValue = entry.getValue();
 			Identifier identifier = BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type);
+			assert identifier != null;
 			Key key = Key.key(identifier.getNamespace(), identifier.getPath());
 			if(optValue.isPresent()){
 				Codec codec = type.codec();
 				if(codec != null){
 					Object nativeJsonElement = codec.encodeStart(minecraftRegistry.createSerializationContext(JsonOps.INSTANCE), optValue.get())
-					                                .getOrThrow();
+													.getOrThrow();
 					JsonElement jsonElement = NativeJsonConverter.fromNative(nativeJsonElement);
 					DataComponentValue value = GsonDataComponentValue.gsonDataComponentValue(jsonElement);
 					convertedComponents.put(key, value);

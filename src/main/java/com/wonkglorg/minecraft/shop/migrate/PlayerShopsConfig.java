@@ -2,13 +2,13 @@ package com.wonkglorg.minecraft.shop.migrate;
 
 import com.wonkglorg.minecraft.config.types.Config;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import static com.wonkglorg.minecraft.shop.shop.ShopType.typeFromString;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
-import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -32,11 +32,10 @@ import java.util.stream.Stream;
  * Represents a players shops in form of a yml config.
  */
 public class PlayerShopsConfig extends Config{
-	private static final ShopLogger logger = Main.getPlugin().logger();
 	/**
 	 * The folder player shops get saved to
 	 */
-	private static final Path SHOPS_DATA_FOLDER = Main.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data"));
+	private static final Path SHOPS_DATA_FOLDER = ShopPlugin.getPlugin().getDataPath().getParent().resolve(Path.of("Shop-old", "Data"));
 	
 	/**
 	 * The shop file name
@@ -48,7 +47,7 @@ public class PlayerShopsConfig extends Config{
 	public static List<AbstractShop> loadLegacyShops() {
 		List<AbstractShop> shops = new ArrayList<>();
 		if(!Files.exists(SHOPS_DATA_FOLDER)){
-			logger.warning("No legacy shop data found under shop-old");
+			logger().warning("No legacy shop data found under shop-old");
 			return new ArrayList<>();
 		}
 		
@@ -70,13 +69,13 @@ public class PlayerShopsConfig extends Config{
 						shops.add(shop);
 					}
 				} catch(IllegalArgumentException iae){
-					Main.getPlugin().logger().severe("Unable to load file: '" + path + "' '" + path.getFileName() + "' is not a valid uuid!");
+					logger().severe("Unable to load file: '" + path + "' '" + path.getFileName() + "' is not a valid uuid!", iae);
 				}
 			});
 		} catch(IOException e){
 			throw new RuntimeException(e);
 		}
-		Main.getPlugin().logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " legacy Shops!");
+		logger().log(Level.INFO, "Loaded " + numShopsLoaded.get() + " legacy Shops!");
 		return shops;
 	}
 	
@@ -117,10 +116,11 @@ public class PlayerShopsConfig extends Config{
 				BlockFace facing = null;
 				String facingStr = section.getString("facing");
 				if(facingStr == null){
-					Main.getPlugin().logger().warning(
+					logger().warning(
 							"Shop without a facing location during migration usually indicates a no longer valid shop, marking as invalid (id:%s,owner:%s)".formatted(
 									id,
 									owner));
+					facing = BlockFace.EAST;
 				} else {
 					facing = BlockFace.valueOf(facingStr);
 				}
@@ -133,17 +133,16 @@ public class PlayerShopsConfig extends Config{
 				
 				ItemStack itemStack = section.getItemStack("item");
 				if(shopType == ShopType.GAMBLE){
-					itemStack = Main.getPlugin().getItemConfig().getGambleDisplayItem();
+					itemStack = ShopPlugin.getPlugin().getItemConfig().getGambleDisplayItem();
 				}
 				
 				if(itemStack == null){
-					Main.getPlugin().logger().log(Level.WARNING,
-							"Unable to load Shop #" + shopNumber + " for owner '" + shopOwner + "'! no valid item Skipping!");
+					logger().log(Level.WARNING, "Unable to load Shop #" + shopNumber + " for owner '" + shopOwner + "'! no valid item Skipping!");
 					continue;
 				}
 				
 				DisplayType displayType = DisplayType.valueOf(section.getString("displayType",
-						Main.getPlugin().getSettingsConfig().getDisplayTypeDefault().name()));
+						ShopPlugin.getPlugin().getSettingsConfig().getDisplayTypeDefault().name()));
 				
 				AbstractShop shop = AbstractShop.create(id == null ? UUID.randomUUID() : id,
 						signLoc,
@@ -165,7 +164,7 @@ public class PlayerShopsConfig extends Config{
 				if(shop.getType() == ShopType.BARTER){
 					ItemStack barterItemStack = section.getItemStack("itemBarter");
 					if(barterItemStack == null){
-						Main.getPlugin().logger().log(Level.WARNING,
+						logger().log(Level.WARNING,
 								"Unable to load Shop #" + shopNumber + " for owner '" + shopOwner + "'! no valid barter item Skipping!");
 						continue;
 					}
@@ -185,9 +184,9 @@ public class PlayerShopsConfig extends Config{
 				playerLoadedShops++;
 			}
 			String ownerName = shopOwner.equals("admin")
-			                   ? "admin"
-			                   : Main.getPlugin().getServer().getOfflinePlayer(UUID.fromString(shopOwner)).getName();
-			logger.debug("Loaded (" + playerLoadedShops + ") shops for Player " + ownerName + " from: " + shopOwner + ".yml");
+							   ? "admin"
+							   : ShopPlugin.getPlugin().getServer().getOfflinePlayer(UUID.fromString(shopOwner)).getName();
+			logger().debug("Loaded (" + playerLoadedShops + ") shops for Player " + ownerName + " from: " + shopOwner + ".yml");
 		}
 		return shops;
 	}
@@ -196,7 +195,7 @@ public class PlayerShopsConfig extends Config{
 	
 	public int saveShops(final UUID uuid, boolean force) {
 		// Check if any of the players shops want to be saved
-		Main plugin = Main.getPlugin();
+		ShopPlugin plugin = ShopPlugin.getPlugin();
 		if(plugin.isImmediateShutdown()){
 			return 0;
 		}
@@ -212,17 +211,17 @@ public class PlayerShopsConfig extends Config{
 		}
 		
 		if(!force && needToBeSaved == 0 && !shops.isEmpty()){
-			logger.debug("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + uuid);
+			logger().debug("save shops for player (" + playerName + ") was called, but no shops for player need updating! " + uuid);
 			return 0;
 		}
 		
 		// There are shops that need to be saved, so go ahead and save the file!
-		logger.debug("attempting to save shops for player " +
-		             playerName +
-		             " (" +
-		             uuid +
-		             ") isAdmin: " +
-		             (uuid.equals(AdminOfflinePlayer.getAdminUUID())));
+		logger().debug("attempting to save shops for player " +
+					   playerName +
+					   " (" +
+					   uuid +
+					   ") isAdmin: " +
+					   (uuid.equals(AdminOfflinePlayer.getAdminUUID())));
 		
 		Path tempFile = SHOPS_DATA_FOLDER.resolve(isAdminShops ? playerName : uuid + ".tmp");
 		Path file = SHOPS_DATA_FOLDER.resolve(isAdminShops ? playerName : uuid + ".yml");
@@ -230,7 +229,7 @@ public class PlayerShopsConfig extends Config{
 			try{
 				Files.deleteIfExists(tempFile);
 			} catch(IOException e){
-				logger.severe("Unable to delete file " + tempFile);
+				logger().severe("Unable to delete file " + tempFile, e);
 				return 0;
 			}
 		}
@@ -258,15 +257,6 @@ public class PlayerShopsConfig extends Config{
 				section.set("facing", shop.getFacing().toString());
 			}
 			section.set("amount", shop.getAmount());
-			/*
-			 * Why was this:
-			 * 					String type = "";
-			 * 					if(shop.isAdmin()){
-			 * 						type = "admin ";
-			 * 					                    }
-			 * 					type = type + shop.getType().toString();
-			 *
-			 */
 			section.set("type", shop.getType().toString());
 			if(shop.getDisplay().getType() != null){
 				section.set("displayType", shop.getDisplay().getType().toString());
@@ -300,20 +290,20 @@ public class PlayerShopsConfig extends Config{
 		
 		try{
 			Files.move(tempFile, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-		} catch(Error | Exception ex){
+		} catch(Exception ex){
 			try{
-				logger.debug("Error during atomic move", ex);
-				logger.debug("Filesystem does not support atomic move; using manual two-step replacement with backup...");
+				logger().debug("Error during atomic move", ex);
+				logger().debug("Filesystem does not support atomic move; using manual two-step replacement with backup...");
 				//try using non atomic move (filesystem might not support it)
 				Files.move(tempFile, file, StandardCopyOption.REPLACE_EXISTING);
-			} catch(Error | Exception moveEx){
+			} catch(Exception moveEx){
 				// Attempt to restore from backup on failure
-				logger.severe("Critical error writing updated shop file for (" +
-				              playerName +
-				              ") to (" +
-				              file +
-				              ")! This issue should not be ignored! Error message: " +
-				              moveEx.getMessage());
+				logger().severe("Critical error writing updated shop file for (" +
+								playerName +
+								") to (" +
+								file +
+								")! This issue should not be ignored! Error message: " +
+								moveEx.getMessage());
 				Path backupFile = tempFile.resolveSibling(tempFile.getFileName() + ".bak");
 				try{
 					if(Files.exists(file)){
@@ -322,22 +312,22 @@ public class PlayerShopsConfig extends Config{
 						logger.warning("Restoring backup player shop file for " + playerName + " from (" + backupFile + ") to (" + file + ")");
 						Files.move(backupFile, file, StandardCopyOption.REPLACE_EXISTING);
 						logger.info("Successfully restored backup player shop file for " +
-						            playerName +
-						            " from (" +
-						            backupFile +
-						            ") to (" +
-						            file +
-						            ")!");
+									playerName +
+									" from (" +
+									backupFile +
+									") to (" +
+									file +
+									")!");
 					}
-				} catch(Error | Exception restoreEx){
+				} catch(Exception restoreEx){
 					logger.severe("Failed to restore backup player shop file for " +
-					              playerName +
-					              " from (" +
-					              backupFile +
-					              ") to (" +
-					              file +
-					              ")! Exception: " +
-					              restoreEx.getMessage());
+								  playerName +
+								  " from (" +
+								  backupFile +
+								  ") to (" +
+								  file +
+								  ")! Exception: " +
+								  restoreEx.getMessage());
 				}
 				// Double check that the file was restored successfully and/or the current state of the files
 				if(Files.exists(file)){
@@ -348,17 +338,17 @@ public class PlayerShopsConfig extends Config{
 				} else {
 					// uh... no files exist somehow? Should never get here, but just in case since this is a critical failure
 					logger.severe("Possible data loss detected! Original file does not exist and Backup file does not exist for player (" +
-					              playerName +
-					              ")! Original MISSING: (" +
-					              file +
-					              "), Backup MISSING: (" +
-					              backupFile +
-					              ")!!!");
+								  playerName +
+								  ")! Original MISSING: (" +
+								  file +
+								  "), Backup MISSING: (" +
+								  backupFile +
+								  ")!!!");
 					logger.severe(
 							"Do not startup the plugin again until you have traced and fixed the issue! You may delete a new player file with each startup if the issue is not fixed!");
 					// Immediate shutdown of server. Something is very wrong.
 					logger.severe("Shutting down plugin immediately to prevent Shop save data loss...");
-					Main.getPlugin().immediateShutdown();
+					ShopPlugin.getPlugin().immediateShutdown();
 				}
 			}
 		}
@@ -372,7 +362,7 @@ public class PlayerShopsConfig extends Config{
 	
 	private Location locationFromString(String locString) {
 		String[] parts = locString.split(",");
-		return new Location(Main.getPlugin().getServer().getWorld(parts[0]),
+		return new Location(ShopPlugin.getPlugin().getServer().getWorld(parts[0]),
 				Double.parseDouble(parts[1]),
 				Double.parseDouble(parts[2]),
 				Double.parseDouble(parts[3]));

@@ -1,7 +1,10 @@
 package com.wonkglorg.minecraft.shop.shop.creation;
 
 import com.wonkglorg.minecraft.config.LangManager;
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getShopBuildLimit;
@@ -13,7 +16,6 @@ import lombok.Setter;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
-import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.inventory.ItemStack;
@@ -91,8 +93,8 @@ public abstract class ShopCreationProcess{
 		this.container = container;
 		this.signDirection = signDirection;
 		this.playerIsOperator = PlayerProfile.isOperator(player);
-		lang = Main.getPlugin().getLangManager();
-		shopManager = Main.getPlugin().getShopmanager();
+		lang = langManager();
+		shopManager = shopManager();
 	}
 	
 	public ImmutableShopCreationProcess toImmutableProgress() {
@@ -119,58 +121,48 @@ public abstract class ShopCreationProcess{
 	 */
 	public boolean canPlayerFulfillsCreationRequirements() {
 		if(playerIsOperator){
-			Main.getPlugin().logger().debug("Player is op, skipping creation check");
+			logger().debug("Player is op, skipping creation check");
 			return true;
 		}
-		//can't build shop in this dimension
-		Main plugin = Main.getPlugin();
 		if(!isAllowedInDimension()){
-			plugin.logger().debug("Dimension check failed");
-			plugin.getLangManager().request("interaction.issues.worldBlacklist").sendToAudience(player);
+			logger().debug("Dimension check failed");
+			lang.request("interaction.issues.create.world-blacklist").sendToAudience(player);
 			return false;
 		}
 		
 		//no create permissions for any shop
 		if(!PlayerProfile.isAllowedToCreateShop(player)){
-			plugin.logger().debug("Player lacks permission to create shop of this type");
-			plugin.getLangManager().request("permission.error.create").sendToAudience(player);
+			logger().debug("Player lacks permission to create shop of this type");
+			lang.request("permission.error.create").sendToAudience(player);
 			return false;
 		}
 		
-		int numberOfShops = plugin.getShopmanager().getNumberOfShops(player.getUniqueId());
+		int numberOfShops = shopManager.getNumberOfShops(player.getUniqueId());
 		int buildPermissionNumber = getShopBuildLimit(player);
 		if(numberOfShops >= buildPermissionNumber){
-			plugin.logger().debug("Player exceeds shop build limit");
-			plugin.getLangManager().request("permission.error.buildLimit").replace("%user-amount%", numberOfShops).replace("%build-limit%",
-					buildPermissionNumber).sendToAudience(player);
+			logger().debug("Player exceeds shop build limit");
+			lang.request("permission.error.buildLimit")
+				.replace("%user-amount%", numberOfShops)
+				.replace("%build-limit%", buildPermissionNumber)
+				.sendToAudience(player);
 			return false;
 		}
 		
 		//if players must pay to create shops, check that they have enough money first
-		double cost = Main.getPlugin().getSettingsConfig().getCreationCost();
-		if(cost > 0 && new PlayerTransactionParty(player).getAvailableFunds(Main.getPlugin().getItemConfig().getCurrencyItem()) < cost){
-			plugin.logger().debug("Player lacks funds to cover create shop costs");
-			lang.request("interaction.issues.createInsufficientFunds").sendToAudience(player);
+		double cost = ShopPlugin.getPlugin().getSettingsConfig().getCreationCost();
+		if(cost > 0 && new PlayerTransactionParty(player).getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem()) < cost){
+			logger().debug("Player lacks funds to cover create shop costs");
+			lang.request("interaction.issues.create.insufficient-funds").sendToAudience(player);
 			return false;
 		}
 		return true;
 	}
 	
 	/**
-	 * Verifies if the blocks are still valid to create a shop
-	 */
-	public boolean verifyBlocks() {
-		//container has been broken or otherwise no longer a valid container, sign is gone or changed orientation
-		return shopManager.isAllowedContainer(container) &&
-			   sign.getBlock() instanceof WallSign wallSign &&
-			   wallSign.getFacing().equals(signDirection);
-	}
-	
-	/**
 	 * @return If the shop can be created in this world
 	 */
 	protected boolean isAllowedInDimension() {
-		return !Main.getPlugin().getSettingsConfig().getWorldBlackList().contains(container.getWorld().getName());
+		return !ShopPlugin.getPlugin().getSettingsConfig().getWorldBlackList().contains(container.getWorld().getName());
 	}
 	
 	/**
@@ -187,7 +179,7 @@ public abstract class ShopCreationProcess{
 				type,
 				signDirection,
 				System.currentTimeMillis(),
-				Main.getPlugin().getSettingsConfig().getDisplayTypeDefault());
+				ShopPlugin.getPlugin().getSettingsConfig().getDisplayTypeDefault());
 		shop.setFakeSign(isFakeSign);
 		
 		if(type != ShopType.GAMBLE){
@@ -199,9 +191,7 @@ public abstract class ShopCreationProcess{
 		
 		boolean loaded = shop.load();
 		if(!loaded){
-			Main.getPlugin()
-				.getLogger()
-				.warning("Shop creation failed, unable to load the shop. Aborting shop creation."); // only seen this happen in tests
+			logger().warning("Shop creation failed, unable to load the shop. Aborting shop creation."); // only seen this happen in tests
 			return null;
 		}
 		

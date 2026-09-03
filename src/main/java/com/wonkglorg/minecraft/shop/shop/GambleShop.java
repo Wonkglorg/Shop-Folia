@@ -1,8 +1,9 @@
 package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
@@ -50,11 +51,7 @@ public class GambleShop extends AbstractShop{
 	
 	@Override
 	protected void logTransaction(TransactionParty party, int multiplier) {
-		Main.getPlugin().getShopmanager().getDatabase().logTransaction(id,
-				System.currentTimeMillis(),
-				party.getPlayer().getUniqueId(),
-				getItemStack(),
-				1);
+		shopDatabase().logTransaction(id, System.currentTimeMillis(), party.getPlayer().getUniqueId(), getItemStack(), 1);
 	}
 	
 	@Override
@@ -64,8 +61,8 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
-	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
-		var lang = Main.getPlugin().getLangManager();
+	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player) {
+		var lang = langManager();
 		switch(result) {
 			case OK -> {
 				LangRequest userRequest = lang.request("transaction.success.gamble.user");
@@ -74,14 +71,16 @@ public class GambleShop extends AbstractShop{
 				userRequest.replace("%item-amount%", amount * multiplier);
 				userRequest.sendToAudience(player);
 			}
-			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.gamble.shopPerformingTransaction").sendToAudience(player);
-			case CANCELLED -> lang.request("transaction.issue.gamble.cancelledExternal").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.gamble.playerNoStock").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_SELLER -> {
+			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.gamble.shop-performing-transaction").sendToAudience(player);
+			case CANCELLED -> lang.request("transaction.issue.gamble.cancelled-external").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.gamble.player-no-stock").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_SELLER -> { // can't happen for gamble shops
 			}
-			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.gamble.playerNoSpace").sendToAudience(player);
-			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.gamble.shopNoStock").sendToAudience(player);
-			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.gamble.useOwnShop").sendToAudience(player);
+			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.gamble.player-no-space").sendToAudience(player);
+			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.gamble.shop-no-stock").sendToAudience(player);
+			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.gamble.use-own-shop").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player, multiplier);
+			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.gamble.player-transaction-limit-reached").sendToAudience(player);
 		}
 		
 	}
@@ -97,7 +96,7 @@ public class GambleShop extends AbstractShop{
 	@Override
 	public ItemStack getDisplayItem() {
 		//todo:mjd allow for rotating display items when viewing the gamble shop.
-		return Main.getPlugin().getItemConfig().getGambleDisplayItem();
+		return ShopPlugin.getPlugin().getItemConfig().getGambleDisplayItem();
 	}
 	
 	@Override
@@ -136,7 +135,7 @@ public class GambleShop extends AbstractShop{
 	
 	//gamble shop can not have anything besides 1x transaction
 	@Override
-	protected @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack) {
+	protected @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack, int maxAmount) {
 		Transaction transaction = startTransaction(party, 1);
 		//populates the transaction result object with the result state
 		transaction.canFulfill();
@@ -152,9 +151,9 @@ public class GambleShop extends AbstractShop{
 		} else {
 			amount = itemStack.getAmount();
 		}
-		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT -> new VaultTransaction(party, getParty(), amount, price, itemStack);
-			case ITEM -> new ItemTransaction(party, getParty(), amount, price, itemStack, Main.getPlugin().getItemConfig().getCurrencyItem());
+			case ITEM -> new ItemTransaction(party, getParty(), amount, price, itemStack, ShopPlugin.getPlugin().getItemConfig().getCurrencyItem());
 			case EXPERIENCE -> new ExpirienceTransaction(party, getParty(), amount, price, itemStack);
 		};
 	}

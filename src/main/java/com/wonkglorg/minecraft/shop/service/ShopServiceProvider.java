@@ -1,6 +1,8 @@
 package com.wonkglorg.minecraft.shop.service;
 
-import com.wonkglorg.minecraft.shop.Main;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
@@ -18,17 +20,18 @@ import java.util.function.Consumer;
 
 public class ShopServiceProvider implements ShopService{
 	
-	private final Main main;
+	private final ShopPlugin main;
+	
 	@Getter
 	private final List<Consumer<Collection<AbstractShop>>> shopLoadHooks = new ArrayList<>();
 	
-	public ShopServiceProvider(Main main) {
+	public ShopServiceProvider(ShopPlugin main) {
 		this.main = main;
 	}
 	
 	@Override
 	public ShopDatabase getDatabase() {
-		return main.getShopmanager().getDatabase();
+		return shopDatabase();
 	}
 	
 	@Override
@@ -38,7 +41,7 @@ public class ShopServiceProvider implements ShopService{
 	
 	@Override
 	public ShopManager getShopManager() {
-		return main.getShopmanager();
+		return shopManager();
 	}
 	
 	@Override
@@ -49,5 +52,13 @@ public class ShopServiceProvider implements ShopService{
 	@Override
 	public OnlinePlayerProfile getProfile(Player player) {
 		return PlayerManager.getOnlineProfile(player);
+	}
+	
+	public void addShop(AbstractShop shop) {
+		shopManager().registerShop(shop);
+	}
+	
+	public void removeShop(AbstractShop shop) {
+		shopManager().unregisterShop(shop);
 	}
 }

@@ -1,9 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
-import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.EMPTY;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OVERFILLED;
@@ -24,14 +22,14 @@ import java.util.UUID;
 public class BarterShop extends AbstractShop{
 	
 	public BarterShop(UUID shopId,
-	                  Location signLoc,
-	                  UUID player,
-	                  double pri,
-	                  int amt,
-	                  Boolean admin,
-	                  BlockFace facing,
-	                  long creationDate,
-	                  DisplayType type) {
+					  Location signLoc,
+					  UUID player,
+					  double pri,
+					  int amt,
+					  Boolean admin,
+					  BlockFace facing,
+					  long creationDate,
+					  DisplayType type) {
 		super(shopId, signLoc, player, ShopType.BARTER, pri, amt, admin, facing, creationDate, type);
 	}
 	
@@ -44,7 +42,7 @@ public class BarterShop extends AbstractShop{
 	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {
 		int calculatedAmount = amount * multiplier;
 		double calculatedPrice = price * multiplier;
-		return switch(Main.getPlugin().getSettingsConfig().getCurrencyType()) {
+		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT -> new VaultTransaction(party, getParty(), calculatedAmount, calculatedPrice, item);
 			case ITEM -> new ItemTransaction(party, getParty(), calculatedAmount, calculatedPrice, item, secondaryItem);
 			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, calculatedAmount, calculatedPrice, item);
@@ -74,7 +72,7 @@ public class BarterShop extends AbstractShop{
 		}
 		
 		if(price == 0){
-			setShopState(OK,true);
+			setShopState(OK, true);
 			return;
 		}
 		
@@ -86,46 +84,19 @@ public class BarterShop extends AbstractShop{
 	}
 	
 	@Override
-	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
-		var lang = Main.getPlugin().getLangManager();
+	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player) {
+		var lang = langManager();
 		switch(result) {
-			case OK -> {
-				LangRequest userRequest = lang.request("transaction.success.barter.user");
-				shopPlaceholders(userRequest, this, false, player);
-				userRequest.replace("%price%", formatPrice(price * multiplier));
-				userRequest.replace("%item-amount%", amount * multiplier);
-				userRequest.replace("%item-barter-amount%", amount * multiplier);
-				userRequest.sendToAudience(player);
-				if(owner.isNotifyOwner() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.success.barter.owner").replace("%user%", player.getName());
-					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
-					ownerRequest.replace("%price%", formatPrice(price * multiplier));
-					ownerRequest.replace("%item-amount%", amount * multiplier);
-					ownerRequest.replace("%item-barter-amount%", amount * multiplier);
-					ownerRequest.sendToAudience(online.getPlayer());
-				}
-			}
-			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.barter.shopPerformingTransaction").sendToAudience(player);
-			case CANCELLED -> lang.request("transaction.issue.barter.cancelledExternal").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.barter.playerNoStock").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_SELLER -> {
-				lang.request("transaction.issue.barter.shopNoStock").sendToAudience(player);
-				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.barter.ownerNoStock");
-					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
-					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
-				}
-			}
-			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.barter.playerNoSpace").sendToAudience(player);
-			case INVENTORY_FULL_SELLER -> {
-				lang.request("transaction.issue.barter.shopNoSpace").sendToAudience(player);
-				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.barter.ownerNoSpace");
-					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
-					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
-				}
-			}
-			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.barter.useOwnShop").sendToAudience(player);
+			case OK -> notifyTransaction(player, multiplier);
+			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.barter.shop-performing-transaction").sendToAudience(player);
+			case CANCELLED -> lang.request("transaction.issue.barter.cancelled-external").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.barter.player-no-stock").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_SELLER -> notifyNoStock(player, multiplier);
+			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.barter.player-no-space").sendToAudience(player);
+			case INVENTORY_FULL_SELLER -> notifyNoSpace(player, multiplier);
+			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.barter.use-own-shop").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player,multiplier);
+			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.barter.player-transaction-limit-reached").sendToAudience(player);
 		}
 		
 	}

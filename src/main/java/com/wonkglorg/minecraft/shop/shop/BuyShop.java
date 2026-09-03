@@ -1,9 +1,6 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.config.lang.LangRequest;
-import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
-import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.EMPTY;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OVERFILLED;
@@ -24,14 +21,14 @@ import java.util.UUID;
 public class BuyShop extends AbstractShop{
 	
 	public BuyShop(UUID shopId,
-	               Location signLoc,
-	               UUID player,
-	               double pri,
-	               int amt,
-	               Boolean admin,
-	               BlockFace facing,
-	               long creationDate,
-	               DisplayType type) {
+				   Location signLoc,
+				   UUID player,
+				   double pri,
+				   int amt,
+				   Boolean admin,
+				   BlockFace facing,
+				   long creationDate,
+				   DisplayType type) {
 		super(shopId, signLoc, player, ShopType.BUY, pri, amt, admin, facing, creationDate, type);
 	}
 	
@@ -58,7 +55,7 @@ public class BuyShop extends AbstractShop{
 		}
 		
 		if(price == 0){
-			setShopState(OK,true);
+			setShopState(OK, true);
 			return;
 		}
 		
@@ -82,44 +79,19 @@ public class BuyShop extends AbstractShop{
 	}
 	
 	@Override
-	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player, PlayerProfile owner) {
-		var lang = Main.getPlugin().getLangManager();
+	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player) {
+		var lang = langManager();
 		switch(result) {
-			case OK -> {
-				LangRequest userRequest = lang.request("transaction.success.buy.user");
-				shopPlaceholders(userRequest, this, false, player);
-				userRequest.replace("%price%", formatPrice(price * multiplier));
-				userRequest.replace("%item-amount%", amount * multiplier);
-				userRequest.sendToAudience(player);
-				if(owner.isNotifyOwner() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.success.buy.owner").replace("%user%", player.getName());
-					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
-					ownerRequest.replace("%price%", formatPrice(price * multiplier));
-					ownerRequest.replace("%item-amount%", amount * multiplier);
-					ownerRequest.sendToAudience(online.getPlayer());
-				}
-			}
-			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.buy.shopPerformingTransaction").sendToAudience(player);
-			case CANCELLED -> lang.request("transaction.issue.buy.cancelledExternal").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_SELLER -> lang.request("transaction.issue.buy.playerNoStock").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_BUYER -> {
-				lang.request("transaction.issue.buy.shopNoStock").sendToAudience(player);
-				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.buy.ownerNoStock");
-					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
-					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
-				}
-			}
-			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.buy.playerNoSpace").sendToAudience(player);
-			case INVENTORY_FULL_BUYER -> {
-				lang.request("transaction.issue.buy.shopNoSpace").sendToAudience(player);
-				if(owner.isNotifyStock() && owner instanceof OnlinePlayerProfile online){
-					LangRequest ownerRequest = lang.request("transaction.issue.buy.ownerNoSpace");
-					shopPlaceholders(ownerRequest, this, false, online.getPlayer());
-					ownerRequest.replace("%user%", player.getName()).sendToAudience(online.getPlayer());
-				}
-			}
-			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.buy.useOwnShop").sendToAudience(player);
+			case OK -> notifyTransaction(player, multiplier);
+			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.buy.shop-performing-transaction").sendToAudience(player);
+			case CANCELLED -> lang.request("transaction.issue.buy.cancelled-external").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_SELLER -> lang.request("transaction.issue.buy.player-no-stock").sendToAudience(player);
+			case INSUFFICIENT_FUNDS_BUYER -> notifyNoStock(player, multiplier);
+			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.buy.player-no-space").sendToAudience(player);
+			case INVENTORY_FULL_BUYER -> notifyNoSpace(player, multiplier);
+			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.buy.use-own-shop").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player,multiplier);
+			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.buy.player-transaction-limit-reached").sendToAudience(player);
 		}
 		
 	}

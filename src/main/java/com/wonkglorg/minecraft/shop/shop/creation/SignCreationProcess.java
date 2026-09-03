@@ -1,198 +1,114 @@
 package com.wonkglorg.minecraft.shop.shop.creation;
 
-import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.config.SettingsConfig;
-import com.wonkglorg.minecraft.shop.shop.CreationWord;
-import com.wonkglorg.minecraft.shop.shop.ShopType;
-import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.ShopSignUtil;
-import com.wonkglorg.minecraft.shop.util.UtilMethods;
+import com.wonkglorg.minecraft.config.lang.LangRequest;
+import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import static com.wonkglorg.minecraft.shop.shop.AbstractShop.formatPrice;
+import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
+import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser.CreationMatch;
+import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.Components;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
-import org.bukkit.block.data.type.WallSign;
 import org.bukkit.block.sign.Side;
 import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
 
 public class SignCreationProcess extends ShopCreationProcess{
-	
 	public SignCreationProcess(Player player, Sign sign, Block container, BlockFace signDirection) {
 		super(player, sign, container, signDirection);
-		isFakeSign = false; //its a sign shop creation a real sign already exists
+		isFakeSign = false;
 	}
 	
 	/**
-	 * Read sign lines and populates process,
+	 * Reads and validates the four sign lines.
 	 */
-	public boolean readSignLines(List<Component> lines) {
+	public boolean readSignLines(List<Component> components) {
+		if(components.size() < 4){
+			return false;
+		}
 		
-		String line3 = Components.toPlainText(lines.get(3));
-		type = getShopType(line3);
+		String[] lines = new String[4];
+		
+		for(int i = 0; i < 4; i++){
+			lines[i] = Components.toPlainText(components.get(i)).trim();
+		}
+		
+		CreationMatch match = SignCreationLayoutParser.match(lines);
+		if(match == null){
+			logger().debug("No match Found for lines!");
+			return false;
+		}
+		amount = match.amount();
+		price = match.price();
+		adminShop = match.admin();
+		type = match.shopType();
+		
 		if(!isAllowedToCreateShop()){
-			Main.getPlugin().logger().debug("Player is not allowed to build shop of type " + type);
-			return false;
-		}
-		adminShop = readShopAdmin(line3);
-		Main.getPlugin().logger().debug("Is Admin shop: " + adminShop);
-		
-		Integer amountRead = readAmount(lines.get(1));
-		if(amountRead == null){
-			Main.getPlugin().logger().debug("Malformed shop line 2");
-			lang.request("interaction.issues.createLine2").sendToAudience(player);
-			lang.request("interaction.issues.createCancel").sendToAudience(player);
-			return false;
-		} else {
-			amount = amountRead;
-		}
-		
-		if(!readPrice(Components.toPlainText(lines.get(2)), type)){
-			Main.getPlugin().logger().debug("Malformed shop line 3");
-			lang.request("interaction.issues.createLine3").sendToAudience(player);
+			logger().debug("Player is not allowed to create a shop of this type!");
 			return false;
 		}
 		
-		Main.getPlugin().logger().debug("Shop type: " + type);
 		return true;
-	}
-	
-	private Integer readAmount(Component component) {
-		try{
-			String line2 = UtilMethods.cleanNumberText(Components.toPlainText(component));
-			amount = Integer.parseInt(line2);
-			if(amount < 1){
-				Main.getPlugin().logger().debug("Amount can't be 0");
-				return null;
-			}
-			Main.getPlugin().logger().debug("Amount:" + amount);
-			return amount;
-		} catch(NumberFormatException _){
-			Main.getPlugin().logger().debug("Not a valid integer");
-			return null;
-		}
-	}
-	
-	private boolean readShopAdmin(String input) {
-		return input.toLowerCase().contains(Main.getPlugin().getSettingsConfig().getCreationWord(CreationWord.ADMIN));
 	}
 	
 	/**
-	 * Reads in the price values
+	 * Gets the initialize context sign lines
 	 */
-	public boolean readPrice(String input, ShopType shopType) {
-		double price = 0;
-		if(Main.getPlugin().getSettingsConfig().getCurrencyType() == CurrencyType.VAULT){
-			Main.getPlugin().logger().debug("Reading Vault currency");
-			try{
-				double multiplyValue = getMultiplyValue(input);
-				Main.getPlugin().logger().debug("Multiplier: " + multiplyValue);
-				String line3 = UtilMethods.cleanNumberText(input);
-				
-				String[] multiplePrices = line3.split(" ");
-				if(multiplePrices.length > 1){
-					if(multiplePrices[0].contains(".")){
-						price = Double.parseDouble(multiplePrices[0]);
-					} else {
-						price = Long.parseLong(multiplePrices[0]);
-					}
-				} else {
-					if(line3.contains(".")){
-						price = Double.parseDouble(line3);
-					} else {
-						price = Long.parseLong(line3);
-					}
-				}
-				
-				price *= multiplyValue;
-				Main.getPlugin().logger().debug("Price: " + price);
-			} catch(NumberFormatException _){
-				return false;
-			}
-		} else {
-			Main.getPlugin().logger().debug("Reading non fractional currency " + Main.getPlugin().getSettingsConfig().getCurrencyType());
-			try{
-				String line3 = UtilMethods.cleanNumberText(input);
-				
-				String[] multiplePrices = line3.split(" ");
-				if(multiplePrices.length > 1){
-					price = Long.parseLong(multiplePrices[0]);
-					Main.getPlugin().logger().debug("Price: " + price);
-				} else {
-					price = Long.parseLong(line3);
-					Main.getPlugin().logger().debug("Price: " + price);
-				}
-			} catch(NumberFormatException _){
-				Main.getPlugin().logger().debug("Malformed Price Number");
-				return false;
-			}
-		}
-		//only allow price to be zero if the type is selling
-		if(price < 0 || (price == 0 && shopType == ShopType.BARTER)){
-			return false;
-		}
-		super.price = price;
-		return true;
-	}
-	
-	private ShopType getShopType(String input) {
-		SettingsConfig config = Main.getPlugin().getSettingsConfig();
-		input = input.toLowerCase();
-		if(input.contains(config.getCreationWord(CreationWord.BUY))){
-			return ShopType.BUY;
-		} else if(input.contains(config.getCreationWord(CreationWord.BARTER))){
-			return ShopType.BARTER;
-		} else if(input.contains(config.getCreationWord(CreationWord.GAMBLE))){
-			return ShopType.GAMBLE;
-		} else if(input.contains(config.getCreationWord(CreationWord.SELL))){
-			return ShopType.SELL;
-		}
-		return ShopType.SELL;
-	}
-	
-	//this takes a dirty (pre-cleaned) string and finds how much to multiply the final by
-	//this utility allows the input of numbers like 1.2k (1200)
-	private double getMultiplyValue(String text) {
-		// Remove color formatting, whitespace, and make sure the string is lowercase for matching our suffixes below
-		String priceString = text.replaceAll("\\s", "").toLowerCase();
-		// Get just the suffix from the price string, remove all numbers and decimals
-		String priceSuffix = priceString.replaceAll("[0-9.]", "");
-		
-		// Load the suffixes from the config values
-		NavigableMap<Double, String> configPriceSuffixes = Main.getPlugin().getSettingsConfig().getPriceSuffixes();
-		
-		// Search for a suffix match
-		for(Map.Entry<Double, String> entry : configPriceSuffixes.entrySet()){
-			Double configPriceValue = entry.getKey();
-			String configSuffix = entry.getValue().toLowerCase();
+	private static List<Component> getSignLines(ShopCreationProcess context) {
+		List<Component> lines = new ArrayList<>(4);
+		for(var i = 1; i < 5; i++){
+			//@formatter:off
+			LangRequest request = langManager().request("sign.text." + context.getType() + ".initialise." + i);
 			
-			if(priceSuffix.equals(configSuffix)){
-				// Return the value for the suffix from the config
-				return configPriceValue;
+			if(context.getItemStack() != null){
+				request.replace("%item%",() -> ItemNameUtil.getName(context.getItemStack()));
+			}else{
+				request.replace("%item%","");
 			}
+			
+			if(context.getSecondaryStack() != null){
+				request.replace("%barter-item%",()->ItemNameUtil.getName(context.getSecondaryStack()));
+			}else{
+				request.replace("%barter-item%","");
+			}
+			
+			request.replace("%amount%",context.getAmount())
+				   .replace("%stock-state%",OK)
+				   .replace("%price%",formatPrice(context.getPrice()))
+				   .replace("%owner%",context.getPlayer().getName())
+				   .replace("%stock%",0);
+			lines.add(request.toSingleComponent());
+			//@formatter:on
 		}
 		
-		// No match so our multiplier is just 1
-		return 1;
+		return lines;
 	}
 	
 	public void updateSignText() {
-		Main.getPlugin().getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
-			if(sign.getBlockData() instanceof WallSign){
-				List<Component> signLines = ShopSignUtil.getSignLines(this);
-				SignSide signSide = sign.getSide(Side.FRONT);
-				signSide.line(0, signLines.get(0));
-				signSide.line(1, signLines.get(1));
-				signSide.line(2, signLines.get(2));
-				signSide.line(3, signLines.get(3));
-				sign.update(true);
+		//schedule one tick later, otherwise sign change event can overwrite the text
+		ShopPlugin.getPlugin().getFoliaLib().getScheduler().runAtLocationLater(sign.getLocation(), () -> {
+			if(!(sign.getBlock().getState() instanceof Sign currentSign)){
+				return;
 			}
-		});
+			
+			currentSign.setWaxed(true);
+			
+			SignSide side = currentSign.getSide(Side.FRONT);
+			List<Component> lines = getSignLines(this);
+			
+			for(int i = 0; i < 4; i++){
+				side.line(i, lines.get(i));
+			}
+			
+			currentSign.update(true);
+		}, 1);
 	}
 	
 	@Override

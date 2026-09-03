@@ -90,6 +90,16 @@ repositories {
 
 
     maven {
+        name = "nexo-items-repo"
+        url = "https://repo.nexomc.com/releases"
+    }
+
+    maven {
+        name = "hmc-wraps-repo"
+        url = "https://repo.hibiscusmc.com/releases/"
+    }
+
+    maven {
         url = uri("https://repo.opencollab.dev/main/")
     }
 }
@@ -132,7 +142,14 @@ dependencies {
     //FoliaLib
     implementation 'com.github.technicallycoded:FoliaLib:0.4.4'
 
+    //Plugin Dependencies
     compileOnly "org.geysermc.floodgate:api:${floodgate_version}"
+    compileOnly "org.geysermc.geyser:api:${geyser_version}"
+
+    //Custom item Dependencies
+    compileOnly "com.nexomc:nexo:${nexo_version}"
+    compileOnly "de.skyslycer.hmcwraps:api:${hmcwraps_version}"
+
     //test dependencies
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -142,7 +159,6 @@ dependencies {
     testImplementation "org.mockito:mockito-core:${mockito_version}"
     testImplementation "io.papermc.paper:paper-api:${minecraft_version}.build.+"
     testImplementation "org.mockbukkit.mockbukkit:mockbukkit-v26.1.2:4.114.0"
-
 
 
 }
@@ -158,13 +174,12 @@ test {
 }
 
 processResources {
-    def props = [
-            version         : version,
-            minecraftVersion: minecraft_version,
-            name            : plugin_name,
-            api_version     : plugin_api_version,
-            description     : plugin_description,
-            author          : author
+    def props = [version         : version,
+                 minecraftVersion: minecraft_version,
+                 name            : plugin_name,
+                 api_version     : plugin_api_version,
+                 description     : plugin_description,
+                 author          : author
 
     ]
     inputs.properties props

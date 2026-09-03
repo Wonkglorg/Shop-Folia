@@ -1,8 +1,8 @@
 package com.wonkglorg.minecraft.shop.manager.player;
 
 import com.wonkglorg.minecraft.shop.Constants;
-import com.wonkglorg.minecraft.shop.Main;
-import com.wonkglorg.minecraft.shop.manager.PlayerManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.loadFromFile;
 import static com.wonkglorg.minecraft.shop.manager.PlayerManager.saveToFile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -15,7 +15,6 @@ import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,10 +33,7 @@ public abstract class PlayerProfile{
 	protected final OfflinePlayer offlinePlayer;
 	@Getter
 	@Setter
-	private boolean notifyUser;
-	@Getter
-	@Setter
-	private boolean notifyOwner;
+	private boolean notifyTransaction;
 	@Getter
 	@Setter
 	private boolean notifyStock;
@@ -51,6 +47,9 @@ public abstract class PlayerProfile{
 	@Getter
 	private final Map<ShopType, List<AbstractShop>> ownedShops = new ConcurrentHashMap<>();
 	
+	private final Map<UUID, Integer> totalPurchasesPerShop = new ConcurrentHashMap<>();
+	private final Map<UUID, Long> lastPurchaseTimePerShop = new ConcurrentHashMap<>();
+	
 	protected PlayerProfile(OfflinePlayer offlinePlayer) {
 		for(var type : ShopType.values()){
 			ownedShops.put(type, new ArrayList<>());
@@ -62,17 +61,7 @@ public abstract class PlayerProfile{
 			ownedShops.get(shop.getType()).add(shop);
 		}
 		loadFromFile(this);
-	}
-	
-	/**
-	 * Toggles user notifications
-	 *
-	 * @return the value it toggled to
-	 */
-	public boolean toggleNotifyUser() {
-		notifyUser = !notifyUser;
-		saveToFile(this);
-		return notifyUser;
+		shopDatabase().loadShopPurchaseStats(uuid, totalPurchasesPerShop, lastPurchaseTimePerShop);
 	}
 	
 	/**
@@ -80,10 +69,10 @@ public abstract class PlayerProfile{
 	 *
 	 * @return the value it toggled to
 	 */
-	public boolean toggleNotifyOwner() {
-		notifyOwner = !notifyOwner;
+	public boolean toggleNotifyTransaction() {
+		notifyTransaction = !notifyTransaction;
 		saveToFile(this);
-		return notifyOwner;
+		return notifyTransaction;
 	}
 	
 	/**
@@ -180,11 +169,26 @@ public abstract class PlayerProfile{
 	/**
 	 * If the user is allowed to cycle shop displays of their own shops
 	 */
-	public static boolean isAllowedToCycleDisplay(Permissible player){return isOperator(player) || player.hasPermission("shop.setdisplay");}
+	public static boolean isAllowedToCycleDisplay(Permissible player) {return isOperator(player) || player.hasPermission("shop.setdisplay");}
+	
 	/**
 	 * If the user is allowed to cycle shop displays of other players shops
 	 */
-	public static boolean isAllowedToCycleDisplayOther(Permissible player){return isOperator(player) || player.hasPermission("shop.setdisplay.other");}
+	public static boolean isAllowedToCycleDisplayOther(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.setdisplay.other");
+	}
+	
+	/**
+	 * If the user is allowed to cycle shop displays of their own shops
+	 */
+	public static boolean isAllowedToOpenShopSettings(Permissible player) {return isOperator(player) || player.hasPermission("shop.settings");}
+	
+	/**
+	 * If the user is allowed to cycle shop displays of other players shops
+	 */
+	public static boolean isAllowedToOpenShopSettingsOther(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.settings.other");
+	}
 	
 	private static boolean hasActionPermission(String permissionBase, Permissible player) {
 		if(isOperator(player)){
@@ -258,7 +262,7 @@ public abstract class PlayerProfile{
 			int value = 0;
 			try{
 				value = Integer.parseInt(perm.substring(perm.lastIndexOf(".") + 1));
-			} catch(NumberFormatException e){
+			} catch(NumberFormatException _){
 				continue;
 			}
 			if(perm.startsWith("shop.buildlimit.")){
@@ -280,23 +284,24 @@ public abstract class PlayerProfile{
 	 * Get all shops this player owns
 	 */
 	public static List<AbstractShop> getShops(UUID uuid) {
-		return Main.getPlugin().getShopmanager().getShops(uuid);
-	}
-	
-	public static Duration getTeleportCooldownRemaining(UUID uuid) {
-		return PlayerManager.getTeleportCooldownRemaining(uuid);
-	}
-	
-	public static boolean canTeleport(UUID uuid) {
-		return PlayerManager.canTeleport(uuid);
-	}
-	
-	public static void addTeleportCooldown(UUID uuid) {
-		PlayerManager.addTeleportCooldown(uuid);
+		return shopManager().getShops(uuid);
 	}
 	
 	@Internal
 	public void setExperience(int experience) {
 		this.experience = experience;
+	}
+	
+	public void recordPurchase(UUID shopId, long timestamp, int multiplier) {
+		totalPurchasesPerShop.merge(shopId, multiplier, Integer::sum);
+		lastPurchaseTimePerShop.put(shopId, timestamp);
+	}
+	
+	public int getPurchaseCount(AbstractShop shop) {
+		return totalPurchasesPerShop.getOrDefault(shop.getId(), 0);
+	}
+	
+	public long getLastPurchaseTime(AbstractShop abstractShop) {
+		return lastPurchaseTimePerShop.getOrDefault(abstractShop.getId(), 0L);
 	}
 }

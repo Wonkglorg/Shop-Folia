@@ -1,142 +1,166 @@
 # Available Log Levels:
 # * WARN   : Logs warnings and errors
-# * INFO   : Standard logging, only logs on startup, warnings, and errors
+# * INFO   : Standard logging + warnings and errors
 # * DEBUG  : Logs detailed information useful for debugging issues
-logLevel: INFO
-
-# This will permanently delete a player's shops if they have not logged onto the server after X hours #
-# Set this to 0 to never auto-delete a player's shops #
-deletePlayerShopsAfterXHoursOffline: 0
+log-level: INFO
 
 # =================================================================== #
 #                      CURRENCY AND ECONOMY                           #
 # =================================================================== #
 # type :
-# ITEM - shops will use a specified item as the currency (default is Emerald). To change this item in-game, run the
+# ITEM - shops will use a specified item as the currency (default is Diamond). To change this item in-game, run the
 #        command '/shop setcurrency while holding the item in your hand you want to use as currency.
 # VAULT - shops will use Vault as the currency. (This requires Vault to be installed on the server)
 # EXPERIENCE - shops will use experience points as the currency
-
-# name :
-# This is the name of the currency that shows up on signs. If you are using ITEM, you will want to change
-# this to the type of item being used. If you are using VAULT, you will want to change this to a currency symbol
-# like '$'. If you are using EXPERIENCE, you will want to name this "Experience" or something similar
-
 
 currency:
   #the type of currency to use (name for currencies is defined in the specific lang file of the plugin
   type: ITEM
 
-# what words to use for sign shop creation
-sign:
-  creation:
-    SHOP: "shop" #this is the first line on a sign
-    #these go in the last line to denote what shop type it is
-    SELL: "sell"
-    BUY: "buy"
-    BARTER: "barter"
-    GAMBLE: "gamble"
-    ADMIN: "admin"
-
-
-cost:
-  shop:
-    #the cost to charge when creating a shop
-    creation: 0
-    #the cost to charge when destroying a shop
-    destruction: 0
-  # This returns the creation cost to the shop creator when the shop is destroyed #
-  returnCreationCosat: false
-
-
-# This formats suffixes for large numbers like (5,000 = 5k) or (5,000,000 = 5M) #
-# minimumValue = minimum value to start formatting strings #
-priceSuffixes:
-  minimumValue: 10000
-  k:
-    enabled: true
-    value: 1000
-  M:
-    enabled: true
-    value: 1000000
-  B:
-    enabled: true
-    value: 1000000000
-  T:
-    enabled: true
-    value: 1000000000000
-  P:
-    enabled: true
-    value: 1000000000000000
-  E:
-    enabled: true
-    value: 1000000000000000000
+# This formats suffixes for large numbers like (5,000 = 5k) or (5,000,000 = 5M)
+price-suffixes:
+  k: 1000
+  M: 1000000
+  B: 1000000000
+  T: 1000000000000
+  P: 1000000000000000
+  E: 1000000000000000000
 
 # =================================================================== #
 #                           SHOP                                      #
 # =================================================================== #
 # This will change the type of item display that shops will use by default above their chests #
 # The options are: NONE, ITEM, GLASS_CASE, LARGE_ITEM, ITEM_FRAME #
-displayType: NONE
-
-# This will show the hover text above the item display #
-# The options are: NONE, RIGHT_CLICK_CHEST, VIEW_SIGN #
-displayNameTags: VIEW_SIGN
-
-# This will change the order that display types are cycled in #
-# To remove a display type as a cycle option, remove it from this list #
-# The options are: NONE, ITEM, GLASS_CASE, LARGE_ITEM, ITEM_FRAME #
-displayCycle:
-  - NONE
-  - ITEM
-  - GLASS_CASE
-  - LARGE_ITEM
-  - ITEM_FRAME
-
-# This controls what light level (0 to 15) shop displays emit #
-displayLightLevel: 0
-
-# This controls whether the item frames of shop displays are glowing #
-setGlowingItemFrame: false
-
-# This controls whether shop sign text should be glowing by default #
-# Signs on Bedrock Edition might look dimmed out
-setGlowingSignText: false
-
-#Controls if the sign should be auto waxed after creation
-setWaxedSign: true
-
 #if set to true uses the clients locale to display material names
-useLocalizedMaterialNames: false
+use-localized-material-names: false
 
-#todo new idea for sign creation config
-#the line format shops need to abide by when being created every line can be a list of possible options of multiple permutations are allowed, placeholders:
-# %price% - the price to pay
-# %amount% - the item amount being given
-#sign-creation-layout:
-#  sell:
-#    1: 'shop'
-#    2: '%amount%'
-#    3: '%price%'
-#    4:
-#      - 'sell'
-#      - ''
-#  buy:
-#    1: 'shop'
-#    2: '%amount%'
-#    3: '%price%'
-#    4: 'buy'
-#  barter:
-#    1: 'shop'
-#    2: '%amount%'
-#    3: '%price%'
-#    4: 'barter'
-#  gamble:
-#    1: 'shop'
-#    2: ''
-#    3: '%price%'
-#    4: 'gamble'
+# (default: false) Should owners be able to buy/sell from their own shop
+allow-use-own-shop: false
 
+# If this is set to true, shops will require you to be sneaking (holding 'shift') to destroy them
+destroy-shop-requires-sneak: true
+
+cost:
+  # cost of destroying a shop
+  destroy: 0
+  # cost of creating a shop
+  create: 0
+  # if creation cost should be returned when shop destroyed
+  return-creation-cost: false
+# shop display related settings
+display:
+  # default display for new shops
+  type: NONE
+  # This will change the order that display types are cycled in #
+  # To remove a display type as a cycle option, remove it from this list #
+  # The options are: NONE, ITEM, GLASS_CASE, LARGE_ITEM, ITEM_FRAME #
+  cycle:
+    - NONE
+    - ITEM
+    - GLASS_CASE
+    - LARGE_ITEM
+    - ITEM_FRAME
+  # This controls whether the item frames of shop displays are glowing #
+  glowing-item-frame: false
+
+#settings for the shop sign
+sign:
+  # This controls whether shop sign text should be glowing by default #
+  # Signs on Bedrock Edition might look dimmed out
+  glowing-sign-text: false
+
+  #Controls if the sign should be auto waxed after creation
+  waxed-sign: true
+
+  #the line format shops need to abide by when being created every line can be a list of possible options of multiple permutations are allowed, placeholders:
+  # %price% - the price to pay (positive value including 0) needs to be standalone on a sign line and cannot be used in the first line
+  # %amount% - the item amount being given (positive value above 0) needs to be standalone on a sign line and cannot be used in the first line
+creation-layout:
+  # Each shop type can have multiple layouts that are "valid".
+  sell:
+    # Declarations for normal shops.
+    normal:
+      # Multiple values can be defined per line, making them alternatives.
+      - 1: [ "shop", "[shop]" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "sell" ]
+
+      - 1: [ "shop", "[shop]", "sell shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+    # Declarations for admin shops.
+    admin:
+      - 1: [ "shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "sell admin" ]
+
+      - 1: [ "admin sell shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+  buy:
+    normal:
+      - 1: [ "shop", "[shop]" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "buy" ]
+
+      - 1: [ "buy shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+    admin:
+      - 1: [ "shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "buy admin" ]
+
+      - 1: [ "admin buy shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+  barter:
+    normal:
+      - 1: [ "shop", "[shop]" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "barter" ]
+
+      - 1: [ "barter shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+    admin:
+      - 1: [ "shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "barter admin" ]
+
+      - 1: [ "admin barter shop" ]
+        2: [ "%amount%" ]
+        3: [ "%price%" ]
+        4: [ "" ]
+
+  # Gamble shops are always admin shops.
+  gamble:
+    admin:
+      - 1: [ "shop", "[shop]" ]
+        2: [ "" ]
+        3: [ "%price%" ]
+        4: [ "gamble" ]
+
+      - 1: [ "gamble shop" ]
+        2: [ "" ]
+        3: [ "%price%" ]
+        4: [ "" ]
 # =================================================================== #
 #                         SHOP INTERACTIONS                           #
 # =================================================================== #
@@ -151,47 +175,61 @@ useLocalizedMaterialNames: false
 #   - SHIFT_LEFT_CLICK_CHEST
 #   - RIGHT_CLICK_CHEST
 #   - SHIFT_RIGHT_CLICK_CHEST
-actionMappings:
+mappings:
   #clicks used to trade with a shop
-  transactWithShop:
+  transact-with-shop:
     - RIGHT_CLICK_SIGN
-  transactWithShopFullStack:
+  transact-with-shop-full-stack:
     - SHIFT_RIGHT_CLICK_SIGN
   #view details about a shop
-  viewShopDetails:
+  view-shop-details:
     - LEFT_CLICK_CHEST
   #cycle displays on a shop
-  cycleShopDisplay:
+  cycle-shop-display:
     - SHIFT_RIGHT_CLICK_CHEST
+  #opens a gui for shop settings
+  open-shop-settings:
+    - SHIFT_LEFT_CLICK_CHEST
 
-# These are the methods players are able to use to create shops #
-# placeSign - players can place signs on chests and fill out the info on the sign itself #
-# hitChest - players can hit a chest and they will be prompted to fill out the info in chat. A sign will be created. #
-creationMethod:
-  placeSign: true
-  command: true
+# These will play sounds and particle effects when creating and using shops
+play-sounds: true
+play-effects: true
 
-# This will show shop creation instructions as floating text above shops #
-displayFloatingCreateText: true
+# Shop settings, their default values and if they should be enabled
+shop:
+  settings:
+    # how often a player can purchase from a given shop (each player has their own counter)
+    transaction-limit:
+      enabled: true
+      default-value: 0
+    # how long the player needs to wait between purchases to buy again from this shop
+    transaction-cooldown:
+      enabled: true
+      default-value: 0
+    # if the shop should notify the owner when someone tries to transact and the shop ran out of stock.
+    out-of-stock-notification:
+      enabled: true
+      default-value: false
+    # if the shop should notify its owner over every transaction
+    transaction-notification:
+      enabled: true
+      default-value: false
 
-# If this is set to true, shops will require you to be sneaking (holding 'shift') to destroy them
-destroyShopRequiresSneak: false
-
-# These will play sounds and particle effects when creating and using shops #
-# These will need to be set to false if your server is running anything less than Minecraft 1.9 #
-playSounds: true
-playEffects: true
+    #if shop items tagged with custom item id's by other plugins such as "Nexo items" should update their item definitions alongside the plugin
+    custom-item-updater:
+      enabled: false
+      default-value: false
 
 # =================================================================== #
 #                                FILTERS                              #
 # =================================================================== #
 # Add the names of worlds that you do not want shops to be able to be created in here #
-worldBlacklist:
+world-blacklist:
   - "example_world"
   - "example2_world"
 
 # These are the different types of containers that can be used for shops #
-enabledContainers:
+enabled-containers:
   - BARREL
   - CHEST
   - TRAPPED_CHEST
@@ -213,9 +251,12 @@ enabledContainers:
   - WHITE_SHULKER_BOX
   - YELLOW_SHULKER_BOX
 
+material-blacklist:
+  materials:
+    - COMMAND_BLOCK
 
-# Should purchases while the player was offline be sent to them on join
-offlinePurchaseNotifications: true
+material-whitelist:
+  materials:
 
 # =================================================================== #
 #                   SHOP PERFORMANCE OPTIMIZATIONS                    #
@@ -223,36 +264,34 @@ offlinePurchaseNotifications: true
 # You should not need to change these settings, we have tried to balance them for performance & experience. #
 # If you are experiencing performance issues however, you can try to tune them. #
 
-# How often (in seconds) to check for shop displays that need to be shown to players
-# Lower values make shop displays appear faster.
-# You can increase this if you are experiencing performance issues to reduce the number of checks.
-displayProcessInterval: 1
+# How often (in ticks) to check for shop updates that need to be shown to players.
+# Lower values make shop displays and signs appear faster when players move into view,
+# but increase the frequency of processing.
+# Shop processing is staggered across players using buckets.
+# This setting has no affect on immediate shop updates such as buying from a shop or a player refilling their shop, these changes will show immediately regardless of this setting
+shop-process-interval-ticks: 20
 
-# How far a player needs to move (in blocks) before shop display checks should be processed
+# How many players should be processed during each shop processing interval.
+# Players are split into buckets of this size and processed one bucket at a time.
+# Smaller values spread the workload more evenly but take longer to cycle through all players.
+# Larger values process more players at once but can create performance issues
+shop-process-bucket-size: 50
+
+# How far a player needs to move (in blocks) before shop checks should be processed for any nearby changes
 # This prevents unnecessary processing when players are standing still
-# Recommended range: 1-4, default: 1.0
-displayMovementThreshold: 1.0
+# Recommended range: 2-4, default: 3
+shop-process-movement-threshold: 3.0
 
-# Maximum distance (in blocks) at which shop displays will be shown to players.
-# Mainly affects player performance, not server performance.
-# Recommended range: 16-32, default: 20.0
-# For an extra smooth experience, you can set this higher to around 32 (radius 2), but this will also increase resource usage on the server.
-# NOTE: Default "Entity Render Distance" settings for the Minecraft client is 20 blocks,
-#       so setting this higher than 20 will only "preload" shop displays for players beyond this distance.
-maxShopDisplayDistance: 20.0
+# Maximum distance (in chunks) at which shops will be processed around the player.
+# affects when shop displays are shown and when shop signs send updated text to each player
+max-shop-processing-distance-chunks: 1
 
 # =================================================================== #
-#                            DEBUG TOOLS                              #
+#                               MIGRATION                             #
 # =================================================================== #
-# Normally Developer Use only, but helpful if you are running into bugs and want more details!
-#
-# If you are running into issues, or doing a lot of testing, you can enable these debug settings
-# in order to speed up your debugging!
-debug:
-  # (default: false) Should owners be able to buy/sell from their own shop
-  allowUseOwnShop: false
-  # (default: 5000) The cooldown in milliseconds for how long a player must wait between creating new shop creation processes
-  shopCreateCooldown: 5000
-  # If old data should be migrated
-  migrateOldData: false
+# THIS SHOULD ONLY BE ENABLED IF YOU KNOW WHAT YOU ARE DOING
+# ==INSTRUCTIONS==
+#  rename the old shop plugins data folder to "Shop-old" then start the server or reload the plugin, the old shop plugin should no longer be active on the server.RUN THIS ONLY ONCE to convert the old data!
+# this setting will turn itself back to false after a successful transfer
+migrate-old-data: false
 

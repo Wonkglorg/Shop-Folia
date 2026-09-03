@@ -12,9 +12,29 @@ currency-item:
   count: 1
   schema_version: 1
 
-shop:
-  blacklist:
-    materials: COMMAND_BLOCK
+# Define any custom items here that should be usable by shop initialization commands alongside vanilla items, changes to these need a complete server restart to apply!
+# ==== SUPPORTS ====
+# Supports full item definitions via itemstack definition  as seen below in the examples or via a plugins namespace
+# currently supports
+# nexo: for nexo items
+# hmcwraps: for hmcwraps
+# ==== EXAMPLES ====
+#
+#   custom_diamond:
+#    ==: org.bukkit.inventory.ItemStack
+#    DataVersion: 4903
+#    id: minecraft:diamond
+#    count: 1
+#    schema_version: 1
+#  arcanite_sword: "nexo:arcanite_sword"
+#  fire_sword_wrap: "hmcwraps:fire_sword"
+custom-item-definitions:
+  custom_diamond:
+    ==: org.bukkit.inventory.ItemStack
+    DataVersion: 4903
+    id: minecraft:diamond
+    count: 1
+    schema_version: 1
 
-  whitelist:
-    materials:
+  arcanite_sword: "nexo:arcanite_sword"
+  fire_sword_wrap: "hmcwraps:fire_sword"

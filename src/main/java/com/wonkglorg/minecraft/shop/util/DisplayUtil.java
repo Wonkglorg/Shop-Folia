@@ -19,6 +19,10 @@ public class DisplayUtil{
 	public static EulerAngle crossBowAngle = new EulerAngle(3.193952531149623, 0.0, 0.2792526803190927);
 	public static EulerAngle shieldAngle = new EulerAngle(Math.toRadians(90), Math.toRadians(0), Math.toRadians(0));
 	
+	private DisplayUtil() {
+		//utility class
+	}
+	
 	public static ArmorStandData getArmorStandData(ItemStack itemStack, Location blockLocation, BlockFace facing, boolean isCase) {
 		EquipmentSlot equipmentSlot = getEquipmentSlot(itemStack);
 		Location standLocation = getStandLocation(blockLocation, itemStack.getType(), facing, equipmentSlot);
@@ -51,10 +55,7 @@ public class DisplayUtil{
 		armorStandData.setEquipment(itemStack);
 		armorStandData.setEquipmentSlot(equipmentSlot);
 		
-		boolean isShield = false;
-		if(itemStack.getType() == Material.SHIELD){
-			isShield = true;
-		}
+		boolean isShield = itemStack.getType() == Material.SHIELD;
 		
 		//make the stand face the correct direction when it spawns
 		armorStandData.setYaw(blockfaceToYaw(facing));
@@ -288,23 +289,6 @@ public class DisplayUtil{
 			return 270F;
 		}
 		return 0F;
-	}
-	
-	public static boolean isBlock(Material material) {
-		if(material.isBlock() && !material.toString().toUpperCase().contains("CHEST")){
-			return true;
-		}
-		return false;
-	}
-	
-	public static boolean isHeldNonItem(Material material) {
-		String sType = material.toString().toUpperCase();
-		return isTool(material) ||
-			   sType.contains("SWORD") ||
-			   material == Material.BOW ||
-			   material == Material.FISHING_ROD ||
-			   material == Material.CARROT_ON_A_STICK ||
-			   material == Material.CROSSBOW;
 	}
 	
 	public static boolean isTool(Material material) {
