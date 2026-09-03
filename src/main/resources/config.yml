@@ -105,7 +105,7 @@ creation-layout:
 
   buy:
     normal:
-      - 1: [ "shop", "[shop]", "buy shop" ]
+      - 1: [ "shop", "[shop]" ]
         2: [ "%amount%" ]
         3: [ "%price%" ]
         4: [ "buy" ]
@@ -128,7 +128,7 @@ creation-layout:
 
   barter:
     normal:
-      - 1: [ "shop", "[shop]", "barter shop" ]
+      - 1: [ "shop", "[shop]" ]
         2: [ "%amount%" ]
         3: [ "%price%" ]
         4: [ "barter" ]
