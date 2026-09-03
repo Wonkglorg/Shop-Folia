@@ -423,7 +423,7 @@ public class ShopManager{
 	public void unregisterShop(AbstractShop shop) {
 		removeShop(shop);
 		database.removeShop(shop);
-		shop.getDisplay().remove();
+		shopClientManager.cleanupShop(shop);
 	}
 	
 	public boolean isAllowedContainer(Block b) {

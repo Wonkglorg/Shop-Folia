@@ -64,7 +64,7 @@ transaction:
       # called when a player tries to transact with a shop that is currently on cooldown for them
       player-cooldown: "<red>You can't trade with this shop for another %duration%!"
       # called when a player tries to transact with a shop where they already reached their limit on possible transacts
-      player-transaction-limit-reached: "<red>You reached your trading limit with this shop (%current-trade-count%/%total-trade-count%)!"
+      player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
       # called when an external plugin listens to the shop transaction event and cancels it
       cancelled-external: "<gray>Transaction cancelled."
       # called when the shop has no stock to sell

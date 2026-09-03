@@ -90,7 +90,7 @@ public class BuyShop extends AbstractShop{
 			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.buy.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_BUYER -> notifyNoSpace(player, multiplier);
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.buy.use-own-shop").sendToAudience(player);
-			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.buy.player-cooldown").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player,multiplier);
 			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.buy.player-transaction-limit-reached").sendToAudience(player);
 		}
 		

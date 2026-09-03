@@ -10,19 +10,23 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class LargeItemDisplay extends AbstractDisplay{
 	protected LargeItemDisplay(AbstractShop shop) {
 		super(shop, DisplayType.LARGE_ITEM);
 	}
 	
 	@Override
-	public void onSpawn(@NotNull Player player) {
+	public List<Integer> spawn(@NotNull Player player) {
 		Location leftLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 		leftLoc.add(getLargeItemBarterOffset(false));
 		ItemStack itemStack = shop.getDisplayItem();
 		itemStack.setAmount(1);
 		ArmorStandData armorStandData = DisplayUtil.getArmorStandData(itemStack, leftLoc, shop.getFacing(), false);
-		spawnArmorStandPacket(player, armorStandData);
+		List<Integer> entityIds = new ArrayList<>();
+		entityIds.add(spawnArmorStandPacket(player, armorStandData));
 		
 		ItemStack secondaryStack = shop.getSecondaryItemStack();
 		if(secondaryStack != null){
@@ -30,8 +34,9 @@ public class LargeItemDisplay extends AbstractDisplay{
 			Location rightLoc = shop.getContainerLocation().clone().add(0, 1, 0);
 			rightLoc.add(getLargeItemBarterOffset(true));
 			ArmorStandData armorStandData2 = DisplayUtil.getArmorStandData(secondaryStack, rightLoc, shop.getFacing(), false);
-			spawnArmorStandPacket(player, armorStandData2);
+			entityIds.add(spawnArmorStandPacket(player, armorStandData2));
 		}
+		return entityIds;
 	}
 	
 	private Vector getLargeItemBarterOffset(boolean isBarterItem) {

@@ -79,7 +79,7 @@ public class GambleShop extends AbstractShop{
 			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.gamble.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.gamble.shop-no-stock").sendToAudience(player);
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.gamble.use-own-shop").sendToAudience(player);
-			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.gamble.player-cooldown").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player,multiplier);
 			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.gamble.player-transaction-limit-reached").sendToAudience(player);
 		}
 		

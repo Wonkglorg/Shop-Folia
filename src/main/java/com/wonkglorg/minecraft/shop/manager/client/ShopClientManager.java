@@ -311,16 +311,13 @@ public class ShopClientManager{
 		if(displayTask != null){
 			displayTask.cancel();
 		}
-		for(var shop : shopManager.getAllShops().values()){
-			shop.getDisplay().remove();
-		}
 		visibleShopsByPlayer.clear();
 		lastProcessedPosition.clear();
 		playersBeingProcessed.clear();
 		for(Player player : Bukkit.getOnlinePlayers()){
 			//clear all player data that needs clearing
 			for(var listener : listeners){
-				listener.clearData(player.getUniqueId());
+				listener.onShopCleanup(player);
 			}
 			playerProcessingQueue.add(player.getUniqueId());
 		}

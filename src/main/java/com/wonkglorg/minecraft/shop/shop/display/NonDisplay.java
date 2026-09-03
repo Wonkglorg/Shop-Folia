@@ -2,7 +2,9 @@ package com.wonkglorg.minecraft.shop.shop.display;
 
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
+
+import java.util.Collections;
+import java.util.List;
 
 public class NonDisplay extends AbstractDisplay{
 	protected NonDisplay(AbstractShop shop) {
@@ -10,22 +12,8 @@ public class NonDisplay extends AbstractDisplay{
 	}
 	
 	@Override
-	public void spawn(@NotNull Player player) {
+	public List<Integer> spawn(Player player) {
 		//nothing
-	}
-	
-	@Override
-	protected void onSpawn(Player player) {
-		//nothing
-	}
-	
-	@Override
-	public void remove() {
-		//nothing
-	}
-	
-	@Override
-	public void remove(@NotNull Player player) {
-		//nothing
+		return Collections.emptyList();
 	}
 }

@@ -5,9 +5,9 @@ import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopClientManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
-import static com.wonkglorg.minecraft.shop.ShopPlugin.shopClientManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import static com.wonkglorg.minecraft.shop.dialogs.ShopSettingsDialog.openShopSettings;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
@@ -774,6 +774,23 @@ public abstract class AbstractShop{
 	}
 	
 	/**
+	 * Notifies the transactor about the transaction
+	 *
+	 * @param purchaser the player transacting with the shop
+	 * @param multiplier how many instances were transacted
+	 */
+	protected void notifyCooldownReached(Player purchaser, int multiplier) {
+		LangRequest request = langManager().request("transaction.issue." + type + ".player-cooldown");
+		DurationBuilder durationBuilder = DurationBuilder.create(Duration.ofMillis(Math.max(0,
+				this.getSetting(PURCHASE_COOLDOWN) - PlayerManager.getOnlineProfile(purchaser).getLastPurchaseTime(this)))).typesToShow(DateType.DAY,
+				DateType.HOUR,
+				DateType.MINUTE,
+				DateType.SECOND).noDecimals();
+		request.replace	("%duration%", durationBuilder.toTimeString());
+		request.sendToAudience(purchaser);
+	}
+	
+	/**
 	 * Notifies both parties about the transaction
 	 *
 	 * @param purchaser the player transacting with the shop
@@ -823,7 +840,6 @@ public abstract class AbstractShop{
 		if(party.getPlayer().getUniqueId().equals(owner) && !ShopPlugin.getPlugin().getSettingsConfig().isAllowUseOwnShop()){
 			logger.debug("Owner is trying to transact their own shop while this debug feature is disabled in the config");
 			logger.debug("===CANCEL SHOP TRANSACTION====");
-			isPerformingTransaction = false;
 			return of(TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP, 0);
 		}
 		
@@ -865,7 +881,6 @@ public abstract class AbstractShop{
 		if(result != TransactionResult.OK){
 			logger.debug("Transaction could not be fulfilled " + result);
 			logger.debug("===CANCEL SHOP TRANSACTION====");
-			isPerformingTransaction = false;
 			return of(result, 0);
 		}
 		
@@ -875,7 +890,6 @@ public abstract class AbstractShop{
 		if(event.isCancelled()){
 			logger.debug("Transaction was cancelled by external plugin");
 			logger.debug("===CANCEL SHOP TRANSACTION====");
-			isPerformingTransaction = false;
 			return of(TransactionResult.CANCELLED, 0);
 		}
 		
@@ -884,7 +898,6 @@ public abstract class AbstractShop{
 		logger.debug("===FINISHED SHOP TRANSACTION====");
 		calculateStock();
 		postTransactionSuccess(transaction);
-		isPerformingTransaction = false;
 		return of(result, multiplier);
 	}
 	
@@ -967,6 +980,7 @@ public abstract class AbstractShop{
 		switch(action) {
 			case TRANSACT, TRANSACT_FULL_STACK:
 				var resultPair = executeTransaction(new PlayerTransactionParty(player), action == ShopAction.TRANSACT_FULL_STACK);
+				isPerformingTransaction = false;
 				TransactionResult result = resultPair.first();
 				int multiplier = resultPair.right();
 				sendTransactionMessage(result, multiplier, player);

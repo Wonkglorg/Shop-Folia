@@ -95,7 +95,7 @@ public class BarterShop extends AbstractShop{
 			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.barter.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_SELLER -> notifyNoSpace(player, multiplier);
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.barter.use-own-shop").sendToAudience(player);
-			case PURCHASE_COOLDOWN -> lang.request("transaction.issue.barter.player-cooldown").sendToAudience(player);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player,multiplier);
 			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.barter.player-transaction-limit-reached").sendToAudience(player);
 		}
 		

@@ -23,10 +23,18 @@ public interface ShopClientListener{
 	void clearData(UUID playerId);
 	
 	/**
-	 * Requests a cleanup for client side data for this shop, this happens as a result of the shop reloading its shop data and in turn should cleanup any client side shop related data
+	 * Requests a cleanup for client side data for this shop, this happens as a result of the shop reloading its shop data and in turn should cleanup any client side shop related data and packets that were sent
 	 *
 	 * @param player the player to clean data for
 	 * @param shop the shop to cleanup
 	 */
 	void onShopCleanup(Player player, AbstractShop shop);
+	
+	
+	/**
+	 * Requests a cleanup for client side data all shops, this happens as a result of the shop reloading its shop data and in turn should cleanup any client side shop related data and packets that were sent
+	 *
+	 * @param player the player to clean data for
+	 */
+	void onShopCleanup(Player player);
 }

@@ -58,6 +58,11 @@ public class SignUpdateHandler implements ShopClientListener{
 		}
 	}
 	
+	@Override
+	public void onShopCleanup(Player player) {
+		lastSignStates.remove(player.getUniqueId());
+	}
+	
 	private void updateSign(Player player, AbstractShop shop) {
 		if(!player.isOnline()){
 			return;

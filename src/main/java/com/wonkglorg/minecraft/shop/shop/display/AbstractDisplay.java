@@ -21,7 +21,6 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -30,14 +29,12 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.EulerAngle;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import static java.util.Objects.requireNonNull;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractDisplay{
 	
@@ -46,8 +43,6 @@ public abstract class AbstractDisplay{
 	protected DisplayType type;
 	@Getter
 	protected AbstractShop shop;
-	
-	protected Map<UUID, List<Integer>> entityIDs = new ConcurrentHashMap<>(); //player UUID. display entities
 	
 	protected AbstractDisplay(AbstractShop shop, DisplayType type) {
 		this.plugin = ShopPlugin.getPlugin();
@@ -68,49 +63,26 @@ public abstract class AbstractDisplay{
 	
 	/**
 	 * Spawns the display for the player
+	 *
+	 * @param player the player to spawn it for
+	 * @return a list of entity id's that were sent to the player, need to be store to later undo via {@link #remove(Player, Collection)}
 	 */
-	public void spawn(@NotNull Player player) {
-		remove(player);//if the player sees this display already remove it first
-		onSpawn(player);
-	}
+	public abstract List<Integer> spawn(Player player);
 	
 	/**
-	 * When display spawning is called
+	 * Removes the entity id's  from the player
 	 */
-	protected abstract void onSpawn(Player player);
-	
-	/**
-	 * Removes the display from all players who currently have one loaded for them
-	 */
-	public void remove() {
-		for(var entry : entityIDs.entrySet()){
-			Player player = Bukkit.getPlayer(entry.getKey());
-			if(player == null || !player.isOnline()){
-				continue;
-			}
-			for(var id : entry.getValue()){
-				ClientboundRemoveEntitiesPacket destroyEntityPacket = new ClientboundRemoveEntitiesPacket(id);
-				sendPacket(player, destroyEntityPacket);
-			}
+	public static void remove(Player player, @Nullable Collection<Integer> ids) {
+		if(ids == null || ids.isEmpty()){
+			return;
 		}
-		entityIDs.clear();
-	}
-	
-	/**
-	 * Removes the display from the player
-	 */
-	public void remove(@NotNull Player player) {
-		List<Integer> entityIds = entityIDs.remove(player.getUniqueId());
-		if(entityIds != null){
-			for(var entityId : entityIds){
-				ClientboundRemoveEntitiesPacket destroyEntityPacket = new ClientboundRemoveEntitiesPacket(entityId);
-				sendPacket(player, destroyEntityPacket);
-			}
+		for(var id : ids){
+			ClientboundRemoveEntitiesPacket destroyEntityPacket = new ClientboundRemoveEntitiesPacket(id);
+			sendPacket(player, destroyEntityPacket);
 		}
 	}
 	
-	protected ClientboundAddEntityPacket createEntity(Player player, Entity entity, int data) {
-		addEntityId(player, entity.getId());
+	protected ClientboundAddEntityPacket createEntity(Entity entity, int data) {
 		return new ClientboundAddEntityPacket(entity.getId(),
 				entity.getUUID(),
 				entity.getX(),
@@ -124,8 +96,7 @@ public abstract class AbstractDisplay{
 				entity.getYHeadRot());
 	}
 	
-	protected ClientboundAddEntityPacket createEntity(Player player, Entity entity, Location location, int data) {
-		addEntityId(player, entity.getId());
+	protected ClientboundAddEntityPacket createEntity(Entity entity, Location location, int data) {
 		return new ClientboundAddEntityPacket(entity.getId(),
 				entity.getUUID(),
 				location.getX(),
@@ -142,22 +113,15 @@ public abstract class AbstractDisplay{
 	/**
 	 * Sends a packet to the player
 	 */
-	protected void sendPacket(Player player, Packet<?> packet) {
+	protected static void sendPacket(Player player, Packet<?> packet) {
 		try{
-			if(isSameWorld(player)){
-				((CraftPlayer) player).getHandle().connection.send(packet);
-			}
-			
+			((CraftPlayer) player).getHandle().connection.send(packet);
 		} catch(Exception e){
 			logger().severe("Unknown error sending packet to player for Display (Item/Hologram text), error message: " + e.getMessage(), e);
 		}
 	}
 	
-	public boolean isChunkLoaded() {
-		return this.getShop().getSignLocation().isChunkLoaded();
-	}
-	
-	protected void spawnArmorStandPacket(Player player, ArmorStandData armorStandData) {
+	protected int spawnArmorStandPacket(Player player, ArmorStandData armorStandData) {
 		Location location = armorStandData.getLocation();
 		ArmorStand armorStand = new ArmorStand(((CraftWorld) location.getWorld()).getHandle(), location.getX(), location.getY(), location.getZ());
 		armorStand.setYRot((float) armorStandData.getYaw());
@@ -183,8 +147,6 @@ public abstract class AbstractDisplay{
 			armorStand.setSmall(true);
 		}
 		
-		addEntityId(player, armorStand.getId());
-		
 		var spawnEntityLivingPacket = new ClientboundAddEntityPacket(armorStand.getId(),
 				armorStand.getUUID(),
 				location.getX(),
@@ -208,13 +170,7 @@ public abstract class AbstractDisplay{
 		sendPacket(player, spawnEntityLivingPacket);
 		sendPacket(player, spawnEntityMetadataPacket);
 		sendPacket(player, spawnEntityEquipmentPacket);
-	}
-	
-	/**
-	 * Adds the entity id to this displays tracker
-	 */
-	private void addEntityId(Player player, int armorStand) {
-		entityIDs.computeIfAbsent(player.getUniqueId(), _ -> new ArrayList<>()).add(armorStand);
+		return armorStand.getId();
 	}
 	
 	private EquipmentSlot getMojangEquipmentSlot(org.bukkit.inventory.EquipmentSlot equipmentSlot) {
@@ -294,14 +250,10 @@ public abstract class AbstractDisplay{
 		return shop.getContainerLocation().clone().add(dropX, dropY, dropZ);
 	}
 	
-	protected boolean isSameWorld(Player player) {
-		return player.getWorld().getUID().equals(this.shop.getSignLocation().getWorld().getUID());
-	}
-	
 	/**
 	 * spawns a floating item packet for a specific player
 	 */
-	protected void spawnItemPacket(Player player, ItemStack is, Location location) {
+	protected int spawnItemPacket(Player player, ItemStack is, Location location) {
 		net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(is);
 		Level serverLevel = ((CraftWorld) location.getWorld()).getHandle();
 		
@@ -315,13 +267,14 @@ public abstract class AbstractDisplay{
 		entityItem.setPickUpDelay(32767);
 		entityItem.setTicksFrozen(2147483647);
 		
-		var entitySpawnPacket = createEntity(player, entityItem, location, 0);
+		var entitySpawnPacket = createEntity(entityItem, location, 0);
 		var entityVelocityPacket = new ClientboundSetEntityMotionPacket(entityItem);
 		var entityMetadataPacket = new ClientboundSetEntityDataPacket(entityID, requireNonNull(entityItem.getEntityData().packDirty()));
 		
 		sendPacket(player, entitySpawnPacket);
 		sendPacket(player, entityVelocityPacket);
 		sendPacket(player, entityMetadataPacket);
+		return entityID;
 	}
 	
 	@Override
