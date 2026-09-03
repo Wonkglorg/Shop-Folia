@@ -515,7 +515,7 @@ public class ShopManager{
 			if(process.getItemStack() == null){
 				process.setItemStack(item);
 				logger.debug("Setting first item for barter shop: " + item);
-				langManager().request("interaction.success." + process.getType() + ".initializeBarter").sendToAudience(player);
+				langManager().request("interaction.success.barter.initialize-barter").sendToAudience(player);
 				if(process instanceof SignCreationProcess signCreationProcess){
 					signCreationProcess.updateSignText();
 				}
