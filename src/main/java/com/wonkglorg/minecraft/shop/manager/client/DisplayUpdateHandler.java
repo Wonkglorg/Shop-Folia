@@ -53,4 +53,9 @@ public class DisplayUpdateHandler implements ShopClientListener{
 			AbstractDisplay.remove(player, entry);
 		}
 	}
+	
+	@Override
+	public boolean needsUpdate(Player player, AbstractShop shop) {
+		return true; // doesn't need direct checking just return true there is no data to compare
+	}
 }

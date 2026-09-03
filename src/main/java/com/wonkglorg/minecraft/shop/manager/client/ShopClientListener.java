@@ -30,11 +30,19 @@ public interface ShopClientListener{
 	 */
 	void onShopCleanup(Player player, AbstractShop shop);
 	
-	
 	/**
 	 * Requests a cleanup for client side data all shops, this happens as a result of the shop reloading its shop data and in turn should cleanup any client side shop related data and packets that were sent
 	 *
 	 * @param player the player to clean data for
 	 */
 	void onShopCleanup(Player player);
+	
+	/**
+	 * Checks if the player has any potential outstanding updates for this shop based on cached data
+	 *
+	 * @param player
+	 * @param shop
+	 * @return
+	 */
+	boolean needsUpdate(Player player, AbstractShop shop);
 }

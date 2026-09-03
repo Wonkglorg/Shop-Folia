@@ -786,7 +786,7 @@ public abstract class AbstractShop{
 				DateType.HOUR,
 				DateType.MINUTE,
 				DateType.SECOND).noDecimals();
-		request.replace	("%duration%", durationBuilder.toTimeString());
+		request.replace("%duration%", durationBuilder.toTimeString());
 		request.sendToAudience(purchaser);
 	}
 	
@@ -845,15 +845,18 @@ public abstract class AbstractShop{
 		
 		OfflinePlayer player = party.getPlayer();
 		PlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
+		int maxTradesPossible = 9999;
 		if(profile != null){
 			if(PURCHASE_LIMIT.isEnabled()){
 				logger.debug("Purchase limit is enabled!");
 				int purchaseLimit = getSetting(PURCHASE_LIMIT);
 				if(purchaseLimit > 0){
 					logger.debug("Shop has a purchase limit setting defined!");
-					if(profile.getPurchaseCount(this) > purchaseLimit){
+					int purchaseCount = profile.getPurchaseCount(this);
+					if(purchaseCount > purchaseLimit){
 						return of(TransactionResult.PURCHASE_LIMIT_REACHED, 0);
 					}
+					maxTradesPossible = purchaseLimit - purchaseCount;
 				}
 			}
 			
@@ -871,7 +874,7 @@ public abstract class AbstractShop{
 		
 		logger.debug("Transaction with shop " + this + " and party " + party);
 		
-		Transaction transaction = findAffordableTransaction(party, requestFullstack);
+		Transaction transaction = findAffordableTransaction(party, requestFullstack, maxTradesPossible);
 		logger.debug("Opened transaction " + transaction);
 		int multiplier = transaction.getAmount() / amount;
 		if(requestFullstack){
@@ -908,14 +911,14 @@ public abstract class AbstractShop{
 	 * @param requestFullstack if the request should try to do multiple transactions in one
 	 * @return check its {@link Transaction#getResult()} before continuing with the transaction to check if it could succeed
 	 */
-	protected @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack) {
+	protected @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack, int maxPossibleTrades) {
 		if(!requestFullstack){
 			Transaction transaction = startTransaction(party, 1);
 			transaction.canFulfill();
 			return transaction;
 		}
 		
-		int maxMultiplier = getMaximumFullStackMultiplier();
+		int maxMultiplier = Math.min(maxPossibleTrades, getMaximumFullStackMultiplier());
 		
 		Transaction transaction = null;
 		
@@ -985,6 +988,7 @@ public abstract class AbstractShop{
 				int multiplier = resultPair.right();
 				sendTransactionMessage(result, multiplier, player);
 				sendEffects(result == TransactionResult.OK, player);
+				shopClientManager().updateShopIfNeeded(SignUpdateHandler.class, player, this);
 				return true;
 			case VIEW_DETAILS:
 				this.printSalesInfo(player);

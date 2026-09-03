@@ -230,7 +230,7 @@ description:
     - '<light_purple>|           <gray>v (hover over item to see details)'
     - '<light_purple>| <gray>Item: <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'
     - '<light_purple>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 <gray>%item%)'
-    - '<light_purple>| <gray>Stock: %stock-color%%stock%'
+    - '<light_purple>| <gray>Stock: <green>%stock%'
     - '<light_purple>+---------------------------------------------------+'
   buy:
     - '<light_purple>+---------------------------------------------------+'
@@ -239,11 +239,11 @@ description:
     - '<light_purple>|           <gray>v (hover over item to see details)'
     - '<light_purple>| <gray>Item: <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'
     - '<light_purple>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 <gray>%item%)'
-    - '<light_purple>| <gray>Stock: %stock-color%%stock%'
+    - '<light_purple>| <gray>Stock: <green>%stock%'
     - '<light_purple>+---------------------------------------------------+'
   barter:
     - '<light_purple>+---------------------------------------------------+'
-    - '<light_purple>| <green>Shop Information: <gray>(bartering items) %stock-color%in stock'
+    - '<light_purple>| <green>Shop Information: <gray>(bartering items)'
     - '<light_purple>| <gray>Owner: <white>%owner%'
     - '<light_purple>|             <gray>v (hover over items to see details)'
     - '<light_purple>| <yellow>You give: <aqua>%barter-item% <gray>(x<yellow>%barter-item-amount%<gray>)'
@@ -273,7 +273,7 @@ hover:
     - '<aqua>%item-enchants%'
     - '<gray>Type: <aqua>%shop-type%'
     - '<gray>Price: <green>%price%'
-    - '%stock-color%%stock% in stock'
+    - '<gray>Stock: <green>%stock%'
     - '<gray>%owner%'
 
 command:

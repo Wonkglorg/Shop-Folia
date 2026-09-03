@@ -521,6 +521,7 @@ public class ShopListener implements Listener{
 					logger.debug("Broken sign was in shop creation process by another player, cancelling");
 					event.setCancelled(true);
 				}
+				shopManager.cancelShopCreationProcess(player);
 				return;
 			}
 			breakShopSign(event, shop);

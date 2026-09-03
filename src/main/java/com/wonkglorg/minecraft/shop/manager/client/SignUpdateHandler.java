@@ -63,6 +63,19 @@ public class SignUpdateHandler implements ShopClientListener{
 		lastSignStates.remove(player.getUniqueId());
 	}
 	
+	@Override
+	public boolean needsUpdate(Player player, AbstractShop shop) {
+		Map<UUID, SignState> map = lastSignStates.get(player.getUniqueId());
+		if(map == null){
+			return true;
+		}
+		SignState state = map.get(shop.getId());
+		if(state == null){
+			return true;
+		}
+		return shop.getClientShopState(player) == state.state;
+	}
+	
 	private void updateSign(Player player, AbstractShop shop) {
 		if(!player.isOnline()){
 			return;

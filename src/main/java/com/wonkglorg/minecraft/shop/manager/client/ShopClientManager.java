@@ -101,6 +101,28 @@ public class ShopClientManager{
 	}
 	
 	/**
+	 * Forces an update to this shop for the given player
+	 */
+	public void updateShop(Player player, AbstractShop shop) {
+		for(var listener : listeners){
+			listener.onShopCleanup(player, shop);
+			listener.onShopEnter(player, shop);
+		}
+	}
+	
+	/**
+	 * Forces an update to this shop for the given player
+	 */
+	public <T extends ShopClientListener> void updateShopIfNeeded(Class<T> service, Player player, AbstractShop shop) {
+		T listener = getListener(service);
+		if(!listener.needsUpdate(player, shop)){
+			return;
+		}
+		listener.onShopCleanup(player, shop);
+		listener.onShopEnter(player, shop);
+	}
+	
+	/**
 	 * Forces a cleanup for this shop for all players in view
 	 */
 	public void cleanupShop(AbstractShop shop) {
