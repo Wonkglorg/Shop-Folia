@@ -24,14 +24,13 @@ placeholders:
   overfilled-stock-color: "<gold>"
   cooldown-stock-color: "<red>"
   limit-reached-stock-color: "<red>"
-  zero-price: "<aqua>FREE"
   admin-stock: "unlimited"
   server-display-name: "<light_purple>Server"
   shop-owner-name-color: "<white>"
   closed-shop: "<red>CLOSED"
 # templates which act similar to placeholders but allow placeholders being part of templates to evaluate
 templates:
-  shop-price-display: "[if:%price%==0]%zero-price%[else]<aqua>%price% %currency-name%[/if]"
+  shop-price-display: "[if:%price%==0]<aqua>FREE[else]<aqua>%price% %currency-name%[/if]"
 
 ##Shop transaction related messages
 transaction:
@@ -231,39 +230,131 @@ interaction:
 
 description:
   sell:
-    - '<light_purple>+---------------------------------------------------+'
-    - '<light_purple>| <green>Shop Information: <gray>(selling items)'
-    - '<light_purple>| <gray>Owner: <white>%owner%'
-    - '<light_purple>|           <gray>v (hover over item to see details)'
-    - '<light_purple>| <gray>Item: <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'
-    - '<light_purple>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 <gray>%item%)'
-    - '<light_purple>| <gray>Stock: <green>%stock%'
-    - '<light_purple>+---------------------------------------------------+'
-  buy:
-    - '<light_purple>+---------------------------------------------------+'
-    - '<light_purple>| <green>Shop Information: <gray>(buying items)'
-    - '<light_purple>| <gray>Owner: <white>%owner%'
-    - '<light_purple>|           <gray>v (hover over item to see details)'
-    - '<light_purple>| <gray>Item: <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'
-    - '<light_purple>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 <gray>%item%)'
-    - '<light_purple>| <gray>Stock: <green>%stock%'
-    - '<light_purple>+---------------------------------------------------+'
-  barter:
-    - '<light_purple>+---------------------------------------------------+'
-    - '<light_purple>| <green>Shop Information: <gray>(bartering items)'
-    - '<light_purple>| <gray>Owner: <white>%owner%'
-    - '<light_purple>|             <gray>v (hover over items to see details)'
-    - '<light_purple>| <yellow>You give: <aqua>%barter-item% <gray>(x<yellow>%barter-item-amount%<gray>)'
-    - '<light_purple>| <green>You get: <aqua>%item% <gray>(x<yellow>%item-amount%<gray>)'
-    - '<light_purple>| <gray>Price: <gray>(%price-per-item% per 1 %item%)'
-    - '<light_purple>+---------------------------------------------------+'
-  gamble:
-    - '<light_purple>+---------------------------------------------------+'
-    - '<light_purple>| <green>Shop Information: <gray>(gambling for items)'
-    - '<light_purple>| <gray><aqua>Random Item'
-    - '<light_purple>| <gray>Price: <green>%price%'
-    - '<light_purple>+---------------------------------------------------+'
+    info:
+      - '<dark_gray>+---------------------------------------------------+'
+      - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(selling items)'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>This shop is selling <yellow>%item-amount%<gray>x %item% <gray>for %shop-price-display%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Selling: <yellow>%item-amount%<gray>x %item%'
+      - '<dark_gray>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 %item%)'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Owner: <white>%owner%'
+      - '<dark_gray>| <gray>Stock: <green>%stock%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <dark_gray>Hover over the item for more details.'
+      - '<dark_gray>+---------------------------------------------------+'
 
+    stats:
+      - '<dark_gray>| <gold><bold>Transaction History</bold>'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>1 Day:   <white>%1-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%1-day%</math> income  <red>-<math>%amount%*%1-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>7 Days:  <white>%7-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%7-day%</math> income  <red>-<math>%amount%*%7-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>30 Days: <white>%30-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%30-day%</math> income  <red>-<math>%amount%*%30-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Total:   <white>%total% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%total%</math> income  <red>-<math>%amount%*%total%</math> spending'
+      - '<dark_gray>+---------------------------------------------------+'
+
+  buy:
+    info:
+      - '<dark_gray>+---------------------------------------------------+'
+      - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(buying items)'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>This shop is buying <yellow>%item-amount%<gray>x %item% <gray>for %shop-price-display%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Buying: <yellow>%item-amount%<gray>x %item%'
+      - '<dark_gray>| <gray>Price: <green>%price% <gray>(%price-per-item% per 1 %item%)'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Owner: <white>%owner%'
+      - '<dark_gray>| <gray>Stock: <green>%stock%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <dark_gray>Hover over the item for more details.'
+      - '<dark_gray>+---------------------------------------------------+'
+
+    stats:
+      - '<dark_gray>| <gold><bold>Transaction History</bold>'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>1 Day:   <white>%1-day% transactions'
+      - '<dark_gray>| <green>          +<math>%amount%*%1-day%</math> income  <red>-<math>%price%*%1-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>7 Days:  <white>%7-day% transactions'
+      - '<dark_gray>| <green>          +<math>%amount%*%7-day%</math> income  <red>-<math>%price%*%7-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>30 Days: <white>%30-day% transactions'
+      - '<dark_gray>| <green>          +<math>%amount%*%30-day%</math> income  <red>-<math>%price%*%30-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Total:   <white>%total% transactions'
+      - '<dark_gray>| <green>          +<math>%amount%*%total%</math> income  <red>-<math>%price%*%total%</math> spending'
+      - '<dark_gray>+---------------------------------------------------+'
+
+  barter:
+    info:
+      - '<dark_gray>+---------------------------------------------------+'
+      - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(bartering items)'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>This shop is trading <yellow>%barter-item-amount%<gray>x %barter-item% <gray>for <yellow>%item-amount%<gray>x %item%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>You give: <yellow>%barter-item-amount%<gray>x %barter-item%'
+      - '<dark_gray>| <gray>You receive: <yellow>%item-amount%<gray>x %item%'
+      - '<dark_gray>| <gray>Price: <white>%price-per-item% <gray>per 1 %item%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Owner: <white>%owner%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <dark_gray>Hover over the items for more details.'
+      - '<dark_gray>+---------------------------------------------------+'
+
+    stats:
+      - '<dark_gray>| <gold><bold>Transaction History</bold>'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>1 Day:   <white>%1-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%1-day%</math> income  <red>-<math>%amount%*%1-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>7 Days:  <white>%7-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%7-day%</math> income  <red>-<math>%amount%*%7-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>30 Days: <white>%30-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%30-day%</math> income  <red>-<math>%amount%*%30-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Total:   <white>%total% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%total%</math> income  <red>-<math>%amount%*%total%</math> spending'
+      - '<dark_gray>+---------------------------------------------------+'
+
+  gamble:
+    info:
+      - '<dark_gray>+---------------------------------------------------+'
+      - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(gambling for items)'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>This shop gives a random item <gray>for %shop-price-display%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Item: <aqua>Random Item'
+      - '<dark_gray>| <gray>Price: <green>%price%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Owner: <white>%owner%'
+      - '<dark_gray>|'
+      - '<dark_gray>| <dark_gray>Hover over the item for more details.'
+      - '<dark_gray>+---------------------------------------------------+'
+
+    stats:
+      - '<dark_gray>| <gold><bold>Transaction History</bold>'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>1 Day:   <white>%1-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%1-day%</math> income  <red>-<math>%amount%*%1-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>7 Days:  <white>%7-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%7-day%</math> income  <red>-<math>%amount%*%7-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>30 Days: <white>%30-day% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%30-day%</math> income  <red>-<math>%amount%*%30-day%</math> spending'
+      - '<dark_gray>|'
+      - '<dark_gray>| <gray>Total:   <white>%total% transactions'
+      - '<dark_gray>| <green>          +<math>%price%*%total%</math> income  <red>-<math>%amount%*%total%</math> spending'
+      - '<dark_gray>+---------------------------------------------------+'
 permission:
   error:
     use: "<red>You are not authorized to use %shop-type% shops."

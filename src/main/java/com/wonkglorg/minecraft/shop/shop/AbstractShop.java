@@ -636,9 +636,24 @@ public abstract class AbstractShop{
 	 * Prints Shop info about the shop to the player in chat
 	 */
 	public void printSalesInfo(Player player) {
-		LangRequest request = langManager().request("description." + this.getType());
-		shopPlaceholders(request, this, true, player);
-		request.sendToAudience(player);
+		if(player.getUniqueId().equals(owner) || PlayerProfile.isOperator(player)){
+			shopDatabase().getTransactionStats(this).thenAccept(s -> {
+				LangRequest request = langManager().request("description." + this.getType() + ".info");
+				shopPlaceholders(request, this, true, player);
+				request.sendToAudience(player);
+				LangRequest statRequest = langManager().request("description." + this.getType() + ".stats");
+				shopPlaceholders(statRequest, this, true, player);
+				statRequest.replace("%1-day%",s.day1());
+				statRequest.replace("%7-day%",s.day7());
+				statRequest.replace("%30-day%",s.day30());
+				statRequest.replace("%total%",s.allTime());
+				statRequest.sendToAudience(player);
+			});
+		} else {
+			LangRequest request = langManager().request("description." + this.getType() + ".info");
+			shopPlaceholders(request, this, true, player);
+			request.sendToAudience(player);
+		}
 	}
 	
 	/**

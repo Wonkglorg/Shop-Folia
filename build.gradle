@@ -75,19 +75,6 @@ repositories {
         name = "ender-zone-repo"
         url = "https://ci.ender.zone/plugin/repository/everything/"
     }
-    maven {
-        name = "dynmap-repo"
-        url = "https://repo.mikeprimm.com"
-    }
-    maven {
-        name = "bluecolored"
-        url = "https://repo.bluecolored.de/releases"
-    }
-    maven {
-        name = "sk89q-repo"
-        url = "https://maven.enginehub.org/repo/"
-    }
-
 
     maven {
         name = "nexo-items-repo"
@@ -100,6 +87,7 @@ repositories {
     }
 
     maven {
+        name = "geyser-repo"
         url = uri("https://repo.opencollab.dev/main/")
     }
 }

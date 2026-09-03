@@ -16,7 +16,7 @@ import com.wonkglorg.minecraft.shop.shop.settings.Setting;
 import static com.wonkglorg.minecraft.shop.shop.settings.Settings.ALL_SETTINGS;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
-import com.wonkglorg.minecraft.util.PluginLogger;
+import static net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class ShopDatabase extends SqliteDatabase<FileDataSource>{
@@ -88,6 +89,18 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			WHERE shop_uuid = ?
 			""";
 	
+	public static final String TRANSACTION_STATS_SQL = """
+			SELECT
+			    COUNT(CASE WHEN t.timestamp >= ? THEN 1 END) AS day1,
+			    COUNT(CASE WHEN t.timestamp >= ? THEN 1 END) AS day7,
+			    COUNT(CASE WHEN t.timestamp >= ? THEN 1 END) AS day30,
+			    COUNT(timestamp) AS all_time
+			    FROM transactions t
+			    LEFT JOIN players
+			    ON t.purchaser_uuid = players.uuid
+			    WHERE shop_uuid = ?
+			""";
+	
 	private final ShopPlugin plugin;
 	private final PlatformScheduler scheduler;
 	
@@ -114,7 +127,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				insertShopValues(shop, ps);
 				ps.executeUpdate();
 			} catch(SQLException e){
-				PluginLogger.error("Error while creating shop chest", e);
+				logger().error("Error while creating shop chest", e);
 			}
 		});
 	}
@@ -185,7 +198,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			}
 			
 		} catch(SQLException e){
-			PluginLogger.error("Error while creating shops", e);
+			logger().error("Error while creating shops", e);
 		}
 	}
 	
@@ -205,7 +218,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					shops.add(buildShop(resultSet));
 				}
 			} catch(SQLException e){
-				PluginLogger.error("Error while creating shop chest", e);
+				logger().error("Error while creating shop chest", e);
 			}
 			future.complete(shops);
 		});
@@ -241,7 +254,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				connection.setAutoCommit(true);
 			}
 		} catch(SQLException e){
-			PluginLogger.error("Error while caching shop stock values", e);
+			logger().error("Error while caching shop stock values", e);
 		}
 	}
 	
@@ -354,7 +367,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				ps.execute();
 				
 			} catch(SQLException e){
-				PluginLogger.error("Error while adding user to db", e);
+				logger().error("Error while adding user to db", e);
 			}
 		});
 	}
@@ -396,16 +409,16 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			try{
 				connection.rollback();
 			} catch(SQLException rollbackException){
-				PluginLogger.error("Error while rolling back legacy players", rollbackException);
+				logger().error("Error while rolling back legacy players", rollbackException);
 			}
 			
-			PluginLogger.error("Error while adding legacy players to db", e);
+			logger().error("Error while adding legacy players to db", e);
 			
 		} finally{
 			try{
 				connection.setAutoCommit(true);
 			} catch(SQLException e){
-				PluginLogger.error("Error while restoring database auto-commit", e);
+				logger().error("Error while restoring database auto-commit", e);
 			}
 		}
 	}
@@ -422,7 +435,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			}
 			
 		} catch(SQLException e){
-			PluginLogger.error("Error while adding user to db", e);
+			logger().error("Error while adding user to db", e);
 		}
 		return names;
 	}
@@ -443,7 +456,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				ps.execute();
 				
 			} catch(SQLException e){
-				PluginLogger.error("Error while deactivating shop", e);
+				logger().error("Error while deactivating shop", e);
 			}
 		});
 	}
@@ -470,7 +483,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				preparedStatement.setInt(6, multiplier);
 				preparedStatement.execute();
 			} catch(SQLException e){
-				PluginLogger.error("Error while adding transaction to shop", e);
+				logger().error("Error while adding transaction to shop", e);
 			}
 		});
 		
@@ -520,16 +533,16 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			try{
 				connection.rollback();
 			} catch(SQLException rollbackException){
-				PluginLogger.error("Error while rolling back legacy transactions", rollbackException);
+				logger().error("Error while rolling back legacy transactions", rollbackException);
 			}
 			
-			PluginLogger.error("Error while adding legacy transactions to shop", e);
+			logger().error("Error while adding legacy transactions to shop", e);
 			
 		} finally{
 			try{
 				connection.setAutoCommit(true);
 			} catch(SQLException e){
-				PluginLogger.error("Error while restoring database auto-commit", e);
+				logger().error("Error while restoring database auto-commit", e);
 			}
 		}
 	}
@@ -550,7 +563,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				preparedStatement.setString(3, currency != null ? ItemStackJsonCodec.serialize(currency, false) : null);
 				preparedStatement.execute();
 			} catch(SQLException e){
-				PluginLogger.error("Error while adding transaction to shop", e);
+				logger().error("Error while adding transaction to shop", e);
 			}
 		});
 		
@@ -668,7 +681,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			}
 			
 		} catch(SQLException e){
-			PluginLogger.error("Error while batch updating shops", e);
+			logger().error("Error while batch updating shops", e);
 		}
 	}
 	
@@ -731,7 +744,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					}
 				}
 			} catch(SQLException e){
-				PluginLogger.error("Error while loading player shop purchase statistics", e);
+				logger().error("Error while loading player shop purchase statistics", e);
 			}
 		});
 	}
@@ -744,9 +757,41 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				ps.setString(3, value == null ? null : value.toString());
 				ps.execute();
 			} catch(SQLException e){
-				PluginLogger.error("Error while loading player shop purchase statistics", e);
+				logger().error("Error while saving shop settings", e);
 				
 			}
 		});
 	}
+	
+	/**
+	 * Performance Statistics about a shops transactions.
+	 * @param shop the shop to query
+	 * @return
+	 */
+	public CompletableFuture<TransactionStats> getTransactionStats(AbstractShop shop) {
+		CompletableFuture<TransactionStats> stats = new CompletableFuture<>();
+		scheduler.runAsync(_ -> {
+			try(var ps = getConnection().prepareStatement(TRANSACTION_STATS_SQL)){
+				long now = System.currentTimeMillis();
+				
+				ps.setLong(1, now - TimeUnit.DAYS.toMillis(1));
+				ps.setLong(2, now - TimeUnit.DAYS.toMillis(7));
+				ps.setLong(3, now - TimeUnit.DAYS.toMillis(30));
+				ps.setString(4, shop.getId().toString());
+				
+				try(var rs = ps.executeQuery()){
+					if(rs.next()){
+						stats.complete(new TransactionStats(rs.getLong("day1"), rs.getLong("day7"), rs.getLong("day30"), rs.getLong("all_time")));
+					}
+					stats.complete(new TransactionStats(0, 0, 0, 0));
+				}
+			} catch(SQLException e){
+				logger().error("Error while fetching transactions for shop", e);
+				stats.complete(new TransactionStats(0, 0, 0, 0));
+			}
+		});
+		return stats;
+	}
+	
+	public record TransactionStats(long day1, long day7, long day30, long allTime){}
 }

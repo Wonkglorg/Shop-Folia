@@ -160,6 +160,4 @@ public class MarketManagerDB extends SqliteDatabase<FileDataSource>{
 	
 	}
 	
-	public record TransactionStats(long day1, long day7, long day30, long allTime){}
-	
 }
