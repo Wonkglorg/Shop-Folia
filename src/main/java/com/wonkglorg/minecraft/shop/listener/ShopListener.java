@@ -426,9 +426,8 @@ public class ShopListener implements Listener{
 		
 		if(isOperator(player)){
 			if(!shop.isAdmin()){
-				lang.request("interaction.success." + shop.getType() + ".opOpen")
-					.replace("%owner%", shop.getOwner().getName())
-					.sendToAudience(player);
+				lang.request("interaction.success." + shop.getType() + ".open-other").replace("%owner%", shop.getOwner().getName()).sendToAudience(
+						player);
 			}
 		} else {
 			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
@@ -730,7 +729,7 @@ public class ShopListener implements Listener{
 		if(isOwner){
 			lang.request("interaction.success." + shop.getType().toString() + ".destroy").sendToAudience(player);
 		} else {
-			lang.request("interaction.success." + shop.getType().toString() + ".opDestroy")
+			lang.request("interaction.success." + shop.getType().toString() + ".destroy-other")
 				.replace("%owner%", shop.getOwner().getName())
 				.sendToAudience(player);
 		}

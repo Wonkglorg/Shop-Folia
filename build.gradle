@@ -133,6 +133,8 @@ dependencies {
     implementation 'com.github.technicallycoded:FoliaLib:0.4.4'
 
     compileOnly "org.geysermc.floodgate:api:${floodgate_version}"
+    compileOnly "org.geysermc.geyser:api:${geyser_version}"
+
     //test dependencies
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation 'org.junit.jupiter:junit-jupiter'

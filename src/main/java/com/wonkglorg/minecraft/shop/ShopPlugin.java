@@ -24,6 +24,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.geysermc.floodgate.api.FloodgateApi;
+
+import java.util.UUID;
 
 public class ShopPlugin extends JavaPlugin{
 	public static boolean floodGateEnabled = false;
@@ -103,7 +106,7 @@ public class ShopPlugin extends JavaPlugin{
 		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
 		
-		this.logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
+		logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
 		
 		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
 	}
@@ -165,6 +168,19 @@ public class ShopPlugin extends JavaPlugin{
 		}
 		
 		return econ;
+	}
+	
+	/**
+	 * If the id belongs to a bedrock player
+	 * @param uuid
+	 * @return true if it is a bedrock player false otherwise, also returns false if floodgate is not available on the server
+	 */
+	public static boolean isBedrockPlayer(UUID uuid) {
+		if(ShopPlugin.floodGateEnabled){
+			FloodgateApi api = FloodgateApi.getInstance();
+			return api != null && api.isFloodgateId(uuid);
+		}
+		return false;
 	}
 	
 	public static LangManager langManager() {

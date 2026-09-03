@@ -3,13 +3,14 @@ package com.wonkglorg.minecraft.shop.shop;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.isBedrockPlayer;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopClientManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
-import static com.wonkglorg.minecraft.shop.dialogs.ShopSettingsDialog.openShopSettings;
+import static com.wonkglorg.minecraft.shop.dialogs.ShopSettingsDialog.openDialog;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
@@ -68,7 +69,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.geysermc.floodgate.api.FloodgateApi;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -608,8 +608,11 @@ public abstract class AbstractShop{
 		if(PURCHASE_COOLDOWN.isEnabled()){
 			long purchaseCooldown = getSetting(PURCHASE_COOLDOWN);
 			if(purchaseCooldown > 0){
-				if((profile.getLastPurchaseTime(this) + purchaseCooldown) < System.currentTimeMillis()){
-					return ShopStateClient.ON_COOLDOWN;
+				long purchaseTime = profile.getLastPurchaseTime(this);
+				if(purchaseTime > 0){
+					if((purchaseTime + purchaseCooldown) < System.currentTimeMillis()){
+						return ShopStateClient.ON_COOLDOWN;
+					}
 				}
 			}
 			
@@ -664,11 +667,9 @@ public abstract class AbstractShop{
 		//@formatter:off
 		ItemStack item = shop.item;
 		
-		if(includeHover && ShopPlugin.floodGateEnabled){
-			FloodgateApi api = FloodgateApi.getInstance();
-			if(api != null && api.isFloodgateId(player.getUniqueId())){
-				includeHover = false;
-			}
+		//bedrock can't have hover items
+		if(isBedrockPlayer(player.getUniqueId())){
+			includeHover = false;
 		}
 		
 		OnlinePlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
@@ -1015,12 +1016,12 @@ public abstract class AbstractShop{
 					//player has permission to change another player's shop display
 					if((isAllowedToOpenShopSettingsOther(player))){
 						logger().debug("Open settings Dialog for player " + player.getName());
-						openShopSettings(player, this);
+						openDialog(player, this);
 					}
 				} else {
 					if(isAllowedToOpenShopSettings(player)){
 						logger().debug("Open settings Dialog for player " + player.getName());
-						openShopSettings(player, this);
+						openDialog(player, this);
 					}
 				}
 				return true;
