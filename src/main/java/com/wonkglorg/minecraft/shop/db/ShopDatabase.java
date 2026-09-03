@@ -16,6 +16,7 @@ import com.wonkglorg.minecraft.shop.shop.settings.Setting;
 import static com.wonkglorg.minecraft.shop.shop.settings.Settings.ALL_SETTINGS;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
+import com.wonkglorg.minecraft.util.PluginLogger;
 import static net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -33,6 +34,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +87,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			""";
 	
 	private static final String SELECT_SHOP_SETTING_SQL = """
-			SELECT * FROm shop_settings
+			SELECT shop_uuid, setting_key, value FROm shop_settings
 			WHERE shop_uuid = ?
 			""";
 	
@@ -99,6 +101,43 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			    LEFT JOIN players
 			    ON t.purchaser_uuid = players.uuid
 			    WHERE shop_uuid = ?
+			""";
+	
+	public static final String TRANSACTION_STATS_SHOPS_SQL = """
+			SELECT
+			    s.shopUuid,
+			    s.ownerUuid,
+			    s.shop_type
+			    s.itemBase64,
+			    s.barterItemBase64,
+			    s.active,
+			    s.amount,
+			    s.timestamp,
+			    s.shopType,
+			    s.price,
+			
+			    COUNT(CASE WHEN t.timestamp >= ? THEN 1 END) AS day1,
+			    COUNT(CASE WHEN t.timestamp >= ? THEN 1 END) AS day7,
+			    COUNT(CASE WHEN t.timestamp >= ? THEN 1 END) AS day30,
+			    COUNT(t.timestamp) AS all_time
+			
+			FROM shops s
+			
+			LEFT JOIN transactions t
+			    ON t.shopUuid = s.shopUuid
+			
+			WHERE s.shopUuid IN (%s)
+			
+			GROUP BY
+			    s.shopUuid,
+			    s.ownerUuid,
+			    s.itemBase64,
+			    s.barterItemBase64,
+			    s.active,
+			    s.amount,
+			    s.timestamp,
+			    s.shopType,
+			    s.price
 			""";
 	
 	private final ShopPlugin plugin;
@@ -595,36 +634,38 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	public void logAction(OfflinePlayer player, AbstractShop shop, ShopActionType actionType) {
 		if(actionType == ShopActionType.INIT){
-			plugin.logger().debug(player.getName() +
-								  " created a " +
-								  shop.getType().name().toUpperCase() +
-								  " shop at (" +
-								  "x: " +
-								  shop.getContainerLocation().getBlockX() +
-								  " y: " +
-								  shop.getContainerLocation().getBlockY() +
-								  " z: " +
-								  shop.getContainerLocation().getBlockZ() +
-								  ") item: " +
-								  ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
-								  (shop.getSecondaryItemStack() != null ? " barterItem: " +
-																		  ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
+			logger().debug(player.getName() +
+						   " created a " +
+						   shop.getType().name().toUpperCase() +
+						   " shop at (" +
+						   "x: " +
+						   shop.getContainerLocation().getBlockX() +
+						   " y: " +
+						   shop.getContainerLocation().getBlockY() +
+						   " z: " +
+						   shop.getContainerLocation().getBlockZ() +
+						   ") item: " +
+						   ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
+						   (shop.getSecondaryItemStack() != null
+							? " barterItem: " + ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack())
+							: ""));
 		}
 		if(actionType == ShopActionType.DESTROY){
-			plugin.logger().debug(player.getName() +
-								  " destroyed a " +
-								  shop.getType().name().toUpperCase() +
-								  " shop at (" +
-								  "x: " +
-								  shop.getContainerLocation().getBlockX() +
-								  " y: " +
-								  shop.getContainerLocation().getBlockY() +
-								  " z: " +
-								  shop.getContainerLocation().getBlockZ() +
-								  ") item: " +
-								  ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
-								  (shop.getSecondaryItemStack() != null ? " barterItem: " +
-																		  ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack()) : ""));
+			logger().debug(player.getName() +
+						   " destroyed a " +
+						   shop.getType().name().toUpperCase() +
+						   " shop at (" +
+						   "x: " +
+						   shop.getContainerLocation().getBlockX() +
+						   " y: " +
+						   shop.getContainerLocation().getBlockY() +
+						   " z: " +
+						   shop.getContainerLocation().getBlockZ() +
+						   ") item: " +
+						   ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
+						   (shop.getSecondaryItemStack() != null
+							? " barterItem: " + ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack())
+							: ""));
 		}
 		logAction(player, shop.getId(), actionType);
 	}
@@ -765,6 +806,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	
 	/**
 	 * Performance Statistics about a shops transactions.
+	 *
 	 * @param shop the shop to query
 	 * @return
 	 */
@@ -791,6 +833,72 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			}
 		});
 		return stats;
+	}
+	
+	/**
+	 * Returns a collection of stats on what transaction the user has made and with what shops
+	 */
+	public CompletableFuture<Map<ShopEntry, TransactionStats>> getTransactionStatsForShops(Collection<UUID> shopIds) {
+		if(shopIds.isEmpty()){
+			return CompletableFuture.completedFuture(Collections.emptyMap());
+		}
+		CompletableFuture<Map<ShopEntry, TransactionStats>> stats = new CompletableFuture<>();
+		
+		scheduler.runAsync(_ -> {
+			Map<ShopEntry, TransactionStats> shopEntries = new HashMap<>();
+			
+			String placeholders = String.join(", ", Collections.nCopies(shopIds.size(), "?"));
+			try(var ps = getConnection().prepareStatement(TRANSACTION_STATS_SHOPS_SQL.formatted(placeholders))){
+				long now = System.currentTimeMillis();
+				
+				int index = 1;
+				
+				ps.setLong(index++, now - TimeUnit.DAYS.toMillis(1));
+				ps.setLong(index++, now - TimeUnit.DAYS.toMillis(7));
+				ps.setLong(index++, now - TimeUnit.DAYS.toMillis(30));
+				
+				for(UUID shopId : shopIds){
+					ps.setString(index++, shopId.toString());
+				}
+				
+				try(var rs = ps.executeQuery()){
+					while(rs.next()){
+						UUID shopUuid = UUID.fromString(rs.getString("shopuuid"));
+						UUID owner = UUID.fromString(rs.getString("ownerUuid"));
+						ShopType type = ShopType.typeFromString((rs.getString("shop_type")));
+						
+						ItemStack stack = ItemStackJsonCodec.deserialize(rs.getString("itemBase64"));
+						
+						ItemStack barterStack = null;
+						
+						if(type == ShopType.BARTER){
+							barterStack = ItemStackJsonCodec.deserialize(rs.getString("barterItemBase64"));
+						}
+						
+						int amount = rs.getInt("amount");
+						int price = rs.getInt("price");
+						long creationDate = rs.getLong("timestamp");
+						boolean isActive = rs.getBoolean("active");
+						
+						shopEntries.put(new ShopEntry(shopUuid, type, owner, stack, amount, price, creationDate, isActive, type, barterStack),
+								new TransactionStats(rs.getLong("day1"), rs.getLong("day7"), rs.getLong("day30"), rs.getLong("all_time")));
+					}
+				}
+				
+			} catch(SQLException e){
+				PluginLogger.error("Error while fetching transactions for shops", e);
+				stats.complete(Collections.emptyMap());
+			}
+			
+			stats.complete(shopEntries);
+		});
+		
+		return stats;
+	}
+	
+	public record ShopEntry(UUID shopUuid, ShopType type, UUID ownerUuid, ItemStack itemStack, int amount, int price, long creationDate,
+							boolean isActive, ShopType shopType, ItemStack barterItem){
+		
 	}
 	
 	public record TransactionStats(long day1, long day7, long day30, long allTime){}

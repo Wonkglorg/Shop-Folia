@@ -153,7 +153,7 @@ interaction:
       # Sent when a sell shop sign is written to with valid shop creation syntax and the shop creation process is initialized.
       initialize:
         - "<gold>Hit the sign with the item you want to sell to other players or use"
-        - "<yellow>/shop-initialize <item-name> <gray>(uses the item in your hand if no name is given)!"
+        - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when a sell shop has been successfully initialized after the player provides the item they want to sell.
       create: "<yellow>You have created a shop that sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
       # Sent when the owner successfully destroys their own sell shop.
@@ -166,7 +166,7 @@ interaction:
       # Sent when a buy shop sign is written with valid shop creation syntax and the shop creation process is initialized.
       initialize:
         - "<gold>Hit the sign with the item you want to buy from other players or use"
-        - "<yellow>/shop-initialize <item-name> <gray>(uses the item in your hand if no name is given)!"
+        - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when a buy shop has been successfully initialized after the player provides the item they want to buy.
       create: "<yellow>You have created a shop that buys <gold>%item%(s)<aqua>%item-enchants%<yellow>."
       # Sent when the owner successfully destroys their own buy shop.
@@ -179,7 +179,7 @@ interaction:
       # Sent when a barter shop sign is written with valid shop creation syntax and the shop creation process is initialized.
       initialize:
         - "<gold>Hit the sign with the item you want to barter to other players or use"
-        - "<yellow>/shop-initialize <item-name> <gray>(uses the item in your hand if no name is given)!"
+        - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when the first item has been provided and the shop is waiting for the player to provide the item they want in exchange.
       initialize-barter:
         - "<gray>You have set this shop's barter item"

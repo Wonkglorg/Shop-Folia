@@ -239,7 +239,7 @@ public class SettingsConfig extends Config{
 		for(var action : getStringList("mappings.transact-with-shop")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT);
 		}
-		for(var action : getStringList("mappings. transact-with-shop-full-stack")){
+		for(var action : getStringList("mappings.transact-with-shop-full-stack")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.TRANSACT_FULL_STACK);
 		}
 		

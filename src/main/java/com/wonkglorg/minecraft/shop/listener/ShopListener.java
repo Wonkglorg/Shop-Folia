@@ -637,9 +637,8 @@ public class ShopListener implements Listener{
 		}
 		
 		if(settingsConfig.isDestroyShopRequiresSneak() && !player.isSneaking()){
-			event.setCancelled(true);
-			shop.updateSign();
 			lang.request("interaction.issues.destroy.sign-requires-sneak").sendToAudience(player);
+			event.setCancelled(true);
 			return;
 		}
 		

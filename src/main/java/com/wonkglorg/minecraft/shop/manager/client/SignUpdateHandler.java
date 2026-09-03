@@ -28,9 +28,7 @@ import java.util.UUID;
  * Handles player-specific sign updating and changes.
  */
 public class SignUpdateHandler implements ShopClientListener{
-	private final Map<UUID, Map<UUID, SignState>> lastSignStates = new HashMap<>();
-	
-	private record SignState(ShopStateClient state, int usage, long lastUsed){}
+	private final Map<UUID, Map<UUID, ShopStateClient>> lastSignStates = new HashMap<>();
 	
 	@Override
 	public void onShopEnter(Player player, AbstractShop shop) {
@@ -65,15 +63,15 @@ public class SignUpdateHandler implements ShopClientListener{
 	
 	@Override
 	public boolean needsUpdate(Player player, AbstractShop shop) {
-		Map<UUID, SignState> map = lastSignStates.get(player.getUniqueId());
+		Map<UUID, ShopStateClient> map = lastSignStates.get(player.getUniqueId());
 		if(map == null){
 			return true;
 		}
-		SignState state = map.get(shop.getId());
+		ShopStateClient state = map.get(shop.getId());
 		if(state == null){
 			return true;
 		}
-		return shop.getClientShopState(player) == state.state;
+		return shop.getClientShopState(player) != state;
 	}
 	
 	private void updateSign(Player player, AbstractShop shop) {
@@ -81,14 +79,20 @@ public class SignUpdateHandler implements ShopClientListener{
 			return;
 		}
 		
-		PlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
+		UUID playerId = player.getUniqueId();
+		PlayerProfile profile = PlayerManager.getOnlineProfileIfCached(playerId);
 		
 		if(profile == null){
 			return;
 		}
 		
 		//if nothing changed about the state just return
-		if(!hasSignStateChanged(profile, shop)){
+		ShopStateClient currentSignState = shop.getClientShopState(profile);
+		UUID shopId = shop.getId(); // use whatever your AbstractShop shop UUID getter is
+		
+		ShopStateClient previous = lastSignStates.computeIfAbsent(playerId, _ -> new HashMap<>()).get(shopId);
+		//nothing changed no update needed
+		if(currentSignState == previous){
 			return;
 		}
 		
@@ -121,6 +125,7 @@ public class SignUpdateHandler implements ShopClientListener{
 			sign.setWaxed(ShopPlugin.getPlugin().getSettingsConfig().isSignWaxed());
 			
 			player.sendBlockUpdate(location, sign);
+			lastSignStates.computeIfAbsent(playerId, _ -> new HashMap<>()).put(shopId, currentSignState);
 		}, 1);
 	}
 	
@@ -159,21 +164,6 @@ public class SignUpdateHandler implements ShopClientListener{
 			lines.add(langManager().request("sign.text.timeout." + i).toSingleComponent());
 		}
 		return lines;
-	}
-	
-	private boolean hasSignStateChanged(PlayerProfile player, AbstractShop shop) {
-		ShopStateClient state = shop.getClientShopState(player);
-		int usage = shop.usageTimes(player);
-		long lastUsed = shop.lastUsedTime(player);
-		
-		SignState current = new SignState(state, usage, lastUsed);
-		
-		UUID playerId = player.getUuid();
-		UUID shopId = shop.getId(); // use whatever your AbstractShop shop UUID getter is
-		
-		SignUpdateHandler.SignState previous = lastSignStates.computeIfAbsent(playerId, _ -> new HashMap<>()).put(shopId, current);
-		
-		return !current.equals(previous);
 	}
 	
 	/**

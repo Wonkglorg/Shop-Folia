@@ -643,10 +643,10 @@ public abstract class AbstractShop{
 				request.sendToAudience(player);
 				LangRequest statRequest = langManager().request("description." + this.getType() + ".stats");
 				shopPlaceholders(statRequest, this, true, player);
-				statRequest.replace("%1-day%",s.day1());
-				statRequest.replace("%7-day%",s.day7());
-				statRequest.replace("%30-day%",s.day30());
-				statRequest.replace("%total%",s.allTime());
+				statRequest.replace("%1-day%", s.day1());
+				statRequest.replace("%7-day%", s.day7());
+				statRequest.replace("%30-day%", s.day30());
+				statRequest.replace("%total%", s.allTime());
 				statRequest.sendToAudience(player);
 			});
 		} else {
@@ -779,8 +779,17 @@ public abstract class AbstractShop{
 	 */
 	protected void notifyCooldownReached(Player purchaser, int multiplier) {
 		LangRequest request = langManager().request("transaction.issue." + type + ".player-cooldown");
-		DurationBuilder durationBuilder = DurationBuilder.create(Duration.ofMillis(this.remainingCooldownBeforeTransactionPossible(PlayerManager.getOnlineProfile(
-				purchaser)))).typesToShow(DateType.DAY, DateType.HOUR, DateType.MINUTE, DateType.SECOND).noDecimals();
+		long remainingCooldown = this.remainingCooldownBeforeTransactionPossible(PlayerManager.getOnlineProfile(purchaser));
+		
+		//show at least 1 second cooldown
+		if(remainingCooldown < 1000){
+			remainingCooldown = 1000;
+		}
+		
+		DurationBuilder durationBuilder = DurationBuilder.create(Duration.ofMillis(remainingCooldown)).typesToShow(DateType.DAY,
+				DateType.HOUR,
+				DateType.MINUTE,
+				DateType.SECOND).noDecimals();
 		request.replace("%duration%", durationBuilder.toTimeString());
 		request.sendToAudience(purchaser);
 	}
@@ -824,19 +833,14 @@ public abstract class AbstractShop{
 	 * @param requestFullstack if the request to buy a full stack
 	 * @return the result of the transaction and how often the trade happened if successful
 	 */
-	public @NotNull Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
+	@Internal
+	private @NotNull Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
 		if(isPerformingTransaction){
 			return of(TransactionResult.SHOP_IS_PERFORMING_TRANSACTION, 0);
 		}
 		ShopLogger logger = logger();
 		isPerformingTransaction = true;
 		logger.debug("====STARTING SHOP TRANSACTION====");
-		
-		if(party.getPlayer().getUniqueId().equals(owner) && !ShopPlugin.getPlugin().getSettingsConfig().isAllowUseOwnShop()){
-			logger.debug("Owner is trying to transact their own shop while this debug feature is disabled in the config");
-			logger.debug("===CANCEL SHOP TRANSACTION====");
-			return of(TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP, 0);
-		}
 		
 		OfflinePlayer player = party.getPlayer();
 		PlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
@@ -896,7 +900,7 @@ public abstract class AbstractShop{
 			logger().debug("Purchase limit setting is set to 0");
 			return 9999;
 		}
-		return Math.min(0, purchaseLimit - profile.getPurchaseCount(this));
+		return Math.max(0, purchaseLimit - profile.getPurchaseCount(this));
 	}
 	
 	protected long remainingCooldownBeforeTransactionPossible(PlayerProfile profile) {
@@ -1000,11 +1004,18 @@ public abstract class AbstractShop{
 	public boolean executeClickAction(Player player, ShopClickType clickType) {
 		ShopAction action = ShopPlugin.getPlugin().getSettingsConfig().getShopAction(clickType);
 		if(action == null){
+			logger().debug("No action is mapped to " + clickType);
 			return false; //there is no action mapped to this click type
 		}
 		
 		switch(action) {
 			case TRANSACT, TRANSACT_FULL_STACK:
+				//early return if transactor is owner
+				if(player.getUniqueId().equals(owner) && !ShopPlugin.getPlugin().getSettingsConfig().isAllowUseOwnShop()){
+					sendTransactionMessage(TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP, 0, player);
+					sendEffects(false, player);
+					return true;
+				}
 				var resultPair = executeTransaction(new PlayerTransactionParty(player), action == ShopAction.TRANSACT_FULL_STACK);
 				isPerformingTransaction = false;
 				TransactionResult result = resultPair.first();
