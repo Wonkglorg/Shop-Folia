@@ -4,6 +4,7 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.PlayerCreateShopEvent;
@@ -43,7 +44,6 @@ import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Chest.Type;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -79,7 +79,7 @@ public class ShopListener implements Listener{
 		lang = langManager();
 		settingsConfig = plugin.getSettingsConfig();
 		shopManager = shopManager();
-		logger = ShopPlugin.logger();
+		logger = logger();
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -158,7 +158,8 @@ public class ShopListener implements Listener{
 		if(process.getType() == ShopType.GAMBLE){
 			shopManager.addPlayerShopCreation(player, process);
 			process.updateSignText();
-			if(shopInitialisation(event, process, player, ShopPlugin.getPlugin().getItemConfig().getGambleDisplayItem())){
+			event.setCancelled(true);
+			if(shopManager.shopInitialisation(process, player, ShopPlugin.getPlugin().getItemConfig().getGambleDisplayItem())){
 				logger.debug("=====SHOP CREATION SUCCESS====");
 			} else {
 				logger.debug("====SHOP CREATION CANCEL====");
@@ -229,64 +230,12 @@ public class ShopListener implements Listener{
 		}
 		
 		logger.debug("Clicked using " + item);
-		
-		if(!shopManager.passesItemListCheck(item)){
-			logger.debug("Item is not allowed to be set as a shop");
-			logger.debug("====SHOP INITIALISATION CANCEL====");
-			lang.request("interaction.issues.create.item-filter-deny").sendToAudience(player);
-			return;
-		}
-		
-		logger.debug("Is allowed item");
-		
-		if(shopInitialisation(event, signProcess, player, item)){
+		event.setCancelled(true);
+		if(shopManager.shopInitialisation(signProcess, player, item)){
 			logger.debug("====SHOP INITIALISATION DONE====");
 		} else {
 			logger.debug("====SHOP INITIALISATION CANCEL====");
 		}
-	}
-	
-	private boolean shopInitialisation(Cancellable event, SignCreationProcess process, Player player, ItemStack item) {
-		logger.debug("Sending shop pre init event");
-		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
-		Bukkit.getPluginManager().callEvent(shopEvent);
-		if(shopEvent.isCancelled()){
-			logger.debug("Event was cancelled by third party plugin");
-			lang.request("interaction.issues.create.cancel").sendToAudience(player);
-			return false;
-		}
-		
-		AbstractShop shop;
-		event.setCancelled(true); //cancel event otherwise 1 tick breaking and creative mode destroy the shop sign while clicking on it
-		
-		if(process.getType() != ShopType.BARTER){
-			process.setItemStack(item);
-			shop = process.createShop();
-			logger.debug("Setting item for shop: " + item);
-		} else {
-			if(process.getItemStack() == null){
-				process.setItemStack(item);
-				logger.debug("Setting first item for barter shop: " + item);
-				lang.request("interaction.success." + process.getType() + ".initializeBarter").sendToAudience(player);
-				process.updateSignText();
-				return false;
-			} else {
-				process.setSecondaryStack(item);
-				shop = process.createShop();
-				logger.debug("Setting second iem for barter shop " + item);
-			}
-		}
-		
-		if(shop != null){
-			shopManager.finishShopCreation(player, shop);
-			logger.debug("Sending Post init shop event");
-			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
-			LangRequest request = lang.request("interaction.success." + shop.getType() + ".create");
-			AbstractShop.shopPlaceholders(request, shop, false, player);
-			request.sendToAudience(player);
-			return true;
-		}
-		return true;
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)

@@ -201,24 +201,24 @@ shop:
     # how often a player can purchase from a given shop (each player has their own counter)
     transaction-limit:
       enabled: true
-      default-value: 10
+      default-value: 0
     # how long the player needs to wait between purchases to buy again from this shop
     transaction-cooldown:
       enabled: true
-      default-value: 1d
+      default-value: 0
     # if the shop should notify the owner when someone tries to transact and the shop ran out of stock.
     out-of-stock-notification:
       enabled: true
-      default-value: true
+      default-value: false
     # if the shop should notify its owner over every transaction
     transaction-notification:
       enabled: true
-      default-value: true
+      default-value: false
 
     #if shop items tagged with custom item id's by other plugins such as "Nexo items" should update their item definitions alongside the plugin
     custom-item-updater:
-      enabled: true
-      default-value: true
+      enabled: false
+      default-value: false
 
 # =================================================================== #
 #                                FILTERS                              #

@@ -80,7 +80,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			""";
 	
 	private static final String INSERT_SHOP_SETTING_SQL = """
-			INSERT INTO shop_settings(shop_uuid,setting_key,value) VALUES(?,?,?)
+			INSERT INTO shop_settings(shop_uuid,setting_key,value) VALUES(?,?,?) ON CONFLICT DO UPDATE SET value = EXCLUDED.value
 			""";
 	
 	private static final String SELECT_SHOP_SETTING_SQL = """

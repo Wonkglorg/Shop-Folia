@@ -152,7 +152,9 @@ interaction:
   success:
     sell:
       # Sent when a sell shop sign is written to with valid shop creation syntax and the shop creation process is initialized.
-      initialize: "<gold>Hit the sign with the item you want to sell to other players or click on the sign with an empty hand to open the shop ui!"
+      initialize:
+        - "<gold>Hit the sign with the item you want to sell to other players or use"
+        - "<yellow>/shop-initialize <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when a sell shop has been successfully initialized after the player provides the item they want to sell.
       create: "<yellow>You have created a shop that sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
       # Sent when the owner successfully destroys their own sell shop.
@@ -163,7 +165,9 @@ interaction:
       open-other: "<gray>You are opening a selling shop owned by %owner%."
     buy:
       # Sent when a buy shop sign is written with valid shop creation syntax and the shop creation process is initialized.
-      initialize: "<gold>Now just hit the sign with the item you want to buy from other players!"
+      initialize:
+        - "<gold>Hit the sign with the item you want to buy from other players or use"
+        - "<yellow>/shop-initialize <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when a buy shop has been successfully initialized after the player provides the item they want to buy.
       create: "<yellow>You have created a shop that buys <gold>%item%(s)<aqua>%item-enchants%<yellow>."
       # Sent when the owner successfully destroys their own buy shop.
@@ -174,11 +178,14 @@ interaction:
       open-other: "<gray>You are opening a buying shop owned by %owner%."
     barter:
       # Sent when a barter shop sign is written with valid shop creation syntax and the shop creation process is initialized.
-      initialize: "<gold>Now hit the sign with the item you want to barter to other players!"
+      initialize:
+        - "<gold>Hit the sign with the item you want to barter to other players or use"
+        - "<yellow>/shop-initialize <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when the first item has been provided and the shop is waiting for the player to provide the item they want in exchange.
       initialize-barter:
         - "<gray>You have set this shop's barter item to %item%(s)"
-        - "<gold>Now hit the sign again with the item you want barter for!"
+        - "<gold>Now hit the sign again with the item you want barter for or use"
+        - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when a barter shop has been successfully initialized after both the offered and requested items have been provided.
       create: "<yellow>You have created a shop that barters <gold>%item%(s)<aqua>%item-enchants% <yellow>for <gold>%barter-item%(s)<aqua>%barter-item-enchants%<yellow>."
       # Sent when the owner successfully destroys their own barter shop.
@@ -277,46 +284,50 @@ hover:
     - '<gray>%owner%'
 
 command:
-  usage:
-    user:
-      -"<blue>/shop list <gray>- list your shops on the server"
-      -"<blue>/shop currency <gray>- info about the currency shops use"
-      -"<blue>/shop currency <gray>- info about the currency shops use"
-      -"<blue>/shop notify [user|owner|stock] <gray>- Toggles notifications"
-    admin:
-      -"<red>/shop setcurrency <gray>- set the currency item to item in hand"
-      -"<red>/shop setgamble <gray>- set the gamble item display to item in hand"
-      -"<red>/shop item refresh <gray>- refresh all display items on shops"
-      -"<red>/shop reload <gray>- reload Shop plugin"
-  list:
-    success-console: "<white>There are <gold>%total-shops%<white> shops registered on the server."
-    success-player:
-      - "<white>There are <gold>%total-shops%<white> shops registered on the server."
-      - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
-  currency:
-    success: "<gray>The server is using %currency-name% as currency."
-    tip: "<gray>To change the currency, run the command '/shop setcurrency' with the item you want in your hand."
-  set-currency:
-    error-no-console: "<red>This command can only be executed by a player"
-    error-digital-currency: "<red>The server is not using an item based currency so no item could be set."
-    error-no-item-in-hand: "<red>You must hold a valid item to use that command."
-    success: "<green>Set the servers currency to %held-item%"
-  set-gamble:
-    error-no-console: "<red>This command can only be executed by a player"
-    error-no-item-in-hand: "<red>>You must hold a valid item to use that command."
-    success: "<green>Set the servers currency to %held-item%"
-  refresh-reload:
-    success: "<green>The display items on all of the shops have been refreshed."
-  reload:
-    success: "<green>Reloaded Shops!"
-  notify:
+  shop:
     usage:
-      -"<blue>/shop notify transaction<gray>- shows transaction notifications when players interact with your shops"
-      -"<blue>/shop notify stock<gray>- shows notifications when your shop runs out of stock"
-    transaction:
-      success: "<gray>Your notifications for players transacting with your shops are now %notify-state%"
-    stock:
-      success: "<gray>Your notifications for your shops running out of stock are now %notify-state%"
+      user:
+        -"<blue>/shop list <gray>- list your shops on the server"
+        -"<blue>/shop currency <gray>- info about the currency shops use"
+        -"<blue>/shop currency <gray>- info about the currency shops use"
+        -"<blue>/shop notify [user|owner|stock] <gray>- Toggles notifications"
+      admin:
+        -"<red>/shop setcurrency <gray>- set the currency item to item in hand"
+        -"<red>/shop setgamble <gray>- set the gamble item display to item in hand"
+        -"<red>/shop item refresh <gray>- refresh all display items on shops"
+        -"<red>/shop reload <gray>- reload Shop plugin"
+    list:
+      success-console: "<white>There are <gold>%total-shops%<white> shops registered on the server."
+      success-player:
+        - "<white>There are <gold>%total-shops%<white> shops registered on the server."
+        - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
+    currency:
+      success: "<gray>The server is using %currency-name% as currency."
+      tip: "<gray>To change the currency, run the command '/shop setcurrency' with the item you want in your hand."
+    set-currency:
+      error-no-console: "<red>This command can only be executed by a player"
+      error-digital-currency: "<red>The server is not using an item based currency so no item could be set."
+      error-no-item-in-hand: "<red>You must hold a valid item to use that command."
+      success: "<green>Set the servers currency to %held-item%"
+    set-gamble:
+      error-no-console: "<red>This command can only be executed by a player"
+      error-no-item-in-hand: "<red>>You must hold a valid item to use that command."
+      success: "<green>Set the servers currency to %held-item%"
+    reload:
+      success: "<green>Reloaded Shops!"
+    notify:
+      usage:
+        -"<blue>/shop notify transaction<gray>- shows transaction notifications when players interact with your shops"
+        -"<blue>/shop notify stock<gray>- shows notifications when your shop runs out of stock"
+      transaction:
+        success: "<gray>Your notifications for players transacting with your shops are now %notify-state%"
+      stock:
+        success: "<gray>Your notifications for your shops running out of stock are now %notify-state%"
+  shop-initialize:
+    usage: "<gray> /shop-initialize <item-name> - to initialize your shop with the specified item"
+    no-initialisation: "<red>Create a shop first to initialize it with the command!"
+    not-valid-item: "<red>Not a valid item!"
+
 
 #sign texts to render on shops, these are player specific based on their current relation to the shop
 # each entry must be a list of 4 entries

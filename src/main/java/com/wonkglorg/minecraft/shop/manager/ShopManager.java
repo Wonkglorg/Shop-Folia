@@ -1,10 +1,14 @@
 package com.wonkglorg.minecraft.shop.manager;
 
+import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
+import com.wonkglorg.minecraft.shop.event.PlayerPostInitializeShopEvent;
+import com.wonkglorg.minecraft.shop.event.PlayerPreInitializeShopEvent;
 import com.wonkglorg.minecraft.shop.manager.client.DisplayUpdateHandler;
 import com.wonkglorg.minecraft.shop.manager.client.ShopClientManager;
 import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
@@ -12,7 +16,9 @@ import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB;
 import com.wonkglorg.minecraft.shop.migrate.PlayerShopsConfig;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
+import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
+import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
@@ -482,6 +488,55 @@ public class ShopManager{
 				}
 			});
 		}
+	}
+	
+	public boolean shopInitialisation(ShopCreationProcess process, Player player, ItemStack item) {
+		if(!shopManager().passesItemListCheck(item)){
+			logger().debug("Item is not allowed to be set as a shop");
+			langManager().request("interaction.issues.create.item-filter-deny").sendToAudience(player);
+			return false;
+		}
+		
+		logger.debug("Sending shop pre init event");
+		PlayerPreInitializeShopEvent shopEvent = new PlayerPreInitializeShopEvent(player, process.toImmutableProgress(), item);
+		Bukkit.getPluginManager().callEvent(shopEvent);
+		if(shopEvent.isCancelled()){
+			logger.debug("Event was cancelled by third party plugin");
+			langManager().request("interaction.issues.create.cancel").sendToAudience(player);
+			return false;
+		}
+		
+		AbstractShop shop;
+		if(process.getType() != ShopType.BARTER){
+			process.setItemStack(item);
+			shop = process.createShop();
+			logger().debug("Setting item for shop: " + item);
+		} else {
+			if(process.getItemStack() == null){
+				process.setItemStack(item);
+				logger.debug("Setting first item for barter shop: " + item);
+				langManager().request("interaction.success." + process.getType() + ".initializeBarter").sendToAudience(player);
+				if(process instanceof SignCreationProcess signCreationProcess){
+					signCreationProcess.updateSignText();
+				}
+				return false;
+			} else {
+				process.setSecondaryStack(item);
+				shop = process.createShop();
+				logger.debug("Setting second iem for barter shop " + item);
+			}
+		}
+		
+		if(shop != null){
+			finishShopCreation(player, shop);
+			logger.debug("Sending Post init shop event");
+			Bukkit.getPluginManager().callEvent(new PlayerPostInitializeShopEvent(player, shop));
+			LangRequest request = langManager().request("interaction.success." + shop.getType() + ".create");
+			AbstractShop.shopPlaceholders(request, shop, false, player);
+			request.sendToAudience(player);
+			return true;
+		}
+		return true;
 	}
 	
 	public boolean passesItemListCheck(ItemStack itemStack) {

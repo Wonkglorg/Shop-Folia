@@ -66,5 +66,15 @@
       <option name="name" value="maven" />
       <option name="url" value="https://repo.opencollab.dev/main/" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="nexo-items-repo" />
+      <option name="name" value="nexo-items-repo" />
+      <option name="url" value="https://repo.nexomc.com/releases" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="hmc-wraps-repo" />
+      <option name="name" value="hmc-wraps-repo" />
+      <option name="url" value="https://repo.hibiscusmc.com/releases/" />
+    </remote-repository>
   </component>
 </project>

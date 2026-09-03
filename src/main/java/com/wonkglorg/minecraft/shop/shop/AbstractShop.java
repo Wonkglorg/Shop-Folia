@@ -596,26 +596,12 @@ public abstract class AbstractShop{
 	 * @param profile the profile of te player
 	 */
 	public ShopStateClient getClientShopState(PlayerProfile profile) {
-		if(PURCHASE_LIMIT.isEnabled()){
-			int purchaseLimit = getSetting(PURCHASE_LIMIT);
-			if(purchaseLimit > 0){
-				if(profile.getPurchaseCount(this) > purchaseLimit){
-					return ShopStateClient.LIMIT_REACHED;
-				}
-			}
+		if(remainingTradesBeforeLimitReached(profile) <= 0){
+			return ShopStateClient.LIMIT_REACHED;
 		}
 		
-		if(PURCHASE_COOLDOWN.isEnabled()){
-			long purchaseCooldown = getSetting(PURCHASE_COOLDOWN);
-			if(purchaseCooldown > 0){
-				long purchaseTime = profile.getLastPurchaseTime(this);
-				if(purchaseTime > 0){
-					if((purchaseTime + purchaseCooldown) < System.currentTimeMillis()){
-						return ShopStateClient.ON_COOLDOWN;
-					}
-				}
-			}
-			
+		if(remainingCooldownBeforeTransactionPossible(profile) > 0){
+			return ShopStateClient.ON_COOLDOWN;
 		}
 		
 		return shopState.getClientState();
@@ -684,10 +670,6 @@ public abstract class AbstractShop{
                .replace("%item-amount%",shop.getAmount());
 		
 		if(profile != null){
-			if(PURCHASE_COOLDOWN.isEnabled()){
-				DurationBuilder durationBuilder = DurationBuilder.create(Duration.ofMillis(Math.max(0,shop.getSetting(PURCHASE_COOLDOWN) - profile.getLastPurchaseTime(shop)))).typesToShow(DateType.DAY,DateType.HOUR,DateType.MINUTE,DateType.SECOND).noDecimals();
-				request.replace("%cooldown%",durationBuilder.toTimeString());
-			}
 			if(PURCHASE_LIMIT.isEnabled()){
 				request.replace("%current-purchase-limit%", profile.getPurchaseCount(shop))
 						.replace("%total-purchase-limit%",shop.getSetting(PURCHASE_LIMIT));
@@ -782,11 +764,8 @@ public abstract class AbstractShop{
 	 */
 	protected void notifyCooldownReached(Player purchaser, int multiplier) {
 		LangRequest request = langManager().request("transaction.issue." + type + ".player-cooldown");
-		DurationBuilder durationBuilder = DurationBuilder.create(Duration.ofMillis(Math.max(0,
-				this.getSetting(PURCHASE_COOLDOWN) - PlayerManager.getOnlineProfile(purchaser).getLastPurchaseTime(this)))).typesToShow(DateType.DAY,
-				DateType.HOUR,
-				DateType.MINUTE,
-				DateType.SECOND).noDecimals();
+		DurationBuilder durationBuilder = DurationBuilder.create(Duration.ofMillis(this.remainingCooldownBeforeTransactionPossible(PlayerManager.getOnlineProfile(
+				purchaser)))).typesToShow(DateType.DAY, DateType.HOUR, DateType.MINUTE, DateType.SECOND).noDecimals();
 		request.replace("%duration%", durationBuilder.toTimeString());
 		request.sendToAudience(purchaser);
 	}
@@ -848,28 +827,13 @@ public abstract class AbstractShop{
 		PlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
 		int maxTradesPossible = 9999;
 		if(profile != null){
-			if(PURCHASE_LIMIT.isEnabled()){
-				logger.debug("Purchase limit is enabled!");
-				int purchaseLimit = getSetting(PURCHASE_LIMIT);
-				if(purchaseLimit > 0){
-					logger.debug("Shop has a purchase limit setting defined!");
-					int purchaseCount = profile.getPurchaseCount(this);
-					if(purchaseCount > purchaseLimit){
-						return of(TransactionResult.PURCHASE_LIMIT_REACHED, 0);
-					}
-					maxTradesPossible = purchaseLimit - purchaseCount;
-				}
+			maxTradesPossible = remainingTradesBeforeLimitReached(profile);
+			if(maxTradesPossible <= 0){
+				return of(TransactionResult.PURCHASE_LIMIT_REACHED, 0);
 			}
 			
-			if(PURCHASE_COOLDOWN.isEnabled()){
-				logger.debug("Purchase cooldown is enabled!");
-				long purchaseCooldown = getSetting(PURCHASE_COOLDOWN);
-				if(purchaseCooldown > 0){
-					logger.debug("Shop has a purchase cooldown setting defined!");
-					if((profile.getLastPurchaseTime(this) + purchaseCooldown) < System.currentTimeMillis()){
-						return of(TransactionResult.PURCHASE_COOLDOWN, 0);
-					}
-				}
+			if(remainingCooldownBeforeTransactionPossible(profile) > 0){
+				return of(TransactionResult.PURCHASE_COOLDOWN, 0);
 			}
 		}
 		
@@ -903,6 +867,49 @@ public abstract class AbstractShop{
 		calculateStock();
 		postTransactionSuccess(transaction);
 		return of(result, multiplier);
+	}
+	
+	protected int remainingTradesBeforeLimitReached(PlayerProfile profile) {
+		if(!PURCHASE_LIMIT.isEnabled()){
+			logger().debug("Purchase limit is not enabled");
+			return 9999;
+		}
+		logger().debug("Purchase cooldown is enabled");
+		
+		int purchaseLimit = getSetting(PURCHASE_LIMIT);
+		if(purchaseLimit == 0){
+			logger().debug("Purchase limit setting is set to 0");
+			return 9999;
+		}
+		return Math.min(0, purchaseLimit - profile.getPurchaseCount(this));
+	}
+	
+	protected long remainingCooldownBeforeTransactionPossible(PlayerProfile profile) {
+		if(!PURCHASE_COOLDOWN.isEnabled()){
+			logger().debug("No purchase cooldown enabled");
+			return 0;
+		}
+		logger().debug("Purchase cooldown is enabled");
+		
+		long purchaseCooldown = getSetting(PURCHASE_COOLDOWN);
+		if(purchaseCooldown == 0){
+			logger().debug("Cooldown setting is set to 0");
+			return 0;
+		}
+		long purchaseTime = profile.getLastPurchaseTime(this);
+		if(purchaseTime == 0){
+			logger().debug("Player never purchased from shop before");
+			return 0;
+		}
+		
+		long cooldownExpiresAt = purchaseTime + purchaseCooldown;
+		long remaining = cooldownExpiresAt - System.currentTimeMillis();
+		
+		if(remaining <= 0){
+			return 0;
+		}
+		
+		return remaining;
 	}
 	
 	/**

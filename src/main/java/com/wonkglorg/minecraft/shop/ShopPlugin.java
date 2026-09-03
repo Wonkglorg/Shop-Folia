@@ -3,6 +3,7 @@ package com.wonkglorg.minecraft.shop;
 import com.tcoded.folialib.FoliaLib;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.shop.command.ShopCommand;
+import com.wonkglorg.minecraft.shop.command.ShopInitializeCommand;
 import com.wonkglorg.minecraft.shop.config.ItemConfig;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
@@ -63,7 +64,6 @@ public class ShopPlugin extends JavaPlugin{
 		ShopPlugin.logger = new ShopLogger(this);
 		ShopPlugin.plugin = this;
 		settingsConfig = new SettingsConfig();
-		itemConfig = new ItemConfig();
 		logger.setLogLevel(settingsConfig.getLogLevel());
 		ShopPlugin.langManager = LangManager.getInstance(this);
 		foliaLib = new FoliaLib(this);
@@ -72,6 +72,7 @@ public class ShopPlugin extends JavaPlugin{
 	@Override
 	public void onEnable() {
 		ShopPlugin.floodGateEnabled = Bukkit.getPluginManager().getPlugin("floodgate") != null;
+		itemConfig = new ItemConfig();
 		if(itemConfig.getGambleDisplayItem() == null){
 			itemConfig.setGambleDisplayItem(new ItemStack(Material.DIAMOND));
 		}
@@ -108,7 +109,10 @@ public class ShopPlugin extends JavaPlugin{
 		
 		logger().info("Enabled Shop " + this.getPluginMeta().getVersion());
 		
-		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> new ShopCommand().register(registrar));
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, registrar -> {
+			new ShopCommand().register(registrar);
+			new ShopInitializeCommand().register(registrar);
+		});
 	}
 	
 	/**
@@ -172,6 +176,7 @@ public class ShopPlugin extends JavaPlugin{
 	
 	/**
 	 * If the id belongs to a bedrock player
+	 *
 	 * @param uuid
 	 * @return true if it is a bedrock player false otherwise, also returns false if floodgate is not available on the server
 	 */
