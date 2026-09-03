@@ -423,8 +423,6 @@ public class ShopManager{
 	public void unregisterShop(AbstractShop shop) {
 		removeShop(shop);
 		database.removeShop(shop);
-		//todo replace with visibilitymanager cleanup if that becomes relevant in the future
-		shop.getDisplay().cleanup();
 		shop.getDisplay().remove();
 	}
 	

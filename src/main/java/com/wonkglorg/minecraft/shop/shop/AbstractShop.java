@@ -288,16 +288,16 @@ public abstract class AbstractShop{
 	 * @param type the display type to show
 	 * @return a new abstract shop constructed with these values
 	 */
-	public static AbstractShop create(UUID id,
-									  Location signLoc,
-									  UUID player,
+	public static AbstractShop create(@NotNull UUID id,
+									  @NotNull Location signLoc,
+									  @NotNull UUID player,
 									  double pri,
 									  int amt,
-									  Boolean admin,
+									  boolean admin,
 									  ShopType shopType,
-									  BlockFace facing,
+									  @NotNull BlockFace facing,
 									  long creationDate,
-									  DisplayType type) {
+									  @NotNull DisplayType type) {
 		
 		return switch(shopType) {
 			case SELL -> new SellShop(id, signLoc, player, pri, amt, admin, facing, creationDate, type);

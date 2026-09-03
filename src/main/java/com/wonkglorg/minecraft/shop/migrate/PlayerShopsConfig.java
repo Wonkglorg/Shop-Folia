@@ -120,6 +120,7 @@ public class PlayerShopsConfig extends Config{
 							"Shop without a facing location during migration usually indicates a no longer valid shop, marking as invalid (id:%s,owner:%s)".formatted(
 									id,
 									owner));
+					facing = BlockFace.EAST;
 				} else {
 					facing = BlockFace.valueOf(facingStr);
 				}

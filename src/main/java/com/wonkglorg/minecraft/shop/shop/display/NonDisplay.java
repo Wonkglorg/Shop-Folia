@@ -20,11 +20,6 @@ public class NonDisplay extends AbstractDisplay{
 	}
 	
 	@Override
-	public void spawn() {
-		//nothing
-	}
-	
-	@Override
 	public void remove() {
 		//nothing
 	}

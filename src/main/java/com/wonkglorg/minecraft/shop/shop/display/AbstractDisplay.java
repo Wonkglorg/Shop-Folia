@@ -24,9 +24,6 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.type.Light;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -70,20 +67,10 @@ public abstract class AbstractDisplay{
 	}
 	
 	/**
-	 * Spawns the display for all players
-	 */
-	public void spawn() {
-		for(var player : Bukkit.getOnlinePlayers()){
-			spawn(player);
-		}
-	}
-	
-	/**
 	 * Spawns the display for the player
 	 */
 	public void spawn(@NotNull Player player) {
 		remove(player);//if the player sees this display already remove it first
-		spawnLight();
 		onSpawn(player);
 	}
 	
@@ -93,12 +80,20 @@ public abstract class AbstractDisplay{
 	protected abstract void onSpawn(Player player);
 	
 	/**
-	 * Removes the display from all players
+	 * Removes the display from all players who currently have one loaded for them
 	 */
 	public void remove() {
-		for(var player : Bukkit.getOnlinePlayers()){
-			remove(player);
+		for(var entry : entityIDs.entrySet()){
+			Player player = Bukkit.getPlayer(entry.getKey());
+			if(player == null || !player.isOnline()){
+				continue;
+			}
+			for(var id : entry.getValue()){
+				ClientboundRemoveEntitiesPacket destroyEntityPacket = new ClientboundRemoveEntitiesPacket(id);
+				sendPacket(player, destroyEntityPacket);
+			}
 		}
+		entityIDs.clear();
 	}
 	
 	/**
@@ -247,33 +242,6 @@ public abstract class AbstractDisplay{
 		return getItemDropLocation(true);
 	}
 	
-	/**
-	 * Spawns a light above the shop if enabled in the config
-	 */
-	private void spawnLight() {
-		if(plugin.getSettingsConfig().getDisplayLightLevel() == 0){
-			return;
-		}
-		
-		Block displayBlock = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
-		if(displayBlock.getType() == Material.AIR){
-			displayBlock.setType(Material.LIGHT);
-			Light data = (Light) displayBlock.getBlockData();
-			data.setLevel(ShopPlugin.getPlugin().getSettingsConfig().getDisplayLightLevel());
-			displayBlock.setBlockData(data);
-		}
-	}
-	
-	/**
-	 * Removes a spawned light
-	 */
-	private void removeLight() {
-		Block displayBlock = shop.getContainerLocation().getBlock().getRelative(BlockFace.UP);
-		if(displayBlock.getType() == Material.LIGHT){
-			displayBlock.setType(Material.AIR);
-		}
-	}
-	
 	private Location getItemDropLocation(boolean isBarterItem) {
 		if(shop == null || shop.getFacing() == null){
 			return null;
@@ -354,15 +322,6 @@ public abstract class AbstractDisplay{
 		sendPacket(player, entitySpawnPacket);
 		sendPacket(player, entityVelocityPacket);
 		sendPacket(player, entityMetadataPacket);
-	}
-	
-	/**
-	 * Cleanup all data for this display
-	 */
-	public void cleanup() {
-		remove();
-		removeLight();
-		entityIDs.clear();
 	}
 	
 	@Override

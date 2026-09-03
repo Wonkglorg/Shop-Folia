@@ -60,8 +60,6 @@ display:
     - GLASS_CASE
     - LARGE_ITEM
     - ITEM_FRAME
-  # This controls what light level (0 to 15) shop displays emit #
-  light-level: 0
   # This controls whether the item frames of shop displays are glowing #
   glowing-item-frame: false
 

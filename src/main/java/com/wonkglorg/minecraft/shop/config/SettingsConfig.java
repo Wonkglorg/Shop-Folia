@@ -90,11 +90,6 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private DisplayType[] displayCycle;
-	/**
-	 * Light level the display emits when placed
-	 */
-	@Getter
-	private int displayLightLevel;
 	
 	/**
 	 * If the itemframe should glow on shop displays
@@ -237,8 +232,6 @@ public class SettingsConfig extends Config{
 		for(int i = 0; i < cycle.size(); i++){
 			displayCycle[i] = DisplayType.fromValue(cycle.get(i));
 		}
-		
-		displayLightLevel = getInt("display.light-level");
 		displayGlowingItemFrame = getBoolean("display.glowing-item-frame");
 		signGlowingSignText = getBoolean("sign.glowing-sign-text");
 		signWaxed = getBoolean("sign.waxed-sign");

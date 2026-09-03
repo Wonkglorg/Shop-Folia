@@ -312,7 +312,7 @@ public class ShopClientManager{
 			displayTask.cancel();
 		}
 		for(var shop : shopManager.getAllShops().values()){
-			shop.getDisplay().cleanup();
+			shop.getDisplay().remove();
 		}
 		visibleShopsByPlayer.clear();
 		lastProcessedPosition.clear();

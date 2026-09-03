@@ -55,10 +55,7 @@ public class DisplayUtil{
 		armorStandData.setEquipment(itemStack);
 		armorStandData.setEquipmentSlot(equipmentSlot);
 		
-		boolean isShield = false;
-		if(itemStack.getType() == Material.SHIELD){
-			isShield = true;
-		}
+		boolean isShield = itemStack.getType() == Material.SHIELD;
 		
 		//make the stand face the correct direction when it spawns
 		armorStandData.setYaw(blockfaceToYaw(facing));
