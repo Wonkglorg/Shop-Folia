@@ -28,7 +28,7 @@ currency-item:
 #    schema_version: 1
 #  arcanite_sword: "nexo:arcanite_sword"
 #  fire_sword_wrap: "hmcwraps:fire_sword"
-custom-item-definitons:
+custom-item-definitions:
   custom_diamond:
     ==: org.bukkit.inventory.ItemStack
     DataVersion: 4903

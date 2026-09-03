@@ -41,10 +41,13 @@ public class JavaShopSettingsDialog{
 		if(Settings.TRANSACTION_NOTIFICATION.isEnabled()){
 			inputs.add(DialogInput.bool("notify_transactions", Component.text("Notify me about transactions"), notifyTransactions, "On", "Off"));
 		}
-		
+		//leave disabled until fully implemented
+		/*
 		if(Settings.ITEM_UPDATER.isEnabled()){
 			inputs.add(DialogInput.bool("item_updater", Component.text("Update custom items"), itemUpdater, "On", "Off"));
 		}
+		
+		 */
 		
 		if(Settings.PURCHASE_LIMIT.isEnabled()){
 			inputs.add(DialogInput.text("purchase_limit",
@@ -77,9 +80,10 @@ public class JavaShopSettingsDialog{
 				Boolean newNotifyStock = view.getBoolean("notify_stock");
 				
 				Boolean newNotifyTransactions = view.getBoolean("notify_transactions");
-				
+				//leave disabled until fully implemented
+						/*
 				Boolean newItemUpdater = view.getBoolean("item_updater");
-				
+						 */
 				String newPurchaseLimit = view.getText("purchase_limit");
 				
 				String newPurchaseCooldown = view.getText("purchase_cooldown");
@@ -87,7 +91,7 @@ public class JavaShopSettingsDialog{
 				ShopSettingsDialog.updateShopSettings(shop,
 						newNotifyStock,
 						newNotifyTransactions,
-						newItemUpdater,
+						itemUpdater,
 						newPurchaseLimit,
 						newPurchaseCooldown);
 			}, ClickCallback.Options.builder().uses(1).build())).build()));
