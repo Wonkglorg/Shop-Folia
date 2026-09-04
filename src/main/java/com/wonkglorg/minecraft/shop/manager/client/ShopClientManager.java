@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -97,6 +98,7 @@ public class ShopClientManager{
 				listener.onShopCleanup(player, shop);
 				listener.onShopEnter(player, shop);
 			}
+			visibleShopsByPlayer.computeIfAbsent(player.getUniqueId(), _ -> new HashSet<>()).add(shop);
 		}
 	}
 	
@@ -108,6 +110,7 @@ public class ShopClientManager{
 			listener.onShopCleanup(player, shop);
 			listener.onShopEnter(player, shop);
 		}
+		visibleShopsByPlayer.computeIfAbsent(player.getUniqueId(), _ -> new HashSet<>()).add(shop);
 	}
 	
 	/**
@@ -120,6 +123,7 @@ public class ShopClientManager{
 		}
 		listener.onShopCleanup(player, shop);
 		listener.onShopEnter(player, shop);
+		visibleShopsByPlayer.computeIfAbsent(player.getUniqueId(), _ -> new HashSet<>()).add(shop);
 	}
 	
 	/**
@@ -131,6 +135,11 @@ public class ShopClientManager{
 			for(var listener : listeners){
 				listener.onShopCleanup(player, shop);
 			}
+			Set<AbstractShop> shops = visibleShopsByPlayer.get(player.getUniqueId());
+			if(shops == null){
+				return;
+			}
+			shops.remove(shop);
 		}
 	}
 	
@@ -140,9 +149,11 @@ public class ShopClientManager{
 	public void addShop(AbstractShop shop) {
 		var nearbyPlayers = shop.getSignLocation().getNearbyPlayers(plugin.getSettingsConfig().getMaxShopProcessingDistanceBlocks());
 		for(var player : nearbyPlayers){
+			//add shops to currently visible list otherwise it will spawn another time
 			for(var listener : listeners){
 				listener.onShopEnter(player, shop);
 			}
+			visibleShopsByPlayer.computeIfAbsent(player.getUniqueId(), _ -> new HashSet<>()).add(shop);
 		}
 	}
 	
@@ -158,6 +169,7 @@ public class ShopClientManager{
 		for(var player : nearbyPlayers){
 			listener.onShopCleanup(player, shop);
 			listener.onShopEnter(player, shop);
+			visibleShopsByPlayer.computeIfAbsent(player.getUniqueId(), _ -> new HashSet<>()).add(shop);
 		}
 	}
 	

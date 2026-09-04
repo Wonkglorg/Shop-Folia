@@ -95,11 +95,6 @@ public class ShopManager{
 	 * Shops that get processed once the chunk they are assigned to loads
 	 */
 	private final Map<ChunkKey, List<AbstractShop>> unloadedShopsByChunk = new ConcurrentHashMap<>();
-	/**
-	 * All current shop owners
-	 */
-	@Getter
-	private final Map<UUID, String> shopOwners = new ConcurrentHashMap<>();
 	
 	public ShopManager(ShopPlugin plugin) throws SQLException, IOException {
 		this.plugin = plugin;
@@ -227,7 +222,6 @@ public class ShopManager{
 		shopsByContainer.clear();
 		shopsByChunk.clear();
 		unloadedShopsByChunk.clear();
-		shopOwners.clear();
 		
 		migrateData();
 		PlayerNameCache.initialize();
@@ -268,7 +262,6 @@ public class ShopManager{
 		}
 		
 		playerShops.computeIfAbsent(shop.getOwnerUUID(), _ -> new ArrayList<>()).add(shop);
-		shopOwners.putIfAbsent(shop.getOwnerUUID(), PlayerNameCache.getName(shop.getOwnerUUID()));
 	}
 	
 	public void addPlayerShopCreation(Player player, ShopCreationProcess process) {
@@ -381,11 +374,6 @@ public class ShopManager{
 		
 		if(playerShops.containsKey(shop.getOwnerUUID())){
 			playerShops.get(shop.getOwnerUUID()).remove(shop);
-			if(playerShops.get(shop.getOwnerUUID()).isEmpty()){
-				shopOwners.remove(shop.getOwnerUUID());
-			}
-		} else {
-			shopOwners.remove(shop.getOwnerUUID());
 		}
 	}
 	
@@ -419,7 +407,7 @@ public class ShopManager{
 			database.addShop(shop);
 			database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
 			//schedules shop client updates one tick after creation, otherwise the initial "load" method of shops sometimes takes priority in showing the default shop state instead
-			plugin.getFoliaLib().getScheduler().runAtLocationLater(shop.getSignLocation(), _ -> shopClientManager.updateShop(shop), 1);
+			plugin.getFoliaLib().getScheduler().runAtLocationLater(shop.getSignLocation(), _ -> shopClientManager.addShop(shop), 1);
 		});
 	}
 	
