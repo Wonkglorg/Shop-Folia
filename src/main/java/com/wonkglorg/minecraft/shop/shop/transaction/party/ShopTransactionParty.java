@@ -123,4 +123,9 @@ public class ShopTransactionParty extends TransactionParty{
 		}
 		super.removeItem(itemStack, amount);
 	}
+	
+	@Override
+	public String toString() {
+		return "ShopTransactionParty{shop-id:" + shop.getId() + ", uuid=" + player.getUniqueId() + ", name=" + player.getName() + '}';
+	}
 }

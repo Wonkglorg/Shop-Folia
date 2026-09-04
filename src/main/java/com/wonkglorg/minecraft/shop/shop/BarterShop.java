@@ -11,10 +11,12 @@ import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.TransactionResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
@@ -39,13 +41,13 @@ public class BarterShop extends AbstractShop{
 	}
 	
 	@Override
-	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {
+	protected @NotNull Transaction startTransaction(TransactionParty party, ShopTransactionParty cachedParty, int multiplier) {
 		int calculatedAmount = amount * multiplier;
 		double calculatedPrice = price * multiplier;
 		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
-			case VAULT -> new VaultTransaction(party, getParty(), calculatedAmount, calculatedPrice, item);
-			case ITEM -> new ItemTransaction(party, getParty(), calculatedAmount, calculatedPrice, item, secondaryItem);
-			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, calculatedAmount, calculatedPrice, item);
+			case VAULT -> new VaultTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item);
+			case ITEM -> new ItemTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item, secondaryItem);
+			case EXPERIENCE -> new ExpirienceTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item);
 		};
 	}
 	
@@ -63,7 +65,7 @@ public class BarterShop extends AbstractShop{
 		}
 		Transaction transaction = startTransaction(null, 1);
 		
-		double availableFunds = transaction.getSellerAvailableFunds();
+		double availableFunds = transaction.getSellerAvailableItems();
 		stock = (int) (availableFunds / this.getAmount());
 		
 		if(stock < 1 && amount > 0){
@@ -95,7 +97,7 @@ public class BarterShop extends AbstractShop{
 			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.barter.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_SELLER -> notifyNoSpace(player, multiplier);
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.barter.use-own-shop").sendToAudience(player);
-			case PURCHASE_COOLDOWN -> notifyCooldownReached(player,multiplier);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player, multiplier);
 			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.barter.player-transaction-limit-reached").sendToAudience(player);
 		}
 		

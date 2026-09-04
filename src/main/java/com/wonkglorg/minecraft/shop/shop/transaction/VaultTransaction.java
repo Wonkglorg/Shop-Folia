@@ -12,13 +12,13 @@ public class VaultTransaction extends Transaction{
 	}
 	
 	@Override
-	public double getBuyerAvailableItems() {
-		return buyer.getAvailableVaultFunds();
+	public double getSellerAvailableItems() {
+		return seller.getAvailableItemFunds(tradedStack);
 	}
 	
 	@Override
-	public double getSellerAvailableFunds() {
-		return seller.getAvailableVaultFunds();
+	public double getBuyerAvailableFunds() {
+		return buyer.getAvailableVaultFunds();
 	}
 	
 	@Override
@@ -41,16 +41,16 @@ public class VaultTransaction extends Transaction{
 	@Override
 	public String toString() {
 		return "VaultTransaction{" +
-		       "buyer=" +
-		       buyer +
-		       ", seller=" +
-		       seller +
-		       ", price=" +
-		       price +
-		       ", amount=" +
-		       amount +
-		       ", tradedStack=" +
-		       tradedStack +
-		       '}';
+			   "buyer=" +
+			   buyer +
+			   ", seller=" +
+			   seller +
+			   ", price=" +
+			   price +
+			   ", amount=" +
+			   amount +
+			   ", tradedStack=" +
+			   tradedStack +
+			   '}';
 	}
 }

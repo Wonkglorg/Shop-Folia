@@ -824,7 +824,18 @@ public abstract class AbstractShop{
 	 * @param party the party this shop transactions with
 	 * @param multiplier how many times the shop should transact with the player. (1 = the normal shops amount for the listed price, 2 = 2 times both values)
 	 */
-	protected abstract @NotNull Transaction startTransaction(TransactionParty party, int multiplier);
+	public @NotNull Transaction startTransaction(TransactionParty party, int multiplier) {
+		return startTransaction(party, getParty(), multiplier);
+	}
+	
+	/**
+	 * Starts a transaction with the specified party, used for internal access when calculating the shops inventory multiple times does not make much sense
+	 *
+	 * @param party the party this shop transactions with
+	 * @param multiplier how many times the shop should transact with the player. (1 = the normal shops amount for the listed price, 2 = 2 times both values)
+	 */
+	@Internal
+	protected abstract @NotNull Transaction startTransaction(TransactionParty party, ShopTransactionParty cachedParty, int multiplier);
 	
 	/**
 	 * executes a transaction between this shop and the other party
@@ -848,15 +859,19 @@ public abstract class AbstractShop{
 		if(profile != null){
 			maxTradesPossible = remainingTradesBeforeLimitReached(profile);
 			if(maxTradesPossible <= 0){
+				logger.debug("Party reached trading limit with shop");
+				logger.debug("===CANCEL SHOP TRANSACTION====");
 				return of(TransactionResult.PURCHASE_LIMIT_REACHED, 0);
 			}
 			
 			if(remainingCooldownBeforeTransactionPossible(profile) > 0){
+				logger.debug("Party is on transaction cooldown with shop");
+				logger.debug("===CANCEL SHOP TRANSACTION====");
 				return of(TransactionResult.PURCHASE_COOLDOWN, 0);
 			}
 		}
 		
-		logger.debug("Transaction with shop " + this + " and party " + party);
+		logger.debug("Transaction " + this + " and party " + party);
 		
 		Transaction transaction = findAffordableTransaction(party, requestFullstack, maxTradesPossible);
 		logger.debug("Opened transaction " + transaction);
@@ -890,14 +905,11 @@ public abstract class AbstractShop{
 	
 	protected int remainingTradesBeforeLimitReached(PlayerProfile profile) {
 		if(!PURCHASE_LIMIT.isEnabled()){
-			logger().debug("Purchase limit is not enabled");
 			return 9999;
 		}
-		logger().debug("Purchase cooldown is enabled");
 		
 		int purchaseLimit = getSetting(PURCHASE_LIMIT);
 		if(purchaseLimit == 0){
-			logger().debug("Purchase limit setting is set to 0");
 			return 9999;
 		}
 		return Math.max(0, purchaseLimit - profile.getPurchaseCount(this));
@@ -905,19 +917,15 @@ public abstract class AbstractShop{
 	
 	protected long remainingCooldownBeforeTransactionPossible(PlayerProfile profile) {
 		if(!PURCHASE_COOLDOWN.isEnabled()){
-			logger().debug("No purchase cooldown enabled");
 			return 0;
 		}
-		logger().debug("Purchase cooldown is enabled");
 		
 		long purchaseCooldown = getSetting(PURCHASE_COOLDOWN);
 		if(purchaseCooldown == 0){
-			logger().debug("Cooldown setting is set to 0");
 			return 0;
 		}
 		long purchaseTime = profile.getLastPurchaseTime(this);
 		if(purchaseTime == 0){
-			logger().debug("Player never purchased from shop before");
 			return 0;
 		}
 		
@@ -940,17 +948,21 @@ public abstract class AbstractShop{
 	 */
 	protected @NotNull Transaction findAffordableTransaction(TransactionParty party, boolean requestFullstack, int maxPossibleTrades) {
 		if(!requestFullstack){
+			logger().debug("Requesting single transaction");
 			Transaction transaction = startTransaction(party, 1);
 			transaction.canFulfill();
 			return transaction;
 		}
-		
+		logger().debug("Requesting full stack transaction");
 		int maxMultiplier = Math.min(maxPossibleTrades, getMaximumFullStackMultiplier());
-		
+		logger().debug("Maximum possible " + maxMultiplier);
 		Transaction transaction = null;
 		
+		var shopParty = getParty();
+		
 		for(int multiplier = maxMultiplier; multiplier >= 1; multiplier--){
-			transaction = startTransaction(party, multiplier);
+			logger().debug("Testing " + multiplier + " multiplier");
+			transaction = startTransaction(party, shopParty, multiplier);
 			if(transaction.canFulfill() == TransactionResult.OK){
 				return transaction;
 			}

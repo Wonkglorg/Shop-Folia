@@ -1,6 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop.transaction.party;
 
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import static com.wonkglorg.minecraft.shop.util.ExperienceUtils.getTotalExperience;
@@ -51,12 +52,17 @@ public class TransactionParty{
 	 * The funds available to the party when using {@link CurrencyType#EXPERIENCE} {@link CurrencyType#VAULT}
 	 */
 	public double getAvailableExperienceFunds() {
+		logger().debug("Checking available experience for party");
+		double experience = 0;
 		if(player.getPlayer() != null){
-			return getTotalExperience(player.getPlayer());
+			logger().debug("Party is online taking their experience directly");
+			experience = getTotalExperience(player.getPlayer());
 		} else {
 			PlayerProfile data = PlayerProfile.offline(player);
-			return data.getExperience();
+			logger().debug("Party is not online taking their experience from exp cache");
+			experience = data.getExperience();
 		}
+		return experience;
 	}
 	
 	/**
@@ -72,6 +78,7 @@ public class TransactionParty{
 	 * @param itemStack the item used as funds
 	 */
 	public int getAvailableItemFunds(ItemStack itemStack) {
+		logger().debug("Checking available items for party");
 		int amount = 0;
 		for(var item : inventory){
 			if(item == null){
@@ -101,6 +108,7 @@ public class TransactionParty{
 	 * If the party can accept payment when using {@link CurrencyType#EXPERIENCE}
 	 */
 	public boolean canAcceptExperiencePayment(double amount) {
+		logger().debug("Party can accept experience payment");
 		return true; // exp can always be accepted
 	}
 	
@@ -108,6 +116,7 @@ public class TransactionParty{
 	 * If the party can accept payment when using {@link CurrencyType#VAULT}
 	 */
 	public boolean canAcceptVaultPayment(double amount) {
+		logger().debug("Party can accept vault payment");
 		return true; //vault can always accept payment
 	}
 	
@@ -118,7 +127,9 @@ public class TransactionParty{
 	 * @param amount how much of this items stack will be used as payment
 	 */
 	public boolean canAcceptItemPayment(ItemStack itemStack, int amount) {
+		logger().debug("Checking if party can accept item payment");
 		if(amount <= 0){
+			logger().debug("Payment is 0 no check needed");
 			return true;
 		}
 		
@@ -126,7 +137,13 @@ public class TransactionParty{
 		currency.setAmount(amount);
 		
 		//let minecraft handle the checking and confirming, if it has room the returned map will be empty
-		return createVirtualInventory().addItem(itemStack).isEmpty();
+		boolean empty = createVirtualInventory().addItem(itemStack).isEmpty();
+		if(empty){
+			logger().debug("Party can accept payment");
+		} else {
+			logger().debug("Party cannot accept payment");
+		}
+		return empty;
 	}
 	
 	/**
@@ -151,10 +168,13 @@ public class TransactionParty{
 	public void addExperience(int amount) {
 		PlayerProfile profile;
 		if(player.getPlayer() != null){
+			logger().debug("Party is online, granting experience directly");
 			profile = PlayerProfile.online(player.getPlayer());
 		} else {
+			logger().debug("Party is offline, writing experience to cache");
 			profile = PlayerProfile.offline(player);
 		}
+		logger().debug("Adding " + amount + " experience points to " + this);
 		profile.addExperienceAmount(amount);
 	}
 	
@@ -166,10 +186,13 @@ public class TransactionParty{
 	public void removeExperience(int amount) {
 		PlayerProfile profile;
 		if(player.getPlayer() != null){
+			logger().debug("Party is online, removing experience directly");
 			profile = PlayerProfile.online(player.getPlayer());
 		} else {
+			logger().debug("Party is offline, removing experience from cache");
 			profile = PlayerProfile.offline(player);
 		}
+		logger().debug("Removing " + amount + " experience points from " + this);
 		profile.removeExperienceAmount(amount);
 	}
 	
@@ -179,6 +202,7 @@ public class TransactionParty{
 	 * @param amount the amount to add
 	 */
 	public void addCurrency(double amount) {
+		logger().debug("Adding " + amount + " vault currency to " + this);
 		ShopPlugin.getPlugin().getEconomy().depositPlayer(player, amount);
 	}
 	
@@ -300,6 +324,6 @@ public class TransactionParty{
 	
 	@Override
 	public String toString() {
-		return "TransactionParty{" + "player=" + player + ", inventory=" + inventory + '}';
+		return "TransactionParty{uuid=" + player.getUniqueId() + ", name=" + player.getName() + "}";
 	}
 }

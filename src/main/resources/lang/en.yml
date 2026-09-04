@@ -1,679 +1,682 @@
-# THIS FILE IS USED TO CONFIGURE WHAT MESSAGES ARE DISPLAYED #
-# ================================================================== #
-# Config supports mini message
-# =========================M A T H ================================= #
-# The config supports math operations using <math></math> to denote all content between the tags to be interpreteded as math operations
-# The operations support using placeholders which either get resolved by the programm, placeholders or templates section
-# EXAMPLES:
-# <math>1-1</math>
-# <math>((2+3)*4)+1</math>
-# ================== C O N D I T I O N A L S ======================== #
-# Conditionals allow using [if:condition][/if] to be used to only show text when certain cases are true
-# The operations support using placeholders which either get resolved by the programm, placeholders or templates section
-# Example of possible conditional usages:
-# Found [if:%hasValue%]Value[else]Nothing[/if]
-# Result [if:!%isOffline% || !%banned%]OK[else]DENIED[/if]
-# You have [if:%coins%==10]exactly[else-if:%coins%>10]more than[else]less than[/if] 10 coins
-#
+  # THIS FILE IS USED TO CONFIGURE WHAT MESSAGES ARE DISPLAYED #
+  # ================================================================== #
+  # Config supports mini message
+  # =========================M A T H ================================= #
+  # The config supports math operations using <math></math> to denote all content between the tags to be interpreteded as math operations
+  # The operations support using placeholders which either get resolved by the programm, placeholders or templates section
+  # EXAMPLES:
+  # <math>1-1</math>
+  # <math>((2+3)*4)+1</math>
+  # ================== C O N D I T I O N A L S ======================== #
+  # Conditionals allow using [if:condition][/if] to be used to only show text when certain cases are true
+  # The operations support using placeholders which either get resolved by the programm, placeholders or templates section
+  # Example of possible conditional usages:
+  # Found [if:%hasValue%]Value[else]Nothing[/if]
+  # Result [if:!%isOffline% || !%banned%]OK[else]DENIED[/if]
+  # You have [if:%coins%==10]exactly[else-if:%coins%>10]more than[else]less than[/if] 10 coins
+  #
 
-## Placeholder definitions which can be used in the rest of the file to replace any keys surrounded by % % example: %currency-name%
-placeholders:
-  currency-name: "<aqua>Diamond(s)"
-  in-stock-color: "<green>"
-  out-of-stock-color: "<red>"
-  overfilled-stock-color: "<gold>"
-  cooldown-stock-color: "<red>"
-  limit-reached-stock-color: "<red>"
-  admin-stock: "unlimited"
-  server-display-name: "<light_purple>Server"
-  shop-owner-name-color: "<white>"
-  closed-shop: "<red>CLOSED"
-# templates which act similar to placeholders but allow placeholders being part of templates to evaluate
-templates:
-  shop-price-display: "[if:%price%==0]<aqua>FREE[else]<aqua>%price% %currency-name%[/if]"
+  ## Placeholder definitions which can be used in the rest of the file to replace any keys surrounded by % % example: %currency-name%
+  placeholders:
+    currency-name: "<aqua>Diamond(s)"
+    in-stock-color: "<green>"
+    out-of-stock-color: "<red>"
+    overfilled-stock-color: "<gold>"
+    cooldown-stock-color: "<red>"
+    limit-reached-stock-color: "<red>"
+    admin-stock: "unlimited"
+    server-display-name: "<light_purple>Server"
+    shop-owner-name-color: "<white>"
+    closed-shop: "<red>CLOSED"
+  # templates which act similar to placeholders but allow placeholders being part of templates to evaluate
+  templates:
+    shop-price-display: "[if:%price%==0]<aqua>FREE[else]<aqua>%price% %currency-name%[/if]"
 
-##Shop transaction related messages
-transaction:
-  success:
+  ##Shop transaction related messages
+  transaction:
+    success:
+      sell:
+        # the message the player receives on a successful trade
+        user: '<gray>You bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from %owner% for %shop-price-display%<gray>.'
+        # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
+        owner: '<gray>%user% bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from you for %shop-price-display%<gray> at <white>%location%<gray>.'
+      buy:
+        # the message the player receives on a successful trade
+        user: '<gray>You sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to %owner% for %shop-price-display%<gray>.'
+        # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
+        owner: '<gray>%user% sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to you for %shop-price-display%<gray> at <white>%location%<gray>.'
+      barter:
+        # the message the player receives on a successful trade
+        user: '<gray>You bartered <white>%barter-item-amount% <gray>of your <white>%barter-item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of %owner%s <white>%item%(s)<aqua>%item-enchants%<gray>.'
+        # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
+        owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
+      gamble:
+        # the message the player receives on a successful trade
+        user: '<gray>You gambled %shop-price-display% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
+
+    issue:
+      sell:
+        # called when the user tries to transact with their own shop while this feature is disabled
+        use-own-shop: "<gray>You cannot use your own shop."
+        # called when 2 players try to transact with a shop at the same time
+        shop-performing-transaction: "<red>Shop is transacting with another player."
+        # called when a player tries to transact with a shop that is currently on cooldown for them
+        player-cooldown: "<red>You can't trade with this shop for another %duration%!"
+        # called when a player tries to transact with a shop where they already reached their limit on possible transacts
+        player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
+        # called when an external plugin listens to the shop transaction event and cancels it
+        cancelled-external: "<gray>Transaction cancelled."
+        # called when the shop has no stock to sell
+        shop-no-stock: "<red>This shop is out of stock."
+        # called when the shop has no stock to sell and the owner opted into being notified about it
+        owner-no-stock: "<red>[Shop] Your selling shop at %location% is out of stock."
+        # called when the shop has no space to accept the server's currency
+        shop-no-space: "<red>This shop does not have enough space in its inventory to accept your payment."
+        # called when the shop has no space to accept the server's currency and the owner opted into being notified about it
+        owner-no-space: "<red>[Shop] Your selling shop at %location% is full."
+        # called when the player tries to buy from the shop but does not have enough currency for the trade
+        player-no-stock: "<red>You do not have sufficient funds to buy from this shop."
+        # called when the player tries to buy from the shop but does not have enough inventory space to receive the purchased items
+        player-no-space: "<red>You do not have enough space in your inventory to buy from this shop."
+
+      buy:
+        # called when the user tries to transact with their own shop while this feature is disabled
+        use-own-shop: "<gray>You cannot use your own shop."
+        # called when 2 players try to transact with a shop at the same time
+        shop-performing-transaction: "<red>Shop is transacting with another player."
+        # called when a player tries to transact with a shop that is currently on cooldown for them
+        player-cooldown: "<red>You can't trade with this shop for another %duration%!"
+        # called when a player tries to transact with a shop where they already reached their limit on possible transacts
+        player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
+        # called when an external plugin listens to the shop transaction event and cancels it
+        cancelled-external: "<gray>Transaction cancelled."
+        # called when the shop has insufficient funds to buy the items from the player
+        shop-no-stock: "<red>This shop is out of funds."
+        # called when the shop has insufficient funds to buy the items from the player and the owner opted into being notified about it
+        owner-no-stock: "<red>[Shop] Your buying shop at %location% is out of funds."
+        # called when the shop does not have enough inventory space to accept the items being sold by the player
+        shop-no-space: "<red>This shop does not have enough space in its inventory for your items."
+        # called when the shop does not have enough inventory space and the owner opted into being notified about it
+        owner-no-space: "<red>[Shop] Your buying shop at %location% is full."
+        # called when the player tries to sell to the shop but does not have enough of the required item
+        player-no-stock: "<red>You do not have enough items to sell to this shop."
+        # called when the player tries to sell to the shop but does not have enough inventory space to receive the payment from the shop
+        player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+
+      barter:
+        # called when the user tries to transact with their own shop while this feature is disabled
+        use-own-shop: "<gray>You cannot use your own shop."
+        # called when 2 players try to transact with a shop at the same time
+        shop-performing-transaction: "<red>Shop is transacting with another player."
+        # called when a player tries to transact with a shop that is currently on cooldown for them
+        player-cooldown: "<red>You can't trade with this shop for another %duration%!"
+        # called when a player tries to transact with a shop where they already reached their limit on possible transacts
+        player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
+        # called when an external plugin listens to the shop transaction event and cancels it
+        cancelled-external: "<gray>Transaction cancelled."
+        # called when the shop has insufficient stock of the item being offered for barter
+        shop-no-stock: "<red>This shop is out of stock."
+        # called when the shop has insufficient stock and the owner opted into being notified about it
+        owner-no-stock: "<red>[Shop] Your barter shop at %location% is out of stock."
+        # called when the shop does not have enough inventory space to accept the player's barter items
+        shop-no-space: "<red>This shop does not have enough space in its inventory to barter with you."
+        # called when the shop does not have enough inventory space and the owner opted into being notified about it
+        owner-no-space: "<red>Your barter shop at %location% is full."
+        # called when the player does not have enough of the required barter item
+        player-no-stock: "<red>You do not have sufficient items to barter with this shop."
+        # called when the player does not have enough inventory space to receive the items from the barter
+        player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+
+      gamble:
+        # called when the user tries to transact with their own shop while this feature is disabled
+        use-own-shop: "<gray>You cannot use your own shop."
+        # called when 2 players try to transact with a shop at the same time
+        shop-performing-transaction: "<red>Shop is transacting with another player."
+        # called when a player tries to transact with a shop that is currently on cooldown for them
+        player-cooldown: "<red>You can't trade with this shop for another %duration%!"
+        # called when a player tries to transact with a shop where they already reached their limit on possible transacts
+        player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
+        # called when an external plugin listens to the shop transaction event and cancels it
+        cancelled-external: "<gray>Transaction cancelled."
+        # called when the shop does not have any items available to use as gambling rewards
+        shop-no-stock: "<red>This shop does not have items to gamble."
+        # called when the player does not have enough currency to gamble with the shop
+        player-no-stock: "<red>You do not have sufficient funds to gamble with this shop."
+        # called when the player does not have enough inventory space to receive the gambling reward
+        player-no-space: "<red>You do not have enough space in your inventory to accept the gambling reward from this shop."
+
+
+  ##Shop interaction related messages
+  interaction:
+    success:
+      sell:
+        # Sent when a sell shop sign is written to with valid shop creation syntax and the shop creation process is initialized.
+        initialize:
+          - "<gold>Hit the sign with the item you want to sell to other players or use"
+          - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
+        # Sent when a sell shop has been successfully initialized after the player provides the item they want to sell.
+        create: "<yellow>You have created a shop that sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
+        # Sent when the owner successfully destroys their own sell shop.
+        destroy: "<gray>You have destroyed your selling shop."
+        # Sent when a player successfully destroys a sell shop owned by another player.
+        destroy-other: "<gray>You have destroyed a selling shop owned by %owner%."
+        # Sent when a player opens a sell shop owned by another player.
+        open-other: "<gray>You are opening a selling shop owned by %owner%."
+      buy:
+        # Sent when a buy shop sign is written with valid shop creation syntax and the shop creation process is initialized.
+        initialize:
+          - "<gold>Hit the sign with the item you want to buy from other players or use"
+          - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
+        # Sent when a buy shop has been successfully initialized after the player provides the item they want to buy.
+        create: "<yellow>You have created a shop that buys <gold>%item%(s)<aqua>%item-enchants%<yellow>."
+        # Sent when the owner successfully destroys their own buy shop.
+        destroy: "<gray>You have destroyed your buying shop."
+        # Sent when a player successfully destroys a buy shop owned by another player.
+        destroy-other: "<gray>You have destroyed a buying shop owned by %owner%."
+        # Sent when a player opens a buy shop owned by another player.
+        open-other: "<gray>You are opening a buying shop owned by %owner%."
+      barter:
+        # Sent when a barter shop sign is written with valid shop creation syntax and the shop creation process is initialized.
+        initialize:
+          - "<gold>Hit the sign with the item you want to barter to other players or use"
+          - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
+        # Sent when the first item has been provided and the shop is waiting for the player to provide the item they want in exchange.
+        initialize-barter:
+          - "<gray>You have set this shop's barter item"
+          - "<gold>Now hit the sign again with the item you want to receive for it"
+          - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
+        # Sent when a barter shop has been successfully initialized after both the offered and requested items have been provided.
+        create: "<yellow>You have created a shop that barters <gold>%item%(s)<aqua>%item-enchants% <yellow>for <gold>%barter-item%(s)<aqua>%barter-item-enchants%<yellow>."
+        # Sent when the owner successfully destroys their own barter shop.
+        destroy: "<gray>You have destroyed your bartering shop."
+        # Sent when a player successfully destroys a barter shop owned by another player.
+        destroy-other: "<gray>You have destroyed a bartering shop owned by %owner%."
+        # Sent when a player opens a barter shop owned by another player.
+        open-other: "<gray>You are opening a bartering shop owned by %owner%."
+      gamble:
+        # Sent when a gambling shop has been successfully created and initialized.
+        create: "<yellow>You have created a gambling shop."
+        # Sent when a player successfully destroys a gambling shop owned by the server.
+        destroy-other: "<gray>You have destroyed a gambling shop owned by %server-name%."
+    issues:
+      create:
+        # Sent when a player attempts to start creating a shop while they already have another shop creation process active.
+        initialize-chest-other: "<red>You already have a shop being created!"
+        # Sent when amount of the shop creation sign does not contain a valid positive number for the item amount.
+        line-amount: "<red>The amount (line 2) needs to be a positive number."
+        # Sent when price of the shop creation sign does not contain a valid positive number for the shop price.
+        line-price: "<red>The price (line 3) needs to be a positive number."
+        # Sent when a player attempts to create a shop using a chest that already belongs to another player's shop.
+        overlap-other-shop: "<red>You may not create a shop on the same chest as another player."
+        # Sent when the player does not have enough funds to pay the shop creation cost.
+        insufficient-funds: "<red>You do not have the funds required to create this shop."
+        # Sent when an external plugin cancels the shop creation event
+        cancel: "<red>Cancelled shop creation."
+        # Sent when the player attempts to create a shop in a world where shops are disabled.
+        world-blacklist: "<red>Shops are not allowed to be created in this world."
+        # Sent when the item being used to create the shop is blocked by the configured item filter.
+        item-filter-deny: "<red>This item is disabled for shop usage!"
+      destroy:
+        uninitialized-chest: "<red>Can't destroy sign currently in initialisation process."
+        # Sent when the player does not have enough funds to pay the shop destruction cost.
+        insufficient-funds: "<red>You do not have the funds required to destroy this shop."
+        # Sent when the player attempts to destroy a shop sign without sneaking.
+        sign-requires-sneak: "<red>You must sneak to destroy this shop sign."
+        # Sent when the player attempts to break the shop's chest before removing the shop sign.
+        chest: "<red>You must remove the sign from this shop to break it."
+        # Sent when a player attempts to destroy a shop that they do not own.
+        chest-other: "<red>Only the owner of this shop can destroy it."
+
+
+  description:
     sell:
-      # the message the player receives on a successful trade
-      user: '<gray>You bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from %owner% for %shop-price-display%<gray>.'
-      # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
-      owner: '<gray>%user% bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from you for %shop-price-display%<gray> at <white>%location%<gray>.'
-    buy:
-      # the message the player receives on a successful trade
-      user: '<gray>You sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to %owner% for %shop-price-display%<gray>.'
-      # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
-      owner: '<gray>%user% sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to you for %shop-price-display%<gray> at <white>%location%<gray>.'
-    barter:
-      # the message the player receives on a successful trade
-      user: '<gray>You bartered <white>%barter-item-amount% <gray>of your <white>%barter-item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of %owner%s <white>%item%(s)<aqua>%item-enchants%<gray>.'
-      # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
-      owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
-    gamble:
-      # the message the player receives on a successful trade
-      user: '<gray>You gambled %shop-price-display% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
+      info:
+        - '<dark_gray>+---------------------------------------------------+'
+        - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(selling items)'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>This shop is selling <yellow>%item-amount%<gray>x %item% <gray>for %shop-price-display%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Selling: <yellow>%item-amount%<gray>x %item%'
+        - '<dark_gray>| <gray>Price: %shop-price-display% <gray>(%price-per-item% per 1 %item%)'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Owner: <white>%owner%'
+        - '<dark_gray>| <gray>Stock: <green>%stock%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <dark_gray>Hover over the item for more details.'
+        - '<dark_gray>+---------------------------------------------------+'
 
-  issue:
-    sell:
-      # called when the user tries to transact with their own shop while this feature is disabled
-      use-own-shop: "<gray>You cannot use your own shop."
-      # called when 2 players try to transact with a shop at the same time
-      shop-performing-transaction: "<red>Shop is transacting with another player."
-      # called when a player tries to transact with a shop that is currently on cooldown for them
-      player-cooldown: "<red>You can't trade with this shop for another %duration%!"
-      # called when a player tries to transact with a shop where they already reached their limit on possible transacts
-      player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
-      # called when an external plugin listens to the shop transaction event and cancels it
-      cancelled-external: "<gray>Transaction cancelled."
-      # called when the shop has no stock to sell
-      shop-no-stock: "<red>This shop is out of stock."
-      # called when the shop has no stock to sell and the owner opted into being notified about it
-      owner-no-stock: "<red>[Shop] Your selling shop at %location% is out of stock."
-      # called when the shop has no space to accept the server's currency
-      shop-no-space: "<red>This shop does not have enough space in its inventory to accept your payment."
-      # called when the shop has no space to accept the server's currency and the owner opted into being notified about it
-      owner-no-space: "<red>[Shop] Your selling shop at %location% is full."
-      # called when the player tries to buy from the shop but does not have enough currency for the trade
-      player-no-stock: "<red>You do not have sufficient funds to buy from this shop."
-      # called when the player tries to buy from the shop but does not have enough inventory space to receive the purchased items
-      player-no-space: "<red>You do not have enough space in your inventory to buy from this shop."
+      stats:
+        - '<dark_gray>| <gold><bold>Transaction History</bold>'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>1 Day:   <gold>%1-day% transactions'
+        - '<dark_gray>| <aqua>          +<math>%price%*%1-day%</math> %currency-name%  <red>-<math>%amount%*%1-day%</math> %item%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>7 Days:  <gold>%7-day% transactions'
+        - '<dark_gray>| <aqua>          +<math>%price%*%7-day%</math> %currency-name%  <red>-<math>%amount%*%7-day%</math> %item%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>30 Days: <gold>%30-day% transactions'
+        - '<dark_gray>| <aqua>          +<math>%price%*%30-day%</math> %currency-name%  <red>-<math>%amount%*%30-day%</math> %item%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Total:   <gold>%total% transactions'
+        - '<dark_gray>| <aqua>          +<math>%price%*%total%</math> %currency-name%  <red>-<math>%amount%*%total%</math> %item%'
+        - '<dark_gray>+---------------------------------------------------+'
 
     buy:
-      # called when the user tries to transact with their own shop while this feature is disabled
-      use-own-shop: "<gray>You cannot use your own shop."
-      # called when 2 players try to transact with a shop at the same time
-      shop-performing-transaction: "<red>Shop is transacting with another player."
-      # called when a player tries to transact with a shop that is currently on cooldown for them
-      player-cooldown: "<red>You can't trade with this shop for another %duration%!"
-      # called when a player tries to transact with a shop where they already reached their limit on possible transacts
-      player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
-      # called when an external plugin listens to the shop transaction event and cancels it
-      cancelled-external: "<gray>Transaction cancelled."
-      # called when the shop has insufficient funds to buy the items from the player
-      shop-no-stock: "<red>This shop is out of funds."
-      # called when the shop has insufficient funds to buy the items from the player and the owner opted into being notified about it
-      owner-no-stock: "<red>[Shop] Your buying shop at %location% is out of funds."
-      # called when the shop does not have enough inventory space to accept the items being sold by the player
-      shop-no-space: "<red>This shop does not have enough space in its inventory for your items."
-      # called when the shop does not have enough inventory space and the owner opted into being notified about it
-      owner-no-space: "<red>[Shop] Your buying shop at %location% is full."
-      # called when the player tries to sell to the shop but does not have enough of the required item
-      player-no-stock: "<red>You do not have enough items to sell to this shop."
-      # called when the player tries to sell to the shop but does not have enough inventory space to receive the payment from the shop
-      player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+      info:
+        - '<dark_gray>+---------------------------------------------------+'
+        - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(buying items)'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>This shop is buying <yellow>%item-amount%<gray>x %item% <gray>for %shop-price-display%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Buying: <yellow>%item-amount%<gray>x %item%'
+        - '<dark_gray>| <gray>Price: %shop-price-display% <gray>(%price-per-item% per 1 %item%)'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Owner: <white>%owner%'
+        - '<dark_gray>| <gray>Stock: <green>%stock%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <dark_gray>Hover over the item for more details.'
+        - '<dark_gray>+---------------------------------------------------+'
+
+      stats:
+        - '<dark_gray>| <gold><bold>Transaction History</bold>'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>1 Day:   <gold>%1-day% transactions'
+        - '<dark_gray>| <green>          +<math>%amount%*%1-day%</math> %item%  <red>-<math>%price%*%1-day%</math> %currency-name%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>7 Days:  <gold>%7-day% transactions'
+        - '<dark_gray>| <green>          +<math>%amount%*%7-day%</math> %item%  <red>-<math>%price%*%7-day%</math> %currency-name%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>30 Days: <gold>%30-day% transactions'
+        - '<dark_gray>| <green>          +<math>%amount%*%30-day%</math> %item%  <red>-<math>%price%*%30-day%</math> %currency-name%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Total:   <gold>%total% transactions'
+        - '<dark_gray>| <green>          +<math>%amount%*%total%</math> %item%  <red>-<math>%price%*%total%</math> %currency-name%'
+        - '<dark_gray>+---------------------------------------------------+'
 
     barter:
-      # called when the user tries to transact with their own shop while this feature is disabled
-      use-own-shop: "<gray>You cannot use your own shop."
-      # called when 2 players try to transact with a shop at the same time
-      shop-performing-transaction: "<red>Shop is transacting with another player."
-      # called when a player tries to transact with a shop that is currently on cooldown for them
-      player-cooldown: "<red>You can't trade with this shop for another %duration%!"
-      # called when a player tries to transact with a shop where they already reached their limit on possible transacts
-      player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
-      # called when an external plugin listens to the shop transaction event and cancels it
-      cancelled-external: "<gray>Transaction cancelled."
-      # called when the shop has insufficient stock of the item being offered for barter
-      shop-no-stock: "<red>This shop is out of stock."
-      # called when the shop has insufficient stock and the owner opted into being notified about it
-      owner-no-stock: "<red>[Shop] Your barter shop at %location% is out of stock."
-      # called when the shop does not have enough inventory space to accept the player's barter items
-      shop-no-space: "<red>This shop does not have enough space in its inventory to barter with you."
-      # called when the shop does not have enough inventory space and the owner opted into being notified about it
-      owner-no-space: "<red>Your barter shop at %location% is full."
-      # called when the player does not have enough of the required barter item
-      player-no-stock: "<red>You do not have sufficient items to barter with this shop."
-      # called when the player does not have enough inventory space to receive the items from the barter
-      player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+      info:
+        - '<dark_gray>+---------------------------------------------------+'
+        - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(bartering items)'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>This shop is trading <yellow>%item-amount%<gray>x %item% <gray>for <yellow>%barter-item-amount%<gray>x %barter-item%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>You give: <yellow>%barter-item-amount%<gray>x %barter-item%'
+        - '<dark_gray>| <gray>You receive: <yellow>%item-amount%<gray>x %item%'
+        - '<dark_gray>| <gray>Price: <white>%price-per-item% <gray>per 1 %item%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Owner: <white>%owner%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <dark_gray>Hover over the items for more details.'
+        - '<dark_gray>+---------------------------------------------------+'
+
+      stats:
+        - '<dark_gray>| <gold><bold>Transaction History</bold>'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>1 Day:   <gold>%1-day% transactions'
+        - '<dark_gray>| <green>          +<math>%item-amount%*%1-day%</math> %barter-item%  <red>-<math>%barter-item-amount%*%1-day%</math> %item%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>7 Days:  <gold>%7-day% transactions'
+        - '<dark_gray>| <green>          +<math>%item-amount%*%7-day%</math> %barter-item%  <red>-<math>%barter-item-amount%*%7-day%</math> %item%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>30 Days: <gold>%30-day% transactions'
+        - '<dark_gray>| <green>          +<math>%item-amount%*%30-day%</math> %barter-item%  <red>-<math>%barter-item-amount%*%30-day%</math> %item%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Total:   <gold>%total% transactions'
+        - '<dark_gray>| <green>          +<math>%item-amount%*%total%</math> %barter-item%  <red>-<math>%barter-item-amount%*%total%</math> %item%'
+        - '<dark_gray>+---------------------------------------------------+'
 
     gamble:
-      # called when the user tries to transact with their own shop while this feature is disabled
-      use-own-shop: "<gray>You cannot use your own shop."
-      # called when 2 players try to transact with a shop at the same time
-      shop-performing-transaction: "<red>Shop is transacting with another player."
-      # called when a player tries to transact with a shop that is currently on cooldown for them
-      player-cooldown: "<red>You can't trade with this shop for another %duration%!"
-      # called when a player tries to transact with a shop where they already reached their limit on possible transacts
-      player-transaction-limit-reached: "<red>You reached your trading limit with this shop!"
-      # called when an external plugin listens to the shop transaction event and cancels it
-      cancelled-external: "<gray>Transaction cancelled."
-      # called when the shop does not have any items available to use as gambling rewards
-      shop-no-stock: "<red>This shop does not have items to gamble."
-      # called when the player does not have enough currency to gamble with the shop
-      player-no-stock: "<red>You do not have sufficient funds to gamble with this shop."
-      # called when the player does not have enough inventory space to receive the gambling reward
-      player-no-space: "<red>You do not have enough space in your inventory to accept the gambling reward from this shop."
+      info:
+        - '<dark_gray>+---------------------------------------------------+'
+        - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(gambling for items)'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>This shop gives a random item <gray>for %shop-price-display%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Item: <aqua>Random Item'
+        - '<dark_gray>| <gray>Price: <green>%price%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Owner: <white>%owner%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <dark_gray>Hover over the item for more details.'
+        - '<dark_gray>+---------------------------------------------------+'
 
+      stats:
+        - '<dark_gray>| <gold><bold>Transaction History</bold>'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>1 Day:   <gold>%1-day% transactions'
+        - '<dark_gray>| <aqua>          +<math>%price%*%1-day%</math> %currency-name%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>7 Days:  <gold>%7-day% transactions'
+        - '<dark_gray>| <aqua>          +<math>%price%*%7-day%</math> %currency-name%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>30 Days: <white>%30-day% transactions'
+        - '<dark_gray>| <aqua>          +<math>%price%*%30-day%</math> %currency-name%'
+        - '<dark_gray>|'
+        - '<dark_gray>| <gray>Total:   <white>%total% transactions'
+        - '<dark_gray>| <aqua>          +<math>%price%*%total%</math> %currency-name%'
+        - '<dark_gray>+---------------------------------------------------+'
+  permission:
+    error:
+      use: "<red>You are not authorized to use %shop-type% shops."
+      create: "<red>You are not authorized to create shops."
+      create-type: "<red>You are not authorized to create shops of type %shop-type%."
+      destroy: "<red>You are not authorized to destroy your own shops."
+      destroyOther: "<red>You are not authorized to destroy other players shops."
+      openOther: "<red>You are not authorized to open other players shops."
+      buildLimit: "<red>You reached your build limit of %user-amount%/%build-limit% shops."
 
-##Shop interaction related messages
-interaction:
-  success:
-    sell:
-      # Sent when a sell shop sign is written to with valid shop creation syntax and the shop creation process is initialized.
-      initialize:
-        - "<gold>Hit the sign with the item you want to sell to other players or use"
-        - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
-      # Sent when a sell shop has been successfully initialized after the player provides the item they want to sell.
-      create: "<yellow>You have created a shop that sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
-      # Sent when the owner successfully destroys their own sell shop.
-      destroy: "<gray>You have destroyed your selling shop."
-      # Sent when a player successfully destroys a sell shop owned by another player.
-      destroy-other: "<gray>You have destroyed a selling shop owned by %owner%."
-      # Sent when a player opens a sell shop owned by another player.
-      open-other: "<gray>You are opening a selling shop owned by %owner%."
-    buy:
-      # Sent when a buy shop sign is written with valid shop creation syntax and the shop creation process is initialized.
-      initialize:
-        - "<gold>Hit the sign with the item you want to buy from other players or use"
-        - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
-      # Sent when a buy shop has been successfully initialized after the player provides the item they want to buy.
-      create: "<yellow>You have created a shop that buys <gold>%item%(s)<aqua>%item-enchants%<yellow>."
-      # Sent when the owner successfully destroys their own buy shop.
-      destroy: "<gray>You have destroyed your buying shop."
-      # Sent when a player successfully destroys a buy shop owned by another player.
-      destroy-other: "<gray>You have destroyed a buying shop owned by %owner%."
-      # Sent when a player opens a buy shop owned by another player.
-      open-other: "<gray>You are opening a buying shop owned by %owner%."
-    barter:
-      # Sent when a barter shop sign is written with valid shop creation syntax and the shop creation process is initialized.
-      initialize:
-        - "<gold>Hit the sign with the item you want to barter to other players or use"
-        - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
-      # Sent when the first item has been provided and the shop is waiting for the player to provide the item they want in exchange.
-      initialize-barter:
-        - "<gray>You have set this shop's barter item"
-        - "<gold>Now hit the sign again with the item you want to receive for it"
-        - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
-      # Sent when a barter shop has been successfully initialized after both the offered and requested items have been provided.
-      create: "<yellow>You have created a shop that barters <gold>%item%(s)<aqua>%item-enchants% <yellow>for <gold>%barter-item%(s)<aqua>%barter-item-enchants%<yellow>."
-      # Sent when the owner successfully destroys their own barter shop.
-      destroy: "<gray>You have destroyed your bartering shop."
-      # Sent when a player successfully destroys a barter shop owned by another player.
-      destroy-other: "<gray>You have destroyed a bartering shop owned by %owner%."
-      # Sent when a player opens a barter shop owned by another player.
-      open-other: "<gray>You are opening a bartering shop owned by %owner%."
-    gamble:
-      # Sent when a gambling shop has been successfully created and initialized.
-      create: "<yellow>You have created a gambling shop."
-      # Sent when a player successfully destroys a gambling shop owned by the server.
-      destroy-other: "<gray>You have destroyed a gambling shop owned by %server-name%."
-  issues:
-    create:
-      # Sent when a player attempts to start creating a shop while they already have another shop creation process active.
-      initialize-chest-other: "<red>You already have a shop being created!"
-      # Sent when amount of the shop creation sign does not contain a valid positive number for the item amount.
-      line-amount: "<red>The amount (line 2) needs to be a positive number."
-      # Sent when price of the shop creation sign does not contain a valid positive number for the shop price.
-      line-price: "<red>The price (line 3) needs to be a positive number."
-      # Sent when a player attempts to create a shop using a chest that already belongs to another player's shop.
-      overlap-other-shop: "<red>You may not create a shop on the same chest as another player."
-      # Sent when the player does not have enough funds to pay the shop creation cost.
-      insufficient-funds: "<red>You do not have the funds required to create this shop."
-      # Sent when an external plugin cancels the shop creation event
-      cancel: "<red>Cancelled shop creation."
-      # Sent when the player attempts to create a shop in a world where shops are disabled.
-      world-blacklist: "<red>Shops are not allowed to be created in this world."
-      # Sent when the item being used to create the shop is blocked by the configured item filter.
-      item-filter-deny: "<red>This item is disabled for shop usage!"
-    destroy:
-      uninitialized-chest: "<red>Can't destroy sign currently in initialisation process."
-      # Sent when the player does not have enough funds to pay the shop destruction cost.
-      insufficient-funds: "<red>You do not have the funds required to destroy this shop."
-      # Sent when the player attempts to destroy a shop sign without sneaking.
-      sign-requires-sneak: "<red>You must sneak to destroy this shop sign."
-      # Sent when the player attempts to break the shop's chest before removing the shop sign.
-      chest: "<red>You must remove the sign from this shop to break it."
-      # Sent when a player attempts to destroy a shop that they do not own.
-      chest-other: "<red>Only the owner of this shop can destroy it."
+  hover:
+    location:
+      - '%item% <gray>(x%item-amount%)'
+      - '<aqua>%item-enchants%'
+      - '<gray>Type: <aqua>%shop-type%'
+      - '<gray>Price: <green>%price%'
+      - '<gray>Stock: <green>%stock%'
+      - '<gray>%owner%'
 
-
-description:
-  sell:
-    info:
-      - '<dark_gray>+---------------------------------------------------+'
-      - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(selling items)'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>This shop is selling <yellow>%item-amount%<gray>x %item% <gray>for %shop-price-display%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Selling: <yellow>%item-amount%<gray>x %item%'
-      - '<dark_gray>| <gray>Price: %shop-price-display% <gray>(%price-per-item% per 1 %item%)'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Owner: <white>%owner%'
-      - '<dark_gray>| <gray>Stock: <green>%stock%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <dark_gray>Hover over the item for more details.'
-      - '<dark_gray>+---------------------------------------------------+'
-
-    stats:
-      - '<dark_gray>| <gold><bold>Transaction History</bold>'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>1 Day:   <gold>%1-day% transactions'
-      - '<dark_gray>| <aqua>          +<math>%price%*%1-day%</math> %currency-name%  <red>-<math>%amount%*%1-day%</math> %item%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>7 Days:  <gold>%7-day% transactions'
-      - '<dark_gray>| <aqua>          +<math>%price%*%7-day%</math> %currency-name%  <red>-<math>%amount%*%7-day%</math> %item%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>30 Days: <gold>%30-day% transactions'
-      - '<dark_gray>| <aqua>          +<math>%price%*%30-day%</math> %currency-name%  <red>-<math>%amount%*%30-day%</math> %item%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Total:   <gold>%total% transactions'
-      - '<dark_gray>| <aqua>          +<math>%price%*%total%</math> %currency-name%  <red>-<math>%amount%*%total%</math> %item%'
-      - '<dark_gray>+---------------------------------------------------+'
-
-  buy:
-    info:
-      - '<dark_gray>+---------------------------------------------------+'
-      - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(buying items)'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>This shop is buying <yellow>%item-amount%<gray>x %item% <gray>for %shop-price-display%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Buying: <yellow>%item-amount%<gray>x %item%'
-      - '<dark_gray>| <gray>Price: %shop-price-display% <gray>(%price-per-item% per 1 %item%)'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Owner: <white>%owner%'
-      - '<dark_gray>| <gray>Stock: <green>%stock%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <dark_gray>Hover over the item for more details.'
-      - '<dark_gray>+---------------------------------------------------+'
-
-    stats:
-      - '<dark_gray>| <gold><bold>Transaction History</bold>'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>1 Day:   <gold>%1-day% transactions'
-      - '<dark_gray>| <green>          +<math>%amount%*%1-day%</math> %item%  <red>-<math>%price%*%1-day%</math> %currency-name%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>7 Days:  <gold>%7-day% transactions'
-      - '<dark_gray>| <green>          +<math>%amount%*%7-day%</math> %item%  <red>-<math>%price%*%7-day%</math> %currency-name%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>30 Days: <gold>%30-day% transactions'
-      - '<dark_gray>| <green>          +<math>%amount%*%30-day%</math> %item%  <red>-<math>%price%*%30-day%</math> %currency-name%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Total:   <gold>%total% transactions'
-      - '<dark_gray>| <green>          +<math>%amount%*%total%</math> %item%  <red>-<math>%price%*%total%</math> %currency-name%'
-      - '<dark_gray>+---------------------------------------------------+'
-
-  barter:
-    info:
-      - '<dark_gray>+---------------------------------------------------+'
-      - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(bartering items)'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>This shop is trading <yellow>%item-amount%<gray>x %item% <gray>for <yellow>%barter-item-amount%<gray>x %barter-item%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>You give: <yellow>%barter-item-amount%<gray>x %barter-item%'
-      - '<dark_gray>| <gray>You receive: <yellow>%item-amount%<gray>x %item%'
-      - '<dark_gray>| <gray>Price: <white>%price-per-item% <gray>per 1 %item%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Owner: <white>%owner%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <dark_gray>Hover over the items for more details.'
-      - '<dark_gray>+---------------------------------------------------+'
-
-    stats:
-      - '<dark_gray>| <gold><bold>Transaction History</bold>'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>1 Day:   <gold>%1-day% transactions'
-      - '<dark_gray>| <green>          +<math>%item-amount%*%1-day%</math> %barter-item%  <red>-<math>%barter-item-amount%*%1-day%</math> %item%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>7 Days:  <gold>%7-day% transactions'
-      - '<dark_gray>| <green>          +<math>%item-amount%*%7-day%</math> %barter-item%  <red>-<math>%barter-item-amount%*%7-day%</math> %item%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>30 Days: <gold>%30-day% transactions'
-      - '<dark_gray>| <green>          +<math>%item-amount%*%30-day%</math> %barter-item%  <red>-<math>%barter-item-amount%*%30-day%</math> %item%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Total:   <gold>%total% transactions'
-      - '<dark_gray>| <green>          +<math>%item-amount%*%total%</math> %barter-item%  <red>-<math>%barter-item-amount%*%total%</math> %item%'
-      - '<dark_gray>+---------------------------------------------------+'
-
-  gamble:
-    info:
-      - '<dark_gray>+---------------------------------------------------+'
-      - '<dark_gray>| <green><bold>Shop Information</bold> <gray>(gambling for items)'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>This shop gives a random item <gray>for %shop-price-display%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Item: <aqua>Random Item'
-      - '<dark_gray>| <gray>Price: <green>%price%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Owner: <white>%owner%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <dark_gray>Hover over the item for more details.'
-      - '<dark_gray>+---------------------------------------------------+'
-
-    stats:
-      - '<dark_gray>| <gold><bold>Transaction History</bold>'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>1 Day:   <gold>%1-day% transactions'
-      - '<dark_gray>| <aqua>          +<math>%price%*%1-day%</math> %currency-name%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>7 Days:  <gold>%7-day% transactions'
-      - '<dark_gray>| <aqua>          +<math>%price%*%7-day%</math> %currency-name%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>30 Days: <white>%30-day% transactions'
-      - '<dark_gray>| <aqua>          +<math>%price%*%30-day%</math> %currency-name%'
-      - '<dark_gray>|'
-      - '<dark_gray>| <gray>Total:   <white>%total% transactions'
-      - '<dark_gray>| <aqua>          +<math>%price%*%total%</math> %currency-name%'
-      - '<dark_gray>+---------------------------------------------------+'
-permission:
-  error:
-    use: "<red>You are not authorized to use %shop-type% shops."
-    create: "<red>You are not authorized to create shops."
-    create-type: "<red>You are not authorized to create shops of type %shop-type%."
-    destroy: "<red>You are not authorized to destroy your own shops."
-    destroyOther: "<red>You are not authorized to destroy other players shops."
-    openOther: "<red>You are not authorized to open other players shops."
-    buildLimit: "<red>You reached your build limit of %user-amount%/%build-limit% shops."
-
-hover:
-  location:
-    - '%item% <gray>(x%item-amount%)'
-    - '<aqua>%item-enchants%'
-    - '<gray>Type: <aqua>%shop-type%'
-    - '<gray>Price: <green>%price%'
-    - '<gray>Stock: <green>%stock%'
-    - '<gray>%owner%'
-
-command:
-  shop:
-    usage:
-      user:
-        -"<blue>/shop list <gray>- list your shops on the server"
-        -"<blue>/shop currency <gray>- info about the currency shops use"
-        -"<blue>/shop currency <gray>- info about the currency shops use"
-        -"<blue>/shop notify [user|owner|stock] <gray>- Toggles notifications"
-      admin:
-        -"<red>/shop setcurrency <gray>- set the currency item to item in hand"
-        -"<red>/shop setgamble <gray>- set the gamble item display to item in hand"
-        -"<red>/shop item refresh <gray>- refresh all display items on shops"
-        -"<red>/shop reload <gray>- reload Shop plugin"
-    list:
-      success-console: "<white>There are <gold>%total-shops%<white> shops registered on the server."
-      success-player:
-        - "<white>There are <gold>%total-shops%<white> shops registered on the server."
-        - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
-    currency:
-      success: "<gray>The server is using %currency-name% as currency."
-      tip: "<gray>To change the currency, run the command '/shop setcurrency' with the item you want in your hand."
-    set-currency:
-      error-no-console: "<red>This command can only be executed by a player"
-      error-digital-currency: "<red>The server is not using an item based currency so no item could be set."
-      error-no-item-in-hand: "<red>You must hold a valid item to use that command."
-      success: "<green>Set the servers currency to %held-item%"
-    set-gamble:
-      error-no-console: "<red>This command can only be executed by a player"
-      error-no-item-in-hand: "<red>>You must hold a valid item to use that command."
-      success: "<green>Set the servers currency to %held-item%"
-    reload:
-      success: "<green>Reloaded Shops!"
-    notify:
+  command:
+    shop:
       usage:
-        -"<blue>/shop notify transaction<gray>- shows transaction notifications when players interact with your shops"
-        -"<blue>/shop notify stock<gray>- shows notifications when your shop runs out of stock"
-      transaction:
-        success: "<gray>Your notifications for players transacting with your shops are now %notify-state%"
-      stock:
-        success: "<gray>Your notifications for your shops running out of stock are now %notify-state%"
-  shop-initialize:
-    usage: "<gray> /shop-initialize <item-name> - to initialize your shop with the specified item"
-    no-initialisation: "<red>Create a shop first to initialize it with the command!"
-    not-valid-item: "<red>Not a valid item!"
+        user:
+          -"<blue>/shop list <gray>- list your shops on the server"
+          -"<blue>/shop currency <gray>- info about the currency shops use"
+          -"<blue>/shop currency <gray>- info about the currency shops use"
+          -"<blue>/shop notify [user|owner|stock] <gray>- Toggles notifications"
+        admin:
+          -"<red>/shop setcurrency <gray>- set the currency item to item in hand"
+          -"<red>/shop setgamble <gray>- set the gamble item display to item in hand"
+          -"<red>/shop item refresh <gray>- refresh all display items on shops"
+          -"<red>/shop reload <gray>- reload Shop plugin"
+      list:
+        success-console: "<white>There are <gold>%total-shops%<white> shops registered on the server."
+        success-player:
+          - "<white>There are <gold>%total-shops%<white> shops registered on the server."
+          - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
+      currency:
+        success: "<gray>The server is using %currency-name% as currency."
+        tip: "<gray>To change the currency, run the command '/shop setcurrency' with the item you want in your hand."
+      set-currency:
+        error-no-console: "<red>This command can only be executed by a player"
+        error-digital-currency: "<red>The server is not using an item based currency so no item could be set."
+        error-no-item-in-hand: "<red>You must hold a valid item to use that command."
+        success:
+          - "<green>Set the servers currency to %held-item%"
+          - "<gray>Make sure to adjust the language file to reflect the name that should be shown for this new item currency"
+          - "<gray>for this visual change to take affect use <gold>/shop reload"
+      set-gamble:
+        error-no-console: "<red>This command can only be executed by a player"
+        error-no-item-in-hand: "<red>>You must hold a valid item to use that command."
+        success: "<green>Set the servers gamble display item to %held-item%"
+      reload:
+        success: "<green>Reloaded Shops!"
+      notify:
+        usage:
+          -"<blue>/shop notify transaction<gray>- shows transaction notifications when players interact with your shops"
+          -"<blue>/shop notify stock<gray>- shows notifications when your shop runs out of stock"
+        transaction:
+          success: "<gray>Your notifications for players transacting with your shops are now %notify-state%"
+        stock:
+          success: "<gray>Your notifications for your shops running out of stock are now %notify-state%"
+    shop-initialize:
+      usage: "<gray> /shop-initialize <item-name> - to initialize your shop with the specified item"
+      no-initialisation: "<red>Create a shop first to initialize it with the command!"
+      not-valid-item: "<red>Not a valid item!"
 
 
-#sign texts to render on shops, these are player specific based on their current relation to the shop
-# each entry must be a list of 4 entries
-sign:
-  text:
-    timeout:
-      1: "<red> TIMEOUT"
-      2: "<red> TIMEOUT"
-      3: "<red> TIMEOUT"
-      4: "<red> TIMEOUT"
-    sell:
-      # when the shop is in its initialization state
-      initialise:
-        1: "<red><bold>[sell shop]"
-        2: "<red>%item%<red>: %amount%"
-        3: "<red>%price% %currency-name%"
-        4: "<red>%owner%"
-      # when the shop is in stock and has a display rendered
-      in-stock:
-        1: "%in-stock-color%<bold>[shop]"
-        2: "<white>Selling: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has no display rendered
-      in-stock-no-display:
-        1: "%in-stock-color%<bold>[sell shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is not in stock and has a display rendered
-      out-of-stock:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Selling: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is not in stock and has no display rendered
-      out-of-stock-no-display:
-        1: "%out-of-stock-color%<bold>[sell shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has a display rendered
-      overfilled:
-        1: "%overfilled-stock-color%<bold>[shop]"
-        2: "<white>Selling: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has no display rendered
-      overfilled-no-display:
-        1: "%overfilled-stock-color%<bold>[sell shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
-      transaction-cooldown:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Selling: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
-      transaction-cooldown-no-display:
-        1: "%out-of-stock-color%<bold>[sell shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop reached its transaction limit for the player viewing it and has a display rendered
-      transaction-limit:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Selling: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop reached its transaction limit for the player viewing it and has no display rendered
-      transaction-limit-no-display:
-        1: "%out-of-stock-color%<bold>[sell shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-    buy:
-      initialise:
-        1: "<red><bold>[buy shop]"
-        2: "<red>%item%<red>: %amount%"
-        3: "%shop-price-display%"
-        4: "<red>%owner%"
-      # when the shop is in stock and has a display rendered
-      in-stock:
-        1: "%in-stock-color%<bold>[shop]"
-        2: "<white>Buying: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has no display rendered
-      in-stock-no-display:
-        1: "%in-stock-color%<bold>[buy shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is not in stock and has a display rendered
-      out-of-stock:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Buying: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is not in stock and has no display rendered
-      out-of-stock-no-display:
-        1: "%out-of-stock-color%<bold>[buy shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has a display rendered
-      overfilled:
-        1: "%overfilled-stock-color%<bold>[shop]"
-        2: "<white>Buying: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has no display rendered
-      overfilled-no-display:
-        1: "%overfilled-stock-color%<bold>[buy shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
-      transaction-cooldown:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Buying: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
-      transaction-cooldown-no-display:
-        1: "%out-of-stock-color%<bold>[buy shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop reached its transaction limit for the player viewing it and has a display rendered
-      transaction-limit:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Buying: <bold>%amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop reached its transaction limit for the player viewing it and has no display rendered
-      transaction-limit-no-display:
-        1: "%out-of-stock-color%<bold>[buy shop]"
-        2: "<white>%item%<white>: %amount%"
-        3: "%shop-price-display%"
-        4: "<white>%owner%"
-    barter:
-      initialise:
-        1: "<red><bold>[barter shop]"
-        2: "%item%<red>: %amount%"
-        3: "%barter-item%<red>: %shop-price-display%"
-        4: "<red>%owner%"
-      # when the shop is in stock and has a display rendered
-      in-stock:
-        1: "%in-stock-color%<bold>[shop]"
-        2: "<white>Bartering: "
-        3: "<white>%amount%   for   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has no display rendered
-      in-stock-no-display:
-        1: "%in-stock-color%<bold>[barter shop]"
-        2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>:   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is not in stock and has a display rendered
-      out-of-stock:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Bartering: "
-        3: "<white>%amount%   for   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is not in stock and has no display rendered
-      out-of-stock-no-display:
-        1: "%out-of-stock-color%<bold>[barter shop]"
-        2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>:   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has a display rendered
-      overfilled:
-        1: "%stock-color%<bold>[shop]"
-        2: "<white>Bartering: "
-        3: "<white>%amount%   for   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is in stock and has no display rendered
-      overfilled-no-display:
-        1: "%overfilled-stock-color%<bold>[barter shop]"
-        2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>:   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
-      transaction-cooldown:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Bartering: "
-        3: "<white>%amount%   for   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
-      transaction-cooldown-no-display:
-        1: "%out-of-stock-color%<bold>[barter shop]"
-        2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>:   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop reached its transaction limit for the player viewing it and has a display rendered
-      transaction-limit:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<white>Bartering: "
-        3: "<white>%amount%   for   %shop-price-display%"
-        4: "<white>%owner%"
-      # when the shop reached its transaction limit for the player viewing it and has no display rendered
-      transaction-limit-no-display:
-        1: "%out-of-stock-color%<bold>[barter shop]"
-        2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>:   %shop-price-display%"
-        4: "<white>%owner%"
-    gamble:
-      # when the shop has items in it and has a display rendered
-      in-stock:
-        1: "%in-stock-color%<bold>[shop]"
-        2: "<light_purple>Gambling"
-        3: "%shop-price-display%"
-        4: "%server-display-name%"
-      # when the shop has items in it and has no display rendered
-      in-stock-no-display:
-        1: "%in-stock-color%<bold>[gamble-shop]"
-        2: "<light_purple>Random Item"
-        3: "%shop-price-display%"
-        4: "%server-display-name%"
-      # when the shop has no items in it and has a display rendered
-      out-of-stock:
-        1: "%out-of-stock-color%<bold>[shop]"
-        2: "<light_purple>Gambling"
-        3: "%shop-price-display%"
-        4: "%server-display-name%"
-      # when the shop has no items in it and has no display rendered
-      out-of-stock-no-display:
-        1: "%out-of-stock-color%<bold>[gamble-shop]"
-        2: "<light_purple>Random Item"
-        3: "%shop-price-display%"
-        4: "%server-display-name%"
-      # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
-      transaction-cooldown:
-        1: "%cooldown-stock-color%<bold>[shop]"
-        2: "<light_purple>Gambling"
-        3: "%cooldown-stock-color%<bold>COOLDOWN"
-        4: "%server-display-name%"
-      # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
-      transaction-cooldown-no-display:
-        1: "%cooldown-stock-color%<bold>[gamble-shop]"
-        2: "<light_purple>Random Item"
-        3: "%cooldown-stock-color%<bold>COOLDOWN"
-        4: "%server-display-name%"
-      # when the shop reached its transaction limit for the player viewing it and has a display rendered
-      transaction-limit:
-        1: "%limit-reached-stock-color%<bold>[shop]"
-        2: "<light_purple>Gambling"
-        3: "%limit-reached-stock-color%<bold>LIMIT REACHED"
-        4: "%server-display-name%"
-      # when the shop reached its transaction limit for the player viewing it and has no display rendered
-      transaction-limit-no-display:
-        1: "%limit-reached-stock-color%<bold>[gamble-shop]"
-        2: "<light_purple>Random Item"
-        3: "%limit-reached-stock-color%<bold>LIMIT REACHED"
-        4: "%server-display-name%"
+  #sign texts to render on shops, these are player specific based on their current relation to the shop
+  # each entry must be a list of 4 entries
+  sign:
+    text:
+      timeout:
+        1: "<red> TIMEOUT"
+        2: "<red> TIMEOUT"
+        3: "<red> TIMEOUT"
+        4: "<red> TIMEOUT"
+      sell:
+        # when the shop is in its initialization state
+        initialise:
+          1: "<red><bold>[sell shop]"
+          2: "<red>%item%<red>: %amount%"
+          3: "<red>%price% %currency-name%"
+          4: "<red>%owner%"
+        # when the shop is in stock and has a display rendered
+        in-stock:
+          1: "%in-stock-color%<bold>[shop]"
+          2: "<white>Selling: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has no display rendered
+        in-stock-no-display:
+          1: "%in-stock-color%<bold>[sell shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is not in stock and has a display rendered
+        out-of-stock:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Selling: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is not in stock and has no display rendered
+        out-of-stock-no-display:
+          1: "%out-of-stock-color%<bold>[sell shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has a display rendered
+        overfilled:
+          1: "%overfilled-stock-color%<bold>[shop]"
+          2: "<white>Selling: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has no display rendered
+        overfilled-no-display:
+          1: "%overfilled-stock-color%<bold>[sell shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
+        transaction-cooldown:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Selling: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
+        transaction-cooldown-no-display:
+          1: "%out-of-stock-color%<bold>[sell shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop reached its transaction limit for the player viewing it and has a display rendered
+        transaction-limit:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Selling: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop reached its transaction limit for the player viewing it and has no display rendered
+        transaction-limit-no-display:
+          1: "%out-of-stock-color%<bold>[sell shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+      buy:
+        initialise:
+          1: "<red><bold>[buy shop]"
+          2: "<red>%item%<red>: %amount%"
+          3: "%shop-price-display%"
+          4: "<red>%owner%"
+        # when the shop is in stock and has a display rendered
+        in-stock:
+          1: "%in-stock-color%<bold>[shop]"
+          2: "<white>Buying: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has no display rendered
+        in-stock-no-display:
+          1: "%in-stock-color%<bold>[buy shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is not in stock and has a display rendered
+        out-of-stock:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Buying: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is not in stock and has no display rendered
+        out-of-stock-no-display:
+          1: "%out-of-stock-color%<bold>[buy shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has a display rendered
+        overfilled:
+          1: "%overfilled-stock-color%<bold>[shop]"
+          2: "<white>Buying: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has no display rendered
+        overfilled-no-display:
+          1: "%overfilled-stock-color%<bold>[buy shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
+        transaction-cooldown:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Buying: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
+        transaction-cooldown-no-display:
+          1: "%out-of-stock-color%<bold>[buy shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop reached its transaction limit for the player viewing it and has a display rendered
+        transaction-limit:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Buying: <bold>%amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop reached its transaction limit for the player viewing it and has no display rendered
+        transaction-limit-no-display:
+          1: "%out-of-stock-color%<bold>[buy shop]"
+          2: "<white>%item%<white>: %amount%"
+          3: "%shop-price-display%"
+          4: "<white>%owner%"
+      barter:
+        initialise:
+          1: "<red><bold>[barter shop]"
+          2: "%item%<red>: %amount%"
+          3: "%barter-item%<red>: %shop-price-display%"
+          4: "<red>%owner%"
+        # when the shop is in stock and has a display rendered
+        in-stock:
+          1: "%in-stock-color%<bold>[shop]"
+          2: "<white>Bartering: "
+          3: "<white>%amount%   for   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has no display rendered
+        in-stock-no-display:
+          1: "%in-stock-color%<bold>[barter shop]"
+          2: "%item%<white>: %amount%"
+          3: "%barter-item%<white>:   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is not in stock and has a display rendered
+        out-of-stock:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Bartering: "
+          3: "<white>%amount%   for   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is not in stock and has no display rendered
+        out-of-stock-no-display:
+          1: "%out-of-stock-color%<bold>[barter shop]"
+          2: "%item%<white>: %amount%"
+          3: "%barter-item%<white>:   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has a display rendered
+        overfilled:
+          1: "%stock-color%<bold>[shop]"
+          2: "<white>Bartering: "
+          3: "<white>%amount%   for   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is in stock and has no display rendered
+        overfilled-no-display:
+          1: "%overfilled-stock-color%<bold>[barter shop]"
+          2: "%item%<white>: %amount%"
+          3: "%barter-item%<white>:   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
+        transaction-cooldown:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Bartering: "
+          3: "<white>%amount%   for   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
+        transaction-cooldown-no-display:
+          1: "%out-of-stock-color%<bold>[barter shop]"
+          2: "%item%<white>: %amount%"
+          3: "%barter-item%<white>:   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop reached its transaction limit for the player viewing it and has a display rendered
+        transaction-limit:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<white>Bartering: "
+          3: "<white>%amount%   for   %shop-price-display%"
+          4: "<white>%owner%"
+        # when the shop reached its transaction limit for the player viewing it and has no display rendered
+        transaction-limit-no-display:
+          1: "%out-of-stock-color%<bold>[barter shop]"
+          2: "%item%<white>: %amount%"
+          3: "%barter-item%<white>:   %shop-price-display%"
+          4: "<white>%owner%"
+      gamble:
+        # when the shop has items in it and has a display rendered
+        in-stock:
+          1: "%in-stock-color%<bold>[shop]"
+          2: "<light_purple>Gambling"
+          3: "%shop-price-display%"
+          4: "%server-display-name%"
+        # when the shop has items in it and has no display rendered
+        in-stock-no-display:
+          1: "%in-stock-color%<bold>[gamble-shop]"
+          2: "<light_purple>Random Item"
+          3: "%shop-price-display%"
+          4: "%server-display-name%"
+        # when the shop has no items in it and has a display rendered
+        out-of-stock:
+          1: "%out-of-stock-color%<bold>[shop]"
+          2: "<light_purple>Gambling"
+          3: "%shop-price-display%"
+          4: "%server-display-name%"
+        # when the shop has no items in it and has no display rendered
+        out-of-stock-no-display:
+          1: "%out-of-stock-color%<bold>[gamble-shop]"
+          2: "<light_purple>Random Item"
+          3: "%shop-price-display%"
+          4: "%server-display-name%"
+        # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
+        transaction-cooldown:
+          1: "%cooldown-stock-color%<bold>[shop]"
+          2: "<light_purple>Gambling"
+          3: "%cooldown-stock-color%<bold>COOLDOWN"
+          4: "%server-display-name%"
+        # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
+        transaction-cooldown-no-display:
+          1: "%cooldown-stock-color%<bold>[gamble-shop]"
+          2: "<light_purple>Random Item"
+          3: "%cooldown-stock-color%<bold>COOLDOWN"
+          4: "%server-display-name%"
+        # when the shop reached its transaction limit for the player viewing it and has a display rendered
+        transaction-limit:
+          1: "%limit-reached-stock-color%<bold>[shop]"
+          2: "<light_purple>Gambling"
+          3: "%limit-reached-stock-color%<bold>LIMIT REACHED"
+          4: "%server-display-name%"
+        # when the shop reached its transaction limit for the player viewing it and has no display rendered
+        transaction-limit-no-display:
+          1: "%limit-reached-stock-color%<bold>[gamble-shop]"
+          2: "<light_purple>Random Item"
+          3: "%limit-reached-stock-color%<bold>LIMIT REACHED"
+          4: "%server-display-name%"

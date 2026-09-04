@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -599,13 +600,57 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					""");){//SQLITE auto increments primary keys, message here is false!
 				preparedStatement.setLong(1, System.currentTimeMillis());
 				preparedStatement.setString(2, type.toString());
-				preparedStatement.setString(3, currency != null ? ItemStackJsonCodec.serialize(currency, false) : null);
+				preparedStatement.setString(3, currency != null ? ItemStackJsonCodec.serialize(currency, true) : null);
 				preparedStatement.execute();
 			} catch(SQLException e){
 				logger().error("Error while adding transaction to shop", e);
 			}
 		});
-		
+	}
+	
+	/**
+	 * Compares the given parameters with the last known currency state and updates the database if it differs
+	 */
+	public void updateCurrencyIfChanged(CurrencyType currencyType, @Nullable ItemStack currencyItem) {
+		scheduler.runAsync(_ -> {
+			try(var preparedStatement = getConnection().prepareStatement("""
+					SELECT item, currency_type
+					FROM currency_history
+					ORDER BY timestamp DESC
+					LIMIT 1
+					""")){
+				try(var resultSet = preparedStatement.executeQuery()){
+					if(!resultSet.next()){
+						// No previous state exists, so record the current state.
+						if(currencyType == CurrencyType.ITEM){
+							logCurrencyChange(currencyType, currencyItem);
+						} else {
+							logCurrencyChange(currencyType, null);
+						}
+						return;
+					}
+					
+					String previousItem = resultSet.getString("item");
+					String currentItem = currencyItem != null ? ItemStackJsonCodec.serialize(currencyItem, true) : null;
+					CurrencyType type = CurrencyType.fromValue(resultSet.getString("currency_type"));
+					
+					if(currencyType == type){
+						if(Objects.equals(previousItem, currentItem)){
+							return;
+						}
+					}
+					
+					if(currencyType == CurrencyType.ITEM){
+						logCurrencyChange(currencyType, currencyItem);
+					} else {
+						logCurrencyChange(currencyType, null);
+					}
+				}
+				
+			} catch(SQLException e){
+				logger().error("Error while checking currency state for {}", currencyType, e);
+			}
+		});
 	}
 	
 	/**

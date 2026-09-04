@@ -12,13 +12,13 @@ public class ExpirienceTransaction extends Transaction{
 	}
 	
 	@Override
-	public double getBuyerAvailableItems() {
+	public double getBuyerAvailableFunds() {
 		return buyer.getAvailableExperienceFunds();
 	}
 	
 	@Override
-	public double getSellerAvailableFunds() {
-		return seller.getAvailableExperienceFunds();
+	public double getSellerAvailableItems() {
+		return seller.getAvailableItemFunds(tradedStack);
 	}
 	
 	@Override

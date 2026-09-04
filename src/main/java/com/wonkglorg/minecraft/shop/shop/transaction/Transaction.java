@@ -1,9 +1,12 @@
 package com.wonkglorg.minecraft.shop.shop.transaction;
 
+import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.bukkit.inventory.ItemStack;
 
+@Slf4j
 public abstract class Transaction{
 	/**
 	 * The buyer of the stack in the transaction
@@ -54,7 +57,7 @@ public abstract class Transaction{
 	/**
 	 * Get the funds the buyer has access to in this transaction
 	 */
-	public abstract double getBuyerAvailableItems();
+	public abstract double getBuyerAvailableFunds();
 	
 	/**
 	 * If the buyer can accept the items in this transaction
@@ -72,7 +75,7 @@ public abstract class Transaction{
 	/**
 	 * Get the funds the seller has access to in this transaction
 	 */
-	public abstract double getSellerAvailableFunds();
+	public abstract double getSellerAvailableItems();
 	
 	/**
 	 * If the seller can accept payments in this transaction
@@ -90,23 +93,36 @@ public abstract class Transaction{
 	 * @return the result of the possible transaction
 	 */
 	public TransactionResult canFulfill() {
-		if(getBuyerAvailableItems() < price){
+		logger().debug("Verify if transaction possible: amount " + amount + " for price " + price);
+		double buyerAvailableFunds = getBuyerAvailableFunds();
+		logger().debug("Buyer has " + buyerAvailableFunds + " available funds");
+		if(buyerAvailableFunds < price){
+			logger().debug("Buyer does not have enough funds available to purchase needs at least " + price);
 			return result = TransactionResult.INSUFFICIENT_FUNDS_BUYER;
 		}
 		
-		if(getSellerAvailableFunds() < amount){
+		double sellerAvailableItems = getSellerAvailableItems();
+		logger().debug("Seller has " + sellerAvailableItems + " available items");
+		if(sellerAvailableItems < amount){
+			logger().debug("Seller does not have enough stocked items to sell needs at least " + amount);
 			return result = TransactionResult.INSUFFICIENT_FUNDS_SELLER;
 		}
 		
 		if(!canBuyerAcceptItems()){
+			logger().debug("Buyer cannot accept items");
 			return result = TransactionResult.INVENTORY_FULL_BUYER;
+		} else {
+			logger().debug("Buyer can accept items");
 		}
 		
 		if(!canSellerAcceptPayment()){
+			logger().debug("Seller cannot accept payment");
 			return result = TransactionResult.INVENTORY_FULL_SELLER;
-			
+		} else {
+			logger().debug("Seller can accept payment");
 		}
 		
+		logger().debug("Transaction verification successful");
 		return result = TransactionResult.OK;
 	}
 	

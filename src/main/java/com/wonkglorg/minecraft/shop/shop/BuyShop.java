@@ -10,10 +10,12 @@ import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.TransactionResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
@@ -60,7 +62,7 @@ public class BuyShop extends AbstractShop{
 			}
 			return;
 		} else {
-			double availableFunds = transaction.getBuyerAvailableItems();
+			double availableFunds = transaction.getBuyerAvailableFunds();
 			stock = (int) (availableFunds / this.getPrice());
 		}
 		
@@ -78,13 +80,13 @@ public class BuyShop extends AbstractShop{
 	}
 	
 	@Override
-	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {
+	protected @NotNull Transaction startTransaction(TransactionParty party, ShopTransactionParty cachedParty, int multiplier) {
 		int calculatedAmount = amount * multiplier;
 		double calculatedPrice = price * multiplier;
 		return switch(getCurrencyType()) {
-			case VAULT -> new VaultTransaction(getParty(), party, calculatedAmount, calculatedPrice, item);
-			case ITEM -> new ItemTransaction(getParty(), party, calculatedAmount, calculatedPrice, item, getCurrencyItem());
-			case EXPERIENCE -> new ExpirienceTransaction(getParty(), party, calculatedAmount, calculatedPrice, item);
+			case VAULT -> new VaultTransaction(cachedParty, party, calculatedAmount, calculatedPrice, item);
+			case ITEM -> new ItemTransaction(cachedParty, party, calculatedAmount, calculatedPrice, item, getCurrencyItem());
+			case EXPERIENCE -> new ExpirienceTransaction(cachedParty, party, calculatedAmount, calculatedPrice, item);
 		};
 	}
 	

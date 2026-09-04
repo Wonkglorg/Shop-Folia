@@ -10,4 +10,9 @@ public class PlayerTransactionParty extends TransactionParty{
 	public PlayerTransactionParty(Player player) {
 		super(player, player.getInventory());
 	}
+	
+	@Override
+	public String toString() {
+		return "PlayerTransactionParty{uuid=" + player.getUniqueId() + ", name=" + player.getName() + '}';
+	}
 }

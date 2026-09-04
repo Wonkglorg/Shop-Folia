@@ -150,6 +150,7 @@ public class ShopPlugin extends JavaPlugin{
 		logger.setLogLevel(settingsConfig.getLogLevel());
 		langManager.silentLoad();
 		shopmanager.reload();
+		shopDatabase().updateCurrencyIfChanged(settingsConfig.getCurrencyType(),itemConfig.getCurrencyItem());
 	}
 	
 	private boolean setupEconomy() {

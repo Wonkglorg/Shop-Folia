@@ -10,11 +10,12 @@ import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.TransactionResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
@@ -51,7 +52,7 @@ public class SellShop extends AbstractShop{
 		
 		//starts a mock transaction to get accurate data on what the actual trade logic would do
 		Transaction transaction = startTransaction(null, 1);
-		double availableFunds = transaction.getSellerAvailableFunds();
+		double availableFunds = transaction.getSellerAvailableItems();
 		stock = (int) (availableFunds / amount);
 		
 		//if we have no stock there is no need to check further
@@ -75,13 +76,14 @@ public class SellShop extends AbstractShop{
 		setShopState(OVERFILLED, true);
 	}
 	
-	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {
+	@Override
+	protected @NotNull Transaction startTransaction(TransactionParty party, ShopTransactionParty cachedParty, int multiplier) {
 		int calculatedAmount = amount * multiplier;
 		double calculatedPrice = price * multiplier;
 		return switch(getCurrencyType()) {
-			case VAULT -> new VaultTransaction(party, getParty(), calculatedAmount, calculatedPrice, item);
-			case ITEM -> new ItemTransaction(party, getParty(), calculatedAmount, calculatedPrice, item, getCurrencyItem());
-			case EXPERIENCE -> new ExpirienceTransaction(party, getParty(), calculatedAmount, calculatedPrice, item);
+			case VAULT -> new VaultTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item);
+			case ITEM -> new ItemTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item, getCurrencyItem());
+			case EXPERIENCE -> new ExpirienceTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item);
 		};
 	}
 	

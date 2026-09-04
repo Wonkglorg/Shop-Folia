@@ -8,6 +8,7 @@ import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
@@ -115,7 +116,6 @@ public class ShopCommand extends AbstractCommand{
 			return 1;
 		}
 		heldItem.setAmount(1);
-		//update all shop signs and log the change to the database
 		plugin.getItemConfig().setCurrencyItem(heldItem);
 		lang.request("command.shop.set-currency.success")
 			.replace("%held-item%", () -> ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))

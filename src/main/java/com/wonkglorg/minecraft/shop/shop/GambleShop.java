@@ -21,7 +21,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -143,7 +142,7 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
-	public @NonNull Transaction startTransaction(TransactionParty party, int multiplier) {//multiplier is ignored for gambling
+	protected @NotNull Transaction startTransaction(TransactionParty party, ShopTransactionParty cachedParty, int multiplier) {
 		ItemStack itemStack = getItemStack();
 		if(itemStack == null){
 			amount = 9999; //use a big amount number to prevent the trade from passing (no item is in the gamble shop)
@@ -152,9 +151,9 @@ public class GambleShop extends AbstractShop{
 			amount = itemStack.getAmount();
 		}
 		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
-			case VAULT -> new VaultTransaction(party, getParty(), amount, price, itemStack);
-			case ITEM -> new ItemTransaction(party, getParty(), amount, price, itemStack, ShopPlugin.getPlugin().getItemConfig().getCurrencyItem());
-			case EXPERIENCE -> new ExpirienceTransaction(party, getParty(), amount, price, itemStack);
+			case VAULT -> new VaultTransaction(party, cachedParty, amount, price, itemStack);
+			case ITEM -> new ItemTransaction(party, cachedParty, amount, price, itemStack, ShopPlugin.getPlugin().getItemConfig().getCurrencyItem());
+			case EXPERIENCE -> new ExpirienceTransaction(party, cachedParty, amount, price, itemStack);
 		};
 	}
 }
