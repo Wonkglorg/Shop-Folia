@@ -1,6 +1,5 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import com.wonkglorg.minecraft.config.lang.LangRequest;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.EMPTY;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
@@ -47,27 +46,32 @@ public class SellShop extends AbstractShop{
 			//leave cached value
 			return;
 		}
+		//amount is always positive
+		assert amount > 0;
+		
 		//starts a mock transaction to get accurate data on what the actual trade logic would do
 		Transaction transaction = startTransaction(null, 1);
 		double availableFunds = transaction.getSellerAvailableFunds();
 		stock = (int) (availableFunds / amount);
 		
-		//if there is no stock and the shop is offering more than 0 items
-		if(stock < 1 && amount > 0){
+		//if we have no stock there is no need to check further
+		if(stock < 1){
 			setShopState(EMPTY, true);
 			return;
 		}
 		
+		//if the shop gives out items for free no need to check space cause the shop receives nothing
 		if(price == 0){
 			setShopState(OK, true);
 			return;
+		} else {
+			//check if the shop has space to accept payment
+			if(transaction.canSellerAcceptPayment()){
+				setShopState(OK, true);
+				return;
+			}
 		}
-		//start a test transaction to see if the shop can accept payment
-		if(transaction.canSellerAcceptPayment()){
-			setShopState(OK, true);
-			return;
-		}
-		
+		//its non of the above so it must be overfilled no need to do another check for that.
 		setShopState(OVERFILLED, true);
 	}
 	
@@ -85,7 +89,7 @@ public class SellShop extends AbstractShop{
 	protected void sendTransactionMessage(TransactionResult result, int multiplier, Player player) {
 		var lang = langManager();
 		switch(result) {
-			case OK -> notifyTransaction(player,multiplier);
+			case OK -> notifyTransaction(player, multiplier);
 			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.sell.shop-performing-transaction").sendToAudience(player);
 			case CANCELLED -> lang.request("transaction.issue.sell.cancelled-external").sendToAudience(player);
 			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.sell.player-no-stock").sendToAudience(player);
@@ -93,7 +97,7 @@ public class SellShop extends AbstractShop{
 			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.sell.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_SELLER -> notifyNoSpace(player, multiplier);
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.sell.use-own-shop").sendToAudience(player);
-			case PURCHASE_COOLDOWN -> notifyCooldownReached(player,multiplier);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player, multiplier);
 			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.sell.player-transaction-limit-reached").sendToAudience(player);
 		}
 		

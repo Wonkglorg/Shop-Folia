@@ -1,6 +1,5 @@
 package com.wonkglorg.minecraft.shop.shop.creation;
 
-import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
@@ -204,27 +203,15 @@ public final class SignCreationLayoutParser{
 				for(String option : lines[line]){
 					
 					if(AMOUNT.equalsIgnoreCase(option)){
-						int parsed = parseAmount(value);
-						
-						if(parsed > 0){
-							amount = parsed;
-							matched = true;
-							break;
-						}
-						
-						continue;
+						amount = parseAmount(value);
+						matched = true;
+						break;
 					}
 					
 					if(PRICE.equalsIgnoreCase(option)){
-						double parsed = parsePrice(value);
-						
-						if(parsed >= 0){
-							price = parsed;
-							matched = true;
-							break;
-						}
-						
-						continue;
+						price = parsePrice(value);
+						matched = true;
+						break;
 					}
 					
 					if(option.equalsIgnoreCase(value)){

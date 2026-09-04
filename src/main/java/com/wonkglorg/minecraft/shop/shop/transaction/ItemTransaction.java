@@ -35,7 +35,7 @@ public class ItemTransaction extends Transaction{
 		var tradeStackClone = tradedStack.clone();
 		tradeStackClone.setAmount(amount);
 		
-		return inventory.addItem(tradedStack).isEmpty();
+		return inventory.addItem(tradeStackClone).isEmpty();
 	}
 	
 	@Override

@@ -706,7 +706,7 @@ public abstract class AbstractShop{
 		if(barterItem != null){
 			request.replace("%barter-item-type%", barterItem.getType().toString())
 			       .replace("%barter-durability%",UtilMethods.getDurabilityPercent(barterItem))
-			       .replace("%barter-item-amount%", barterItem.getAmount())
+			       .replace("%barter-item-amount%", formatPrice(shop.getPrice()))
 				   .replace("%barter-item-enchants%",()->UtilMethods.getEnchantmentsComponent(barterItem));
 			
 

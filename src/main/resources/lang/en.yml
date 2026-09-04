@@ -202,10 +202,10 @@ interaction:
     create:
       # Sent when a player attempts to start creating a shop while they already have another shop creation process active.
       initialize-chest-other: "<red>You already have a shop being created!"
-      # Sent when line 2 of the shop creation sign does not contain a valid positive number for the item amount.
-      line2: "<red>The amount (line 2) needs to be a positive number."
-      # Sent when line 3 of the shop creation sign does not contain a valid positive number for the shop price.
-      line3: "<red>The price (line 3) needs to be a positive number."
+      # Sent when amount of the shop creation sign does not contain a valid positive number for the item amount.
+      line-amount: "<red>The amount (line 2) needs to be a positive number."
+      # Sent when price of the shop creation sign does not contain a valid positive number for the shop price.
+      line-price: "<red>The price (line 3) needs to be a positive number."
       # Sent when a player attempts to create a shop using a chest that already belongs to another player's shop.
       overlap-other-shop: "<red>You may not create a shop on the same chest as another player."
       # Sent when the player does not have enough funds to pay the shop creation cost.

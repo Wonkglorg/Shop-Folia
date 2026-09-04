@@ -6,6 +6,7 @@ import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import static com.wonkglorg.minecraft.shop.shop.AbstractShop.formatPrice;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
+import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser.CreationMatch;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.Components;
@@ -45,11 +46,30 @@ public class SignCreationProcess extends ShopCreationProcess{
 			logger().debug("No match Found for lines!");
 			return false;
 		}
+		type = match.shopType();
 		amount = match.amount();
 		price = match.price();
-		adminShop = match.admin();
-		type = match.shopType();
 		
+		if(amount < 1){
+			lang.request("interaction.issues.create.line-amount").sendToAudience(player);
+			return false;
+		}
+		
+		if(type == ShopType.BARTER){
+			//barter uses 2 items so price needs to be a valid int
+			price = (int) match.price();
+			if(price < 1){
+				lang.request("interaction.issues.create.line-price").sendToAudience(player);
+				return false;
+			}
+		} else {
+			if(price < 0){
+				lang.request("interaction.issues.create.line-price").sendToAudience(player);
+				return false;
+			}
+		}
+		
+		adminShop = match.admin();
 		if(!isAllowedToCreateShop()){
 			logger().debug("Player is not allowed to create a shop of this type!");
 			return false;

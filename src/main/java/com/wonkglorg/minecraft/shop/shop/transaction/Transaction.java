@@ -66,7 +66,7 @@ public abstract class Transaction{
 		var inventory = buyer.createVirtualInventory();
 		var tradeStackClone = tradedStack.clone();
 		tradeStackClone.setAmount(amount);
-		return inventory.addItem(tradedStack).isEmpty();
+		return inventory.addItem(tradeStackClone).isEmpty();
 	}
 	
 	/**

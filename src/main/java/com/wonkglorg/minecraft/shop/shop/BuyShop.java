@@ -44,22 +44,32 @@ public class BuyShop extends AbstractShop{
 			//leave cached value
 			return;
 		}
+		
+		assert amount > 0;
+		
 		Transaction transaction = startTransaction(null, 1);
 		
-		double availableFunds = transaction.getBuyerAvailableItems();
-		stock = (int) (availableFunds / this.getAmount());
+		//if its free we can do infinite trades as long as space is available
+		boolean canBuyerAcceptItems = transaction.canBuyerAcceptItems();
+		if(price == 0){
+			stock = Integer.MAX_VALUE;
+			if(canBuyerAcceptItems){
+				setShopState(OK, true);
+			} else {
+				setShopState(OVERFILLED, true);
+			}
+			return;
+		} else {
+			double availableFunds = transaction.getBuyerAvailableItems();
+			stock = (int) (availableFunds / this.getPrice());
+		}
 		
-		if(stock < 1 && amount > 0){
+		if(stock == 0){
 			setShopState(EMPTY, true);
 			return;
 		}
 		
-		if(price == 0){
-			setShopState(OK, true);
-			return;
-		}
-		
-		if(transaction.canBuyerAcceptItems()){
+		if(canBuyerAcceptItems){
 			setShopState(OK, true);
 			return;
 		}
@@ -90,7 +100,7 @@ public class BuyShop extends AbstractShop{
 			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.buy.player-no-space").sendToAudience(player);
 			case INVENTORY_FULL_BUYER -> notifyNoSpace(player, multiplier);
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.buy.use-own-shop").sendToAudience(player);
-			case PURCHASE_COOLDOWN -> notifyCooldownReached(player,multiplier);
+			case PURCHASE_COOLDOWN -> notifyCooldownReached(player, multiplier);
 			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.buy.player-transaction-limit-reached").sendToAudience(player);
 		}
 		
