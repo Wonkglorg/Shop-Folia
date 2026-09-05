@@ -163,7 +163,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					ps.setDouble(4, shop.getPrice());
 					ps.setInt(5, shop.getAmount());
 					ps.setInt(6, shop.getStock());
-					ps.setString(7, shop.getShopState().toString());
+					ps.setString(7, shop.getShopState().toString().toUpperCase());
 					ps.setString(8, shop.getType().toString().toUpperCase());
 					BlockFace facing = shop.getFacing();
 					if(facing == null){
@@ -327,22 +327,19 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setDouble(4, shop.getPrice());
 		ps.setInt(5, shop.getAmount());
 		ps.setInt(6, shop.getStock());
-		ps.setString(7, shop.getShopState().toString());
+		ps.setString(7, shop.getShopState().toString().toUpperCase());
 		ps.setString(8, shop.getType().toString().toUpperCase());
 		BlockFace facing = shop.getFacing();
 		if(facing == null){
 			facing = BlockFace.EAST;
 		}
 		ps.setString(9, facing.toString().toUpperCase());
-		ps.setString(10,
-				(shop.getDisplay() != null && shop.getDisplay().getType() != null)
-				? shop.getDisplay().getType().toString()
-				: DisplayType.NONE.toString());
+		ps.setString(10, shop.getDisplay().getType() != null ? shop.getDisplay().getType().toString().toUpperCase() : DisplayType.NONE.toString());
 		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
 		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
 		ps.setLong(13, shop.getCreationDate());
-		ps.setString(14, mainStack.getType().toString());
-		ps.setString(15, barterStack != null ? barterStack.getType().toString() : null);
+		ps.setString(14, mainStack.getType().toString().toUpperCase());
+		ps.setString(15, barterStack != null ? barterStack.getType().toString().toUpperCase() : null);
 		ps.setString(16, signLocation.getWorld().getName());
 		ps.setInt(17, signLocation.getBlockX());
 		ps.setInt(18, signLocation.getBlockY());
@@ -751,14 +748,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setInt(5, shop.getStock());
 		ps.setString(6, shop.getType().toString().toUpperCase());
 		ps.setString(7, shop.getFacing().toString().toUpperCase());
-		ps.setString(8,
-				shop.getDisplay() != null && shop.getDisplay().getType() != null
-				? shop.getDisplay().getType().toString()
-				: DisplayType.NONE.toString());
+		ps.setString(8, shop.getDisplay().getType() != null ? shop.getDisplay().getType().toString().toUpperCase() : DisplayType.NONE.toString());
 		ps.setInt(9, shop.isFakeSign() ? 1 : 0);
 		ps.setString(10, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
-		ps.setString(11, mainStack.getType().toString());
-		ps.setString(12, barterStack != null ? barterStack.getType().toString() : null);
+		ps.setString(11, mainStack.getType().toString().toUpperCase());
+		ps.setString(12, barterStack != null ? barterStack.getType().toString().toUpperCase() : null);
 		ps.setString(13, signLocation.getWorld().getName());
 		ps.setInt(14, signLocation.getBlockX());
 		ps.setInt(15, signLocation.getBlockY());
