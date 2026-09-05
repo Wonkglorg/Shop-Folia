@@ -50,9 +50,12 @@ public class SignCreationProcess extends ShopCreationProcess{
 		amount = match.amount();
 		price = match.price();
 		
-		if(amount < 1){
-			lang.request("interaction.issues.create.line-amount").sendToAudience(player);
-			return false;
+		//gamble shops have no amount
+		if(type != ShopType.GAMBLE){
+			if(amount < 1){
+				lang.request("interaction.issues.create.line-amount").sendToAudience(player);
+				return false;
+			}
 		}
 		
 		if(type == ShopType.BARTER){
