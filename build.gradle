@@ -28,10 +28,6 @@ def enableConfig = providers.gradleProperty("enable_config")
         .map { it.toBoolean() }
         .getOrElse(false)
 
-def enableScheduler = providers.gradleProperty("enable_scheduler")
-        .map { it.toBoolean() }
-        .getOrElse(false)
-
 def enableCommand = providers.gradleProperty("enable_command")
         .map { it.toBoolean() }
         .getOrElse(false)
@@ -93,9 +89,10 @@ repositories {
 }
 
 dependencies {
-    compileOnly "io.papermc.paper:paper-api:${minecraft_version}.build.+"
     if (usePaperweight) {
         paperweight.paperDevBundle("${minecraft_version}.build.+")
+    } else {
+        compileOnly "io.papermc.paper:paper-api:${minecraft_version}.build.+"
     }
 
     if (enableUtils) {
@@ -140,15 +137,11 @@ dependencies {
 
     //test dependencies
     testImplementation platform("org.junit:junit-bom:${junit_version}")
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
-    testImplementation 'net.milkbowl.vault:VaultAPI:1.7'
+    testImplementation "net.milkbowl.vault:VaultAPI:1.7"
     testImplementation "org.mockito:mockito-core:${mockito_version}"
-    testImplementation "io.papermc.paper:paper-api:${minecraft_version}.build.+"
-    testImplementation "org.mockbukkit.mockbukkit:mockbukkit-v26.1.2:4.114.0"
-
-
 }
 
 tasks {

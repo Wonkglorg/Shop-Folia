@@ -407,7 +407,7 @@ public class ShopManager{
 			database.addShop(shop);
 			database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
 			//schedules shop client updates one tick after creation, otherwise the initial "load" method of shops sometimes takes priority in showing the default shop state instead
-			plugin.getFoliaLib().getScheduler().runAtLocationLater(shop.getSignLocation(), _ -> shopClientManager.addShop(shop), 1);
+			plugin.getFoliaLib().getScheduler().runAtLocationLater(shop.getSignLocation(), _ -> shopClientManager.updateShop(shop), 1);
 		});
 	}
 	
