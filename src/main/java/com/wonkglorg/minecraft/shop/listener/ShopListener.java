@@ -1,20 +1,19 @@
 package com.wonkglorg.minecraft.shop.listener;
 
 import com.wonkglorg.minecraft.config.LangManager;
-import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopClientManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.PlayerCreateShopEvent;
 import com.wonkglorg.minecraft.shop.event.PlayerDestroyShopEvent;
-import com.wonkglorg.minecraft.shop.event.PlayerPostInitializeShopEvent;
-import com.wonkglorg.minecraft.shop.event.PlayerPreInitializeShopEvent;
 import com.wonkglorg.minecraft.shop.event.PlayerResizeShopEvent;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
+import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShop;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
@@ -156,8 +155,6 @@ public class ShopListener implements Listener{
 		shopManager.getDatabase().logAction(player, process.getShopId(), ShopActionType.CREATE);
 		
 		if(process.getType() == ShopType.GAMBLE){
-			shopManager.addPlayerShopCreation(player, process);
-			process.updateSignText();
 			event.setCancelled(true);
 			if(shopManager.shopInitialisation(process, player, ShopPlugin.getPlugin().getItemConfig().getGambleDisplayItem())){
 				logger.debug("=====SHOP CREATION SUCCESS====");
@@ -624,6 +621,8 @@ public class ShopListener implements Listener{
 		if(isOwner && !isAllowedToDestroyShop(player, shop.getType())){
 			logger.debug("Owner %s without permission trying to break shop container".formatted(player.getName()));
 			lang.request("permission.error.destroy").replace("%shop-type%", shop.getType().getCreationWord()).sendToAudience(player);
+			//send an update for the sign on cancle otherwise it reverts back to the "initial sign" without the custom sending part
+			shopClientManager().updateShop(SignUpdateHandler.class,shop);
 			event.setCancelled(true);
 			return;
 		}
@@ -632,12 +631,14 @@ public class ShopListener implements Listener{
 			logger.debug("Player %s without destroy other permission trying to break shop container of %s".formatted(player.getName(),
 					shop.getOwner().getName()));
 			lang.request("permission.error.destroyOther").sendToAudience(player);
+			shopClientManager().updateShop(SignUpdateHandler.class,shop);
 			event.setCancelled(true);
 			return;
 		}
 		
 		if(settingsConfig.isDestroyShopRequiresSneak() && !player.isSneaking()){
 			lang.request("interaction.issues.destroy.sign-requires-sneak").sendToAudience(player);
+			shopClientManager().updateShop(SignUpdateHandler.class,shop);
 			event.setCancelled(true);
 			return;
 		}
@@ -645,6 +646,7 @@ public class ShopListener implements Listener{
 		PlayerDestroyShopEvent e = new PlayerDestroyShopEvent(player, shop);
 		plugin.getServer().getPluginManager().callEvent(e);
 		if(e.isCancelled()){
+			shopClientManager().updateShop(SignUpdateHandler.class,shop);
 			event.setCancelled(true);
 			return;
 		}
@@ -656,6 +658,7 @@ public class ShopListener implements Listener{
 			// Check for funds
 			if(party.getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem()) < cost){
 				lang.request("interaction.issues.destroy.insufficient-funds").sendToAudience(player);
+				shopClientManager().updateShop(SignUpdateHandler.class,shop);
 				event.setCancelled(true);
 				return;
 			}
