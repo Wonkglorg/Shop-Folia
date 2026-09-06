@@ -221,6 +221,8 @@ public class ShopManager{
 		shopsBySign.clear();
 		shopsByContainer.clear();
 		shopsByChunk.clear();
+		playerShops.clear();
+		playersInShopCreation.clear();
 		unloadedShopsByChunk.clear();
 		
 		migrateData();
