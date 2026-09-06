@@ -170,6 +170,6 @@ public class SignUpdateHandler implements ShopClientListener{
 	 * @return a default set of sign text to assign when a shop loads so the shop sign looks similar to what the clients state would be in case something loads slow.
 	 */
 	public static List<Component> getDefaultSignLines(AbstractShop shop) {
-		return getComponents(shop, "sign.text." + shop.getType().toString() + ".in-stock");
+		return getComponents(shop, "sign.text." + shop.getType().toString() + ".in-stock-no-display");
 	}
 }

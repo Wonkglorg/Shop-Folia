@@ -149,7 +149,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			
 			try{
 				for(AbstractShop shop : shops.values()){
-					ItemStack mainStack = shop.getItemStack().clone();
+					ItemStack mainStack = shop.getItemStack();
+					if(mainStack == null){
+						continue;
+					}
 					mainStack.setAmount(1);
 					ItemStack barterStack = shop.getSecondaryItemStack();
 					if(barterStack != null){
