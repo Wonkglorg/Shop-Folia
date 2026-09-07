@@ -45,9 +45,17 @@ public class ShopCommand extends AbstractCommand{
 					 )
 				.then(literal("reload").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::reload))
 				.then(literal("reload-lang").requires(permissions(SHOP_PERMISSION_OPERATOR))).executes(this::reloadLang)
+				.then(literal("reload-config").requires(permissions(SHOP_PERMISSION_OPERATOR))).executes(this::reloadConfig)
 				.then(literal("setcurrency").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setCurrency))
 				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble));
 		//@formatter:on
+	}
+	
+	private int reloadConfig(CommandContext<CommandSourceStack> ctx) {
+		ShopPlugin.getPlugin().getSettingsConfig().silentLoad();
+		ShopPlugin.getPlugin().getItemConfig().silentLoad();
+		lang.request("command.shop.reload.success").sendToAudience(ctx.getSource().getSender());
+		return 0;
 	}
 	
 	private int reloadLang(CommandContext<CommandSourceStack> ctx) {
