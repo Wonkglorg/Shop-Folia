@@ -8,7 +8,6 @@ import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
-import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
@@ -45,9 +44,16 @@ public class ShopCommand extends AbstractCommand{
 						.then(literal("stock").executes(this::notifyStock))
 					 )
 				.then(literal("reload").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::reload))
+				.then(literal("reload-lang").requires(permissions(SHOP_PERMISSION_OPERATOR))).executes(this::reloadLang)
 				.then(literal("setcurrency").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setCurrency))
 				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble));
 		//@formatter:on
+	}
+	
+	private int reloadLang(CommandContext<CommandSourceStack> ctx) {
+		lang.silentLoad();
+		lang.request("command.shop.reload.success").sendToAudience(ctx.getSource().getSender());
+		return 0;
 	}
 	
 	private int usageNotify(CommandContext<CommandSourceStack> ctx) {
