@@ -49,7 +49,7 @@
         # the message the player receives on a successful trade
         user: '<gray>You bartered <white>%barter-item-amount% <gray>of your <white>%barter-item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of %owner%s <white>%item%(s)<aqua>%item-enchants%<gray>.'
         # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
-        owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
+        owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter-item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
       gamble:
         # the message the player receives on a successful trade
         user: '<gray>You gambled %shop-price-display% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
