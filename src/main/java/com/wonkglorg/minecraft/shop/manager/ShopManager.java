@@ -333,17 +333,19 @@ public class ShopManager{
 		if(process != null){
 			langManager().request("interaction.issues.create.cancel").sendToAudience(player);
 			Sign sign = process.getSign();
-			plugin.getFoliaLib().getScheduler().runAtLocation(sign.getLocation(), _ -> {
-				if(sign.getBlockData() instanceof WallSign){
-					List<Component> lines = SignUpdateHandler.getSignLinesTimeout();
-					SignSide side = sign.getSide(Side.FRONT);
-					side.line(0, lines.get(0));
-					side.line(1, lines.get(1));
-					side.line(2, lines.get(2));
-					side.line(3, lines.get(3));
-					sign.update(true);
+			plugin.getFoliaLib().getScheduler().runAtLocationLater(sign.getLocation(), _ -> {
+				if(!(sign.getLocation().getBlock().getBlockData() instanceof WallSign wallSign)){
+					//its not a wall sign do not update the sign location
+					return;
 				}
-			});
+				List<Component> lines = SignUpdateHandler.getSignLinesTimeout();
+				SignSide side = sign.getSide(Side.FRONT);
+				side.line(0, lines.get(0));
+				side.line(1, lines.get(1));
+				side.line(2, lines.get(2));
+				side.line(3, lines.get(3));
+				sign.update(true);
+			}, 1);
 		}
 	}
 	
