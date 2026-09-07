@@ -636,7 +636,8 @@ public abstract class AbstractShop{
 	 * Prints Shop info about the shop to the player in chat
 	 */
 	public void printSalesInfo(Player player) {
-		if(player.getUniqueId().equals(owner) || PlayerProfile.isOperator(player)){
+		if((player.getUniqueId().equals(owner) || PlayerProfile.isOperator(player)) &&
+		   ShopPlugin.getPlugin().getSettingsConfig().isPrintHistoryWithShopInfo()){
 			shopDatabase().getTransactionStats(this).thenAccept(s -> {
 				LangRequest request = langManager().request("description." + this.getType() + ".info");
 				shopPlaceholders(request, this, true, player);

@@ -115,6 +115,12 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private Map<ShopClickType, ShopAction> clickTypeActionMap = new EnumMap<>(ShopClickType.class);
+	
+	/**
+	 * If {@link ShopAction#VIEW_DETAILS} should also print out the shop history for owners
+	 */
+	@Getter
+	private boolean printHistoryWithShopInfo;
 	/**
 	 * Play sounds on shop interactions
 	 */
@@ -253,6 +259,8 @@ public class SettingsConfig extends Config{
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.OPEN_SETTINGS);
 		}
 		
+		
+		printHistoryWithShopInfo = getBoolean("print-history-with-shop-details");
 		playSounds = getBoolean("play-sounds");
 		playEffects = getBoolean("play-effects");
 		

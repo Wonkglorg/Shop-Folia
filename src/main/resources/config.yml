@@ -191,6 +191,8 @@ mappings:
   open-shop-settings:
     - SHIFT_LEFT_CLICK_CHEST
 
+# If the "view-shop-details" option should also print out its history to the owner and operators
+print-history-with-shop-details: false
 # These will play sounds and particle effects when creating and using shops
 play-sounds: true
 play-effects: true
