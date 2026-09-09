@@ -201,7 +201,7 @@ interaction:
   issues:
     create:
       # Sent when a player attempts to start creating a shop while they already have another shop creation process active.
-      initialize-chest-other: "<red>You already have a shop being created!"
+      initialize-chest-other: "<red>There already is a shop registered to this block!"
       # Sent when amount of the shop creation sign does not contain a valid positive number for the item amount.
       line-amount: "<red>The amount (line 2) needs to be a positive number."
       # Sent when price of the shop creation sign does not contain a valid positive number for the shop price.
@@ -392,8 +392,6 @@ command:
       success-player:
         - "<white>There are <gold>%total-shops%<white> shops registered on the server."
         - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
-      success-operator:
-        - "<gray>> %owner%<gray>-%location% %world% <blue>amount:%item-amount% <green>price:%price% <red>stock:%stock% <gray>item:%item%"
     currency:
       success: "<gray>The server is using %currency-name% as currency."
       tip: "<gray>To change the currency, run the command '/shop setcurrency' with the item you want in your hand."

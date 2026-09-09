@@ -437,7 +437,6 @@ public abstract class AbstractShop{
 		
 		// Update the stock
 		this.calculateStock();
-		
 		// Update sign if needed
 		boolean hasStockChange = stock != oldStock;
 		if(hasStockChange){
@@ -900,6 +899,14 @@ public abstract class AbstractShop{
 		logTransaction(party, multiplier);
 		logger.debug("===FINISHED SHOP TRANSACTION====");
 		calculateStock();
+		
+		//also recalculate the secondary locations stock as both could be affected by this transaction
+		if(secondaryContainerLocation != null){
+			AbstractShop shop = shopManager().getShopIfPrimaryContainer(secondaryContainerLocation);
+			if(shop != null){
+				shop.calculateStock();
+			}
+		}
 		postTransactionSuccess(transaction);
 		return of(result, multiplier);
 	}
@@ -1036,6 +1043,13 @@ public abstract class AbstractShop{
 				sendTransactionMessage(result, multiplier, player);
 				sendEffects(result == TransactionResult.OK, player);
 				shopClientManager().updateShopIfNeeded(SignUpdateHandler.class, player, this);
+				//update the secondary shops sign if 2 shops are present on a double chest
+				if(secondaryContainerLocation != null){
+					var shop = shopManager().getShopIfSecondaryContainer(secondaryContainerLocation);
+					if(shop != null){
+						shopClientManager().updateShopIfNeeded(SignUpdateHandler.class, player, shop);
+					}
+				}
 				return true;
 			case VIEW_DETAILS:
 				this.printSalesInfo(player);
@@ -1175,7 +1189,7 @@ public abstract class AbstractShop{
 	 * Refreshes the sign for every player who can currently see it
 	 */
 	public void updateSign() {
-		shopClientManager().updateShop(this);
+		shopClientManager().updateShop(SignUpdateHandler.class, this);
 	}
 	
 	/**

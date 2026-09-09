@@ -120,7 +120,7 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
-		if(shopManager.getShopByContainer(chest.getLocation()) != null){
+		if(shopManager.getShopIfPrimaryContainer(chest.getLocation()) != null){
 			logger.debug("Container is already a registered shop");
 			logger.debug("====SHOP CREATION CANCEL====");
 			lang.request("interaction.issues.create.initialize-chest-other").sendToAudience(player);
@@ -575,13 +575,16 @@ public class ShopListener implements Listener{
 	public void onShopInventoryClose(InventoryCloseEvent event) {
 		InventoryHolder holder = event.getInventory().getHolder();
 		if(holder instanceof Container container){
-			AbstractShop shop = shopManager.getShopByContainer(container.getBlock());
+			AbstractShop shop = shopManager.getShopIfPrimaryContainer(container.getBlock());
 			
-			if(shop == null){
-				return;
+			if(shop != null){
+				shop.updateStock();
 			}
+			shop = shopManager.getShopIfSecondaryContainer(container.getBlock());
 			
-			shop.updateStock();
+			if(shop != null){
+				shop.updateStock();
+			}
 			return;
 		}
 		
@@ -591,13 +594,17 @@ public class ShopListener implements Listener{
 			if(leftSide == null){
 				return;
 			}
-			AbstractShop shop = shopManager.getShopByContainer(leftSide.getInventory().getLocation());
+			Block block = leftSide.getInventory().getLocation().getBlock();
+			AbstractShop shop = shopManager.getShopIfPrimaryContainer(block);
 			
-			if(shop == null){
-				return;
+			if(shop != null){
+				shop.updateStock();
 			}
+			shop = shopManager.getShopIfSecondaryContainer(block);
 			
-			shop.updateStock();
+			if(shop != null){
+				shop.updateStock();
+			}
 		}
 		
 	}
@@ -622,7 +629,7 @@ public class ShopListener implements Listener{
 			logger.debug("Owner %s without permission trying to break shop container".formatted(player.getName()));
 			lang.request("permission.error.destroy").replace("%shop-type%", shop.getType().getCreationWord()).sendToAudience(player);
 			//send an update for the sign on cancle otherwise it reverts back to the "initial sign" without the custom sending part
-			shopClientManager().updateShop(SignUpdateHandler.class,shop);
+			shopClientManager().updateShop(SignUpdateHandler.class, shop);
 			event.setCancelled(true);
 			return;
 		}
@@ -631,14 +638,14 @@ public class ShopListener implements Listener{
 			logger.debug("Player %s without destroy other permission trying to break shop container of %s".formatted(player.getName(),
 					shop.getOwner().getName()));
 			lang.request("permission.error.destroyOther").sendToAudience(player);
-			shopClientManager().updateShop(SignUpdateHandler.class,shop);
+			shopClientManager().updateShop(SignUpdateHandler.class, shop);
 			event.setCancelled(true);
 			return;
 		}
 		
 		if(settingsConfig.isDestroyShopRequiresSneak() && !player.isSneaking()){
 			lang.request("interaction.issues.destroy.sign-requires-sneak").sendToAudience(player);
-			shopClientManager().updateShop(SignUpdateHandler.class,shop);
+			shopClientManager().updateShop(SignUpdateHandler.class, shop);
 			event.setCancelled(true);
 			return;
 		}
@@ -646,7 +653,7 @@ public class ShopListener implements Listener{
 		PlayerDestroyShopEvent e = new PlayerDestroyShopEvent(player, shop);
 		plugin.getServer().getPluginManager().callEvent(e);
 		if(e.isCancelled()){
-			shopClientManager().updateShop(SignUpdateHandler.class,shop);
+			shopClientManager().updateShop(SignUpdateHandler.class, shop);
 			event.setCancelled(true);
 			return;
 		}
@@ -658,7 +665,7 @@ public class ShopListener implements Listener{
 			// Check for funds
 			if(party.getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem()) < cost){
 				lang.request("interaction.issues.destroy.insufficient-funds").sendToAudience(player);
-				shopClientManager().updateShop(SignUpdateHandler.class,shop);
+				shopClientManager().updateShop(SignUpdateHandler.class, shop);
 				event.setCancelled(true);
 				return;
 			}

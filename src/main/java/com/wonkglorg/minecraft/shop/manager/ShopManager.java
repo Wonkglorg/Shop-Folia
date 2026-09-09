@@ -76,6 +76,10 @@ public class ShopManager{
 	 * All shops by their container location
 	 */
 	private final Map<BlockKey, AbstractShop> shopsByContainer = new ConcurrentHashMap<>();
+	/**
+	 * All shops by their secondary container location (in case of double chests) a primary shop location can also take up the same spot so make sure to check for primary first in {@link #shopsByContainer}
+	 */
+	private final Map<BlockKey, AbstractShop> shopsBySecondaryContainer = new ConcurrentHashMap<>();
 	
 	/**
 	 * Shops by their chunk
@@ -190,8 +194,24 @@ public class ShopManager{
 		return shopsBySign.get(BlockKey.of(loc));
 	}
 	
+	/**
+	 * Gets the shop this container is registered to, this both considers primary and secondary locations for shop containers
+	 */
 	public AbstractShop getShopByContainer(Location loc) {
+		BlockKey key = BlockKey.of(loc);
+		AbstractShop shop = shopsByContainer.get(key);
+		if(shop == null){
+			return shopsBySecondaryContainer.get(key);
+		}
+		return shop;
+	}
+	
+	public AbstractShop getShopIfPrimaryContainer(Location loc) {
 		return shopsByContainer.get(BlockKey.of(loc));
+	}
+	
+	public AbstractShop getShopIfSecondaryContainer(Location loc) {
+		return shopsBySecondaryContainer.get(BlockKey.of(loc));
 	}
 	
 	public List<AbstractShop> getShops(ChunkKey chunkKey) {
@@ -220,6 +240,7 @@ public class ShopManager{
 		allShops.clear();
 		shopsBySign.clear();
 		shopsByContainer.clear();
+		shopsBySecondaryContainer.clear();
 		shopsByChunk.clear();
 		playerShops.clear();
 		playersInShopCreation.clear();
@@ -263,7 +284,7 @@ public class ShopManager{
 		shopsByContainer.put(shop.getContainerKey(), shop);
 		shopsByChunk.computeIfAbsent(ChunkKey.of(shop.getSignLocation()), _ -> new ArrayList<>()).add(shop);
 		if(shop.getSecondaryContainerLocation() != null){
-			shopsByContainer.put(BlockKey.of(shop.getSecondaryContainerLocation()), shop);
+			shopsBySecondaryContainer.put(BlockKey.of(shop.getSecondaryContainerLocation()), shop);
 		}
 		
 		//adds the shop to the players profile if they are online
@@ -361,12 +382,12 @@ public class ShopManager{
 	
 	@Internal
 	public void addSecondaryShopLocation(Location location, AbstractShop shop) {
-		shopsByContainer.putIfAbsent(BlockKey.of(location), shop);
+		shopsBySecondaryContainer.putIfAbsent(BlockKey.of(location), shop);
 	}
 	
 	@Internal
 	public void removeSecondaryChestLocation(Location location, AbstractShop shop) {
-		shopsByContainer.remove(BlockKey.of(location), shop);
+		shopsBySecondaryContainer.remove(BlockKey.of(location), shop);
 	}
 	
 	/**
@@ -379,7 +400,7 @@ public class ShopManager{
 		shopsByChunk.get(ChunkKey.of(shop.getSignLocation())).remove(shop);
 		
 		if(shop.getSecondaryContainerLocation() != null){
-			shopsByContainer.remove(BlockKey.of(shop.getSecondaryContainerLocation()), shop);
+			shopsBySecondaryContainer.remove(BlockKey.of(shop.getSecondaryContainerLocation()), shop);
 		}
 		var onlineProfile = PlayerManager.getOnlineProfileIfCached(shop.getOwnerUUID());
 		if(onlineProfile != null){
@@ -458,13 +479,32 @@ public class ShopManager{
 		unloadedShopsByChunk.computeIfAbsent(chunkKey, _ -> new ArrayList<>()).add(shop);
 	}
 	
+	public AbstractShop getShopIfPrimaryContainer(Block container) {
+		if(!isAllowedContainer(container)){
+			return null;
+		}
+		return shopsByContainer.get(BlockKey.of(container));
+	}
+	
+	public AbstractShop getShopIfSecondaryContainer(Block container) {
+		if(!isAllowedContainer(container)){
+			return null;
+		}
+		return shopsBySecondaryContainer.get(BlockKey.of(container));
+	}
+	
 	public AbstractShop getShopByContainer(Block container) {
 		if(!isAllowedContainer(container)){
 			return null;
 		}
 		
-		return shopsByContainer.get(BlockKey.of(container));
-		
+		BlockKey key = BlockKey.of(container);
+		//first check if a primary shop is at that location
+		AbstractShop shop = shopsByContainer.get(key);
+		if(shop == null){
+			return shopsBySecondaryContainer.get(key);
+		}
+		return shop;
 	}
 	
 	public List<AbstractShop> getShops(UUID playerId) {
