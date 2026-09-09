@@ -53,7 +53,8 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	private static final String SHOP_SELECT_SQL = """
 			SELECT shop_uuid, owner_uuid, item, price, amount, last_known_stock_count,last_known_stock_status, destroy_time, shop_type,sign_facing, display_type, fake_sign, secondary_item, creation_time, item_type, secondary_item_type, shop_world, shop_x, shop_y, shop_z
 			  FROM shops
-			 WHERE destroy_time = 0 OR 1 = ?;
+			 WHERE destroy_time = 0 OR 1 = ?
+			 ORDER BY creation_time DESC
 			""";
 	
 	private static final String SHOP_CACHE_STOCK_SQL = """

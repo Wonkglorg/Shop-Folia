@@ -229,7 +229,12 @@ public class ShopManager{
 		PlayerNameCache.initialize();
 		getDatabase().getShops(false).thenAccept(shops -> {
 			for(var shop : shops){
-				addShop(shop);
+				if(!addShop(shop)){
+					//no 2 shops can be at one location, since the initial loading happend via a SORT BY the newer one was registered first so refuse to load this one.
+					logger.warning("Plugin tried to register 2 shops at the same location! Marking older one as destroyed: " + shop);
+					database.removeShop(shop);
+					continue;
+				}
 				//if chunk its in is already loaded, calculate it here
 				if(shop.isChunkLoaded()){
 					loadShop(shop);
@@ -246,9 +251,13 @@ public class ShopManager{
 	}
 	
 	/**
-	 * Adds a shop to the runtime cache
+	 * Adds a shop to the runtime cache, if the shop was added or not
 	 */
-	private void addShop(AbstractShop shop) {
+	private boolean addShop(AbstractShop shop) {
+		if(shopsBySign.containsKey(shop.getSignKey())){
+			return false;
+		}
+		
 		allShops.put(shop.getId(), shop);
 		shopsBySign.put(shop.getSignKey(), shop);
 		shopsByContainer.put(shop.getContainerKey(), shop);
@@ -264,6 +273,7 @@ public class ShopManager{
 		}
 		
 		playerShops.computeIfAbsent(shop.getOwnerUUID(), _ -> new ArrayList<>()).add(shop);
+		return true;
 	}
 	
 	public void addPlayerShopCreation(Player player, ShopCreationProcess process) {
@@ -407,7 +417,11 @@ public class ShopManager{
 	public void registerShop(AbstractShop shop) {
 		//loads the shop if not yet loaded needed to accurately store data in database
 		loadShop(shop).thenAccept(s -> {
-			addShop(shop);
+			if(!addShop(shop)){
+				logger.severe(
+						"A shop was registered at %s but another shop already exists in the cache for this location! Report this issue to the developer!".formatted(
+								shop.getSignLocation()));
+			}
 			database.addShop(shop);
 			database.logAction(shop.getOwner(), shop, ShopActionType.INIT);
 			//schedules shop client updates one tick after creation, otherwise the initial "load" method of shops sometimes takes priority in showing the default shop state instead
