@@ -63,6 +63,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
+import java.util.UUID;
 
 @Slf4j
 public class ShopListener implements Listener{
@@ -433,6 +434,39 @@ public class ShopListener implements Listener{
 		PlayerNameCache.cacheName(player.getUniqueId(), player.getName());
 		
 		shopManager.getShopClientManager().handlePlayerJoin(player);
+		if(!player.hasPlayedBefore()){
+			return;
+		}
+		
+		if(settingsConfig.isSendOfflineTransactionsOnJoin()){
+			sendOfflineTransaction(player);
+		}
+	}
+	
+	private void sendOfflineTransaction(Player player) {
+		shopManager.getOfflineTransactions(player.getUniqueId(), player.getLastLogin()).thenAccept(transactions -> {
+			if(transactions.isEmpty()){
+				//send nothing if no transactions happened
+				return;
+			}
+			lang.request("transaction.offline-summary.header").sendToAudience(player);
+			for(var entry : transactions.entrySet()){
+				UUID shopId = entry.getKey();
+				long transactionCount = entry.getValue();
+				AbstractShop shop = shopManager.getAllShops().get(shopId);
+				if(shop == null){
+					//shop was destroyed while the person was offline
+					continue;
+				}
+				if(shop.getType() == ShopType.GAMBLE){
+					continue;
+				}
+				var request = lang.request("transaction.offline-summary.entry." + shop.getType().toString().toLowerCase());
+				AbstractShop.shopPlaceholders(request, shop, true, player);
+				request.replace("%total-transactions%", transactionCount).sendToAudience(player);
+			}
+			lang.request("transaction.offline-summary.footer").sendToAudience(player);
+		});
 	}
 	
 	@EventHandler

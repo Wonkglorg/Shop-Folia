@@ -103,6 +103,19 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			    WHERE shop_uuid = ?
 			""";
 	
+	public static final String TRANSACTION_STATS_SINCE_SQL = """
+			SELECT
+			    t.shop_uuid,
+			    COUNT(*) AS transaction_count,
+			    COALESCE(SUM(t.transaction_count), 0) AS total_transactions
+			FROM transactions t
+			INNER JOIN shops s
+			    ON s.shop_uuid = t.shop_uuid
+			WHERE s.owner_uuid = ?
+			  AND t.timestamp > ?
+			GROUP BY t.shop_uuid
+			""";
+	
 	private final ShopPlugin plugin;
 	private final PlatformScheduler scheduler;
 	
@@ -112,6 +125,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		this.scheduler = plugin.getFoliaLib().getScheduler();
 		initDB();
 		addPlayer(AdminOfflinePlayer.getAdminUUID(), "admin");
+		dropColumnIfExists(this.getConnection(), "transactions", "cache_offline");
 	}
 	
 	public void initDB() throws SQLException, IOException {
@@ -204,6 +218,27 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			
 		} catch(SQLException e){
 			logger().error("Error while creating shops", e);
+		}
+	}
+	
+	private void dropColumnIfExists(Connection connection, String table, String column) throws SQLException {
+		
+		boolean exists = false;
+		
+		try(var statement = connection.createStatement(); var result = statement.executeQuery("PRAGMA table_info(" + table + ")")){
+			
+			while(result.next()){
+				if(column.equals(result.getString("name"))){
+					exists = true;
+					break;
+				}
+			}
+		}
+		
+		if(exists){
+			try(var statement = connection.createStatement()){
+				statement.executeUpdate("ALTER TABLE " + table + " DROP COLUMN " + column);
+			}
 		}
 	}
 	
@@ -475,14 +510,13 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	public void logTransaction(UUID shopId, long timestamp, UUID purchaserId, @Nullable ItemStack gambleReward, int multiplier) {
 		scheduler.runAsync(_ -> {
 			try(var preparedStatement = getConnection().prepareStatement("""
-					INSERT INTO transactions(shop_uuid, timestamp, purchaser_uuid,cache_offline,gamble_reward, transaction_count) VALUES (?,?,?,?,?,?)
+					INSERT INTO transactions(shop_uuid, timestamp, purchaser_uuid,gamble_reward, transaction_count) VALUES (?,?,?,?,?)
 					""");){//SQLITE auto increments primary keys, message here is false!
 				preparedStatement.setString(1, shopId.toString());
 				preparedStatement.setLong(2, timestamp);
 				preparedStatement.setString(3, purchaserId.toString());
-				preparedStatement.setInt(4, 0); //todo:mjd impplement offline caching for players to get stats when they login next time.
-				preparedStatement.setString(5, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward, false) : null);
-				preparedStatement.setInt(6, multiplier);
+				preparedStatement.setString(4, gambleReward != null ? ItemStackJsonCodec.serialize(gambleReward, false) : null);
+				preparedStatement.setInt(5, multiplier);
 				preparedStatement.execute();
 			} catch(SQLException e){
 				logger().error("Error while adding transaction to shop", e);
@@ -509,19 +543,17 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					    shop_uuid,
 					    timestamp,
 					    purchaser_uuid,
-					    cache_offline,
 					    gamble_reward,
 					    transaction_count
-					) VALUES (?, ?, ?, ?, ?, ?)
+					) VALUES (?, ?, ?, ?, ?)
 					""")){
 				
 				for(ShopHistoryEntry entry : entries){
 					preparedStatement.setString(1, entry.shopUuid().toString());
 					preparedStatement.setLong(2, entry.timestamp());
 					preparedStatement.setString(3, entry.purchaserUuid().toString());
-					preparedStatement.setInt(4, 0);
-					preparedStatement.setNull(5, java.sql.Types.VARCHAR);
-					preparedStatement.setInt(6, 1);
+					preparedStatement.setNull(4, java.sql.Types.VARCHAR);
+					preparedStatement.setInt(5, 1);
 					
 					preparedStatement.addBatch();
 				}
@@ -559,7 +591,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		scheduler.runAsync(_ -> {
 			try(var preparedStatement = getConnection().prepareStatement("""
 					INSERT INTO currency_history(timestamp, currency_type, item) VALUES (?,?,?)
-					""");){//SQLITE auto increments primary keys, message here is false!
+					""")){//SQLITE auto increments primary keys, message here is false!
 				preparedStatement.setLong(1, System.currentTimeMillis());
 				preparedStatement.setString(2, type.toString());
 				preparedStatement.setString(3, currency != null ? ItemStackJsonCodec.serialize(currency, true) : null);
@@ -837,6 +869,45 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			}
 		});
 		return stats;
+	}
+	
+	/**
+	 * Returns aggregated transaction statistics per unique shop ID
+	 * for all transactions newer than the given timestamp.
+	 *
+	 * @param since timestamp in milliseconds
+	 * @return statistics grouped by shop UUID
+	 */
+	public CompletableFuture<Map<UUID, Long>> getTransactionStatsSince(UUID ownerId, long since) {
+		
+		CompletableFuture<Map<UUID, Long>> future = new CompletableFuture<>();
+		
+		scheduler.runAsync(_ -> {
+			Map<UUID, Long> stats = new HashMap<>();
+			
+			try(var ps = getConnection().prepareStatement(TRANSACTION_STATS_SINCE_SQL)){
+				
+				ps.setString(1, ownerId.toString());
+				ps.setLong(2, since);
+				
+				try(var rs = ps.executeQuery()){
+					while(rs.next()){
+						UUID shopId = UUID.fromString(rs.getString("shop_uuid"));
+						
+						stats.put(shopId, rs.getLong("total_transactions"));
+					}
+				}
+				
+				future.complete(stats);
+				
+			} catch(SQLException e){
+				logger().error("Error while fetching transaction statistics", e);
+				
+				future.completeExceptionally(e);
+			}
+		});
+		
+		return future;
 	}
 	
 	public record TransactionStats(long day1, long day7, long day30, long allTime){}

@@ -64,6 +64,12 @@ public class SettingsConfig extends Config{
 	private boolean destroyShopRequiresSneak;
 	
 	/**
+	 * If the player should receive notifications about offline sales when they join
+	 */
+	@Getter
+	private boolean sendOfflineTransactionsOnJoin;
+	
+	/**
 	 * The currency cost when creating a shop
 	 */
 	@Getter
@@ -220,6 +226,7 @@ public class SettingsConfig extends Config{
 		useLocalizedMaterials = getBoolean("use-localized-material-names");
 		allowUseOwnShop = getBoolean("allow-use-own-shop");
 		destroyShopRequiresSneak = getBoolean("destroy-shop-requires-sneak");
+		sendOfflineTransactionsOnJoin = getBoolean("show-offline-transactions-on-join", false);
 		
 		creationCost = getDouble("cost.create");
 		destructionCost = getDouble("cost.destroy");
@@ -258,7 +265,6 @@ public class SettingsConfig extends Config{
 		for(var action : getStringList("mappings.open-shop-settings")){
 			clickTypeActionMap.put(ShopClickType.valueOf(action), ShopAction.OPEN_SETTINGS);
 		}
-		
 		
 		printHistoryWithShopInfo = getBoolean("print-history-with-shop-details");
 		playSounds = getBoolean("play-sounds");

@@ -40,6 +40,9 @@ allow-use-own-shop: false
 # If this is set to true, shops will require you to be sneaking (holding 'shift') to destroy them
 destroy-shop-requires-sneak: true
 
+# If all transactions the player's shop's made while the player was offline should be sent to them when joining.
+show-offline-transactions-on-join: true
+
 cost:
   # cost of destroying a shop
   destroy: 0

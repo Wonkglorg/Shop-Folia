@@ -57,8 +57,6 @@ CREATE TABLE IF NOT EXISTS transactions
     timestamp      INTEGER NOT NULL,
     -- the user who did the transaction with the shop
     purchaser_uuid TEXT    NOT NULL,
-    -- if the value is set to one show it as an offline purchase the next time they log in
-    cache_offline  INTEGER NOT NULL DEFAULT 0,
     -- if the transaction was gambling shows the reward the user got from gambling
     gamble_reward  TEXT NULL,
     -- How many trades were done within this one transaction with the shop

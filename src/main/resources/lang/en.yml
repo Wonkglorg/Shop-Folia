@@ -34,6 +34,14 @@ templates:
 
 ##Shop transaction related messages
 transaction:
+  #sent when a player joins regarding their transactions
+  offline-summary:
+    header: "<gold>=====OFFLINE SUMMARY====="
+    entry:
+      sell: "Your Shop%location% sold %item% (x%total-transactions%)"
+      buy: "Your Shop%location% bought %item% (x%total-transactions%)"
+      barter: "Your Shop%location% traded %item% for %barter-item% (x%total-transactions%)"
+    footer: "<gold>========================="
   success:
     sell:
       # the message the player receives on a successful trade
