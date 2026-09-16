@@ -31,17 +31,23 @@ placeholders:
 # templates which act similar to placeholders but allow placeholders being part of templates to evaluate
 templates:
   shop-price-display: "[if:%price%==0]<aqua>FREE[else]<aqua>%price% %currency-name%[/if]"
+  stock-state-color: "[if:%stock-state%==OK]%in-stock-color%[else-if:%stock-state%==OVERFILLED]%overfilled-stock-color%[else]%out-of-stock-color%[/if]"
 
 ##Shop transaction related messages
 transaction:
   #sent when a player joins regarding their transactions
   offline-summary:
-    header: "<gold>=====OFFLINE SUMMARY====="
+    header:
+      - "<gold>=====OFFLINE SUMMARY====="
     entry:
-      sell: "Your Shop%location% sold %item% (x%total-transactions%)"
-      buy: "Your Shop%location% bought %item% (x%total-transactions%)"
-      barter: "Your Shop%location% traded %item% for %barter-item% (x%total-transactions%)"
-    footer: "<gold>========================="
+      sell: "%stock-state-color%Your Shop%location% sold %item% <gray>(x%total-transactions%) "
+      buy: "%stock-state-color%Your Shop%location% bought %item% <gray>(x%total-transactions%)"
+      barter: "%stock-state-color%Your Shop%location% traded %item% for %barter-item% <gray>(x%total-transactions%)"
+    footer:
+      - ""
+      - "<green>Profits: %total-profits% %currency-name%"
+      - "<red>Spending: %total-spending% %currency-name%"
+      - "<gold>========================="
   success:
     sell:
       # the message the player receives on a successful trade
@@ -390,6 +396,7 @@ command:
         -"<blue>/shop currency <gray>- info about the currency shops use"
         -"<blue>/shop currency <gray>- info about the currency shops use"
         -"<blue>/shop notify [user|owner|stock] <gray>- Toggles notifications"
+        -"<blue>/shop transactions <gray>- Shows transactions about the shop currently aimed at"
       admin:
         -"<red>/shop setcurrency <gray>- set the currency item to item in hand"
         -"<red>/shop setgamble <gray>- set the gamble item display to item in hand"
@@ -425,6 +432,27 @@ command:
         success: "<gray>Your notifications for players transacting with your shops are now %notify-state%"
       stock:
         success: "<gray>Your notifications for your shops running out of stock are now %notify-state%"
+    transactions:
+      no-valid-shop: "<red>Look at your shop sign when executing the command!"
+      not-shop-owner: "<red>This shop does not belong to you!"
+      shop-entry-sell:
+        - "<gold>==Shop Transaction Stats=="
+        - "Total: %sales-1d% | <green>+<math>%sales-1d% * %price%</math> %currency-name% <red>-<math>%sales-1d% * %amount%</math><white> %item% <gray>- 1 Day"
+        - "Total: %sales-7d% | <green>+<math>%sales-7d% * %price%</math> %currency-name% <red>-<math>%sales-7d% * %amount%</math><white> %item% <gray>- 7 Days"
+        - "Total: %sales-30d% | <green>+<math>%sales-30d% * %price%</math> %currency-name% <red>-<math>%sales-30d% * %amount%</math><white> %item% <gray>- 30 Days"
+        - "Total: %sales-all-time% | <green>+<math>%sales-all-time% * %price%</math> %currency-name% <red>-<math>%sales-all-time% * %amount%</math><white> %item% <gray>- All"
+      shop-entry-buy:
+        - "<gold>==Shop Transaction Stats=="
+        - "Total: %sales-1d% | <green>+<math>%sales-1d% * %amount%</math> %item% <red>-<math>%sales-1d% * %price%</math> %currency-name% <gray>- 1 Day"
+        - "Total: %sales-7d% | <green>+<math>%sales-7d% * %amount%</math> %item% <red>-<math>%sales-7d% * %price%</math> %currency-name% <gray>- 7 Days"
+        - "Total: %sales-30d% | <green>+<math>%sales-30d% * %amount%</math> %item% <red>-<math>%sales-30d% * %price%</math> %currency-name% <gray>- 30 Days"
+        - "Total: %sales-all-time% | <green>+<math>%sales-all-time% * %amount%</math> %item% <red>-<math>%sales-all-time% * %price%</math> %currency% <gray>- All"
+      shop-entry-barter:
+        - "<gold>==Shop Transaction Stats=="
+        - "Total: %sales-1d% | <green>[+] <math>%sales-1d% * %price%</math> %item% <red>[-] <math>%sales-1d% * %amount%</math> %secondary-item% <gray>- 1 Day"
+        - "Total: %sales-7d% | <green>[+] <math>%sales-7d% * %price%</math> %item% <red>[-] <math>%sales-7d% * %amount%</math> %secondary-item% <gray>- 7 Days"
+        - "Total: %sales-30d% | <green>[+] <math>%sales-30d% * %price%</math> %item% <red>[-] <math>%sales-30d% * %amount%</math> %secondary-item% <gray>- 30 Days"
+        - "Total: %sales-all-time% | <green>[+] <math>%sales-all-time% * %price%</math> %item% <red>[-] <math>%sales-all-time% * %amount%</math> %secondary-item% <gray>- All"
     debug:
       usage:
         - "<yellow>Shop Debug Commands:"

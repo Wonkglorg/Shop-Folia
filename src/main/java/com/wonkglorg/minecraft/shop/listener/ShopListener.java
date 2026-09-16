@@ -450,6 +450,8 @@ public class ShopListener implements Listener{
 				return;
 			}
 			lang.request("transaction.offline-summary.header").sendToAudience(player);
+			int totalSpending = 0;
+			int totalEarning = 0;
 			for(var entry : transactions.entrySet()){
 				UUID shopId = entry.getKey();
 				long transactionCount = entry.getValue();
@@ -464,8 +466,12 @@ public class ShopListener implements Listener{
 				var request = lang.request("transaction.offline-summary.entry." + shop.getType().toString().toLowerCase());
 				AbstractShop.shopPlaceholders(request, shop, true, player);
 				request.replace("%total-transactions%", transactionCount).sendToAudience(player);
-			}
-			lang.request("transaction.offline-summary.footer").sendToAudience(player);
+				if(shop.getType() == ShopType.BUY){
+					totalSpending += shop.getPrice() * transactionCount;
+				} else {
+					totalEarning += shop.getPrice() * transactionCount;
+				}
+			} lang.request("transaction.offline-summary.footer").replace("%total-profits%",totalEarning).replace("%total-spending%",totalSpending).sendToAudience(player);
 		});
 	}
 	

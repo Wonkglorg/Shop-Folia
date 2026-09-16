@@ -11,6 +11,7 @@ import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
@@ -21,12 +22,15 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 import org.bukkit.Bukkit;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.RayTraceResult;
 
 import java.util.UUID;
 
@@ -53,6 +57,7 @@ public class ShopCommand extends AbstractCommand{
 						.then(literal("transaction").executes(this::notifyTransaction))
 						.then(literal("stock").executes(this::notifyStock))
 					 )
+				.then(literal("transactions").executes(this::showTransactions))
 				.then(literal("reload").requires(permissions(SHOP_PERMISSION_OPERATOR))
 						.then(literal("lang").executes(this::reloadLang))
 						.then(literal("config").executes(this::reloadConfig))
@@ -70,6 +75,55 @@ public class ShopCommand extends AbstractCommand{
 				.then(literal("setcurrency").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setCurrency))
 				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble));
 		//@formatter:on
+	}
+	
+	private int showTransactions(CommandContext<CommandSourceStack> ctx) {
+		if(!(ctx.getSource().getSender() instanceof Player player)){
+			return -1;
+		}
+		
+		RayTraceResult rayTraceResult = player.rayTraceBlocks(5, FluidCollisionMode.NEVER);
+		
+		if(rayTraceResult == null){
+			lang.request("command.shop.transactions.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		Block hitBlock = rayTraceResult.getHitBlock();
+		if(hitBlock == null){
+			lang.request("command.shop.transactions.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		var targetShop = shopManager().getShopBySign(hitBlock.getLocation());
+		
+		if(targetShop == null){
+			lang.request("command.shop.transactions.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && PlayerProfile.isOperator(player)){
+			lang.request("command.shop.transactions.not-shop-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		shopDatabase().getTransactionStats(targetShop).thenAccept(stats -> {
+			
+			LangRequest request = lang.request("command.shop.transactions.shop-entry-%s".formatted(targetShop.getType()));
+			
+			AbstractShop.shopPlaceholders(request, targetShop, true, player);
+			
+			//@formatter:off
+			request.replace("%sales-1d%", stats.day1())
+				   .replace("%sales-7d%", stats.day7())
+				   .replace("%sales-30d%", stats.day30())
+				   .replace("%sales-all-time%", stats.allTime())
+				   .replace("%amount%", targetShop.getAmount())
+				   .replace("%price%", (int) targetShop.getPrice());
+			//@formatter:on
+			request.sendToAudience(player);
+		});
+		return 1;
 	}
 	
 	private int debugShop(CommandContext<CommandSourceStack> ctx) {

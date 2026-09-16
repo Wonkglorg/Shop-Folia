@@ -70,6 +70,12 @@ public class SettingsConfig extends Config{
 	private boolean sendOfflineTransactionsOnJoin;
 	
 	/**
+	 * How long group messages by after the first purchase happened until the owner is informed about all of them at once
+	 */
+	@Getter
+	private long ownerTransactionGroupingTime;
+	
+	/**
 	 * The currency cost when creating a shop
 	 */
 	@Getter
@@ -227,6 +233,7 @@ public class SettingsConfig extends Config{
 		allowUseOwnShop = getBoolean("allow-use-own-shop");
 		destroyShopRequiresSneak = getBoolean("destroy-shop-requires-sneak");
 		sendOfflineTransactionsOnJoin = getBoolean("show-offline-transactions-on-join", false);
+		ownerTransactionGroupingTime = getLong("owner-transaction-grouping-time", 0);
 		
 		creationCost = getDouble("cost.create");
 		destructionCost = getDouble("cost.destroy");
