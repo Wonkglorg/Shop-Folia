@@ -407,6 +407,11 @@ command:
       success-player:
         - "<white>There are <gold>%total-shops%<white> shops registered on the server."
         - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
+        - "<white>Stock <dark_gray>| <gold>Location <dark_gray>| <gray>Type"
+      entry:
+        sell: "%stock-state-color% %stock%    <dark_gray>| <gold>%location% <dark_gray>| <gray>Selling %item%"
+        buy: "%stock-state-color% %stock%    <dark_gray>| <gold>%location% <dark_gray>| <gray>Buying %item%"
+        barter: "%stock-state-color% %stock%    <dark_gray>| <gold>%location% <dark_gray>| <gray>Trading %item% <gray>for %barter-item%"
     currency:
       success: "<gray>The server is using %currency-name% as currency."
       tip: "<gray>To change the currency, run the command '/shop setcurrency' with the item you want in your hand."

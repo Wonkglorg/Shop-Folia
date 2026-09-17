@@ -32,6 +32,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.RayTraceResult;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 public class ShopCommand extends AbstractCommand{
@@ -102,7 +105,7 @@ public class ShopCommand extends AbstractCommand{
 			return -1;
 		}
 		
-		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && PlayerProfile.isOperator(player)){
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isOperator(player)){
 			lang.request("command.shop.transactions.not-shop-owner").sendToAudience(player);
 			return -1;
 		}
@@ -328,6 +331,24 @@ public class ShopCommand extends AbstractCommand{
 				.replace("%user-amount%", shopManager().getNumberOfShops(player.getUniqueId()))
 				.lazyReplace("%build-limit%",() -> String.valueOf(PlayerProfile.getShopBuildLimit(player)))
 				.sendToAudience(sender);
+			//@formatter:on
+			List<AbstractShop> shops = new ArrayList<>(shopManager().getShops(player.getUniqueId()));
+			
+			shops.sort(Comparator.comparingInt(AbstractShop::getStock).thenComparing(AbstractShop::getType));
+			
+			for(var shop : shops){
+				LangRequest request = switch(shop.getType()) {
+					case SELL -> lang.request("command.shop.list.entry.sell");
+					case BUY -> lang.request("command.shop.list.entry.buy");
+					case BARTER -> lang.request("command.shop.list.entry.barter");
+					case GAMBLE -> null;
+				};
+				if(request == null){
+					continue;
+				}
+				AbstractShop.shopPlaceholders(request, shop, true, player);
+				request.sendToAudience(player);
+			}
 		} else {
 			lang.request("command.shop.list.success-console").replace("%total-shops%", shopManager().getNumberOfShops()).sendToAudience(sender);
 		}
@@ -340,7 +361,6 @@ public class ShopCommand extends AbstractCommand{
 		return 1;
 	}
 	
-	
 	private int debugPlayer(CommandContext<CommandSourceStack> ctx) {
 		CommandSender sender = ctx.getSource().getSender();
 		String targetString = ctx.getArgument("player", String.class);
@@ -351,14 +371,14 @@ public class ShopCommand extends AbstractCommand{
 		
 		lang.request("command.shop.debug.player.header")
 			.replace("%player%", offlinePlayer.getName())
-			.replace("%uuid%", String.valueOf(offlinePlayer.getUniqueId()))
+			.replace("%uuid%",
+					String.valueOf(offlinePlayer.getUniqueId()))
 			.replace("%online%", offlinePlayer.isOnline())
 			.replace("%shop-count%", shops.size())
 			.sendToAudience(sender);
 		
 		if(shops.isEmpty()){
-			lang.request("command.shop.debug.player.no-shops")
-				.sendToAudience(sender);
+			lang.request("command.shop.debug.player.no-shops").sendToAudience(sender);
 			
 			return 1;
 		}
@@ -383,8 +403,7 @@ public class ShopCommand extends AbstractCommand{
 		CommandSender sender = ctx.getSource().getSender();
 		
 		if(!(sender instanceof Player player)){
-			lang.request("command.shop.debug.nearby.error-no-console")
-				.sendToAudience(sender);
+			lang.request("command.shop.debug.nearby.error-no-console").sendToAudience(sender);
 			
 			return -1;
 		}
@@ -408,7 +427,8 @@ public class ShopCommand extends AbstractCommand{
 			
 			lang.request("command.shop.debug.nearby.shop")
 				.replace("%shop-id%", String.valueOf(shop.getId()))
-				.replace("%world%", shopLocation.getWorld().getName())
+				.replace("%world%",
+						shopLocation.getWorld().getName())
 				.replace("%x%", shopLocation.getBlockX())
 				.replace("%y%", shopLocation.getBlockY())
 				.replace("%z%", shopLocation.getBlockZ())
@@ -439,29 +459,21 @@ public class ShopCommand extends AbstractCommand{
 			.sendToAudience(sender);
 		
 		if(signShop == null){
-			lang.request("command.shop.debug.location.sign.none")
-				.sendToAudience(sender);
+			lang.request("command.shop.debug.location.sign.none").sendToAudience(sender);
 		} else {
-			lang.request("command.shop.debug.location.sign.found")
-				.replace("%shop-id%", String.valueOf(signShop.getId()))
-				.sendToAudience(sender);
+			lang.request("command.shop.debug.location.sign.found").replace("%shop-id%", String.valueOf(signShop.getId())).sendToAudience(sender);
 		}
 		
 		if(containerShop == null){
-			lang.request("command.shop.debug.location.container.none")
-				.sendToAudience(sender);
+			lang.request("command.shop.debug.location.container.none").sendToAudience(sender);
 		} else {
-			lang.request("command.shop.debug.location.container.found")
-				.replace("%shop-id%", String.valueOf(containerShop.getId()))
-				.sendToAudience(sender);
+			lang.request("command.shop.debug.location.container.found").replace("%shop-id%", String.valueOf(containerShop.getId())).sendToAudience(
+					sender);
 		}
 		
-		if(signShop != null
-		   && containerShop != null
-		   && signShop != containerShop){
+		if(signShop != null && containerShop != null && signShop != containerShop){
 			
-			lang.request("command.shop.debug.location.mismatch")
-				.sendToAudience(sender);
+			lang.request("command.shop.debug.location.mismatch").sendToAudience(sender);
 		}
 		
 		return 1;
@@ -470,9 +482,7 @@ public class ShopCommand extends AbstractCommand{
 	private int debugStats(CommandContext<CommandSourceStack> ctx) {
 		CommandSender sender = ctx.getSource().getSender();
 		
-		lang.request("command.shop.debug.stats.header")
-			.replace("%total-shops%", shopManager().getNumberOfShops())
-			.sendToAudience(sender);
+		lang.request("command.shop.debug.stats.header").replace("%total-shops%", shopManager().getNumberOfShops()).sendToAudience(sender);
 		
 		return 1;
 	}
