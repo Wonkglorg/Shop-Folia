@@ -102,7 +102,7 @@ public class ShopCommand extends AbstractCommand{
 			return -1;
 		}
 		
-		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && PlayerProfile.isOperator(player)){
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isOperator(player)){
 			lang.request("command.shop.transactions.not-shop-owner").sendToAudience(player);
 			return -1;
 		}
