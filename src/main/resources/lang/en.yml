@@ -40,9 +40,9 @@ transaction:
     header:
       - "<gold>=====OFFLINE SUMMARY====="
     entry:
-      sell: "%stock-state-color%Your Shop%location% sold %item% <gray>(x%total-transactions%) "
-      buy: "%stock-state-color%Your Shop%location% bought %item% <gray>(x%total-transactions%)"
-      barter: "%stock-state-color%Your Shop%location% traded %item% for %barter-item% <gray>(x%total-transactions%)"
+      sell: "<white>Sold:<gray>(x%total-transactions%) %item% <gray> at %location% [if:%stock-state%==OK][else-if:%stock-state%==OVERFILLED]%overfilled-stock-color%(Overfilled)[else]%out-of-stock-color%(Out-of-Stock)[/if]"
+      buy: "<white>Bought:<gray>(x%total-transactions%) %item% <gray> at %location% [if:%stock-state%==OK][else-if:%stock-state%==OVERFILLED]%overfilled-stock-color%(Overfilled)[else]%out-of-stock-color%(Out-of-Stock)[/if]"
+      barter: "<white>Traded:<gray>(x%total-transactions%) %item% for %barter-item% at %location% [if:%stock-state%==OK][else-if:%stock-state%==OVERFILLED]%overfilled-stock-color%(Overfilled)[else]%out-of-stock-color%(Out-of-Stock)[/if]"
     footer:
       - ""
       - "<green>Profits: %total-profits% %currency-name%"

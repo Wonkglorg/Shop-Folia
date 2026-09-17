@@ -20,6 +20,7 @@ import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperat
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
+import com.wonkglorg.minecraft.shop.shop.ShopState;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
@@ -62,7 +63,11 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -445,33 +450,62 @@ public class ShopListener implements Listener{
 	
 	private void sendOfflineTransaction(Player player) {
 		shopManager.getOfflineTransactions(player.getUniqueId(), player.getLastLogin()).thenAccept(transactions -> {
+			
 			if(transactions.isEmpty()){
-				//send nothing if no transactions happened
 				return;
 			}
-			lang.request("transaction.offline-summary.header").sendToAudience(player);
-			int totalSpending = 0;
-			int totalEarning = 0;
+			
+			Map<ShopState, List<AbstractShop>> grouped = new EnumMap<>(ShopState.class);
+			
+			long totalSpending = 0;
+			long totalEarning = 0;
+			
 			for(var entry : transactions.entrySet()){
 				UUID shopId = entry.getKey();
 				long transactionCount = entry.getValue();
+				
 				AbstractShop shop = shopManager.getAllShops().get(shopId);
-				if(shop == null){
-					//shop was destroyed while the person was offline
+				
+				if(shop == null || shop.getType() == ShopType.GAMBLE){
 					continue;
 				}
-				if(shop.getType() == ShopType.GAMBLE){
-					continue;
-				}
-				var request = lang.request("transaction.offline-summary.entry." + shop.getType().toString().toLowerCase());
-				AbstractShop.shopPlaceholders(request, shop, true, player);
-				request.replace("%total-transactions%", transactionCount).sendToAudience(player);
+				
+				grouped.computeIfAbsent(shop.getShopState(), type -> new ArrayList<>()).add(shop);
+				
+				long total = (long) shop.getPrice() * transactionCount;
+				
 				if(shop.getType() == ShopType.BUY){
-					totalSpending += shop.getPrice() * transactionCount;
+					totalSpending += total;
 				} else {
-					totalEarning += shop.getPrice() * transactionCount;
+					totalEarning += total;
 				}
-			} lang.request("transaction.offline-summary.footer").replace("%total-profits%",totalEarning).replace("%total-spending%",totalSpending).sendToAudience(player);
+			}
+			
+			lang.request("transaction.offline-summary.header")
+				.replace("%total-profits%", totalEarning)
+				.replace("%total-spending%", totalSpending)
+				.sendToAudience(player);
+			
+			for(ShopState type : ShopState.values()){
+				
+				List<AbstractShop> group = grouped.get(type);
+				
+				if(group == null || group.isEmpty()){
+					continue;
+				}
+				
+				for(var shop : group){
+					var request = lang.request("transaction.offline-summary.entry." + shop.getType().toString().toLowerCase());
+					
+					AbstractShop.shopPlaceholders(request, shop, true, player);
+					request.replace("%total-transactions%", transactions.get(shop.getId())).sendToAudience(player);
+				}
+			}
+			
+			lang.request("transaction.offline-summary.footer")
+				.replace("%total-profits%", totalEarning)
+				.replace("%total-spending%", totalSpending)
+				.sendToAudience(player);
 		});
 	}
 	
