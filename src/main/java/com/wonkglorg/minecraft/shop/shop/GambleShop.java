@@ -7,7 +7,7 @@ import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
-import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.ItemCurrencyTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.TransactionResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
@@ -152,7 +152,7 @@ public class GambleShop extends AbstractShop{
 		}
 		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT -> new VaultTransaction(party, cachedParty, amount, price, itemStack);
-			case ITEM -> new ItemTransaction(party, cachedParty, amount, price, itemStack, ShopPlugin.getPlugin().getItemConfig().getCurrencyItem());
+			case ITEM -> new ItemCurrencyTransaction(party, cachedParty, amount, price, itemStack, getCurrencyItem(), getCondensedCurrencies());
 			case EXPERIENCE -> new ExpirienceTransaction(party, cachedParty, amount, price, itemStack);
 		};
 	}

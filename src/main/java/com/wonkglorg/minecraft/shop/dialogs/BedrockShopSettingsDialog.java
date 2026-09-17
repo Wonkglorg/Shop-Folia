@@ -38,13 +38,6 @@ public final class BedrockShopSettingsDialog{
 		if(Settings.TRANSACTION_NOTIFICATION.isEnabled()){
 			form.toggle("Notify me about transactions", notifyTransactions);
 		}
-		//leave disabled until fully implemented
-				/*
-		if(Settings.ITEM_UPDATER.isEnabled()){
-			form.toggle("Update custom items", itemUpdater);
-		}
-		
-				 */
 		
 		if(Settings.PURCHASE_LIMIT.isEnabled()){
 			form.input("Transaction limit (per Player)", "", String.valueOf(purchaseLimit));
@@ -77,17 +70,6 @@ public final class BedrockShopSettingsDialog{
 			}
 			
 			Boolean newItemUpdater = itemUpdater;
-			//leave disabled until fully implemented
-					/*
-			if(Settings.ITEM_UPDATER.isEnabled()){
-				newItemUpdater = response.next();
-				
-				if(newItemUpdater == null){
-					return;
-				}
-			}
-			
-					 */
 			
 			String newPurchaseLimit = String.valueOf(purchaseLimit);
 			
@@ -109,7 +91,7 @@ public final class BedrockShopSettingsDialog{
 				}
 			}
 			
-			ShopSettingsDialog.updateShopSettings(shop, newNotifyStock, newNotifyTransactions, newItemUpdater, newPurchaseLimit, newPurchaseCooldown);
+			ShopSettingsDialog.updateShopSettings(shop, newNotifyStock, newNotifyTransactions, newItemUpdater, newPurchaseLimit, newPurchaseCooldown,null);
 		});
 		
 		form.closedOrInvalidResultHandler(() -> {

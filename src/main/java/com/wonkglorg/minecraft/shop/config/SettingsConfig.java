@@ -58,6 +58,12 @@ public class SettingsConfig extends Config{
 	private boolean allowUseOwnShop;
 	
 	/**
+	 * If condensed currencies should be allowed for usage when transacting with a shop, defined in {@link ItemConfig#getCurrencyDenominations()}
+	 */
+	@Getter
+	private boolean allowUseCondensedCurrencyForShop;
+	
+	/**
 	 * If sneaking is required to destroy a shop
 	 */
 	@Getter
@@ -69,6 +75,11 @@ public class SettingsConfig extends Config{
 	@Getter
 	private boolean sendOfflineTransactionsOnJoin;
 	
+	/**
+	 * How long to wait before sending another notification to the shop owner if their shop is out of stock on transaction
+	 */
+	@Getter
+	private long ownerOutOfStockCooldownTime;
 	/**
 	 * How long group messages by after the first purchase happened until the owner is informed about all of them at once
 	 */
@@ -231,8 +242,10 @@ public class SettingsConfig extends Config{
 		
 		useLocalizedMaterials = getBoolean("use-localized-material-names");
 		allowUseOwnShop = getBoolean("allow-use-own-shop");
+		allowUseCondensedCurrencyForShop = getBoolean("allow-use-condensed-currency-for-shop");
 		destroyShopRequiresSneak = getBoolean("destroy-shop-requires-sneak");
 		sendOfflineTransactionsOnJoin = getBoolean("show-offline-transactions-on-join", false);
+		ownerOutOfStockCooldownTime = getLong("owner-out-of-stock-cooldown-time", 1000);
 		ownerTransactionGroupingTime = getLong("owner-transaction-grouping-time", 0);
 		
 		creationCost = getDouble("cost.create");
@@ -285,7 +298,7 @@ public class SettingsConfig extends Config{
 		for(String materialString : getStringList("enabled-containers")){
 			try{
 				enabledContainers.add(Material.valueOf(materialString));
-			} catch(IllegalArgumentException e){
+			} catch(IllegalArgumentException _){
 				logger().warning("Invalid container material config definition " + materialString);
 			}
 		}
@@ -296,7 +309,7 @@ public class SettingsConfig extends Config{
 			for(var material : getStringList("material-blacklist")){
 				try{
 					blacklistMaterials.add(Material.valueOf(material));
-				} catch(IllegalArgumentException e){
+				} catch(IllegalArgumentException _){
 					logger.warning("Invalid blacklist material:" + material);
 				}
 			}
@@ -306,7 +319,7 @@ public class SettingsConfig extends Config{
 			for(var material : getStringList("material-whitelist")){
 				try{
 					whitelistMaterials.add(Material.valueOf(material));
-				} catch(IllegalArgumentException e){
+				} catch(IllegalArgumentException _){
 					logger.warning("Invalid whitelist material:" + material);
 				}
 			}
@@ -338,11 +351,7 @@ public class SettingsConfig extends Config{
 			return false;
 		}
 		
-		if(!whitelistMaterials.isEmpty() && !whitelistMaterials.contains(itemStack.getType())){
-			return false;
-		}
-		
-		return true;
+		return whitelistMaterials.isEmpty() || whitelistMaterials.contains(itemStack.getType());
 	}
 	
 	public ShopAction getShopAction(ShopClickType type) {
@@ -376,6 +385,11 @@ public class SettingsConfig extends Config{
 		@Getter
 		private boolean customItemUpdaterDefault;
 		
+		@Getter
+		private boolean condenseCurrencyEnabled;
+		@Getter
+		private boolean condenseCurrencyDefault;
+		
 		public void reload(ConfigurationSection section) {
 			transactionLimitEnabled = section.getBoolean("transaction-limit.enabled");
 			transactionLimitDefault = section.getInt("transaction-limit.default-value");
@@ -391,6 +405,9 @@ public class SettingsConfig extends Config{
 			
 			customItemUpdaterEnabled = section.getBoolean("transaction-notification.enabled");
 			customItemUpdaterDefault = section.getBoolean("transaction-notification.default-value");
+			
+			condenseCurrencyEnabled = section.getBoolean("condense-currency-in-shop.enabled");
+			condenseCurrencyDefault = section.getBoolean("condense-currency-in-shop.default-value");
 		}
 	}
 }

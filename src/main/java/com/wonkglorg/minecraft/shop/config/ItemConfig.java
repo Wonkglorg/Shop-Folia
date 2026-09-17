@@ -16,6 +16,9 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -24,10 +27,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ItemConfig extends Config{
 	
 	/**
-	 * The item used as currency when the currency type is ITEM.
+	 * Base currency item
 	 */
 	@Getter
 	private ItemStack currencyItem;
+	/**
+	 * List of items considered as condensed currency versions (a currency item representing x times more than the base which can also be used for trades, sorted by highest to lowest value
+	 */
+	@Getter
+	private List<CurrencyDenomination> currencyDenominations = new ArrayList<>();
+	
+	/**
+	 * The smallest multiplier a condensed currency is a multiplier of in the {@link #currencyDenominations} list
+	 */
+	@Getter
+	private int smallestCurrencyDenominationMultiplier = 1;
 	
 	/**
 	 * The item displayed for gambling shops.
@@ -57,11 +71,75 @@ public final class ItemConfig extends Config{
 	
 	public void reload() {
 		silentLoad();
-		
-		currencyItem = getItemStack("currency-item", new ItemStack(Material.DIAMOND));
-		currencyItem.setAmount(1);
+		currencyDenominations.clear();
 		
 		gambleDisplayItem = getItemStack("gamble-display-item", new ItemStack(Material.DIAMOND));
+		
+		ConfigurationSection section = getConfigurationSection("currency-items");
+		if(section == null){
+			logger().severe("No currency-items defined in item-config.yml!");
+			return;
+		}
+		var baseCurrency = section.getItemStack("base");
+		if(baseCurrency == null){
+			logger().severe("No base currency item definition in item-config.yml!");
+			return;
+		}
+		baseCurrency.setAmount(1);
+		currencyItem = baseCurrency;
+		
+		section = section.getConfigurationSection("condensed");
+		if(section == null){
+			return;
+		}
+		for(var key : section.getKeys(false)){
+			var item = section.getItemStack(key + ".item");
+			if(item == null){
+				continue;
+			}
+			int currencyMultiplier = section.getInt(key + ".multiplier");
+			if(currencyMultiplier <= 1){
+				logger().warning("Currency amount multiplier for " + key + " must be at least x2");
+				continue;
+			}
+			item.setAmount(1);
+			currencyDenominations.add(new CurrencyDenomination(item, currencyMultiplier));
+		}
+		
+		if(currencyDenominations.isEmpty()){
+			return;
+		}
+		
+		validateDenominations();
+		currencyDenominations.sort(Comparator.comparingInt(CurrencyDenomination::value).reversed());
+		smallestCurrencyDenominationMultiplier = currencyDenominations.getLast().value;
+	}
+	
+	/**
+	 * Reject invalid or ambiguous denomination configurations.
+	 */
+	private void validateDenominations() {
+		for(int i = 0; i < currencyDenominations.size(); i++){
+			CurrencyDenomination denomination = currencyDenominations.get(i);
+			
+			if(denomination == null || denomination.item() == null){
+				throw new IllegalArgumentException("Condensed currency and its item must not be null");
+			}
+			
+			if(denomination.value() <= 1){
+				throw new IllegalArgumentException("Condensed denomination value must be greater than 1");
+			}
+			
+			if(currencyItem.isSimilar(denomination.item())){
+				throw new IllegalArgumentException("Base currency cannot also be a condensed denomination");
+			}
+			
+			for(int j = 0; j < i; j++){
+				if(currencyDenominations.get(j).item().isSimilar(denomination.item())){
+					throw new IllegalArgumentException("Duplicate condensed currency denomination");
+				}
+			}
+		}
 	}
 	
 	private void loadIntegrations() {
@@ -180,7 +258,8 @@ public final class ItemConfig extends Config{
 	
 	public void setCurrencyItem(ItemStack currencyItem) {
 		this.currencyItem = currencyItem.clone();
-		set("currency-item", this.currencyItem);
+		this.currencyItem.setAmount(1);
+		set("currency-items.base", this.currencyItem);
 		shopDatabase().logCurrencyChange(CurrencyType.ITEM, this.currencyItem);
 		silentSave();
 	}
@@ -192,12 +271,20 @@ public final class ItemConfig extends Config{
 	}
 	
 	/**
-	 * Represents a configured custom item.
-	 *
-	 * @param id configured ID
-	 * @param namespace external namespace, or null for a serialized Bukkit item
-	 * @param itemId external item ID, or null for a serialized Bukkit item
-	 * @param item resolved ItemStack
+	 * Represents a currency item and it's worth
 	 */
-	public record CustomItem(String id, String namespace, String itemId, ItemStack item){}
+	public record CurrencyDenomination(ItemStack item, int value){
+		public CurrencyDenomination {
+			if(item == null || item.getType().isAir()){
+				throw new IllegalArgumentException("Currency item cannot be empty");
+			}
+			
+			if(value <= 0){
+				throw new IllegalArgumentException("Currency value must be positive");
+			}
+			
+			item = item.clone();
+			item.setAmount(1);
+		}
+	}
 }

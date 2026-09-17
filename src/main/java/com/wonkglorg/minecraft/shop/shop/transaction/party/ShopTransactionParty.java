@@ -1,9 +1,12 @@
 package com.wonkglorg.minecraft.shop.shop.transaction.party;
 
+import com.wonkglorg.minecraft.shop.config.ItemConfig.CurrencyDenomination;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import lombok.Getter;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.List;
 
 /**
  * A transaction party represented by a shop
@@ -50,6 +53,14 @@ public class ShopTransactionParty extends TransactionParty{
 			return Integer.MAX_VALUE;
 		}
 		return super.getAvailableItemFunds(itemStack);
+	}
+	
+	@Override
+	public long getAvailableItemFunds(ItemStack baseCurrency, List<CurrencyDenomination> condensedCurrencies) {
+		if(shop.isAdmin()){
+			return Integer.MAX_VALUE;
+		}
+		return super.getAvailableItemFunds(baseCurrency, condensedCurrencies);
 	}
 	
 	@Override
@@ -117,11 +128,11 @@ public class ShopTransactionParty extends TransactionParty{
 	}
 	
 	@Override
-	public void removeItem(ItemStack itemStack, int amount) {
+	public int removeItem(ItemStack itemStack, int amount) {
 		if(shop.isAdmin()){
-			return;
+			return 0;
 		}
-		super.removeItem(itemStack, amount);
+		return super.removeItem(itemStack, amount);
 	}
 	
 	@Override

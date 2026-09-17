@@ -1,6 +1,7 @@
 package com.wonkglorg.minecraft.shop.dialogs;
 
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
+import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.settings.Settings;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -31,6 +32,7 @@ public class JavaShopSettingsDialog{
 		long purchaseCooldownMillis = shop.getSetting(Settings.PURCHASE_COOLDOWN);
 		
 		long purchaseCooldownSeconds = purchaseCooldownMillis / 1000L;
+		boolean condenseCurrency = shop.getSetting(Settings.CONDENSE_CURRENCY);
 		
 		List<DialogInput> inputs = new ArrayList<>();
 		
@@ -41,14 +43,16 @@ public class JavaShopSettingsDialog{
 		if(Settings.TRANSACTION_NOTIFICATION.isEnabled()){
 			inputs.add(DialogInput.bool("notify_transactions", Component.text("Notify me about transactions"), notifyTransactions, "On", "Off"));
 		}
-		//leave disabled until fully implemented
-		/*
-		if(Settings.ITEM_UPDATER.isEnabled()){
-			inputs.add(DialogInput.bool("item_updater", Component.text("Update custom items"), itemUpdater, "On", "Off"));
+		//these have no use to condense payments.
+		if(Settings.CONDENSE_CURRENCY.isEnabled()){
+			if(shop.getType() != ShopType.GAMBLE && shop.getType() != ShopType.BARTER){
+				inputs.add(DialogInput.bool("condense_currency",
+						Component.text("Condense Currency inside shop chest"),
+						condenseCurrency,
+						"On",
+						"Off"));
+			}
 		}
-		
-		 */
-		
 		if(Settings.PURCHASE_LIMIT.isEnabled()){
 			inputs.add(DialogInput.text("purchase_limit",
 					200,
@@ -73,27 +77,27 @@ public class JavaShopSettingsDialog{
 			builder.empty().base(DialogBase.builder(Component.text("Shop Settings")).body(List.of(DialogBody.plainMessage(Component.text(
 					"Configure your shop settings below.")))).inputs(inputs).build()).type(DialogType.notice(ActionButton.builder(Component.text(
 					"Save")).action(DialogAction.customClick((view, audience) -> {
-				if(!(audience instanceof Player target)){
+				if(!(audience instanceof Player)){
 					return;
 				}
 				
 				Boolean newNotifyStock = view.getBoolean("notify_stock");
 				
 				Boolean newNotifyTransactions = view.getBoolean("notify_transactions");
-				//leave disabled until fully implemented
-						/*
-				Boolean newItemUpdater = view.getBoolean("item_updater");
-						 */
+				
 				String newPurchaseLimit = view.getText("purchase_limit");
 				
 				String newPurchaseCooldown = view.getText("purchase_cooldown");
+				
+				Boolean newCondenseCurrency = view.getBoolean("condense_currency");
 				
 				ShopSettingsDialog.updateShopSettings(shop,
 						newNotifyStock,
 						newNotifyTransactions,
 						itemUpdater,
 						newPurchaseLimit,
-						newPurchaseCooldown);
+						newPurchaseCooldown,
+						newCondenseCurrency);
 			}, ClickCallback.Options.builder().uses(1).build())).build()));
 		});
 		player.showDialog(dialog);
