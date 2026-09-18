@@ -13,7 +13,7 @@ const SHOP_TESTS = [{
                 x: 0, y: -60, z: 0
             },
 
-            item: item('minecraft:stone'), amount: 1,
+            item: item('minecraft:stone', 1),
 
             price: 10,
 

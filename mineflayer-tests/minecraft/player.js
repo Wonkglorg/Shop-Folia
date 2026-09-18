@@ -23,14 +23,6 @@ class Player
         await this.bot.chat(command)
     }
 
-    async giveItems(items = [])
-    {
-        for(const item of items)
-        {
-            await this.giveItem(item.type, item.amount)
-        }
-    }
-
     async setExperience(level)
     {
         await this.bot.chat(`/experience set ${this.bot.username} ${level} levels`)
@@ -42,19 +34,6 @@ class Player
         return {
             level: this.bot.experience.level, points: this.bot.experience.points, progress: this.bot.experience.progress
         }
-    }
-
-    getPosition()
-    {
-        const {x, y, z} = this.bot.entity.position
-        return {x, y, z}
-    }
-
-    getInventory()
-    {
-        return this.bot.inventory.items().map(item => ({
-            type: item.name, amount: item.count
-        }))
     }
 
     wait(ms)
