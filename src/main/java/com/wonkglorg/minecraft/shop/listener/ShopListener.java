@@ -701,7 +701,7 @@ public class ShopListener implements Listener{
 		
 		if(isOwner && !isAllowedToDestroyShop(player, shop.getType())){
 			logger.debug("Owner %s without permission trying to break shop container".formatted(player.getName()));
-			lang.request("permission.error.destroy").replace("%shop-type%", shop.getType().getCreationWord()).sendToAudience(player);
+			lang.request("permission.error.destroy").replace("%shop-type%", shop.getType().toString().toLowerCase()).sendToAudience(player);
 			//send an update for the sign on cancle otherwise it reverts back to the "initial sign" without the custom sending part
 			shopClientManager().updateShop(SignUpdateHandler.class, shop);
 			event.setCancelled(true);
