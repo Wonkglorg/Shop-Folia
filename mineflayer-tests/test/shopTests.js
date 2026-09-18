@@ -5,7 +5,7 @@ const {
 const {ShopState} = require('../shops/shopState')
 
 const SHOP_TESTS = [{
-    name: 'Buy one item with item currency',
+    name: 'Buy one item',
 
     setup: {
         shop: buyShop({
@@ -21,8 +21,7 @@ const SHOP_TESTS = [{
         }),
 
         player: {
-            inventory: [
-            ]
+            inventory: [item('minecraft:diamond', 1)]
         }
     },
 
@@ -34,15 +33,13 @@ const SHOP_TESTS = [{
         result: 'SUCCESS',
 
         player: {
-            inventory: [
-            ]
+            inventory: [item('minecraft:stone', 1)]
         },
 
         shop: {
             state: ShopState.OK,
 
-            inventory: [item('minecraft:stone', 31)
-            ]
+            inventory: [item('minecraft:stone', 31), item('minecraft:diamond', 1)]
         }
     }
 }]
