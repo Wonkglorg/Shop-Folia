@@ -1,0 +1,15 @@
+{
+  "name": "shop-mineflayer-tests",
+  "version": "1.0.0",
+  "description": "Integration tests for the Shop plugin using mineflayer",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "author": "Sky Young",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "mineflayer": "https://github.com/Complexity-ML/mineflayer-26.2/releases/download/complexity-26.2.3/mineflayer-complexity-26.2.3.tgz",
+    "vec3": "^0.2.0"
+  }
+}

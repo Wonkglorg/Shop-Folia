@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
-    id("xyz.jpenilla.run-paper") version "3.0.2"
+    id("xyz.jpenilla.run-paper") version "3.1.0"
     id("com.gradleup.shadow") version "9.2.2"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.21" apply false
 }
@@ -144,14 +144,189 @@ dependencies {
     testImplementation "org.mockito:mockito-core:${mockito_version}"
 }
 
-tasks {
-    runServer {
-        minecraftVersion(minecraft_version)
+tasks.named('runServer') {
+    minecraftVersion(minecraft_version)
+
+    jvmArgs('-Dcom.mojang.eula.agree=true')
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
     }
+
+    runDirectory.set(file("$projectDir/run"))
 }
 
 test {
     useJUnitPlatform()
+}
+
+def mineflayerTests = file("$projectDir/mineflayer-tests")
+
+def gradlewPath = System.getProperty('os.name').toLowerCase().contains('windows') ? "$projectDir/gradlew.bat" : "$projectDir/gradlew"
+
+def npmCommand = providers.gradleProperty('npm_path').getOrElse('npm')
+def nodejsPath = providers.gradleProperty('nodejs.path').orNull
+
+def testServerDirectory = file("$projectDir/run")
+
+def testServerProperties = file("$testServerDirectory/server.properties")
+
+tasks.register('configureTestServer') {
+    outputs.file(testServerProperties)
+
+    doLast {
+        testServerDirectory.mkdirs()
+
+        def properties = new Properties()
+
+        if (testServerProperties.exists()) {
+            testServerProperties.withInputStream {
+                properties.load(it)
+            }
+        }
+
+        properties.setProperty('online-mode', 'false')
+        properties.setProperty('difficulty', 'peaceful')
+        properties.setProperty('gamemode', 'creative')
+        properties.setProperty('server-port', '25565')
+        properties.setProperty('level-type', 'minecraft:flat')
+        properties.setProperty('generator-settings', '{}')
+
+        testServerProperties.withOutputStream {
+            properties.store(it, 'Mineflayer integration test server')
+        }
+    }
+}
+
+tasks.register('installMineflayerDependencies', Exec) {
+    workingDir(mineflayerTests)
+
+    commandLine(npmCommand,
+            'install')
+}
+
+tasks.register('integrationTest') {
+    group = 'verification'
+    description = 'Runs the Mineflayer integration tests against Paper'
+
+    dependsOn('build',
+            'installMineflayerDependencies',
+            'configureTestServer')
+
+    doLast {
+        def serverProcess
+
+        if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+            serverProcess = new ProcessBuilder('cmd.exe',
+                    '/c',
+                    gradlewPath,
+                    'runServer',
+                    '--console=plain',
+                    '--no-daemon')
+                    .directory(projectDir)
+                    .redirectError(ProcessBuilder.Redirect.INHERIT)
+                    .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                    .start()
+        } else {
+            serverProcess = new ProcessBuilder(gradlewPath,
+                    'runServer',
+                    '--console=plain',
+                    '--no-daemon')
+                    .directory(projectDir)
+                    .redirectError(ProcessBuilder.Redirect.INHERIT)
+                    .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                    .start()
+        }
+
+        try {
+            def timeout = System.currentTimeMillis() + 60_000
+            def serverReady = false
+
+            while (System.currentTimeMillis() < timeout) {
+                if (!serverProcess.isAlive()) {
+                    def exitCode = serverProcess.exitValue()
+
+                    throw new GradleException(
+                            "Paper process exited before the server became ready. Exit code: ${exitCode}"
+                    )
+                }
+
+                try {
+                    def socket = new Socket('127.0.0.1', 25565)
+                    socket.close()
+
+                    // The port is open, but Paper may still be finishing startup.
+                    // Give Paper a little time to finish loading.
+                    Thread.sleep(2_000)
+
+                    serverReady = true
+                    break
+                } catch (Exception ignored) {
+                    Thread.sleep(250)
+                }
+            }
+
+            if (!serverReady) {
+                throw new GradleException(
+                        'Paper did not start listening on port 25565 within 60 seconds'
+                )
+            }
+
+            println ''
+            println 'Paper is ready'
+            println 'Making Bot an operator'
+
+            serverProcess.outputStream.write("op Bot\n".getBytes())
+            serverProcess.outputStream.flush()
+
+            Thread.sleep(1_000)
+
+            println 'Running Mineflayer integration tests...'
+            def testBuilder = new ProcessBuilder(npmCommand,
+                    'test')
+                    .directory(mineflayerTests)
+                    .redirectErrorStream(true)
+
+            if (nodejsPath != null) {
+                def currentPath = testBuilder.environment().get('PATH', '')
+
+                testBuilder.environment().put('PATH',
+                        nodejsPath.toString() + ';' + currentPath.toString())
+            }
+
+            def testProcess = testBuilder.start()
+
+            testProcess.inputStream.eachLine { line -> println "[Mineflayer] ${line}"
+            }
+
+            def testExitCode = testProcess.waitFor()
+
+            if (testExitCode != 0) {
+                throw new GradleException("Mineflayer integration tests failed with exit code ${testExitCode}")
+            }
+        } finally {
+            def processes = serverProcess.toHandle()
+                    .descendants()
+                    .collect { it }
+
+            processes.each {
+                it.destroy()
+            }
+
+            serverProcess.destroy()
+
+            processes.each {
+                try {
+                    it.onExit().get()
+                } catch (Exception ignored) {
+                }
+            }
+
+            if (serverProcess.isAlive()) {
+                serverProcess.destroyForcibly()
+            }
+        }
+    }
 }
 
 processResources {
