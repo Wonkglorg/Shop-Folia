@@ -451,7 +451,7 @@ command:
         - "Total: %sales-1d% | <green>+<math>%sales-1d% * %amount%</math> %item% <red>-<math>%sales-1d% * %price%</math> %currency-name% <gray>- 1 Day"
         - "Total: %sales-7d% | <green>+<math>%sales-7d% * %amount%</math> %item% <red>-<math>%sales-7d% * %price%</math> %currency-name% <gray>- 7 Days"
         - "Total: %sales-30d% | <green>+<math>%sales-30d% * %amount%</math> %item% <red>-<math>%sales-30d% * %price%</math> %currency-name% <gray>- 30 Days"
-        - "Total: %sales-all-time% | <green>+<math>%sales-all-time% * %amount%</math> %item% <red>-<math>%sales-all-time% * %price%</math> %currency% <gray>- All"
+        - "Total: %sales-all-time% | <green>+<math>%sales-all-time% * %amount%</math> %item% <red>-<math>%sales-all-time% * %price%</math> %currency-name% <gray>- All"
       shop-entry-barter:
         - "<gold>==Shop Transaction Stats=="
         - "Total: %sales-1d% | <green>[+] <math>%sales-1d% * %price%</math> %item% <red>[-] <math>%sales-1d% * %amount%</math> %secondary-item% <gray>- 1 Day"
