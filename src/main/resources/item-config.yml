@@ -5,12 +5,28 @@ gamble-display-item:
   count: 1
   schema_version: 1
 
-currency-item:
-  ==: org.bukkit.inventory.ItemStack
-  DataVersion: 4903
-  id: minecraft:diamond
-  count: 1
-  schema_version: 1
+#The item to use as currency if currency is set to a physical item
+currency-items:
+  #base
+  base:
+    ==: org.bukkit.inventory.ItemStack
+    DataVersion: 4903
+    id: minecraft:diamond
+    count: 1
+    schema_version: 1
+  #Optional items that represent a multiple of the base items worth, such as a diamond block being considered 9x the worth of a single diamond as currency,
+  # any number of items can be specified as multiples.
+  condensed:
+    diamond_block:
+      # how many instances of the basic currency item this one is worth
+      multiplier: 9
+      # the item representing this amount
+      item:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4903
+        id: minecraft:diamond_block
+        count: 1
+        schema_version: 1
 
 # Define any custom items here that should be usable by shop initialization commands alongside vanilla items, changes to these need a complete server restart to apply!
 # ==== SUPPORTS ====

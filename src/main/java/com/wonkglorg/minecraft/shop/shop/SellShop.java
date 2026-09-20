@@ -5,8 +5,9 @@ import static com.wonkglorg.minecraft.shop.shop.ShopState.EMPTY;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OVERFILLED;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
+import static com.wonkglorg.minecraft.shop.shop.settings.Settings.CONDENSE_CURRENCY;
 import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
-import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
+import com.wonkglorg.minecraft.shop.shop.transaction.ItemCurrencyTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.Transaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.TransactionResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
@@ -17,6 +18,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import static java.lang.Boolean.TRUE;
 import java.util.UUID;
 
 public class SellShop extends AbstractShop{
@@ -36,7 +38,6 @@ public class SellShop extends AbstractShop{
 	@SuppressWarnings("DuplicatedCode")
 	@Override
 	protected void calculateStock() {
-		
 		if(this.isAdmin){
 			// There is always stock in the admin shop!
 			stock = Integer.MAX_VALUE;
@@ -52,6 +53,9 @@ public class SellShop extends AbstractShop{
 		
 		//starts a mock transaction to get accurate data on what the actual trade logic would do
 		Transaction transaction = startTransaction(null, 1);
+		if(CONDENSE_CURRENCY.isEnabled() && TRUE == getSetting(CONDENSE_CURRENCY) && !isAdmin){
+			condenseCurrency(transaction.getSeller().getInventory());
+		}
 		double availableFunds = transaction.getSellerAvailableItems();
 		stock = (int) (availableFunds / amount);
 		
@@ -82,7 +86,13 @@ public class SellShop extends AbstractShop{
 		double calculatedPrice = price * multiplier;
 		return switch(getCurrencyType()) {
 			case VAULT -> new VaultTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item);
-			case ITEM -> new ItemTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item, getCurrencyItem());
+			case ITEM -> new ItemCurrencyTransaction(party,
+					cachedParty,
+					calculatedAmount,
+					calculatedPrice,
+					item,
+					getCurrencyItem(),
+					getCondensedCurrencies());
 			case EXPERIENCE -> new ExpirienceTransaction(party, cachedParty, calculatedAmount, calculatedPrice, item);
 		};
 	}

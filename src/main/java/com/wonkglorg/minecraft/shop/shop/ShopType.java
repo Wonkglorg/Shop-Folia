@@ -1,24 +1,19 @@
 package com.wonkglorg.minecraft.shop.shop;
 
-import lombok.Getter;
-
 public enum ShopType{
 	
-	SELL(0, CreationWord.SELL),
+	SELL(0),
 	
-	BUY(1, CreationWord.BUY),
+	BUY(1),
 	
-	BARTER(2, CreationWord.BARTER),
+	BARTER(2),
 	
-	GAMBLE(3, CreationWord.GAMBLE);
+	GAMBLE(3);
 	
 	private final int weight;
-	@Getter
-	private final CreationWord creationWord;
 	
-	ShopType(int slot, CreationWord creationWord) {
+	ShopType(int slot) {
 		this.weight = slot;
-		this.creationWord = creationWord;
 	}
 	
 	@Override

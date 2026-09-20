@@ -23,7 +23,8 @@ public class ShopSettingsDialog{
 											 Boolean notifyTransactions,
 											 Boolean itemUpdater,
 											 String purchaseLimit,
-											 String purchaseCooldown) {
+											 String purchaseCooldown,
+											 Boolean condenseCurrency) {
 		boolean needsRefresh = false;
 		
 		if(Settings.OUT_OF_STOCK_NOTIFICATION.isEnabled()){
@@ -73,6 +74,18 @@ public class ShopSettingsDialog{
 				}
 			}
 		}
+		
+		if(Settings.CONDENSE_CURRENCY.isEnabled()){
+			if(!Objects.equals(shop.getSetting(Settings.CONDENSE_CURRENCY), condenseCurrency)){
+				shop.setSetting(Settings.CONDENSE_CURRENCY, condenseCurrency);
+				if(Boolean.TRUE.equals(condenseCurrency)){
+					AbstractShop.condenseCurrency(shop.getInventory());
+					return;
+				}
+				needsRefresh = true;
+			}
+		}
+		
 		if(needsRefresh){
 			shopClientManager().updateShop(shop);
 		}

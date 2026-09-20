@@ -407,6 +407,11 @@ command:
       success-player:
         - "<white>There are <gold>%total-shops%<white> shops registered on the server."
         - "<gray>You have built <gold>%user-amount% <gray>out of your <gold>%build-limit% allotted shops."
+        - "<white>Stock <dark_gray>| <gold>Location <dark_gray>| <gray>Type"
+      entry:
+        sell: "%stock-state-color% %stock%    <dark_gray>| <gold>%location% <dark_gray>| <gray>Selling %item%"
+        buy: "%stock-state-color% %stock%    <dark_gray>| <gold>%location% <dark_gray>| <gray>Buying %item%"
+        barter: "%stock-state-color% %stock%    <dark_gray>| <gold>%location% <dark_gray>| <gray>Trading %item% <gray>for %barter-item%"
     currency:
       success: "<gray>The server is using %currency-name% as currency."
       tip: "<gray>To change the currency, run the command '/shop setcurrency' with the item you want in your hand."
@@ -446,7 +451,7 @@ command:
         - "Total: %sales-1d% | <green>+<math>%sales-1d% * %amount%</math> %item% <red>-<math>%sales-1d% * %price%</math> %currency-name% <gray>- 1 Day"
         - "Total: %sales-7d% | <green>+<math>%sales-7d% * %amount%</math> %item% <red>-<math>%sales-7d% * %price%</math> %currency-name% <gray>- 7 Days"
         - "Total: %sales-30d% | <green>+<math>%sales-30d% * %amount%</math> %item% <red>-<math>%sales-30d% * %price%</math> %currency-name% <gray>- 30 Days"
-        - "Total: %sales-all-time% | <green>+<math>%sales-all-time% * %amount%</math> %item% <red>-<math>%sales-all-time% * %price%</math> %currency% <gray>- All"
+        - "Total: %sales-all-time% | <green>+<math>%sales-all-time% * %amount%</math> %item% <red>-<math>%sales-all-time% * %price%</math> %currency-name% <gray>- All"
       shop-entry-barter:
         - "<gold>==Shop Transaction Stats=="
         - "Total: %sales-1d% | <green>[+] <math>%sales-1d% * %price%</math> %item% <red>[-] <math>%sales-1d% * %amount%</math> %secondary-item% <gray>- 1 Day"

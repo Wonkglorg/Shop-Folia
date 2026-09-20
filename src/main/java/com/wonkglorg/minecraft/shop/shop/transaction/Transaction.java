@@ -1,6 +1,7 @@
 package com.wonkglorg.minecraft.shop.shop.transaction;
 
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -11,10 +12,12 @@ public abstract class Transaction{
 	/**
 	 * The buyer of the stack in the transaction
 	 */
+	@Getter
 	protected final TransactionParty buyer;
 	/**
 	 * The seller of the stack in the transaction
 	 */
+	@Getter
 	protected final TransactionParty seller;
 	/**
 	 * The currency price to pay for the transacted stack
@@ -38,6 +41,18 @@ public abstract class Transaction{
 	private TransactionResult result;
 	
 	/**
+	 * If the buyer in this transaction is an admin shop
+	 */
+	@Getter
+	protected final boolean buyerIsAdminShop;
+	
+	/**
+	 * If the seller in this transaction is an admin shop
+	 */
+	@Getter
+	protected final boolean sellerIsAdminShop;
+	
+	/**
 	 * Represents a transaction between 2 parties
 	 *
 	 * @param buyer the party buying an itemstack for the servers provided currency
@@ -52,6 +67,8 @@ public abstract class Transaction{
 		this.amount = amount;
 		this.price = price;
 		this.tradedStack = tradedStack;
+		this.buyerIsAdminShop = buyer instanceof ShopTransactionParty shopParty && shopParty.getShop().isAdmin();
+		this.sellerIsAdminShop = seller instanceof ShopTransactionParty shopParty && shopParty.getShop().isAdmin();
 	}
 	
 	/**

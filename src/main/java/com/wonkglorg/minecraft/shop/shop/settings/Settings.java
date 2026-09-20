@@ -58,6 +58,16 @@ public final class Settings{
 			shopSettings()::isCustomItemUpdaterDefault,
 			shopSettings()::isCustomItemUpdaterEnabled);
 	
+	
+	/**
+	 * If shop should condense its currency to allow for more space inside the shop before being overfilled
+	 */
+	public static final Setting<Boolean> CONDENSE_CURRENCY = new Setting<>("condense_currency",
+			Boolean.class,
+			Boolean::parseBoolean,
+			shopSettings()::isCondenseCurrencyDefault,
+			shopSettings()::isCondenseCurrencyEnabled);
+	
 	private static SettingsConfig.ShopSettings shopSettings() {
 		return ShopPlugin.getPlugin().getSettingsConfig().getShopSettings();
 	}

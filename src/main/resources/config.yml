@@ -37,11 +37,17 @@ use-localized-material-names: false
 # (default: false) Should owners be able to buy/sell from their own shop
 allow-use-own-shop: false
 
+#If condensed currencies should be allowed for usage when transacting with a shop, (defined in item-config.yml)
+allow-use-condensed-currency-for-shop: true
+
 # If this is set to true, shops will require you to be sneaking (holding 'shift') to destroy them
 destroy-shop-requires-sneak: true
 
 # If all transactions the player's shop's made while the player was offline should be sent to them when joining.
 show-offline-transactions-on-join: true
+
+# The amount of milliseconds to wait before another out of stock notification should be sent to the shop owner when option is toggled
+owner-out-of-stock-cooldown-time: 10000
 
 # The amount of time that needs to pass (in milliseconds)  before sending a grouped transaction notification to the owner of a shop if owner wants notifications (0 to disable)
 owner-transaction-grouping-time: 1000
@@ -222,10 +228,13 @@ shop:
     transaction-notification:
       enabled: true
       default-value: false
-
     #if shop items tagged with custom item id's by other plugins such as "Nexo items" should update their item definitions alongside the plugin
     custom-item-updater:
       enabled: false
+      default-value: false
+    #if shop should condense it's currency to free up more space when trading.
+    condense-currency-in-shop:
+      enabled: true
       default-value: false
 
 # =================================================================== #

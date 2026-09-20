@@ -6,6 +6,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.EulerAngle;
+import org.jetbrains.annotations.NotNull;
 
 public class DisplayUtil{
 	
@@ -241,6 +242,8 @@ public class DisplayUtil{
 		if(facing == null){
 			facing = BlockFace.NORTH;
 		}
+		//noinspection ConstantValue
+		assert facing != null;
 		assert standLocation != null;
 		//make the stand face the correct direction when it spawns
 		standLocation.setYaw(blockfaceToYaw(facing));
@@ -347,7 +350,7 @@ public class DisplayUtil{
 		return false;
 	}
 	
-	public static BlockFace nextFace(BlockFace face) {
+	public static @NotNull BlockFace nextFace(BlockFace face) {
 		BlockFace[] faces = {BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH, BlockFace.EAST};
 		BlockFace direction = null;
 		if(face == faces[faces.length - 1]){

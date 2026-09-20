@@ -8,7 +8,10 @@ import org.bukkit.inventory.ItemStack;
  * Transaction using an item as the currency
  */
 public class ItemTransaction extends Transaction{
-	private final ItemStack currency;
+	/**
+	 * The currency being used for this item transaction
+	 */
+	protected final ItemStack currency;
 	
 	public ItemTransaction(TransactionParty buyer, TransactionParty seller, int amount, double price, ItemStack tradedStack, ItemStack currency) {
 		super(buyer, seller, amount, price, tradedStack);
@@ -23,6 +26,9 @@ public class ItemTransaction extends Transaction{
 	@Override
 	public boolean canBuyerAcceptItems() {
 		if(amount == 0){
+			return true;
+		}
+		if(buyerIsAdminShop){
 			return true;
 		}
 		var inventory = buyer.createVirtualInventory();
@@ -46,6 +52,10 @@ public class ItemTransaction extends Transaction{
 	@Override
 	public boolean canSellerAcceptPayment() {
 		if(price == 0){
+			return true;
+		}
+		//admin shops do not care about any constraints
+		if(sellerIsAdminShop){
 			return true;
 		}
 		var inventory = seller.createVirtualInventory();

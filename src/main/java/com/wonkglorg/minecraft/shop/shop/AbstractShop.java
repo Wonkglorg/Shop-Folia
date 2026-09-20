@@ -2,13 +2,15 @@ package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
-import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.getPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.isBedrockPlayer;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopClientManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
+import com.wonkglorg.minecraft.shop.config.ItemConfig;
+import com.wonkglorg.minecraft.shop.config.ItemConfig.CurrencyDenomination;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import static com.wonkglorg.minecraft.shop.dialogs.ShopSettingsDialog.openDialog;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
@@ -222,6 +224,9 @@ public abstract class AbstractShop{
 	@Getter
 	private ShopState shopState = OK;
 	
+	@Getter
+	private long lastOutOfStockNotification = 0;
+	
 	/**
 	 *
 	 * @param id the unique id of the shop
@@ -391,8 +396,8 @@ public abstract class AbstractShop{
 			front.line(i, lines.get(i));
 		}
 		
-		front.setGlowingText(ShopPlugin.getPlugin().getSettingsConfig().isSignGlowingSignText());
-		sign.setWaxed(ShopPlugin.getPlugin().getSettingsConfig().isSignWaxed());
+		front.setGlowingText(getPlugin().getSettingsConfig().isSignGlowingSignText());
+		sign.setWaxed(getPlugin().getSettingsConfig().isSignWaxed());
 		sign.update(true);
 	}
 	
@@ -635,8 +640,7 @@ public abstract class AbstractShop{
 	 * Prints Shop info about the shop to the player in chat
 	 */
 	public void printSalesInfo(Player player) {
-		if((player.getUniqueId().equals(owner) || PlayerProfile.isOperator(player)) &&
-		   ShopPlugin.getPlugin().getSettingsConfig().isPrintHistoryWithShopInfo()){
+		if((player.getUniqueId().equals(owner) || PlayerProfile.isOperator(player)) && getPlugin().getSettingsConfig().isPrintHistoryWithShopInfo()){
 			shopDatabase().getTransactionStats(this).thenAccept(s -> {
 				LangRequest request = langManager().request("description." + this.getType() + ".info");
 				shopPlaceholders(request, this, true, player);
@@ -806,15 +810,30 @@ public abstract class AbstractShop{
 		if(!shopOwner.isOnline()){
 			return;
 		}
-		Player ownerPlayer = shopOwner.getPlayer();
-		assert ownerPlayer != null;
-		OnlinePlayerProfile ownerProfile = PlayerManager.getOnlineProfile(ownerPlayer);
-		if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE || ownerProfile.isNotifyStock()){
-			var ownerRequest = langManager().request("transaction.issue." + type + ".owner-no-stock").replace("%user%", purchaser.getName());
-			ownerRequest.replace("%location%", UtilMethods.getCleanLocation(getSignLocation(), false));
-			ownerRequest.replace("%price%", formatPrice(price * multiplier));
-			ownerRequest.replace("%item-amount%", amount * multiplier);
-			ownerRequest.sendToAudience(requireNonNull(shopOwner.getPlayer()));
+		
+		long now = System.currentTimeMillis();
+		long cooldown = getPlugin().getSettingsConfig().getOwnerOutOfStockCooldownTime();
+		
+		if(lastOutOfStockNotification == 0 || now - lastOutOfStockNotification >= cooldown){
+			
+			Player ownerPlayer = shopOwner.getPlayer();
+			if(ownerPlayer == null){
+				return;
+			}
+			
+			OnlinePlayerProfile ownerProfile = PlayerManager.getOnlineProfile(ownerPlayer);
+			
+			if(getSetting(Settings.OUT_OF_STOCK_NOTIFICATION) == TRUE || ownerProfile.isNotifyStock()){
+				
+				var ownerRequest = langManager().request("transaction.issue." + type + ".owner-no-stock").replace("%user%", purchaser.getName());
+				
+				ownerRequest.replace("%location%", UtilMethods.getCleanLocation(getSignLocation(), false));
+				ownerRequest.replace("%price%", formatPrice(price * multiplier));
+				ownerRequest.replace("%item-amount%", amount * multiplier);
+				ownerRequest.sendToAudience(ownerPlayer);
+				
+				lastOutOfStockNotification = now;
+			}
 		}
 	}
 	
@@ -1022,7 +1041,7 @@ public abstract class AbstractShop{
 	 * @return true if something was done false if nothing happened
 	 */
 	public boolean executeClickAction(Player player, ShopClickType clickType) {
-		ShopAction action = ShopPlugin.getPlugin().getSettingsConfig().getShopAction(clickType);
+		ShopAction action = getPlugin().getSettingsConfig().getShopAction(clickType);
 		if(action == null){
 			logger().debug("No action is mapped to " + clickType);
 			return false; //there is no action mapped to this click type
@@ -1031,7 +1050,7 @@ public abstract class AbstractShop{
 		switch(action) {
 			case TRANSACT, TRANSACT_FULL_STACK:
 				//early return if transactor is owner
-				if(player.getUniqueId().equals(owner) && !ShopPlugin.getPlugin().getSettingsConfig().isAllowUseOwnShop()){
+				if(player.getUniqueId().equals(owner) && !getPlugin().getSettingsConfig().isAllowUseOwnShop()){
 					sendTransactionMessage(TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP, 0, player);
 					sendEffects(false, player);
 					return true;
@@ -1104,14 +1123,21 @@ public abstract class AbstractShop{
 	 * @return the currency type being used by the server
 	 */
 	public static @NotNull CurrencyType getCurrencyType() {
-		return ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType();
+		return getPlugin().getSettingsConfig().getCurrencyType();
 	}
 	
 	/**
 	 * @return the item being used for currency or null if not defined, this value is present as long as it's defined in the config, use {@link #getCurrencyType()} first to confirm what currency type is currently active on the server
 	 */
-	public static @Nullable ItemStack getCurrencyItem() {
-		return ShopPlugin.getPlugin().getItemConfig().getCurrencyItem();
+	public static ItemStack getCurrencyItem() {
+		return getPlugin().getItemConfig().getCurrencyItem();
+	}
+	
+	/**
+	 * @return optional items being used as "condensed currency" being worth a multiple of the base {@link #getCurrencyItem()}
+	 */
+	public static List<ItemConfig.CurrencyDenomination> getCondensedCurrencies() {
+		return getPlugin().getItemConfig().getCurrencyDenominations();
 	}
 	
 	/**
@@ -1130,7 +1156,7 @@ public abstract class AbstractShop{
 		}
 		ShopLogger logger = logger();
 		logger.debug("===STARTING DISPLAY CYCLE===");
-		DisplayType[] cycle = ShopPlugin.getPlugin().getSettingsConfig().getDisplayCycle();
+		DisplayType[] cycle = getPlugin().getSettingsConfig().getDisplayCycle();
 		
 		if(cycle.length == 0){
 			logger.debug("Cycle list is empty cannot cycle");
@@ -1224,7 +1250,7 @@ public abstract class AbstractShop{
 	 * @param player the player to send it to
 	 */
 	public void sendEffects(boolean success, Player player) {
-		SettingsConfig settingsConfig = ShopPlugin.getPlugin().getSettingsConfig();
+		SettingsConfig settingsConfig = getPlugin().getSettingsConfig();
 		if(success){
 			if(settingsConfig.isPlaySounds()){
 				player.playSound(signLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
@@ -1347,7 +1373,126 @@ public abstract class AbstractShop{
 		return setting.getType().cast(value);
 	}
 	
-	//the id is the identity of the shop, only consider that for equality
+	/**
+	 * Condenses currency when its total value can form at least one
+	 * configured denomination.
+	 *
+	 * @return true if the inventory was condensed; false if no condensing
+	 * was possible or the result would not fit.
+	 */
+	public static boolean condenseCurrency(Inventory inventory) {
+		var itemConfig = getPlugin().getItemConfig();
+		ItemStack baseCurrency = itemConfig.getCurrencyItem();
+		List<CurrencyDenomination> denominations = itemConfig.getCurrencyDenominations();
+		
+		if(denominations.isEmpty()){
+			return false;
+		}
+		
+		long totalValue = 0;
+		ItemStack[] original = inventory.getStorageContents();
+		
+		for(ItemStack stack : original){
+			if(stack == null || stack.getType().isAir()){
+				continue;
+			}
+			
+			if(stack.isSimilar(baseCurrency)){
+				totalValue += stack.getAmount();
+				continue;
+			}
+			
+			for(CurrencyDenomination denomination : denominations){
+				if(stack.isSimilar(denomination.item())){
+					totalValue += (long) stack.getAmount() * denomination.value();
+					break;
+				}
+			}
+		}
+		
+		//not enough value to condense anything
+		if(totalValue < itemConfig.getSmallestCurrencyDenominationMultiplier()){
+			return false;
+		}
+		
+		ItemStack[] contents = new ItemStack[original.length];
+		
+		for(int i = 0; i < original.length; i++){
+			ItemStack stack = original[i];
+			
+			if(stack == null || stack.getType().isAir()){
+				continue;
+			}
+			
+			boolean isCurrency = stack.isSimilar(baseCurrency);
+			
+			if(!isCurrency){
+				for(CurrencyDenomination denomination : denominations){
+					if(stack.isSimilar(denomination.item())){
+						isCurrency = true;
+						break;
+					}
+				}
+			}
+			
+			if(!isCurrency){
+				contents[i] = stack.clone();
+			}
+		}
+		
+		for(CurrencyDenomination denomination : denominations){
+			long count = totalValue / denomination.value();
+			totalValue %= denomination.value();
+			
+			if(count > 0 && !insertItems(contents, denomination.item(), count)){
+				return false;
+			}
+		}
+		
+		if(totalValue > 0 && !insertItems(contents, baseCurrency, totalValue)){
+			return false;
+		}
+		
+		inventory.setStorageContents(contents);
+		return true;
+	}
+	
+	/**
+	 * Inserts as many items as possible into the provided storage contents.
+	 * Returns false if the entire amount cannot fit.
+	 */
+	private static boolean insertItems(ItemStack[] contents, ItemStack item, long amount) {
+		int maxStackSize = item.getMaxStackSize();
+		
+		for(int i = 0; i < contents.length && amount > 0; i++){
+			ItemStack existing = contents[i];
+			
+			if(existing == null || !existing.isSimilar(item)){
+				continue;
+			}
+			
+			int space = maxStackSize - existing.getAmount();
+			int added = (int) Math.clamp(space, 0, amount);
+			
+			existing.setAmount(existing.getAmount() + added);
+			amount -= added;
+		}
+		
+		for(int i = 0; i < contents.length && amount > 0; i++){
+			if(contents[i] != null && !contents[i].getType().isAir()){
+				continue;
+			}
+			
+			int added = (int) Math.min(amount, maxStackSize);
+			ItemStack stack = item.clone();
+			stack.setAmount(added);
+			contents[i] = stack;
+			amount -= added;
+		}
+		
+		return amount == 0;
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if(obj == null){

@@ -2,6 +2,7 @@ package com.wonkglorg.minecraft.shop.shop.transaction.party;
 
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import com.wonkglorg.minecraft.shop.config.ItemConfig.CurrencyDenomination;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import static com.wonkglorg.minecraft.shop.util.ExperienceUtils.getTotalExperience;
@@ -28,6 +29,7 @@ public class TransactionParty{
 	/**
 	 * The inventory of the party
 	 */
+	@Getter
 	protected final Inventory inventory;
 	
 	public TransactionParty(OfflinePlayer player, Inventory inventory) {
@@ -92,6 +94,40 @@ public class TransactionParty{
 	}
 	
 	/**
+	 * Gets the total item currency value available to the party.
+	 *
+	 * @param baseCurrency the base currency, worth 1 unit
+	 * @param condensedCurrencies optional currencies worth multiples
+	 * of the base currency
+	 * @return total currency value in base currency units
+	 */
+	public long getAvailableItemFunds(ItemStack baseCurrency, List<CurrencyDenomination> condensedCurrencies) {
+		logger().debug("Checking available items for party");
+		
+		long total = 0;
+		
+		for(ItemStack item : inventory.getStorageContents()){
+			if(item == null || item.getAmount() <= 0){
+				continue;
+			}
+			
+			if(baseCurrency.isSimilar(item)){
+				total += item.getAmount();
+				continue;
+			}
+			
+			for(CurrencyDenomination denomination : condensedCurrencies){
+				if(denomination.item().isSimilar(item)){
+					total += (long) item.getAmount() * denomination.value();
+					break;
+				}
+			}
+		}
+		
+		return total;
+	}
+	
+	/**
 	 * @param itemStack the currency item if {@link CurrencyType#ITEM}
 	 * @param amount how much the payment will be
 	 * @return if the party can accept this payment
@@ -144,6 +180,25 @@ public class TransactionParty{
 			logger().debug("Party cannot accept payment");
 		}
 		return empty;
+	}
+	
+	/**
+	 * Checks whether the party can receive these actual payment stacks.
+	 */
+	public boolean canAcceptItemPayment(List<ItemStack> paymentStacks) {
+		Inventory virtualInventory = createVirtualInventory();
+		
+		for (ItemStack stack : paymentStacks) {
+			if (stack == null || stack.getAmount() <= 0) {
+				continue;
+			}
+			
+			if (!virtualInventory.addItem(stack.clone()).isEmpty()) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	/**
@@ -246,11 +301,12 @@ public class TransactionParty{
 	 *
 	 * @param itemStack the item to remove
 	 * @param amount how much of the item to remove
+	 * @return the amount of items that could not be removed
 	 */
-	public void removeItem(ItemStack itemStack, int amount) {
+	public int removeItem(ItemStack itemStack, int amount) {
 		ItemStack clone = itemStack.clone();
 		clone.setAmount(amount);
-		removeItemSmallestStacksFirst(inventory, clone, amount);
+		return removeItemSmallestStacksFirst(inventory, clone, amount);
 	}
 	
 	/**
