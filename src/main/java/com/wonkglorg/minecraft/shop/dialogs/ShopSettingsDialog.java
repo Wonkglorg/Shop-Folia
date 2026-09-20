@@ -78,6 +78,10 @@ public class ShopSettingsDialog{
 		if(Settings.CONDENSE_CURRENCY.isEnabled()){
 			if(!Objects.equals(shop.getSetting(Settings.CONDENSE_CURRENCY), condenseCurrency)){
 				shop.setSetting(Settings.CONDENSE_CURRENCY, condenseCurrency);
+				if(Boolean.TRUE.equals(condenseCurrency)){
+					AbstractShop.condenseCurrency(shop.getInventory());
+					return;
+				}
 				needsRefresh = true;
 			}
 		}
