@@ -449,7 +449,7 @@ public class ShopListener implements Listener{
 	}
 	
 	private void sendOfflineTransaction(Player player) {
-		shopManager.getOfflineTransactions(player.getUniqueId(), player.getLastLogin()).thenAccept(transactions -> {
+		shopManager.getOfflineTransactions(player.getUniqueId()).thenAccept(transactions -> {
 			
 			if(transactions.isEmpty()){
 				return;
@@ -514,6 +514,7 @@ public class ShopListener implements Listener{
 		Player player = event.getPlayer();
 		PlayerManager.removeProfile(player);
 		shopManager.getShopClientManager().handlePlayerQuit(player);
+		shopManager.getDatabase().setPlayerLastSeen(player.getUniqueId(),System.currentTimeMillis());
 	}
 	
 	@EventHandler

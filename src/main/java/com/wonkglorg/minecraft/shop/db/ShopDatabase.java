@@ -23,6 +23,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -126,6 +127,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		initDB();
 		addPlayer(AdminOfflinePlayer.getAdminUUID(), "admin");
 		dropColumnIfExists(this.getConnection(), "transactions", "cache_offline");
+		addColumnIfMissing(this.getConnection(), "players", "last_online", "INTEGER");
 	}
 	
 	public void initDB() throws SQLException, IOException {
@@ -238,6 +240,27 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		if(exists){
 			try(var statement = connection.createStatement()){
 				statement.executeUpdate("ALTER TABLE " + table + " DROP COLUMN " + column);
+			}
+		}
+	}
+	
+	private void addColumnIfMissing(Connection connection, String table, String column, String definition) throws SQLException {
+		
+		boolean exists = false;
+		
+		try(var statement = connection.createStatement(); var result = statement.executeQuery("PRAGMA table_info(" + table + ")")){
+			
+			while(result.next()){
+				if(column.equals(result.getString("name"))){
+					exists = true;
+					break;
+				}
+			}
+		}
+		
+		if(!exists){
+			try(var statement = connection.createStatement()){
+				statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
 			}
 		}
 	}
@@ -875,20 +898,36 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	 * Returns aggregated transaction statistics per unique shop ID
 	 * for all transactions newer than the given timestamp.
 	 *
-	 * @param since timestamp in milliseconds
 	 * @return statistics grouped by shop UUID
 	 */
-	public CompletableFuture<Map<UUID, Long>> getTransactionStatsSince(UUID ownerId, long since) {
+	public CompletableFuture<Map<UUID, Long>> getTransactionStatsSinceLastJoin(UUID ownerId) {
 		
 		CompletableFuture<Map<UUID, Long>> future = new CompletableFuture<>();
 		
 		scheduler.runAsync(_ -> {
 			Map<UUID, Long> stats = new HashMap<>();
+			long lastSeen = 0;
+			
+			try(var ps = getConnection().prepareStatement("""
+					SELECT last_online
+					FROM players t
+					WHERE t.uuid = ?
+					""")){
+				ps.setString(1,ownerId.toString());
+				ResultSet rs = ps.executeQuery();
+				lastSeen = rs.getLong("last_online");
+			} catch(Exception e){
+				lastSeen = 0;
+			}
+			
+			if(lastSeen == 0){
+				return;
+			}
 			
 			try(var ps = getConnection().prepareStatement(TRANSACTION_STATS_SINCE_SQL)){
 				
 				ps.setString(1, ownerId.toString());
-				ps.setLong(2, since);
+				ps.setLong(2, lastSeen);
 				
 				try(var rs = ps.executeQuery()){
 					while(rs.next()){
@@ -908,6 +947,23 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		});
 		
 		return future;
+	}
+	
+	public void setPlayerLastSeen(@NotNull UUID playerId, long lastSeen) {
+		scheduler.runAsync(_ -> {
+			try(var ps = getConnection().prepareStatement("""
+					INSERT INTO players (uuid, last_online)
+					VALUES (?, ?)
+					ON CONFLICT(uuid) DO UPDATE SET last_online = excluded.last_online;
+					""")){
+				
+				ps.setString(1, playerId.toString());
+				ps.setLong(2, lastSeen);
+				ps.execute();
+			} catch(SQLException e){
+				logger().error("Error while fetching transaction statistics", e);
+			}
+		});
 	}
 	
 	public record TransactionStats(long day1, long day7, long day30, long allTime){}

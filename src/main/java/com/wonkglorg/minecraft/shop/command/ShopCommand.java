@@ -5,6 +5,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.wonkglorg.minecraft.command.AbstractCommand;
+import com.wonkglorg.minecraft.command.completion.Argument;
+import com.wonkglorg.minecraft.command.completion.ArgumentBuilder;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
@@ -35,16 +37,24 @@ import org.bukkit.util.RayTraceResult;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class ShopCommand extends AbstractCommand{
 	
 	private final ShopPlugin plugin;
 	private final LangManager lang;
+	private final ArgumentBuilder argumentBuilder;
 	
 	public ShopCommand() {
 		this.plugin = ShopPlugin.getPlugin();
 		this.lang = ShopPlugin.langManager();
+		argumentBuilder = new ArgumentBuilder(this::lookup);
+		argumentBuilder.addArgument(new Argument("user", false, () -> Bukkit.getOnlinePlayers().stream().map(Player::getName).toList()));
+		argumentBuilder.addArgument(new Argument("radius", false, () -> List.of("10", "25", "50", "100")));
+		argumentBuilder.addArgument(new Argument("action", false, () -> List.of("BUY", "SELL", "BARTER", "GAMBLE")));
+		argumentBuilder.addArgument(new Argument("before", false));
+		argumentBuilder.addArgument(new Argument("after", false));
 	}
 	
 	@Override
@@ -76,8 +86,15 @@ public class ShopCommand extends AbstractCommand{
 						.then(literal("shop")
 								.then(argument("shop-id",StringArgumentType.greedyString()).executes(this::debugShop))))
 				.then(literal("setcurrency").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setCurrency))
-				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble));
+				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble))
+				.then(literal("lookup").requires(permissions(SHOP_PERMISSION_OPERATOR)).then(argumentBuilder.constructArguments()));
+		
+		//todo add a shop lookup subtree that functions like findseller does for searching items and other history of a players sales
 		//@formatter:on
+	}
+	
+	private Integer lookup(CommandContext<CommandSourceStack> commandSourceStackCommandContext, Map<String, String> stringStringMap) {
+		return 1;
 	}
 	
 	private int showTransactions(CommandContext<CommandSourceStack> ctx) {
