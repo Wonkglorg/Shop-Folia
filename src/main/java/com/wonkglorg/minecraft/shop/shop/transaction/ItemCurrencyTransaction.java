@@ -123,10 +123,6 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 			}
 		}
 		
-		if(!sellerIsAdminShop && plan.basePayment() > 0){
-			seller.addItem(currency, plan.basePayment());
-		}
-		
 		if(amount > 0){
 			int remaining = seller.removeItem(tradedStack, amount);
 			
@@ -134,6 +130,10 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 				throw new IllegalStateException("Validated traded items could not be removed");
 			}
 			buyer.addItem(tradedStack, amount);
+		}
+		
+		if(!sellerIsAdminShop && plan.basePayment() > 0){
+			seller.addItem(currency, plan.basePayment());
 		}
 		
 		paymentPlan = null;
