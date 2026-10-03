@@ -458,6 +458,12 @@ command:
         - "Total: %sales-7d% | <green>[+] <math>%sales-7d% * %price%</math> %item% <red>[-] <math>%sales-7d% * %amount%</math> %secondary-item% <gray>- 7 Days"
         - "Total: %sales-30d% | <green>[+] <math>%sales-30d% * %price%</math> %item% <red>[-] <math>%sales-30d% * %amount%</math> %secondary-item% <gray>- 30 Days"
         - "Total: %sales-all-time% | <green>[+] <math>%sales-all-time% * %price%</math> %item% <red>[-] <math>%sales-all-time% * %amount%</math> %secondary-item% <gray>- All"
+    lookup:
+      data-no-results: "No entries"
+      header: "Stuff"
+      result-entry: "Entry"
+      result-entry-hover: "Hover"
+      footer: "footer"
     debug:
       usage:
         - "<yellow>Shop Debug Commands:"

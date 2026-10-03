@@ -15,6 +15,8 @@ import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
+import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand;
+import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand.ShopHistoryAction;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
@@ -35,9 +37,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.RayTraceResult;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class ShopCommand extends AbstractCommand{
@@ -45,14 +47,15 @@ public class ShopCommand extends AbstractCommand{
 	private final ShopPlugin plugin;
 	private final LangManager lang;
 	private final ArgumentBuilder argumentBuilder;
+	private static final List<String> actions = Arrays.stream(ShopHistoryAction.values()).map(Enum::name).toList();
 	
 	public ShopCommand() {
 		this.plugin = ShopPlugin.getPlugin();
 		this.lang = ShopPlugin.langManager();
-		argumentBuilder = new ArgumentBuilder(this::lookup);
+		argumentBuilder = new ArgumentBuilder(new ShopLookupSubCommand()::lookup);
 		argumentBuilder.addArgument(new Argument("user", false, () -> Bukkit.getOnlinePlayers().stream().map(Player::getName).toList()));
 		argumentBuilder.addArgument(new Argument("radius", false, () -> List.of("10", "25", "50", "100")));
-		argumentBuilder.addArgument(new Argument("action", false, () -> List.of("BUY", "SELL", "BARTER", "GAMBLE")));
+		argumentBuilder.addArgument(new Argument("action", false, () -> actions));
 		argumentBuilder.addArgument(new Argument("before", false));
 		argumentBuilder.addArgument(new Argument("after", false));
 	}
@@ -88,13 +91,7 @@ public class ShopCommand extends AbstractCommand{
 				.then(literal("setcurrency").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setCurrency))
 				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble))
 				.then(literal("lookup").requires(permissions(SHOP_PERMISSION_OPERATOR)).then(argumentBuilder.constructArguments()));
-		
-		//todo add a shop lookup subtree that functions like findseller does for searching items and other history of a players sales
 		//@formatter:on
-	}
-	
-	private Integer lookup(CommandContext<CommandSourceStack> commandSourceStackCommandContext, Map<String, String> stringStringMap) {
-		return 1;
 	}
 	
 	private int showTransactions(CommandContext<CommandSourceStack> ctx) {
@@ -508,4 +505,5 @@ public class ShopCommand extends AbstractCommand{
 	public String description() {
 		return "Command to view and modify the shop plugin data.";
 	}
+
 }
