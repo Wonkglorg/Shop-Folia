@@ -67,6 +67,21 @@ public class PlayerNameCache{
 	}
 	
 	/**
+	 * Gets the uuid from a specified name
+	 */
+	public static UUID getUUID(String name) {
+		if(name != null && name.isEmpty()){
+			return null;
+		}
+		for(var entry : cache.entrySet()){
+			if(entry.getValue().equalsIgnoreCase(name)){
+				return entry.getKey();
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * Caches a player name and switches off initial build mode
 	 *
 	 * @param uuid Player UUID

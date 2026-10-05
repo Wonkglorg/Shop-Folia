@@ -54,6 +54,8 @@ public class ShopCommand extends AbstractCommand{
 		this.lang = ShopPlugin.langManager();
 		argumentBuilder = new ArgumentBuilder(new ShopLookupSubCommand()::lookup);
 		argumentBuilder.addArgument(new Argument("user", false, () -> Bukkit.getOnlinePlayers().stream().map(Player::getName).toList()));
+		argumentBuilder.addArgument(new Argument("owner", false, () -> Bukkit.getOnlinePlayers().stream().map(Player::getName).toList()));
+		argumentBuilder.addArgument(new Argument("transactor", false, () -> Bukkit.getOnlinePlayers().stream().map(Player::getName).toList()));
 		argumentBuilder.addArgument(new Argument("radius", false, () -> List.of("10", "25", "50", "100")));
 		argumentBuilder.addArgument(new Argument("action", false, () -> actions));
 		argumentBuilder.addArgument(new Argument("before", false));

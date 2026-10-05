@@ -8,6 +8,7 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase.ShopHistoryData;
+import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.date.DurationBuilder;
@@ -19,8 +20,6 @@ import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.event.ClickEvent.runCommand;
 import net.kyori.adventure.text.event.HoverEvent;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -70,7 +69,22 @@ public class ShopLookupSubCommand{
 			return 1;
 		}
 		
-		UUID user;
+		UUID owner = PlayerNameCache.getUUID(args.get("owner"));
+		if(args.containsKey("owner") && owner == null){
+			lang.request("command.shop.lookup.invalid-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		UUID transactor = PlayerNameCache.getUUID(args.get("transactor"));
+		if(args.containsKey("transactor") && transactor == null){
+			lang.request("command.shop.lookup.invalid-transactor").sendToAudience(player);
+			return -1;
+		}
+		UUID user = PlayerNameCache.getUUID(args.get("user"));
+		if(args.containsKey("user") && user == null){
+			lang.request("command.shop.lookup.invalid-user").sendToAudience(player);
+			return -1;
+		}
 		Integer radius = null;
 		
 		Long before = null;
@@ -78,29 +92,6 @@ public class ShopLookupSubCommand{
 		
 		ShopHistoryAction action = null;
 		
-		/*
-		 * ---------------------------------------------------------
-		 * User
-		 * ---------------------------------------------------------
-		 */
-		if(args.containsKey("user")){
-			
-			OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(args.get("user"));
-			
-			if(!offlinePlayer.hasPlayedBefore()){
-				return -1;
-			}
-			
-			user = offlinePlayer.getUniqueId();
-		} else {
-			user = null;
-		}
-		
-		/*
-		 * ---------------------------------------------------------
-		 * Radius
-		 * ---------------------------------------------------------
-		 */
 		if(args.containsKey("radius")){
 			
 			try{
@@ -110,11 +101,6 @@ public class ShopLookupSubCommand{
 			}
 		}
 		
-		/*
-		 * ---------------------------------------------------------
-		 * Time
-		 * ---------------------------------------------------------
-		 */
 		if(args.containsKey("before")){
 			before = parseTime(args.get("before"));
 		}
@@ -123,11 +109,6 @@ public class ShopLookupSubCommand{
 			after = parseTime(args.get("after"));
 		}
 		
-		/*
-		 * ---------------------------------------------------------
-		 * Action
-		 * ---------------------------------------------------------
-		 */
 		if(args.containsKey("action")){
 			
 			try{
@@ -153,6 +134,8 @@ public class ShopLookupSubCommand{
 				(parent, providedPage) -> ShopPlugin.shopManager()
 													.getDatabase()
 													.getHistory(user,
+															transactor,
+															owner,
 															player.getLocation(),
 															parent.radius,
 															parent.action,
