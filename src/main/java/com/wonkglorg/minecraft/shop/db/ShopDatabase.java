@@ -4,8 +4,10 @@ import com.tcoded.folialib.impl.PlatformScheduler;
 import com.wonkglorg.database.DatabaseType;
 import com.wonkglorg.database.databases.SqliteDatabase;
 import com.wonkglorg.database.datasources.FileDataSource;
+import com.wonkglorg.minecraft.command.paged.PageResult;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand.ShopHistoryAction;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB.ShopHistoryEntry;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
@@ -16,6 +18,8 @@ import com.wonkglorg.minecraft.shop.shop.settings.Setting;
 import static com.wonkglorg.minecraft.shop.shop.settings.Settings.ALL_SETTINGS;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
+import com.wonkglorg.minecraft.util.date.DateType;
+import com.wonkglorg.minecraft.util.date.DurationBuilder;
 import static net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -32,6 +36,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -913,7 +918,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 					FROM players t
 					WHERE t.uuid = ?
 					""")){
-				ps.setString(1,ownerId.toString());
+				ps.setString(1, ownerId.toString());
 				ResultSet rs = ps.executeQuery();
 				lastSeen = rs.getLong("last_online");
 			} catch(Exception e){
@@ -949,6 +954,224 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		return future;
 	}
 	
+	/**
+	 * Requests a history lookup with the given parameters
+	 */
+	public CompletableFuture<PageResult<ShopHistoryData>> getHistory(UUID userId,
+																	 UUID transactorId,
+																	 UUID ownerId,
+																	 Location location,
+																	 Integer radius,
+																	 ShopHistoryAction action,
+																	 Long after,
+																	 Long before,
+																	 long requestTime,
+																	 int pageSize,
+																	 int page) {
+		var future = new CompletableFuture<PageResult<ShopHistoryData>>();
+		
+		scheduler.runAsync(task -> {
+			List<ShopHistoryData> results = new ArrayList<>();
+			
+			if(page < 0){
+				future.completeExceptionally(new IllegalArgumentException("Page cannot be negative"));
+				return;
+			}
+			
+			int offset;
+			
+			try{
+				offset = Math.multiplyExact(page, pageSize);
+			} catch(ArithmeticException e){
+				future.completeExceptionally(e);
+				return;
+			}
+			
+			boolean useRadius = radius != null && location != null && location.getWorld() != null;
+			
+			String world = useRadius ? location.getWorld().getName() : null;
+			
+			double x = useRadius ? location.getX() : 0;
+			double z = useRadius ? location.getZ() : 0;
+			
+			String userUuid = userId != null ? userId.toString() : null;
+			
+			String ownerUuid = ownerId != null ? ownerId.toString() : null;
+			
+			String transactorUuid = transactorId != null ? transactorId.toString() : null;
+			
+			String actionName = action != null ? action.name() : null;
+			
+			StringBuilder where = new StringBuilder();
+			List<Object> parameters = new ArrayList<>();
+			where.append("timestamp <= ?");
+			parameters.add(requestTime);
+			
+			if(after != null){
+				where.append(" AND timestamp >= ?");
+				parameters.add(after);
+			}
+			
+			if(before != null){
+				where.append(" AND timestamp <= ?");
+				parameters.add(before);
+			}
+			
+			/*
+			 * Matches:
+			 * - transaction purchaser
+			 * - action performer
+			 * - shop owner
+			 */
+			if(userUuid != null){
+				where.append("""
+						AND (
+						    player_uuid = ?
+						    OR owner_uuid = ?
+						)
+						""");
+				
+				parameters.add(userUuid);
+				parameters.add(userUuid);
+			}
+			
+			if(ownerUuid != null){
+				where.append(" AND owner_uuid = ?");
+				parameters.add(ownerUuid);
+			}
+			
+			if(transactorUuid != null){
+				where.append(" AND transactor_uuid = ?");
+				parameters.add(transactorUuid);
+			}
+			
+			if(useRadius){
+				where.append("""
+						AND world_name = ?
+						AND (
+						    (x - ?) * (x - ?)
+						    + (z - ?) * (z - ?)
+						) <= (? * ?)
+						""");
+				
+				parameters.add(world);
+				parameters.add(x);
+				parameters.add(x);
+				parameters.add(z);
+				parameters.add(z);
+				parameters.add(radius);
+				parameters.add(radius);
+			}
+			
+			if(actionName != null){
+				where.append(" AND action = ?");
+				parameters.add(actionName);
+			}
+			
+			String sql = """
+								 SELECT
+								     source_type,
+								     timestamp,
+								     action,
+								     player_uuid,
+								     player_name,
+								     shop_uuid,
+								     owner_uuid,
+								     owner_name,
+								     item,
+								     secondary_item,
+								     price,
+								     amount,
+								     transaction_count,
+								     gamble_reward,
+								     world_name,
+								     x,
+								     y,
+								     z
+								 FROM shop_history
+								 WHERE
+								 """ + where + """
+								 ORDER BY timestamp DESC, source_type ASC
+								 LIMIT ? OFFSET ?
+								 """;
+			
+			try(Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(sql)){
+				int i = 1;
+				
+				for(Object parameter : parameters){
+					ps.setObject(i++, parameter);
+				}
+				
+				ps.setInt(i++, pageSize + 1);
+				ps.setInt(i, offset);
+				try(ResultSet rs = ps.executeQuery()){
+					while(rs.next()){
+						
+						String playerUuidString = rs.getString("player_uuid");
+						
+						String shopUuidString = rs.getString("shop_uuid");
+						
+						String ownerUuidString = rs.getString("owner_uuid");
+						
+						UUID playerUuid = UUID.fromString(playerUuidString);
+						
+						UUID shopUuid = UUID.fromString(shopUuidString);
+						
+						UUID resultOwnerUuid = ownerUuidString != null ? UUID.fromString(ownerUuidString) : null;
+						
+						ShopHistoryAction historyAction = parseAction(rs.getString("action"));
+						
+						results.add(new ShopHistoryData(historyAction, rs.getLong("timestamp"),
+								
+								playerUuid, rs.getString("player_name"),
+								
+								shopUuid,
+								
+								resultOwnerUuid, rs.getString("owner_name"),
+								
+								ItemStackJsonCodec.deserialize(rs.getString("item")),
+								
+								rs.getString("secondary_item") != null ? ItemStackJsonCodec.deserialize(rs.getString("secondary_item")) : null,
+								
+								rs.getDouble("price"), rs.getInt("amount"), rs.getInt("transaction_count"),
+								
+								rs.getString("gamble_reward") != null ? ItemStackJsonCodec.deserialize(rs.getString("gamble_reward")) : null,
+								
+								rs.getString("world_name"), rs.getInt("x"), rs.getInt("y"), rs.getInt("z")));
+					}
+				}
+				
+			} catch(SQLException e){
+				logger().error("Error while fetching shop history", e);
+				
+				future.completeExceptionally(e);
+				return;
+			}
+			
+			boolean hasNext = results.size() > pageSize;
+			
+			if(hasNext){
+				results.removeLast();
+			}
+			
+			future.complete(new PageResult<>(results, hasNext));
+		});
+		
+		return future;
+	}
+	
+	private ShopHistoryAction parseAction(String value) {
+		if(value == null){
+			return null;
+		}
+		
+		try{
+			return ShopHistoryAction.valueOf(value.toUpperCase());
+		} catch(IllegalArgumentException _){
+			return null;
+		}
+	}
+	
 	public void setPlayerLastSeen(@NotNull UUID playerId, long lastSeen) {
 		scheduler.runAsync(_ -> {
 			try(var ps = getConnection().prepareStatement("""
@@ -967,4 +1190,35 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	}
 	
 	public record TransactionStats(long day1, long day7, long day30, long allTime){}
+	
+	public record ShopHistoryData(ShopHistoryAction action,
+								  
+								  long timestamp,
+								  
+								  UUID playerUuid, String playerName,
+								  
+								  UUID shopUuid,
+								  
+								  UUID ownerUuid, String ownerName,
+								  
+								  ItemStack item, ItemStack barterItem,
+								  
+								  double price, int amount, int transactionCount,
+								  
+								  ItemStack gambleReward,
+								  
+								  String worldName, int x, int y, int z){
+		
+		public String formattedTime(long requestTime) {
+			long difference = requestTime - timestamp;
+			
+			return DurationBuilder.create(Duration.ofMillis(difference)).noDecimals().typesToShow(DateType.YEAR,
+					DateType.MONTH,
+					DateType.WEEK,
+					DateType.DAY,
+					DateType.HOUR,
+					DateType.MINUTE,
+					DateType.SECOND).toTimeString();
+		}
+	}
 }

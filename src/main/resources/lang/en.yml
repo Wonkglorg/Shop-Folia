@@ -458,6 +458,35 @@ command:
         - "Total: %sales-7d% | <green>[+] <math>%sales-7d% * %price%</math> %item% <red>[-] <math>%sales-7d% * %amount%</math> %secondary-item% <gray>- 7 Days"
         - "Total: %sales-30d% | <green>[+] <math>%sales-30d% * %price%</math> %item% <red>[-] <math>%sales-30d% * %amount%</math> %secondary-item% <gray>- 30 Days"
         - "Total: %sales-all-time% | <green>[+] <math>%sales-all-time% * %price%</math> %item% <red>[-] <math>%sales-all-time% * %amount%</math> %secondary-item% <gray>- All"
+    lookup:
+      data-no-results: "<red>No Shop History Found!"
+      header: "<gold>Shop History:"
+      entry:
+        sell:
+          text: "<white>%player% <gray>sold <yellow>%amount%x %item% <gray>for <gold>%price% <gray>%time-formatted% ago"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Transactions: <white>%transaction-count%"
+        buy:
+          text: "<white>%player% <gray>bought <yellow>%amount%x %item% <gray>for <gold>%price% <gray>%time-formatted% ago"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Transactions: <white>%transaction-count%"
+        barter:
+          text: "<white>%player% <gray>bartered <yellow>%amount%x %item% <gray>%time-formatted% ago"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Other Party: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%<newline><gray>Transactions: <white>%transaction-count%"
+        gamble:
+          text: "<white>%player% <gray>gambled and received <green>%reward% <gray>%time-formatted% ago"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Reward: <white>%reward%"
+        create:
+          text: "<white>%player% <gray>created a shop %time-formatted% ago"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Price: <white>%price%<newline><gray>Amount: <white>%amount%"
+        destroy:
+          text: "<white>%player% <gray>destroyed <yellow>%item% <gray>shop %time-formatted% ago"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
+        resize:
+          text: "<white>%player% <gray>resized <yellow>%item% <gray>shop %time-formatted% ago"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%"
+        init:
+          text: "<white>%player% <gray>initialized <yellow>%item% <gray>shop %time-formatted% ago"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
+      footer: "<gray>=== Page: %page% ==="
     debug:
       usage:
         - "<yellow>Shop Debug Commands:"
