@@ -76,9 +76,15 @@ CREATE INDEX IF NOT EXISTS idx_transactions_purchaser_shop
 CREATE INDEX IF NOT EXISTS idx_transactions_purchaser_shop_timestamp
     ON transactions (purchaser_uuid, shop_uuid, timestamp);
 
+CREATE INDEX IF NOT EXISTS idx_transactions_purchaser_timestamp
+    ON transactions (purchaser_uuid, timestamp DESC);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_timestamp
+    ON transactions (timestamp DESC);
+
 CREATE TABLE IF NOT EXISTS shop_actions
 (
-    timestamp     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    timestamp     INTEGER NOT NULL,
     player_uuid   TEXT NOT NULL,
     shop_uuid     TEXT NOT NULL,
     player_action TEXT NOT NULL,
@@ -90,7 +96,7 @@ CREATE TABLE IF NOT EXISTS shop_actions
 
 CREATE TABLE IF NOT EXISTS currency_history
 (
-    timestamp     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    timestamp     INTEGER NOT NULL,
     currency_type TEXT NOT NULL,
     item          TEXT,
 

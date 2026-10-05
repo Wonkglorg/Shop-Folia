@@ -8,6 +8,8 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase.ShopHistoryData;
+import com.wonkglorg.minecraft.shop.shop.AbstractShop;
+import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.date.DurationBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import lombok.Getter;
@@ -57,10 +59,9 @@ public class ShopLookupSubCommand{
 		if(hasPage && !hasFilters){
 			dataManager.get(player.getUniqueId()).ifPresent(d -> {
 				try{
-					int page = Integer.parseInt(args.get("page"));
+					int page = Integer.parseInt(args.get("page")) - 1;
 					
-					d.setPage(page);
-					d.sendToAudience(player);
+					d.setPage(page).thenAccept(_ -> d.sendToAudience(player));
 					
 				} catch(Exception ignored){
 				}
@@ -206,49 +207,96 @@ public class ShopLookupSubCommand{
 		
 		@Override
 		protected @NotNull List<Component> constructEntry(int entryCount, ShopHistoryData data) {
-			
-			List<Component> entry = applyChanges(lang.request("command.shop.lookup.result-entry"), data).toComponent();
-			
-			List<Component> hover = applyChanges(lang.request("command.shop.lookup.result-entry-hover"), data).toComponent();
-			
-			if(entry.isEmpty()){
-				return entry;
+			try{
+				List<Component> entry = applyChanges(lang.request("command.shop.lookup.entry." + data.action().toString().toLowerCase() + ".text"),
+						data).toComponent();
+				
+				List<Component> hover = applyChanges(lang.request("command.shop.lookup.entry." + data.action().toString().toLowerCase() + ".hover"),
+						data).toComponent();
+				
+				if(entry.isEmpty()){
+					return entry;
+				}
+				
+				if(hover.isEmpty()){
+					return entry;
+				}
+				
+				return entry.stream().map(component -> component.hoverEvent(HoverEvent.showText(hover.getFirst()))
+																.clickEvent(runCommand("tp %s %s %s %s".formatted(data.worldName(),
+																		data.x(),
+																		data.y(),
+																		data.z())))).toList();
+			} catch(Exception e){
+				ShopPlugin.logger().severe(e.getMessage(), e);
+				throw new RuntimeException(e);
 			}
-			
-			if(hover.isEmpty()){
-				return entry;
-			}
-			
-			return entry.stream().map(component -> component.hoverEvent(HoverEvent.showText(hover.getFirst()))
-															.clickEvent(runCommand("tp %s %s %s %s".formatted(data.worldName(),
-																	data.x(),
-																	data.y(),
-																	data.z())))).toList();
 		}
 		
 		private LangRequest applyChanges(LangRequest request, ShopHistoryData data) {
-			/*
+			//@formatter:off
+			request = request
+					.replace("%timestamp%", data.timestamp())
+					.replace("%time-formatted%", data.formattedTime(requestTime))
+					.replace("%player%", data.playerName())
+					.replace("%player-uuid%", data.playerUuid().toString())
+					.replace("%shop%", data.shopUuid().toString())
+					.replace("%world%", data.worldName())
+					.replace("%x%", data.x())
+					.replace("%y%", data.y())
+					.replace("%z%", data.z());
 			
-			return request.replace("%action%", data.action().name())
-						  .replace("%timestamp%", data.timestamp())
-						  .replace("%time-formatted%",
-								  data.formattedTime(requestTime))
-						  .replace("%player%", data.playerName())
-						  .replace("%player-uuid%", data.playerUuid().toString())
-						  .replace("%shop%", data.shopUuid().toString())
-						  .replace("%item%", data.item())
-						  .replace("%price%", data.price())
-						  .replace("%amount%", data.amount())
-						  .replace("%transaction-count%", data.transactionCount())
-						  .replace("%world%", data.worldName())
-						  .replace("%x%", data.x())
-						  .replace("%y%", data.y())
-						  .replace("%z%", data.z())
-						  .replace("%owner%", data.ownerName())
-						  .replace("%owner-uuid%", data.ownerUuid().toString())
-						  .replace("%reward%", data.gambleReward());
-						  
-			 */
+			if(data.item() != null){
+				request.replace("%item%",()-> ItemNameUtil.getName(data.item()).hoverEvent(ItemNameUtil.getItemHover(data.item())));
+			}
+			
+			if(data.barterItem() != null){
+				request.replace("%barter-item%", ()->ItemNameUtil.getName(data.barterItem()).hoverEvent(ItemNameUtil.getItemHover(data.barterItem())));
+			}
+			
+			switch(data.action()) {
+				case BUY, SELL, BARTER -> {
+					request = request
+							.replace("%owner%", data.ownerName())
+							.replace("%owner-uuid%", data.ownerUuid().toString())
+							.replace("%price%", AbstractShop.formatPrice(data.price()))
+							.replace("%amount%", data.amount())
+							.replace("%transaction-count%", data.transactionCount());
+				}
+				
+				case GAMBLE -> {
+					request = request
+							.replace("%owner%", data.ownerName())
+							.replace("%owner-uuid%", data.ownerUuid().toString())
+							.replace("%price%", AbstractShop.formatPrice(data.price()))
+							.replace("%amount%", data.amount());
+					if(data.gambleReward() != null){
+						request.replace("%reward%", ()->ItemNameUtil.getName(data.gambleReward()).hoverEvent(ItemNameUtil.getItemHover(data.gambleReward())));
+					}
+				}
+				
+				case CREATE -> {
+					request = request
+							.replace("%owner%", data.ownerName())
+							.replace("%owner-uuid%", data.ownerUuid().toString())
+							.replace("%price%", AbstractShop.formatPrice(data.price()))
+							.replace("%amount%", data.amount());
+				}
+				
+				case DESTROY -> {
+					request = request
+							.replace("%owner%", data.ownerName())
+							.replace("%owner-uuid%", data.ownerUuid().toString());
+				}
+				
+				case RESIZE -> {
+					request = request
+							.replace("%owner%", data.ownerName())
+							.replace("%owner-uuid%", data.ownerUuid().toString())
+							.replace("%amount%", data.amount());
+				}
+			//@formatter:on
+			}
 			return request;
 		}
 		
@@ -271,12 +319,13 @@ public class ShopLookupSubCommand{
 				return List.of();
 			}
 			
-			Component back = page > 0 ? text("⬅ Previous").clickEvent(runCommand("shop lookup page:" + (page - 1))) : empty();
+			Component back = page > 0 ? text("⬅ Previous").clickEvent(runCommand("shop lookup page:" + (getPageDisplay() - 1))) : empty();
 			
-			Component forward = hasNextPage() ? text(" Next ➡").clickEvent(runCommand("shop lookup page:" + (page + 1))) : empty();
+			Component forward = hasNextPage() ? text(" Next ➡").clickEvent(runCommand("shop lookup page:" + (getPageDisplay() + 1))) : empty();
 			
 			return List.of(back.append(space()).append(forward));
 		}
+		
 	}
 	
 	public enum ShopHistoryAction{
@@ -287,6 +336,7 @@ public class ShopLookupSubCommand{
 		GAMBLE,
 		
 		CREATE,
+		INIT,
 		DESTROY,
 		RESIZE
 	}

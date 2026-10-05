@@ -18,6 +18,7 @@ import com.wonkglorg.minecraft.shop.shop.settings.Setting;
 import static com.wonkglorg.minecraft.shop.shop.settings.Settings.ALL_SETTINGS;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
+import com.wonkglorg.minecraft.util.date.DateType;
 import com.wonkglorg.minecraft.util.date.DurationBuilder;
 import static net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger;
 import org.bukkit.Bukkit;
@@ -119,111 +120,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			WHERE s.owner_uuid = ?
 			  AND t.timestamp > ?
 			GROUP BY t.shop_uuid
-			""";
-	
-	public static final String OPERATOR_HISTORY_SQL = """
-			WITH history AS (
-			    -- Transactions
-			    SELECT
-			        'TRANSACTION' AS source_type,
-			        t.id AS source_id,
-			        t.timestamp AS timestamp,
-			
-			        s.shop_type AS action,
-			
-			        t.purchaser_uuid AS player_uuid,
-			        p.name AS player_name,
-			
-			        s.shop_uuid,
-			        s.owner_uuid,
-			        owner.name AS owner_name,
-			
-			        s.item,
-			        s.price,
-			        s.amount,
-			        t.transaction_count,
-			        t.gamble_reward,
-			
-			        s.shop_world AS world_name,
-			        s.shop_x AS x,
-			        s.shop_y AS y,
-			        s.shop_z AS z
-			
-			    FROM transactions t
-			    JOIN shops s ON s.shop_uuid = t.shop_uuid
-			    LEFT JOIN players p ON p.uuid = t.purchaser_uuid
-			    LEFT JOIN players owner ON owner.uuid = s.owner_uuid
-			
-			    WHERE t.timestamp <= ?
-			      AND (? IS NULL OR t.timestamp >= ?)
-			      AND (? IS NULL OR t.timestamp <= ?)
-			      AND (? IS NULL OR t.purchaser_uuid = ?)
-			      AND (
-			          ? IS NULL
-			          OR (
-			              s.shop_world = ?
-			              AND (
-			                  (s.shop_x - ?) * (s.shop_x - ?)
-			                  + (s.shop_z - ?) * (s.shop_z - ?)
-			              ) <= (? * ?)
-			          )
-			      )
-			      AND (? IS NULL OR s.shop_type = ?)
-			
-			    UNION ALL
-			
-			    -- Shop actions
-			    SELECT
-			        'ACTION' AS source_type,
-			        sa.rowid AS source_id,
-			        CAST(strftime('%s', sa.timestamp) AS INTEGER) * 1000 AS timestamp,
-			
-			        sa.player_action AS action,
-			
-			        sa.player_uuid,
-			        p.name AS player_name,
-			
-			        s.shop_uuid,
-			        s.owner_uuid,
-			        owner.name AS owner_name,
-			
-			        s.item,
-			        s.price,
-			        s.amount,
-			        0 AS transaction_count,
-			        NULL AS gamble_reward,
-			
-			        s.shop_world AS world_name,
-			        s.shop_x AS x,
-			        s.shop_y AS y,
-			        s.shop_z AS z
-			
-			    FROM shop_actions sa
-			    JOIN shops s ON s.shop_uuid = sa.shop_uuid
-			    LEFT JOIN players p ON p.uuid = sa.player_uuid
-			    LEFT JOIN players owner ON owner.uuid = s.owner_uuid
-			
-			    WHERE CAST(strftime('%s', sa.timestamp) AS INTEGER) * 1000 <= ?
-			      AND (? IS NULL OR CAST(strftime('%s', sa.timestamp) AS INTEGER) * 1000 >= ?)
-			      AND (? IS NULL OR CAST(strftime('%s', sa.timestamp) AS INTEGER) * 1000 <= ?)
-			      AND (? IS NULL OR sa.player_uuid = ?)
-			      AND (
-			          ? IS NULL
-			          OR (
-			              s.shop_world = ?
-			              AND (
-			                  (s.shop_x - ?) * (s.shop_x - ?)
-			                  + (s.shop_z - ?) * (s.shop_z - ?)
-			              ) <= (? * ?)
-			          )
-			      )
-			      AND (? IS NULL OR sa.player_action = ?)
-			)
-			
-			SELECT *
-			FROM history
-			ORDER BY timestamp DESC, source_type ASC, source_id DESC
-			LIMIT ? OFFSET ?
 			""";
 	
 	private final ShopPlugin plugin;
@@ -1068,9 +964,23 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 																	 int pageSize,
 																	 int page) {
 		var future = new CompletableFuture<PageResult<ShopHistoryData>>();
+		
 		scheduler.runAsync(task -> {
-			
 			List<ShopHistoryData> results = new ArrayList<>();
+			
+			if(page < 0){
+				future.completeExceptionally(new IllegalArgumentException("Page cannot be negative"));
+				return;
+			}
+			
+			int offset;
+			
+			try{
+				offset = Math.multiplyExact(page, pageSize);
+			} catch(ArithmeticException e){
+				future.completeExceptionally(e);
+				return;
+			}
 			
 			boolean useRadius = radius != null && location != null && location.getWorld() != null;
 			
@@ -1080,93 +990,212 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			double z = useRadius ? location.getZ() : 0;
 			
 			String userUuid = user != null ? user.toString() : null;
+			
 			String actionName = action != null ? action.name() : null;
 			
-			int offset = Math.multiplyExact(page, pageSize);
+			/*
+			 * ---------------------------------------------------------
+			 * Parameters for each branch
+			 * ---------------------------------------------------------
+			 */
 			
-			try(Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(OPERATOR_HISTORY_SQL)){
+			List<Object> transactionParameters = new ArrayList<>();
+			List<Object> actionParameters = new ArrayList<>();
+			
+			/*
+			 * ---------------------------------------------------------
+			 * Transaction WHERE
+			 * ---------------------------------------------------------
+			 */
+			
+			StringBuilder transactionWhere = new StringBuilder();
+			
+			transactionWhere.append("t.timestamp <= ?");
+			transactionParameters.add(requestTime);
+			
+			if(after != null){
+				transactionWhere.append(" AND t.timestamp >= ?");
+				transactionParameters.add(after);
+			}
+			
+			if(before != null){
+				transactionWhere.append(" AND t.timestamp <= ?");
+				transactionParameters.add(before);
+			}
+			
+			if(userUuid != null){
+				transactionWhere.append(" AND t.purchaser_uuid = ?");
+				transactionParameters.add(userUuid);
+			}
+			
+			if(useRadius){
+				transactionWhere.append("""
+						AND s.shop_world = ?
+						AND (
+						    (s.shop_x - ?) * (s.shop_x - ?)
+						    + (s.shop_z - ?) * (s.shop_z - ?)
+						) <= (? * ?)
+						""");
+				
+				transactionParameters.add(world);
+				transactionParameters.add(x);
+				transactionParameters.add(x);
+				transactionParameters.add(z);
+				transactionParameters.add(z);
+				transactionParameters.add(radius);
+				transactionParameters.add(radius);
+			}
+			
+			if(actionName != null){
+				transactionWhere.append(" AND s.shop_type = ?");
+				transactionParameters.add(actionName);
+			}
+			
+			/*
+			 * ---------------------------------------------------------
+			 * Shop action WHERE
+			 * ---------------------------------------------------------
+			 */
+			
+			StringBuilder shopActionWhere = new StringBuilder();
+			
+			shopActionWhere.append("CAST(sa.timestamp AS INTEGER) <= ?");
+			actionParameters.add(requestTime);
+			
+			if(after != null){
+				shopActionWhere.append(" AND CAST(sa.timestamp AS INTEGER) >= ?");
+				actionParameters.add(after);
+			}
+			
+			if(before != null){
+				shopActionWhere.append(" AND CAST(sa.timestamp AS INTEGER) <= ?");
+				actionParameters.add(before);
+			}
+			
+			if(userUuid != null){
+				shopActionWhere.append(" AND sa.player_uuid = ?");
+				actionParameters.add(userUuid);
+			}
+			
+			if(useRadius){
+				shopActionWhere.append("""
+						AND s.shop_world = ?
+						AND (
+						    (s.shop_x - ?) * (s.shop_x - ?)
+						    + (s.shop_z - ?) * (s.shop_z - ?)
+						) <= (? * ?)
+						""");
+				
+				actionParameters.add(world);
+				actionParameters.add(x);
+				actionParameters.add(x);
+				actionParameters.add(z);
+				actionParameters.add(z);
+				actionParameters.add(radius);
+				actionParameters.add(radius);
+			}
+			
+			if(actionName != null){
+				shopActionWhere.append(" AND sa.player_action = ?");
+				actionParameters.add(actionName);
+			}
+			
+			String sql = """
+								 WITH history AS (
+								     SELECT
+								         'TRANSACTION' AS source_type,
+								         t.timestamp AS timestamp,
+								         s.shop_type AS action,
+								         t.purchaser_uuid AS player_uuid,
+								         p.name AS player_name,
+								         s.shop_uuid,
+								         s.owner_uuid,
+								         owner.name AS owner_name,
+								         s.item,
+								         s.secondary_item AS secondary_item,
+								         s.price,
+								         s.amount,
+								         t.transaction_count,
+								         t.gamble_reward,
+								         s.shop_world AS world_name,
+								         s.shop_x AS x,
+								         s.shop_y AS y,
+								         s.shop_z AS z
+								     FROM transactions t
+								     JOIN shops s
+								         ON s.shop_uuid = t.shop_uuid
+								     LEFT JOIN players p
+								         ON p.uuid = t.purchaser_uuid
+								     LEFT JOIN players owner
+								         ON owner.uuid = s.owner_uuid
+								     WHERE
+								 """ + transactionWhere + """
+								 
+								     UNION ALL
+								 
+								     SELECT
+								         'ACTION' AS source_type,
+								         CAST(sa.timestamp AS INTEGER) AS timestamp,
+								         sa.player_action AS action,
+								         sa.player_uuid,
+								         p.name AS player_name,
+								         s.shop_uuid,
+								         s.owner_uuid,
+								         owner.name AS owner_name,
+								         s.item,
+								         NULL AS secondary_item,
+								         s.price,
+								         s.amount,
+								         0 AS transaction_count,
+								         NULL AS gamble_reward,
+								         s.shop_world AS world_name,
+								         s.shop_x AS x,
+								         s.shop_y AS y,
+								         s.shop_z AS z
+								     FROM shop_actions sa
+								     JOIN shops s
+								         ON s.shop_uuid = sa.shop_uuid
+								     LEFT JOIN players p
+								         ON p.uuid = sa.player_uuid
+								     LEFT JOIN players owner
+								         ON owner.uuid = s.owner_uuid
+								     WHERE
+								 """ + shopActionWhere + """
+								 )
+								 SELECT *
+								 FROM history
+								 ORDER BY timestamp DESC, source_type ASC
+								 LIMIT ? OFFSET ?
+								 """;
+			
+			try(Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(sql)){ //NOSONAR its safe
+				/*
+				 * -----------------------------------------------------
+				 * Bind parameters
+				 *
+				 * Must follow:
+				 * transaction params
+				 * shop action params
+				 * limit
+				 * offset
+				 * -----------------------------------------------------
+				 */
+				
 				int i = 1;
 				
-				// -----------------------------------------------------
-				// Transactions
-				// -----------------------------------------------------
+				for(Object parameter : transactionParameters){
+					ps.setObject(i++, parameter);
+				}
 				
-				ps.setLong(i++, requestTime);
-				
-				// After
-				ps.setObject(i++, after);
-				ps.setObject(i++, after);
-				
-				// Before
-				ps.setObject(i++, before);
-				ps.setObject(i++, before);
-				
-				// User
-				ps.setString(i++, userUuid);
-				ps.setString(i++, userUuid);
-				
-				// Radius
-				ps.setObject(i++, useRadius ? radius : null);
-				ps.setString(i++, world);
-				
-				ps.setDouble(i++, x);
-				ps.setDouble(i++, x);
-				
-				ps.setDouble(i++, z);
-				ps.setDouble(i++, z);
-				
-				ps.setObject(i++, useRadius ? radius : null);
-				ps.setObject(i++, useRadius ? radius : null);
-				
-				// Action
-				ps.setString(i++, actionName);
-				ps.setString(i++, actionName);
-				
-				// -----------------------------------------------------
-				// Shop actions
-				// -----------------------------------------------------
-				
-				ps.setLong(i++, requestTime);
-				
-				// After
-				ps.setObject(i++, after);
-				ps.setObject(i++, after);
-				
-				// Before
-				ps.setObject(i++, before);
-				ps.setObject(i++, before);
-				
-				// User
-				ps.setString(i++, userUuid);
-				ps.setString(i++, userUuid);
-				
-				// Radius
-				ps.setObject(i++, useRadius ? radius : null);
-				ps.setString(i++, world);
-				
-				ps.setDouble(i++, x);
-				ps.setDouble(i++, x);
-				
-				ps.setDouble(i++, z);
-				ps.setDouble(i++, z);
-				
-				ps.setObject(i++, useRadius ? radius : null);
-				ps.setObject(i++, useRadius ? radius : null);
-				
-				// Action
-				ps.setString(i++, actionName);
-				ps.setString(i++, actionName);
-				
-				// -----------------------------------------------------
-				// Pagination
-				// -----------------------------------------------------
+				for(Object parameter : actionParameters){
+					ps.setObject(i++, parameter);
+				}
 				
 				ps.setInt(i++, pageSize + 1);
 				ps.setInt(i, offset);
 				
 				try(ResultSet rs = ps.executeQuery()){
 					while(rs.next()){
-						
 						String playerUuidString = rs.getString("player_uuid");
 						String shopUuidString = rs.getString("shop_uuid");
 						String ownerUuidString = rs.getString("owner_uuid");
@@ -1186,11 +1215,13 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 								
 								ownerUuid, rs.getString("owner_name"),
 								
-								rs.getString("item"),
+								ItemStackJsonCodec.deserialize(rs.getString("item")),
+								
+								rs.getString("secondary_item") != null ? ItemStackJsonCodec.deserialize(rs.getString("secondary_item")) : null,
 								
 								rs.getDouble("price"), rs.getInt("amount"), rs.getInt("transaction_count"),
 								
-								rs.getString("gamble_reward"),
+								rs.getString("gamble_reward") != null ? ItemStackJsonCodec.deserialize(rs.getString("gamble_reward")) : null,
 								
 								rs.getString("world_name"), rs.getInt("x"), rs.getInt("y"), rs.getInt("z")));
 					}
@@ -1199,7 +1230,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			} catch(SQLException e){
 				logger().error("Error while fetching shop history", e);
 				future.completeExceptionally(e);
-				throw new RuntimeException("Failed to fetch shop history", e);
+				return;
 			}
 			
 			boolean hasNext = results.size() > pageSize;
@@ -1207,8 +1238,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			if(hasNext){
 				results.removeLast();
 			}
+			
 			future.complete(new PageResult<>(results, hasNext));
 		});
+		
 		return future;
 	}
 	
@@ -1253,18 +1286,24 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 								  
 								  UUID ownerUuid, String ownerName,
 								  
-								  String item,
+								  ItemStack item, ItemStack barterItem,
 								  
 								  double price, int amount, int transactionCount,
 								  
-								  String gambleReward,
+								  ItemStack gambleReward,
 								  
 								  String worldName, int x, int y, int z){
 		
 		public String formattedTime(long requestTime) {
 			long difference = requestTime - timestamp;
 			
-			return DurationBuilder.create(Duration.ofMillis(difference)).toString();
+			return DurationBuilder.create(Duration.ofMillis(difference)).noDecimals().typesToShow(DateType.YEAR,
+					DateType.MONTH,
+					DateType.WEEK,
+					DateType.DAY,
+					DateType.HOUR,
+					DateType.MINUTE,
+					DateType.SECOND).toTimeString();
 		}
 	}
 }
