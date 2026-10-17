@@ -258,24 +258,11 @@ public class ShopLookupSubCommand{
 					}
 				}
 				
-				case CREATE -> {
+				case DESTROY, RESIZE, INIT, CREATE -> {
 					request = request
 							.replace("%owner%", data.ownerName())
 							.replace("%owner-uuid%", data.ownerUuid().toString())
 							.replace("%price%", AbstractShop.formatPrice(data.price()))
-							.replace("%amount%", data.amount());
-				}
-				
-				case DESTROY -> {
-					request = request
-							.replace("%owner%", data.ownerName())
-							.replace("%owner-uuid%", data.ownerUuid().toString());
-				}
-				
-				case RESIZE -> {
-					request = request
-							.replace("%owner%", data.ownerName())
-							.replace("%owner-uuid%", data.ownerUuid().toString())
 							.replace("%amount%", data.amount());
 				}
 			//@formatter:on

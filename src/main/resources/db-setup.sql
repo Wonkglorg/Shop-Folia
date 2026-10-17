@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS transactions
     -- the id of the shop
     shop_uuid         TEXT    NOT NULL,
     -- when the transaction happened
-    timestamp         INTEGER NOT NULL,
+    timestamp         INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- the user who did the transaction with the shop
     purchaser_uuid    TEXT    NOT NULL,
     -- if the transaction was gambling shows the reward the user got from gambling
@@ -84,7 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_timestamp
 
 CREATE TABLE IF NOT EXISTS shop_actions
 (
-    timestamp     INTEGER NOT NULL,
+    timestamp     INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
     player_uuid   TEXT    NOT NULL,
     shop_uuid     TEXT    NOT NULL,
     player_action TEXT    NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS shop_actions
 
 CREATE TABLE IF NOT EXISTS currency_history
 (
-    timestamp     INTEGER NOT NULL,
+    timestamp     INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
     currency_type TEXT    NOT NULL,
     item          TEXT,
 

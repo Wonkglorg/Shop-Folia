@@ -35,7 +35,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -687,7 +686,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			// Connect to datasource & create statement in "try" to handle automatically closing the connection!
 			try(Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(
 					"INSERT INTO shop_actions(timestamp, player_uuid, shop_uuid, player_action) VALUES(?,  ?, ?, ?);");){
-				stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+				stmt.setLong(1, System.currentTimeMillis());
 				stmt.setString(2, player.getUniqueId().toString());
 				stmt.setString(3, shopUuid.toString());
 				stmt.setString(4, actionType.toString());
@@ -969,7 +968,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 																	 int pageSize,
 																	 int page) {
 		var future = new CompletableFuture<PageResult<ShopHistoryData>>();
-		
+		//todo find out why create destroy and init aren't showing up properly, make clicking on the entry teleport you there directly
 		scheduler.runAsync(task -> {
 			List<ShopHistoryData> results = new ArrayList<>();
 			

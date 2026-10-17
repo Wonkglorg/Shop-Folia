@@ -464,28 +464,28 @@ command:
       entry:
         sell:
           text: "<white>%player% <gray>sold <yellow>%amount%x %item% <gray>for <gold>%price% <gray>%time-formatted% ago"
-          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Transactions: <white>%transaction-count%"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Transactions: <white>%transaction-count%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         buy:
           text: "<white>%player% <gray>bought <yellow>%amount%x %item% <gray>for <gold>%price% <gray>%time-formatted% ago"
-          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Transactions: <white>%transaction-count%"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Transactions: <white>%transaction-count%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         barter:
           text: "<white>%player% <gray>bartered <yellow>%amount%x %item% <gray>%time-formatted% ago"
-          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Other Party: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%<newline><gray>Transactions: <white>%transaction-count%"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Other Party: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount%<newline><gray>Transactions: <white>%transaction-count%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         gamble:
           text: "<white>%player% <gray>gambled and received <green>%reward% <gray>%time-formatted% ago"
-          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Reward: <white>%reward%"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Reward: <white>%reward%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         create:
           text: "<white>%player% <gray>created a shop %time-formatted% ago"
-          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Price: <white>%price%<newline><gray>Amount: <white>%amount%"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount% <newline><gray>Price: <white>%price%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         destroy:
           text: "<white>%player% <gray>destroyed <yellow>%item% <gray>shop %time-formatted% ago"
-          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount% <newline><gray>Price: <white>%price%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         resize:
           text: "<white>%player% <gray>resized <yellow>%item% <gray>shop %time-formatted% ago"
-          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)<newline><gray>Amount: <white>%amount%"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount% <newline><gray>Price: <white>%price%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         init:
           text: "<white>%player% <gray>initialized <yellow>%item% <gray>shop %time-formatted% ago"
-          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
+          hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount% <newline><gray>Price: <white>%price%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
       footer: "<gray>=== Page: %page% ==="
     debug:
       usage:
