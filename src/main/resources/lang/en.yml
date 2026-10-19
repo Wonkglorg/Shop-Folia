@@ -463,10 +463,10 @@ command:
       header: "<gold>Shop History:"
       entry:
         sell:
-          text: "<white>%player% <gray>sold <yellow>%amount%x %item% <gray>for <gold>%price% <gray>%time-formatted% ago"
+          text: "<white>%player% <gray>bought <yellow>%amount%x %item% <gray>for <gold>%price% <gray>%time-formatted% ago"
           hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Transactions: <white>%transaction-count%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         buy:
-          text: "<white>%player% <gray>bought <yellow>%amount%x %item% <gray>for <gold>%price% <gray>%time-formatted% ago"
+          text: "<white>%player% <gray>sold <yellow>%amount%x %item% <gray>for <gold>%price% <gray>%time-formatted% ago"
           hover: "<gray>Player: <white>%player%<newline><gray>Player UUID: <white>%player-uuid%<newline><gray>Shop Owner: <white>%owner%<newline><gray>Owner UUID: <white>%owner-uuid%<newline><gray>Shop: <white>%shop%<newline><gray>Amount: <white>%amount%<newline><gray>Price: <white>%price%<newline><gray>Transactions: <white>%transaction-count%<newline><gray>Location: <white>%world% <gray>(%x%, %y%, %z%)"
         barter:
           text: "<white>%player% <gray>bartered <yellow>%amount%x %item% <gray>%time-formatted% ago"
