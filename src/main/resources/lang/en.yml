@@ -93,7 +93,7 @@ transaction:
       # called when the player tries to buy from the shop but does not have enough inventory space to receive the purchased items
       player-no-space: "<red>You do not have enough space in your inventory to buy from this shop."
       # called when the player is banned from interacting with the shop
-      player-banned: "<red>You are banned from buying at this shop!"
+      player-banned: "<red>You are blacklisted from buying at this shop!"
 
     buy:
       # called when the user tries to transact with their own shop while this feature is disabled
@@ -119,7 +119,7 @@ transaction:
       # called when the player tries to sell to the shop but does not have enough inventory space to receive the payment from the shop
       player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
       # called when the player is banned from interacting with the shop
-      player-banned: "<red>You are banned from selling at this shop!"
+      player-banned: "<red>You are blacklisted from selling at this shop!"
 
     barter:
       # called when the user tries to transact with their own shop while this feature is disabled
@@ -145,7 +145,7 @@ transaction:
       # called when the player does not have enough inventory space to receive the items from the barter
       player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
       # called when the player is banned from interacting with the shop
-      player-banned: "<red>You are banned from bartering with this shop!"
+      player-banned: "<red>You are blacklisted from bartering with this shop!"
 
     gamble:
       # called when the user tries to transact with their own shop while this feature is disabled
@@ -165,7 +165,7 @@ transaction:
       # called when the player does not have enough inventory space to receive the gambling reward
       player-no-space: "<red>You do not have enough space in your inventory to accept the gambling reward from this shop."
       # called when the player is banned from interacting with the shop
-      player-banned: "<red>You are banned from gambling with this shop!"
+      player-banned: "<red>You are blacklisted from gambling with this shop!"
 
 
 ##Shop interaction related messages
