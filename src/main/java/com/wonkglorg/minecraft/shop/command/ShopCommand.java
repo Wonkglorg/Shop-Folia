@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.wonkglorg.minecraft.command.AbstractCommand;
 import com.wonkglorg.minecraft.command.completion.Argument;
 import com.wonkglorg.minecraft.command.completion.ArgumentBuilder;
@@ -18,6 +19,7 @@ import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand;
 import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand.ShopHistoryAction;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
+import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -35,11 +37,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.RayTraceResult;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class ShopCommand extends AbstractCommand{
@@ -75,6 +80,15 @@ public class ShopCommand extends AbstractCommand{
 						.then(literal("transaction").executes(this::notifyTransaction))
 						.then(literal("stock").executes(this::notifyStock))
 					 )
+				.then(literal("ban")
+						.then(literal("add")
+								.then(suggestedArgument("player",StringArgumentType.greedyString(),Bukkit.getOnlinePlayers(),Player::getName)
+										.executes(this::addBannedPlayer)))
+						.then(literal("remove")
+								.then(argument("player",StringArgumentType.word()).suggests(suggestBannedPlayer())
+																				  .executes((this::removeBannedPlayer))))
+						.then(literal("list").executes(this::showBanList))
+						.executes(this::usageBan))
 				.then(literal("transactions").executes(this::showTransactions))
 				.then(literal("reload").requires(permissions(SHOP_PERMISSION_OPERATOR))
 						.then(literal("lang").executes(this::reloadLang))
@@ -89,6 +103,7 @@ public class ShopCommand extends AbstractCommand{
 					    .then(literal("location").executes(this::debugLocation))
 					    .then(literal("stats").executes(this::debugStats))
 						.then(literal("shop")
+								.executes(this::debugShopOnCursor)
 								.then(argument("shop-id",StringArgumentType.greedyString()).executes(this::debugShop))))
 				.then(literal("setcurrency").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setCurrency))
 				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble))
@@ -96,33 +111,190 @@ public class ShopCommand extends AbstractCommand{
 		//@formatter:on
 	}
 	
+	private int usageBan(CommandContext<CommandSourceStack> ctx) {
+		lang.request("command.shop.ban.usage").sendToAudience(ctx.getSource().getSender());
+		return 1;
+	}
+	
+	private @NotNull SuggestionProvider<CommandSourceStack> suggestBannedPlayer() {
+		return (ctx, builder) -> {
+			if(!(ctx.getSource().getSender() instanceof Player player)){
+				return builder.buildFuture();
+			}
+			AbstractShop shop = getTargetingShop(player);
+			if(shop == null){
+				return builder.buildFuture();
+			}
+			
+			if(player.getUniqueId().equals(shop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBans(player)){
+				return builder.buildFuture();
+			}
+			
+			if(!player.getUniqueId().equals(shop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBansOther(player)){
+				return builder.buildFuture();
+			}
+			
+			for(var banned : shop.getBannedPlayers()){
+				builder.suggest(PlayerNameCache.getName(banned));
+			}
+			
+			return builder.buildFuture();
+		};
+	}
+	
+	private @Nullable AbstractShop getTargetingShop(Player player) {
+		RayTraceResult rayTraceResult = player.rayTraceBlocks(5, FluidCollisionMode.NEVER);
+		if(rayTraceResult == null){
+			return null;
+		}
+		
+		Block hitBlock = rayTraceResult.getHitBlock();
+		if(hitBlock == null){
+			return null;
+		}
+		
+		return shopManager().getShopBySign(hitBlock.getLocation());
+	}
+	
+	private int removeBannedPlayer(CommandContext<CommandSourceStack> ctx) {
+		if(!(ctx.getSource().getSender() instanceof Player player)){
+			return -1;
+		}
+		
+		AbstractShop targetShop = getTargetingShop(player);
+		if(targetShop == null){
+			lang.request("command.shop.ban.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		if(player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBans(player)){
+			lang.request("command.shop.ban.no-permission").sendToAudience(player);
+			return -1;
+		}
+		
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBansOther(player)){
+			lang.request("command.shop.ban.not-shop-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		String playerName = getArgument(ctx, "player", String.class, "");
+		
+		UUID uuid = PlayerNameCache.getUUID(playerName);
+		if(uuid == null){
+			lang.request("command.shop.ban.remove.not-valid-player").sendToAudience(player);
+			return 1;
+		}
+		
+		Set<UUID> bannedPlayers = targetShop.getBannedPlayers();
+		
+		if(!bannedPlayers.contains(uuid)){
+			lang.request("command.shop.ban.remove.not-banned").replace("%player-name%", playerName).sendToAudience(player);
+			return 1;
+		}
+		lang.request("command.shop.ban.remove.success").replace("%player-name%", playerName).sendToAudience(player);
+		targetShop.removePlayerBan(uuid);
+		return 1;
+	}
+	
+	private int addBannedPlayer(CommandContext<CommandSourceStack> ctx) {
+		if(!(ctx.getSource().getSender() instanceof Player player)){
+			return -1;
+		}
+		
+		AbstractShop targetShop = getTargetingShop(player);
+		if(targetShop == null){
+			lang.request("command.shop.ban.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		if(player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBans(player)){
+			lang.request("command.shop.ban.no-permission").sendToAudience(player);
+			return -1;
+		}
+		
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBansOther(player)){
+			lang.request("command.shop.ban.not-shop-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		String playerName = getArgument(ctx, "player", String.class, "");
+		
+		UUID uuid = PlayerNameCache.getUUID(playerName);
+		if(uuid == null){
+			lang.request("command.shop.ban.add.not-valid-player").sendToAudience(player);
+			return 1;
+		}
+		
+		if(targetShop.getOwnerUUID().equals(uuid)){
+			lang.request("command.shop.ban.add.owner-invalid").sendToAudience(player);
+			return 1;
+		}
+		
+		Set<UUID> bannedPlayers = targetShop.getBannedPlayers();
+		
+		if(bannedPlayers.contains(uuid)){
+			lang.request("command.shop.ban.add.already-banned").replace("%player-name%", playerName).sendToAudience(player);
+			return 1;
+		}
+		lang.request("command.shop.ban.add.success").replace("%player-name%", playerName).sendToAudience(player);
+		targetShop.addPlayerBan(uuid);
+		return 1;
+	}
+	
+	private int showBanList(CommandContext<CommandSourceStack> ctx) {
+		if(!(ctx.getSource().getSender() instanceof Player player)){
+			return -1;
+		}
+		
+		AbstractShop targetShop = getTargetingShop(player);
+		if(targetShop == null){
+			lang.request("command.shop.ban.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		if(player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBans(player)){
+			lang.request("command.shop.ban.no-permission").sendToAudience(player);
+			return -1;
+		}
+		
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBansOther(player)){
+			lang.request("command.shop.ban.not-shop-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		Set<UUID> bannedPlayers = targetShop.getBannedPlayers();
+		if(bannedPlayers.isEmpty()){
+			lang.request("command.shop.ban.list.no-entries").sendToAudience(player);
+			return 1;
+		}
+		lang.request("command.shop.ban.list.header").sendToAudience(player);
+		
+		for(var entry : bannedPlayers){
+			lang.request("command.shop.ban.list.entry").replace("%player-name%", PlayerNameCache.getName(entry)).replace("%player-uuid%",
+					entry.toString()).sendToAudience(player);
+		}
+		
+		return 1;
+	}
+	
 	private int showTransactions(CommandContext<CommandSourceStack> ctx) {
 		if(!(ctx.getSource().getSender() instanceof Player player)){
 			return -1;
 		}
 		
-		RayTraceResult rayTraceResult = player.rayTraceBlocks(5, FluidCollisionMode.NEVER);
-		
-		if(rayTraceResult == null){
-			lang.request("command.shop.transactions.no-valid-shop").sendToAudience(player);
-			return -1;
-		}
-		
-		Block hitBlock = rayTraceResult.getHitBlock();
-		if(hitBlock == null){
-			lang.request("command.shop.transactions.no-valid-shop").sendToAudience(player);
-			return -1;
-		}
-		
-		var targetShop = shopManager().getShopBySign(hitBlock.getLocation());
-		
+		AbstractShop targetShop = getTargetingShop(player);
 		if(targetShop == null){
 			lang.request("command.shop.transactions.no-valid-shop").sendToAudience(player);
 			return -1;
 		}
 		
-		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isOperator(player)){
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactionsOther(player)){
 			lang.request("command.shop.transactions.not-shop-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		if(player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactions(player)){
+			lang.request("command.shop.transactions.no-permission").sendToAudience(player);
 			return -1;
 		}
 		
@@ -170,6 +342,25 @@ public class ShopCommand extends AbstractCommand{
 			return 1;
 		}
 		
+		return sendShopDebug(player, shop);
+	}
+	
+	private int debugShopOnCursor(CommandContext<CommandSourceStack> ctx) {
+		if(!(ctx.getSource().getSender() instanceof Player player)){
+			return -1;
+		}
+		
+		AbstractShop shop = getTargetingShop(player);
+		if(shop == null) {
+			lang.request("command.shop.debug.shop.not-at-cursor").sendToAudience(player);
+			return -1;
+		}
+		sendShopDebug(player, shop);
+		return 0;
+		
+	}
+	
+	private int sendShopDebug(Player player, AbstractShop shop) {
 		LangRequest request = lang.request("command.shop.debug.shop.result");
 		
 		AbstractShop.shopPlaceholders(request, shop, true, player);
@@ -183,6 +374,7 @@ public class ShopCommand extends AbstractCommand{
 				.replace("%loaded%", shop.isLoaded())
 				.replace("%chunk-loaded%", shop.isChunkLoaded())
 				.replace("%needs-save%", shop.needsSave())
+				.replace("%banned-players%",String.join(",",shop.getBannedPlayers().stream().map(Object::toString).toList()))
 				.replace("%performing-transaction%", shop.isPerformingTransaction())
 				.replace("%fake-sign%", shop.isFakeSign())
 				.replace("%facing%", shop.getFacing())
@@ -202,8 +394,7 @@ public class ShopCommand extends AbstractCommand{
 				.replace("%display%", shop.getDisplay().getType())
 				.sendToAudience(player);
 		//@formatter:om
-		return 1;
-	}
+		return 1;}
 	
 	private String formatLocation(Location location) {
 		if (location == null || location.getWorld() == null) {
@@ -507,5 +698,5 @@ public class ShopCommand extends AbstractCommand{
 	public String description() {
 		return "Command to view and modify the shop plugin data.";
 	}
-
+	
 }

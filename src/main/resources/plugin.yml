@@ -60,10 +60,25 @@ permissions:
     description: Allows player to set the display type on other shops (allows shop display cycling, see actionMappings in config.yml).
     default: op
   shop.settings:
-    description: Allows player to change settings of their shop (allows shop display cycling, see actionMappings in config.yml).
+    description: Allows player to change settings of their shop.
     default: op
   shop.settings.other:
-    description: Allows player to change settings on other shops (allows shop display cycling, see actionMappings in config.yml).
+    description: Allows player to change settings on other shops
+    default: op
+  shop.transactions:
+    description: Allows player to see their shops transaction history
+    default: op
+  shop.transactions.other:
+    description: Allows player to see another players shops transaction history
+    default: op
+  shop.ban:
+    description: Allows player to modify their shops ban list to prevent players from using their shop
+    default: op
+  shop.ban.other:
+    description: Allows player to modify other player's shop ban list
+    default: op
+  shop.ban.bypass:
+    description: Allows player to bypass being banned from the shop
     default: op
   shop.user:
     description: Allows users to access the /shop command with basic access to informational commands

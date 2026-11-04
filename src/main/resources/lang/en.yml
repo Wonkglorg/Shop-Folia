@@ -92,6 +92,8 @@ transaction:
       player-no-stock: "<red>You do not have sufficient funds to buy from this shop."
       # called when the player tries to buy from the shop but does not have enough inventory space to receive the purchased items
       player-no-space: "<red>You do not have enough space in your inventory to buy from this shop."
+      # called when the player is banned from interacting with the shop
+      player-banned: "<red>You are banned from buying at this shop!"
 
     buy:
       # called when the user tries to transact with their own shop while this feature is disabled
@@ -116,6 +118,8 @@ transaction:
       player-no-stock: "<red>You do not have enough items to sell to this shop."
       # called when the player tries to sell to the shop but does not have enough inventory space to receive the payment from the shop
       player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+      # called when the player is banned from interacting with the shop
+      player-banned: "<red>You are banned from selling at this shop!"
 
     barter:
       # called when the user tries to transact with their own shop while this feature is disabled
@@ -140,6 +144,8 @@ transaction:
       player-no-stock: "<red>You do not have sufficient items to barter with this shop."
       # called when the player does not have enough inventory space to receive the items from the barter
       player-no-space: "<red>You do not have enough space in your inventory to accept the payment from this shop."
+      # called when the player is banned from interacting with the shop
+      player-banned: "<red>You are banned from bartering with this shop!"
 
     gamble:
       # called when the user tries to transact with their own shop while this feature is disabled
@@ -158,6 +164,8 @@ transaction:
       player-no-stock: "<red>You do not have sufficient funds to gamble with this shop."
       # called when the player does not have enough inventory space to receive the gambling reward
       player-no-space: "<red>You do not have enough space in your inventory to accept the gambling reward from this shop."
+      # called when the player is banned from interacting with the shop
+      player-banned: "<red>You are banned from gambling with this shop!"
 
 
 ##Shop interaction related messages
@@ -392,16 +400,16 @@ command:
   shop:
     usage:
       user:
-        -"<blue>/shop list <gray>- list your shops on the server"
-        -"<blue>/shop currency <gray>- info about the currency shops use"
-        -"<blue>/shop currency <gray>- info about the currency shops use"
-        -"<blue>/shop notify [user|owner|stock] <gray>- Toggles notifications"
-        -"<blue>/shop transactions <gray>- Shows transactions about the shop currently aimed at"
+        - "<blue>/shop list <gray>- list your shops on the server"
+        - "<blue>/shop currency <gray>- info about the currency shops use"
+        - "<blue>/shop currency <gray>- info about the currency shops use"
+        - "<blue>/shop notify [user|owner|stock] <gray>- Toggles notifications"
+        - "<blue>/shop transactions <gray>- Shows transactions about the shop currently aimed at"
       admin:
-        -"<red>/shop setcurrency <gray>- set the currency item to item in hand"
-        -"<red>/shop setgamble <gray>- set the gamble item display to item in hand"
-        -"<red>/shop item refresh <gray>- refresh all display items on shops"
-        -"<red>/shop reload <gray>- reload Shop plugin"
+        - "<red>/shop setcurrency <gray>- set the currency item to item in hand"
+        - "<red>/shop setgamble <gray>- set the gamble item display to item in hand"
+        - "<red>/shop item refresh <gray>- refresh all display items on shops"
+        - "<red>/shop reload <gray>- reload Shop plugin"
     list:
       success-console: "<white>There are <gold>%total-shops%<white> shops registered on the server."
       success-player:
@@ -440,6 +448,7 @@ command:
     transactions:
       no-valid-shop: "<red>Look at your shop sign when executing the command!"
       not-shop-owner: "<red>This shop does not belong to you!"
+      no-permission: "<red>You do not have permission to view shop history!!"
       shop-entry-sell:
         - "<gold>==Shop Transaction Stats=="
         - "Total: %sales-1d% | <green>+<math>%sales-1d% * %price%</math> %currency-name% <red>-<math>%sales-1d% * %amount%</math><white> %item% <gray>- 1 Day"
@@ -458,6 +467,28 @@ command:
         - "Total: %sales-7d% | <green>[+] <math>%sales-7d% * %price%</math> %item% <red>[-] <math>%sales-7d% * %amount%</math> %secondary-item% <gray>- 7 Days"
         - "Total: %sales-30d% | <green>[+] <math>%sales-30d% * %price%</math> %item% <red>[-] <math>%sales-30d% * %amount%</math> %secondary-item% <gray>- 30 Days"
         - "Total: %sales-all-time% | <green>[+] <math>%sales-all-time% * %price%</math> %item% <red>[-] <math>%sales-all-time% * %amount%</math> %secondary-item% <gray>- All"
+    ban:
+      usage:
+        - "<green>Look at a shop sign when executing this command"
+        - "<blue>/shop ban add <player> <gray>- Prevents a player trading with this shop"
+        - "<blue>/shop ban remove <player> <gray>- Allows a player to trade with this shop if previously banned"
+        - "<blue>/shop ban list <gray>- Shows a list of all currently banned players from the shopw"
+      no-valid-shop: "<red>Look at your shop sign when executing the command!"
+      not-shop-owner: "<red>This shop does not belong to you!"
+      no-permission: "<red>>You do not have permission to ban players from your shop!"
+      add:
+        not-valid-player: "<red>Player does not exist!"
+        already-banned: "<red>Player is already banned!"
+        owner-invalid: "<red>You cannot ban the shop owner from their own shop!"
+        success: "<green>Player %player-name% is banned from using this shop"
+      remove:
+        not-valid-player: "<red>Player does not exist!"
+        not-banned: "<red>Player is not banned from this shop!"
+        success: "<green> Player %player-name% is no longer banned from using this shop"
+      list:
+        no-entries: "<green>No players are banned from using this shop."
+        header: "<green>==Players banned from this shop=="
+        entry: "<gray>- <gold>%player-name%"
     lookup:
       data-no-results: "<red>No Shop History Found!"
       header: "<gold>Shop History:"
@@ -535,6 +566,7 @@ command:
 
       shop:
         not-found: "<red>Shop not found: <white>%shop-id%"
+        not-at-cursor: "<red>No shop sign on crosshair! Look at a valid shop or specify the shops uuid"
         result:
           - "<yellow>Shop Debug"
           - "<gray>ID: <white>%shop-id%"
@@ -556,6 +588,7 @@ command:
           - "<gray>Loaded: <white>%loaded%"
           - "<gray>Chunk Loaded: <white>%chunk-loaded%"
           - "<gray>Needs Save: <white>%needs-save%"
+          - "<gray>Banned Players: <white>%banned-players%"
           - "<gray>Fake Sign: <white>%fake-sign%"
           - "<gray>Performing Transaction: <white>%performing-transaction%"
           - "<gray>Creation Date: <white>%creation-date%"
@@ -642,6 +675,18 @@ sign:
         2: "<white>%item%<white>: %amount%"
         3: "%shop-price-display%"
         4: "<white>%owner%"
+      # when the shop reached its transaction limit for the player viewing it and has a display rendered
+      banned:
+        1: ""
+        2: "%out-of-stock-color%BANNED"
+        3: ""
+        4: ""
+      # when the shop reached its transaction limit for the player viewing it and has no display rendered
+      banned-no-display:
+        1: ""
+        2: "%out-of-stock-color%BANNED"
+        3: ""
+        4: ""
     buy:
       initialise:
         1: "<red><bold>[buy shop]"
@@ -708,6 +753,18 @@ sign:
         2: "<white>%item%<white>: %amount%"
         3: "%shop-price-display%"
         4: "<white>%owner%"
+      # when the shop reached its transaction limit for the player viewing it and has a display rendered
+      banned:
+        1: ""
+        2: "%out-of-stock-color%BANNED"
+        3: ""
+        4: ""
+      # when the shop reached its transaction limit for the player viewing it and has no display rendered
+      banned-no-display:
+        1: ""
+        2: "%out-of-stock-color%BANNED"
+        3: ""
+        4: ""
     barter:
       initialise:
         1: "<red><bold>[barter shop]"
@@ -774,6 +831,18 @@ sign:
         2: "%item%<white>: %amount%"
         3: "%barter-item%<white>:   %shop-price-display%"
         4: "<white>%owner%"
+      # when the shop reached its transaction limit for the player viewing it and has a display rendered
+      banned:
+        1: ""
+        2: "%out-of-stock-color%BANNED"
+        3: ""
+        4: ""
+      # when the shop reached its transaction limit for the player viewing it and has no display rendered
+      banned-no-display:
+        1: ""
+        2: "%out-of-stock-color%BANNED"
+        3: ""
+        4: ""
     gamble:
       # when the shop has items in it and has a display rendered
       in-stock:
@@ -823,3 +892,15 @@ sign:
         2: "<light_purple>Random Item"
         3: "%limit-reached-stock-color%<bold>LIMIT REACHED"
         4: "%server-display-name%"
+      # when the shop reached its transaction limit for the player viewing it and has a display rendered
+      banned:
+        1: ""
+        2: "%out-of-stock-color%BANNED"
+        3: ""
+        4: ""
+      # when the shop reached its transaction limit for the player viewing it and has no display rendered
+      banned-no-display:
+        1: ""
+        2: "%out-of-stock-color%BANNED"
+        3: ""
+        4: ""

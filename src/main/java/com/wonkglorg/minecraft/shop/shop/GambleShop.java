@@ -80,6 +80,7 @@ public class GambleShop extends AbstractShop{
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.gamble.use-own-shop").sendToAudience(player);
 			case PURCHASE_COOLDOWN -> notifyCooldownReached(player, multiplier);
 			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.gamble.player-transaction-limit-reached").sendToAudience(player);
+			case BANNED -> lang.request("transaction.issue.gamble.player-banned").sendToAudience(player);
 		}
 		
 	}

@@ -26,7 +26,11 @@ public enum ShopStateClient{
 	/**
 	 * Shop has no stock
 	 */
-	EMPTY(4);
+	EMPTY(4),
+	/**
+	 * If the user is banned from using the shop
+	 */
+	BANNED(5);
 	
 	@Getter
 	private final int weight;

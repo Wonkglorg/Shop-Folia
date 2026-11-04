@@ -47,6 +47,25 @@ CREATE TABLE IF NOT EXISTS shop_settings
         REFERENCES shops (shop_uuid)
         ON DELETE CASCADE
 );
+-- users that are banned from using a specific shop
+CREATE TABLE IF NOT EXISTS shop_bans
+(
+    -- The shop the ban applies for
+    shop_uuid TEXT NOT NULL,
+
+    -- The user banned
+    player_uuid TEXT NOT NULL,
+
+    PRIMARY KEY (shop_uuid, player_uuid),
+
+    FOREIGN KEY (shop_uuid)
+        REFERENCES shops (shop_uuid)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (player_uuid)
+        REFERENCES players (uuid)
+        ON DELETE CASCADE
+);
 
 --this table stores every transaction a player has done with a shop
 CREATE TABLE IF NOT EXISTS transactions
@@ -105,34 +124,33 @@ CREATE TABLE IF NOT EXISTS currency_history
 
 CREATE VIEW IF NOT EXISTS shop_history AS
 
-SELECT
-    'TRANSACTION' AS source_type,
+SELECT 'TRANSACTION'    AS source_type,
 
-    t.timestamp,
+       t.timestamp,
 
-    s.shop_type AS action,
+       s.shop_type      AS action,
 
-    t.purchaser_uuid AS player_uuid,
-    t.purchaser_uuid AS transactor_uuid,
+       t.purchaser_uuid AS player_uuid,
+       t.purchaser_uuid AS transactor_uuid,
 
-    s.owner_uuid AS owner_uuid,
+       s.owner_uuid     AS owner_uuid,
 
-    p.name AS player_name,
-    owner.name AS owner_name,
+       p.name           AS player_name,
+       owner.name       AS owner_name,
 
-    s.shop_uuid,
-    s.item,
-    s.secondary_item,
+       s.shop_uuid,
+       s.item,
+       s.secondary_item,
 
-    s.price,
-    s.amount,
-    t.transaction_count,
-    t.gamble_reward,
+       s.price,
+       s.amount,
+       t.transaction_count,
+       t.gamble_reward,
 
-    s.shop_world AS world_name,
-    s.shop_x AS x,
-    s.shop_y AS y,
-    s.shop_z AS z
+       s.shop_world     AS world_name,
+       s.shop_x         AS x,
+       s.shop_y         AS y,
+       s.shop_z         AS z
 
 FROM transactions t
          JOIN shops s
@@ -144,34 +162,33 @@ FROM transactions t
 
 UNION ALL
 
-SELECT
-    'ACTION' AS source_type,
+SELECT 'ACTION'         AS source_type,
 
-    sa.timestamp,
+       sa.timestamp,
 
-    sa.player_action AS action,
+       sa.player_action AS action,
 
-    sa.player_uuid AS player_uuid,
-    NULL AS transactor_uuid,
+       sa.player_uuid   AS player_uuid,
+       NULL             AS transactor_uuid,
 
-    s.owner_uuid AS owner_uuid,
+       s.owner_uuid     AS owner_uuid,
 
-    p.name AS player_name,
-    owner.name AS owner_name,
+       p.name           AS player_name,
+       owner.name       AS owner_name,
 
-    s.shop_uuid,
-    s.item,
-    NULL AS secondary_item,
+       s.shop_uuid,
+       s.item,
+       NULL             AS secondary_item,
 
-    s.price,
-    s.amount,
-    0 AS transaction_count,
-    NULL AS gamble_reward,
+       s.price,
+       s.amount,
+       0                AS transaction_count,
+       NULL             AS gamble_reward,
 
-    s.shop_world AS world_name,
-    s.shop_x AS x,
-    s.shop_y AS y,
-    s.shop_z AS z
+       s.shop_world     AS world_name,
+       s.shop_x         AS x,
+       s.shop_y         AS y,
+       s.shop_z         AS z
 
 FROM shop_actions sa
          JOIN shops s
