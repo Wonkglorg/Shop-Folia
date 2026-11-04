@@ -5,7 +5,6 @@ import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopClientManager;
-import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.event.PlayerCreateShopEvent;
@@ -17,6 +16,7 @@ import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShop;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToOpenShopOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
@@ -377,7 +377,7 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
-		if(isOperator(player)){
+		if(isAllowedToOpenShopOther(player)){
 			if(!shop.isAdmin()){
 				lang.request("interaction.success." + shop.getType() + ".open-other").replace("%owner%", shop.getOwner().getName()).sendToAudience(
 						player);
@@ -515,7 +515,7 @@ public class ShopListener implements Listener{
 		Player player = event.getPlayer();
 		PlayerManager.removeProfile(player);
 		shopManager.getShopClientManager().handlePlayerQuit(player);
-		shopManager.getDatabase().setPlayerLastSeen(player.getUniqueId(),System.currentTimeMillis());
+		shopManager.getDatabase().setPlayerLastSeen(player.getUniqueId(), System.currentTimeMillis());
 	}
 	
 	@EventHandler

@@ -167,6 +167,13 @@ public abstract class PlayerProfile{
 	}
 	
 	/**
+	 * If the user is allowed to open someone else's shop
+	 */
+	public static boolean isAllowedToOpenShopOther(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.open.other");
+	}
+	
+	/**
 	 * If the user is allowed to cycle shop displays of their own shops
 	 */
 	public static boolean isAllowedToCycleDisplay(Permissible player) {return isOperator(player) || player.hasPermission("shop.setdisplay");}

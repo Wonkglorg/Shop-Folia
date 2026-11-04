@@ -47,6 +47,9 @@ permissions:
   shop.destroy.other:
     description: Allows player to destroy other player's shops.
     default: op
+  shop.open.other:
+    description: Allows player to open another player's shop.
+    default: op
   shop.buildlimit.#:
     description: Restricts the number of shops a player can create. For example shop.buildlimit.10 would limit players to creating 10 shops maximum. If multiple buildlimit permissions exist, ONLY the highest will be used.
     default: op
