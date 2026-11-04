@@ -4,7 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.wonkglorg.minecraft.command.AbstractCommand;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_INITIALIZE_COMMAND;
-import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
+import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_COMMAND;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
@@ -134,7 +134,7 @@ public final class ShopInitializeCommand extends AbstractCommand{
 	
 	@Override
 	public LiteralArgumentBuilder<CommandSourceStack> argumentBuilder() {
-		LiteralArgumentBuilder<CommandSourceStack> builder = literal(SHOP_INITIALIZE_COMMAND).requires(permissions(SHOP_PERMISSION_USER));
+		LiteralArgumentBuilder<CommandSourceStack> builder = literal(SHOP_INITIALIZE_COMMAND).requires(permissions(SHOP_PERMISSION_COMMAND));
 		builder.executes(handler());
 		
 		SINGLE_SELECTION.forEach((key, item) -> builder.then(literal(key).executes(handler(key, null, false))));
