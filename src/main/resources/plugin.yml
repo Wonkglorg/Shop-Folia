@@ -80,9 +80,11 @@ permissions:
   shop.ban.bypass:
     description: Allows player to bypass being banned from the shop
     default: op
-  shop.user:
-    description: Allows users to access the /shop command with basic access to informational commands
+  shop.command:
+    description: Allows access the /shop command with basic access to informational commands
     default: op
+  shop.lookup:
+    description: Allows access to /shop lookup command to
   shop.operator:
     description: Allows access to operator actions like setting currency, setting the gamble item, reloading configs, creating gamble/admin shops, etc.
     default: op

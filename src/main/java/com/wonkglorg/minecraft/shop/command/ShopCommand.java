@@ -12,7 +12,7 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
-import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_USER;
+import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_COMMAND;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
@@ -71,7 +71,7 @@ public class ShopCommand extends AbstractCommand{
 	public LiteralArgumentBuilder<CommandSourceStack> argumentBuilder() {
 		//@formatter:off
 		return literal(SHOP_COMMAND)
-				.requires(permissions(SHOP_PERMISSION_USER))
+				.requires(permissions(SHOP_PERMISSION_COMMAND))
 				.executes(this::usageMessage)
 				.then(literal("list").executes(this::list))
 				.then(literal("currency").executes(this::currency))
@@ -107,7 +107,7 @@ public class ShopCommand extends AbstractCommand{
 								.then(argument("shop-id",StringArgumentType.greedyString()).executes(this::debugShop))))
 				.then(literal("setcurrency").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setCurrency))
 				.then(literal("setgamble").requires(permissions(SHOP_PERMISSION_OPERATOR)).executes(this::setGamble))
-				.then(literal("lookup").requires(permissions(SHOP_PERMISSION_OPERATOR)).then(argumentBuilder.constructArguments()));
+				.then(literal("lookup").requires(permissions("shop.lookup")).then(argumentBuilder.constructArguments()));
 		//@formatter:on
 	}
 	
