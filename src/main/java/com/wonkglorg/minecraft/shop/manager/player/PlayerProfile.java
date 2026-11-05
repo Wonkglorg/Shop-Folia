@@ -118,6 +118,13 @@ public abstract class PlayerProfile{
 	}
 	
 	/**
+	 * If the player is allowed to create admin shops
+	 */
+	public static boolean isAllowedToCreateAdminShop(Permissible player){
+		return isOperator(player);
+	}
+	
+	/**
 	 * If the user is allowed to create a shop of this type, this does NOT enforce shop build limit
 	 */
 	public static boolean isAllowedToCreateShop(Permissible player, ShopType type) {

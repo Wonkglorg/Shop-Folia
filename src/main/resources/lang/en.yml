@@ -385,7 +385,7 @@ permission:
     destroy: "<red>You are not authorized to destroy your own shops."
     destroyOther: "<red>You are not authorized to destroy other players shops."
     openOther: "<red>You are not authorized to open other players shops."
-    buildLimit: "<red>You reached your build limit of %user-amount%/%build-limit% shops."
+    buildLimit: "<red>You reached your Shop build limit."
 
 hover:
   location:

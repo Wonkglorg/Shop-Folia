@@ -23,6 +23,7 @@ import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.ShopState;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.SUCCESS;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
@@ -136,16 +137,26 @@ public class ShopListener implements Listener{
 		}
 		
 		final SignCreationProcess process = new SignCreationProcess(player, sign, chest, signDirection);
-		
-		//do some checks with the provided data to verify the player has all required things to create a shop here
-		if(!process.canPlayerFulfillsCreationRequirements()){
-			logger.debug("Player can't fulfill creation requirements");
+		if(!process.readSignLines(event.lines())){
+			logger.debug("Error reading sign lines");
 			logger.debug("====SHOP CREATION CANCEL====");
 			return;
 		}
 		
-		if(!process.readSignLines(event.lines())){
-			logger.debug("Error reading sign lines");
+		var result = process.validateProcess();
+		
+		if(result != SUCCESS){
+			switch(result) {
+				case NO_DATA -> {
+				
+				}
+				case DIMENSION_BLACKLIST -> lang.request("interaction.issues.create.world-blacklist").sendToAudience(player);
+				case LACKS_CREATION_PERMISSION -> lang.request("permission.error.create-type")
+													  .replace("%shop-type%", process.getType().toString())
+													  .sendToAudience(player);
+				case SHOP_LIMIT_REACHED -> lang.request("permission.error.buildLimit").sendToAudience(player);
+				case INSUFFICIENT_FUNDS -> lang.request("interaction.issues.create.insufficient-funds").sendToAudience(player);
+			}
 			logger.debug("====SHOP CREATION CANCEL====");
 			return;
 		}

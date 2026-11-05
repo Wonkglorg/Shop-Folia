@@ -44,6 +44,18 @@ permissions:
   shop.destroy:
     description: Allows player to destroy their own shops.
     default: op
+  shop.destroy.sell:
+    description: Allows player to destroy their own sell shops.
+    default: op
+  shop.destroy.buy:
+    description: Allows player to destroy their own buy shops.
+    default: op
+  shop.destroy.barter:
+    description: Allows player to destroy their own barter shops.
+    default: op
+  shop.destroy.gamble:
+    description: Allows player to destroy their own gamble shops.
+    default: op
   shop.destroy.other:
     description: Allows player to destroy other player's shops.
     default: op
