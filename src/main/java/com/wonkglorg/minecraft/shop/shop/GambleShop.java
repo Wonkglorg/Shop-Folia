@@ -14,6 +14,7 @@ import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import static com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty.createVirtualInventory;
+import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -28,6 +29,10 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GambleShop extends AbstractShop{
+	/**
+	 * Used when the gamble shop has no insides
+	 */
+	public static final int DUMMY_AMOUNT = 999999;
 	/**
 	 * Used when no valid item is defined in the shop
 	 */
@@ -73,10 +78,10 @@ public class GambleShop extends AbstractShop{
 			case SHOP_IS_PERFORMING_TRANSACTION -> lang.request("transaction.issue.gamble.shop-performing-transaction").sendToAudience(player);
 			case CANCELLED -> lang.request("transaction.issue.gamble.cancelled-external").sendToAudience(player);
 			case INSUFFICIENT_FUNDS_BUYER -> lang.request("transaction.issue.gamble.player-no-stock").sendToAudience(player);
-			case INSUFFICIENT_FUNDS_SELLER -> { // can't happen for gamble shops
-			}
+			case INSUFFICIENT_FUNDS_SELLER -> lang.request("transaction.issue.gamble.shop-no-stock").sendToAudience(player);
 			case INVENTORY_FULL_BUYER -> lang.request("transaction.issue.gamble.player-no-space").sendToAudience(player);
-			case INVENTORY_FULL_SELLER -> lang.request("transaction.issue.gamble.shop-no-stock").sendToAudience(player);
+			case INVENTORY_FULL_SELLER -> {
+			} //can't happen for gamble shops
 			case OWNER_CANT_TRANSACT_OWN_SHOP -> lang.request("transaction.issue.gamble.use-own-shop").sendToAudience(player);
 			case PURCHASE_COOLDOWN -> notifyCooldownReached(player, multiplier);
 			case PURCHASE_LIMIT_REACHED -> lang.request("transaction.issue.gamble.player-transaction-limit-reached").sendToAudience(player);
@@ -143,14 +148,19 @@ public class GambleShop extends AbstractShop{
 	}
 	
 	@Override
+	protected @NotNull Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
+		if(getItemStack() == null){
+			return Pair.of(TransactionResult.INSUFFICIENT_FUNDS_SELLER, 0);
+		}
+		return super.executeTransaction(party, requestFullstack);
+	}
+	
+	@Override
 	protected @NotNull Transaction startTransaction(TransactionParty party, ShopTransactionParty cachedParty, int multiplier) {
 		ItemStack itemStack = getItemStack();
-		if(itemStack == null){
-			amount = 9999; //use a big amount number to prevent the trade from passing (no item is in the gamble shop)
-			itemStack = DEFAULT_EMPTY_ITEM;
-		} else {
-			amount = itemStack.getAmount();
-		}
+		//cannot be null anymore as execute transaction check already filters out empty gamble shops
+		assert itemStack != null;
+		amount = itemStack.getAmount();
 		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
 			case VAULT -> new VaultTransaction(party, cachedParty, amount, price, itemStack);
 			case ITEM -> new ItemCurrencyTransaction(party, cachedParty, amount, price, itemStack, getCurrencyItem(), getCondensedCurrencies());

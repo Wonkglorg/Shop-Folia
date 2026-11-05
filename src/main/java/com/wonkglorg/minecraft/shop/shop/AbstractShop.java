@@ -921,7 +921,7 @@ public abstract class AbstractShop{
 	 * @return the result of the transaction and how often the trade happened if successful
 	 */
 	@Internal
-	private @NotNull Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
+	protected @NotNull Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
 		if(isPerformingTransaction){
 			return of(TransactionResult.SHOP_IS_PERFORMING_TRANSACTION, 0);
 		}
