@@ -472,7 +472,7 @@ command:
         - "<green>Look at a shop sign when executing this command"
         - "<blue>/shop ban add <player> <gray>- Prevents a player trading with this shop"
         - "<blue>/shop ban remove <player> <gray>- Allows a player to trade with this shop if previously banned"
-        - "<blue>/shop ban list <gray>- Shows a list of all currently banned players from the shopw"
+        - "<blue>/shop ban list <gray>- Shows a list of all currently banned players from the shop"
       no-valid-shop: "<red>Look at your shop sign when executing the command!"
       not-shop-owner: "<red>This shop does not belong to you!"
       no-permission: "<red>>You do not have permission to ban players from your shop!"
