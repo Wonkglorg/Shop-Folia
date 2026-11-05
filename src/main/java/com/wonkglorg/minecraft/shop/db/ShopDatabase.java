@@ -458,8 +458,11 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	}
 	
 	private void insertShopValues(AbstractShop shop, PreparedStatement ps) throws SQLException {
-		ItemStack mainStack = shop.getItemStack().clone();
-		mainStack.setAmount(1);
+		ItemStack mainStack = shop.getItemStack();
+		if(mainStack != null){
+			mainStack.setAmount(1);
+		}
+		
 		ItemStack barterStack = shop.getSecondaryItemStack();
 		if(barterStack != null){
 			barterStack = barterStack.clone();
@@ -483,7 +486,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
 		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
 		ps.setLong(13, shop.getCreationDate());
-		ps.setString(14, mainStack.getType().toString().toUpperCase());
+		ps.setString(14, mainStack != null ? mainStack.getType().toString().toUpperCase() : null);
 		ps.setString(15, barterStack != null ? barterStack.getType().toString().toUpperCase() : null);
 		ps.setString(16, signLocation.getWorld().getName());
 		ps.setInt(17, signLocation.getBlockX());
@@ -875,8 +878,10 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	}
 	
 	private void updateShopValues(AbstractShop shop, PreparedStatement ps) throws SQLException {
-		ItemStack mainStack = shop.getItemStack().clone();
-		mainStack.setAmount(1);
+		ItemStack mainStack = shop.getItemStack();
+		if(mainStack != null){
+			mainStack.setAmount(1);
+		}
 		
 		ItemStack barterStack = shop.getSecondaryItemStack();
 		if(barterStack != null){
@@ -896,7 +901,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setString(8, shop.getDisplay().getType() != null ? shop.getDisplay().getType().toString().toUpperCase() : DisplayType.NONE.toString());
 		ps.setInt(9, shop.isFakeSign() ? 1 : 0);
 		ps.setString(10, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
-		ps.setString(11, mainStack.getType().toString().toUpperCase());
+		ps.setString(11, mainStack != null ? mainStack.getType().toString().toUpperCase() : null);
 		ps.setString(12, barterStack != null ? barterStack.getType().toString().toUpperCase() : null);
 		ps.setString(13, signLocation.getWorld().getName());
 		ps.setInt(14, signLocation.getBlockX());

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS shops
 (
     shop_uuid                TEXT    NOT NULL PRIMARY KEY,
     owner_uuid               TEXT    NOT NULL,
-    item                     TEXT    NOT NULL,
+    item                     TEXT    NULL,
     price                    REAL    NOT NULL,
     amount                   INTEGER NOT NULL,
     last_known_stock_count   INTEGER NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS shops
     secondary_item           TEXT    NULL     DEFAULT NULL,
     creation_time            INTEGER NOT NULL,
     destroy_time             INTEGER NOT NULL DEFAULT 0,
-    item_type                TEXT    NOT NULL,
+    item_type                TEXT    NULL,
     secondary_item_type      TEXT    NULL     DEFAULT NULL,
     custom_item_id           TEXT    NULL     DEFAULT NULL,
     custom_secondary_item_id TEXT    NULL     DEFAULT NULL,
