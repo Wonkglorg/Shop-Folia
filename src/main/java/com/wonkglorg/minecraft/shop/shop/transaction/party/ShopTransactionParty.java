@@ -7,6 +7,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
+import java.util.function.BiPredicate;
 
 /**
  * A transaction party represented by a shop
@@ -23,8 +24,8 @@ public class ShopTransactionParty extends TransactionParty{
 	/**
 	 * Used for shops where a different inventory should be used instead of the shops internal one
 	 *
-	 * @param shop
-	 * @param inventory
+	 * @param shop the shop representing this party
+	 * @param inventory the inventory this party has access to
 	 */
 	public ShopTransactionParty(AbstractShop shop, Inventory inventory) {
 		super(shop.getOwner(), inventory);
@@ -48,11 +49,11 @@ public class ShopTransactionParty extends TransactionParty{
 	}
 	
 	@Override
-	public int getAvailableItemFunds(ItemStack itemStack) {
+	public int getAvailableItemFunds(ItemStack itemStack, BiPredicate<ItemStack, ItemStack> matcher) {
 		if(shop.isAdmin()){
 			return Integer.MAX_VALUE;
 		}
-		return super.getAvailableItemFunds(itemStack);
+		return super.getAvailableItemFunds(itemStack, matcher);
 	}
 	
 	@Override
@@ -128,11 +129,11 @@ public class ShopTransactionParty extends TransactionParty{
 	}
 	
 	@Override
-	public int removeItem(ItemStack itemStack, int amount) {
+	public ItemRemovalResult removeItem(ItemStack itemStack, int amount, BiPredicate<ItemStack, ItemStack> matches) {
 		if(shop.isAdmin()){
-			return 0;
+			return new ItemRemovalResult(0, List.of(new RemovedItem(itemStack, amount)));
 		}
-		return super.removeItem(itemStack, amount);
+		return super.removeItem(itemStack, amount, matches);
 	}
 	
 	@Override
