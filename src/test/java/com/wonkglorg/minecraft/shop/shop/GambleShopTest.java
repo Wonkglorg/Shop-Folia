@@ -4,12 +4,12 @@ import com.wonkglorg.minecraft.shop.TestBase;
 import com.wonkglorg.minecraft.shop.mocks.GambleShopMock;
 import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.ItemCurrencyTransaction;
-import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
@@ -70,16 +70,32 @@ public class GambleShopTest extends TestBase implements ShopTestable{
 		shop.getInventory().addItem(mainStack);
 		shop.updateStock();
 		setCurrencyType(CurrencyType.VAULT);
-		var transaction = shop.startTransaction(playerTransactionParty, 1);
+		var party = createTransactionParty();
+		var transaction = shop.startTransaction(party, 1);
 		assertSame(VaultTransaction.class, transaction.getClass());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertTrue(transaction.isSellerIsAdminShop());
 		
 		setCurrencyType(CurrencyType.EXPERIENCE);
-		transaction = shop.startTransaction(playerTransactionParty, 1);
+		transaction = shop.startTransaction(party, 1);
 		assertSame(ExpirienceTransaction.class, transaction.getClass());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertTrue(transaction.isSellerIsAdminShop());
 		
 		setCurrencyType(CurrencyType.ITEM);
-		transaction = shop.startTransaction(playerTransactionParty, 1);
+		transaction = shop.startTransaction(party, 1);
 		assertSame(ItemCurrencyTransaction.class, transaction.getClass());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertTrue(transaction.isSellerIsAdminShop());
 	}
 	
 	protected AbstractShop createGambleShop(double price, int amount) {

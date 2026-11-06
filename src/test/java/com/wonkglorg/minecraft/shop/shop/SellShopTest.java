@@ -79,15 +79,34 @@ public class SellShopTest extends TestBase implements ShopTestable{
 		ItemStack mainStack = new ItemStack(Material.STONE);
 		var shop = createShop(type, price, amount, false, mainStack, null);
 		setCurrencyType(CurrencyType.VAULT);
-		var transaction = shop.startTransaction(playerTransactionParty, 1);
+		var party = createTransactionParty();
+		var transaction = shop.startTransaction(party, 1);
 		assertSame(VaultTransaction.class, transaction.getClass());
+		assertEquals(transaction.getSeller().getInventory(), shop.getInventory());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertFalse(transaction.isSellerIsAdminShop());
 		
 		setCurrencyType(CurrencyType.EXPERIENCE);
-		transaction = shop.startTransaction(playerTransactionParty, 1);
+		transaction = shop.startTransaction(party, 1);
 		assertSame(ExpirienceTransaction.class, transaction.getClass());
+		assertEquals(transaction.getSeller().getInventory(), shop.getInventory());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertFalse(transaction.isSellerIsAdminShop());
 		
 		setCurrencyType(CurrencyType.ITEM);
-		transaction = shop.startTransaction(playerTransactionParty, 1);
+		transaction = shop.startTransaction(party, 1);
 		assertSame(ItemCurrencyTransaction.class, transaction.getClass());
+		assertEquals(transaction.getSeller().getInventory(), shop.getInventory());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertFalse(transaction.isSellerIsAdminShop());
 	}
 }

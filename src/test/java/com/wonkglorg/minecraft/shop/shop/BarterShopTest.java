@@ -81,18 +81,37 @@ public class BarterShopTest extends TestBase implements ShopTestable{
 	@Test
 	public void testTransactionTypesBasedOnSetCurrency() {
 		ItemStack mainStack = new ItemStack(Material.STONE);
-		ItemStack secondaryStack = new ItemStack(Material.GRASS_BLOCK);
-		var shop = createShop(type, price, amount, false, mainStack, secondaryStack);
+		ItemStack barterStack = new ItemStack(Material.GRASS_BLOCK);
+		var shop = createShop(type, price, amount, false, mainStack, barterStack);
 		setCurrencyType(CurrencyType.VAULT);
-		var transaction = shop.startTransaction(playerTransactionParty, 1);
+		var party = createTransactionParty();
+		var transaction = shop.startTransaction(party, 1);
 		assertSame(VaultTransaction.class, transaction.getClass());
+		assertEquals(transaction.getSeller().getInventory(), shop.getInventory());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertFalse(transaction.isSellerIsAdminShop());
 		
 		setCurrencyType(CurrencyType.EXPERIENCE);
-		transaction = shop.startTransaction(playerTransactionParty, 1);
+		transaction = shop.startTransaction(party, 1);
 		assertSame(ExpirienceTransaction.class, transaction.getClass());
+		assertEquals(transaction.getSeller().getInventory(), shop.getInventory());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertFalse(transaction.isSellerIsAdminShop());
 		
 		setCurrencyType(CurrencyType.ITEM);
-		transaction = shop.startTransaction(playerTransactionParty, 1);
+		transaction = shop.startTransaction(party, 1);
 		assertSame(ItemTransaction.class, transaction.getClass());
+		assertEquals(transaction.getSeller().getInventory(), shop.getInventory());
+		assertEquals(amount, transaction.getAmount());
+		assertEquals(price, transaction.getPrice());
+		assertEquals(party, transaction.getBuyer());
+		assertFalse(transaction.isBuyerIsAdminShop());
+		assertFalse(transaction.isSellerIsAdminShop());
 	}
 }

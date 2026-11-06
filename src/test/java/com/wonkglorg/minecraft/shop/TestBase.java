@@ -17,7 +17,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
-import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
@@ -25,10 +24,6 @@ import static org.mockito.Mockito.when;
 
 public class TestBase{
 	protected static ServerMock server;
-	
-	protected static PlayerMock player;
-	protected static PlayerTransactionParty playerTransactionParty;
-	protected static PlayerMock shopOwner;
 	
 	protected static Material CURRENCY_TYPE = Material.DIAMOND;
 	protected static ItemConfigProvider itemConfigMock;
@@ -42,9 +37,8 @@ public class TestBase{
 	@BeforeAll
 	static void setUp() {
 		server = MockBukkit.mock();
-		player = server.addPlayer();
-		shopOwner = server.addPlayer();
-		playerTransactionParty = new PlayerTransactionParty(player);
+		server.addSimpleWorld("world");
+		server.addPlayer();
 		
 		logger = mock(ShopLogger.class);
 		pluginMock = mock(ShopPlugin.class);
@@ -102,15 +96,21 @@ public class TestBase{
 		when(settingsConfig.getCurrencyType()).thenReturn(type);
 	}
 	
+	protected PlayerTransactionParty createTransactionParty(){
+		return new PlayerTransactionParty(server.addPlayer());
+	}
+	
 	protected AbstractShop createShop(ShopType type, double price, int amount, boolean admin, ItemStack mainStack, ItemStack barterStack) {
+		
+		var player = server.addPlayer();
 		
 		AbstractShop shop = MockHelper.createShop(type,
 				shopSignLocation,
-				shopOwner.getUniqueId(),
+				player.getUniqueId(),
 				price,
 				amount,
 				admin,
-				shopOwner.getInventory(),
+				player.getInventory(),
 				mainStack);
 		
 		if(type == ShopType.BARTER){
