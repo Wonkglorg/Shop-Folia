@@ -1,5 +1,6 @@
 package com.wonkglorg.minecraft.shop.shop.transaction;
 
+import com.wonkglorg.minecraft.shop.shop.transaction.party.ItemRemovalResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import org.bukkit.inventory.ItemStack;
 
@@ -13,7 +14,7 @@ public class VaultTransaction extends Transaction{
 	
 	@Override
 	public double getSellerAvailableItems() {
-		return seller.getAvailableItemFunds(tradedStack);
+		return seller.getAvailableItemFunds(tradedStack, itemMatcher);
 	}
 	
 	@Override
@@ -31,10 +32,10 @@ public class VaultTransaction extends Transaction{
 	
 	@Override
 	public void execute() {
-		seller.removeItem(tradedStack, amount);
+		ItemRemovalResult result = seller.removeItem(tradedStack, amount, itemMatcher);
 		buyer.removeCurrency(price);
 		
-		buyer.addItem(tradedStack, amount);
+		buyer.addItems(result);
 		seller.addCurrency(price);
 	}
 	

@@ -18,7 +18,7 @@ public class ExpirienceTransaction extends Transaction{
 	
 	@Override
 	public double getSellerAvailableItems() {
-		return seller.getAvailableItemFunds(tradedStack);
+		return seller.getAvailableItemFunds(tradedStack, itemMatcher);
 	}
 	
 	@Override
@@ -32,9 +32,9 @@ public class ExpirienceTransaction extends Transaction{
 	@Override
 	public void execute() {
 		buyer.removeExperience((int) price);
-		seller.removeItem(tradedStack, amount);
+		var result = seller.removeItem(tradedStack, amount, itemMatcher);
 		
-		buyer.addItem(tradedStack, amount);
+		buyer.addItems(result);
 		seller.addExperience((int) price);
 	}
 	

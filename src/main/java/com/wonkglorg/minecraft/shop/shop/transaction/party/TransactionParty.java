@@ -14,8 +14,12 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiPredicate;
 
 /**
  * A party in a transaction
@@ -42,9 +46,9 @@ public class TransactionParty{
 	 *
 	 * @param itemStack the currency item if {@link CurrencyType#ITEM}
 	 */
-	public double getAvailableFunds(ItemStack itemStack) {
+	public double getAvailableFunds(ItemStack itemStack, BiPredicate<ItemStack, ItemStack> matcher) {
 		return switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
-			case ITEM -> getAvailableItemFunds(itemStack);
+			case ITEM -> getAvailableItemFunds(itemStack, matcher);
 			case VAULT -> getAvailableVaultFunds();
 			case EXPERIENCE -> getAvailableExperienceFunds();
 		};
@@ -55,7 +59,7 @@ public class TransactionParty{
 	 */
 	public double getAvailableExperienceFunds() {
 		logger().debug("Checking available experience for party");
-		double experience = 0;
+		double experience;
 		if(player.getPlayer() != null){
 			logger().debug("Party is online taking their experience directly");
 			experience = getTotalExperience(player.getPlayer());
@@ -79,14 +83,14 @@ public class TransactionParty{
 	 *
 	 * @param itemStack the item used as funds
 	 */
-	public int getAvailableItemFunds(ItemStack itemStack) {
+	public int getAvailableItemFunds(ItemStack itemStack, BiPredicate<ItemStack, ItemStack> matcher) {
 		logger().debug("Checking available items for party");
 		int amount = 0;
 		for(var item : inventory){
 			if(item == null){
 				continue;
 			}
-			if(itemStack.isSimilar(item)){
+			if(matcher.test(itemStack, item)){
 				amount += item.getAmount();
 			}
 		}
@@ -188,12 +192,12 @@ public class TransactionParty{
 	public boolean canAcceptItemPayment(List<ItemStack> paymentStacks) {
 		Inventory virtualInventory = createVirtualInventory();
 		
-		for (ItemStack stack : paymentStacks) {
-			if (stack == null || stack.getAmount() <= 0) {
+		for(ItemStack stack : paymentStacks){
+			if(stack == null || stack.getAmount() <= 0){
 				continue;
 			}
 			
-			if (!virtualInventory.addItem(stack.clone()).isEmpty()) {
+			if(!virtualInventory.addItem(stack.clone()).isEmpty()){
 				return false;
 			}
 		}
@@ -267,9 +271,9 @@ public class TransactionParty{
 	 * @param stack the itemstack if item is defined
 	 * @param amount the amount to remove
 	 */
-	public void remove(ItemStack stack, double amount) {
+	public void remove(ItemStack stack, double amount, BiPredicate<ItemStack, ItemStack> matches) {
 		switch(ShopPlugin.getPlugin().getSettingsConfig().getCurrencyType()) {
-			case ITEM -> removeItem(stack, (int) amount);
+			case ITEM -> removeItem(stack, (int) amount, matches);
 			case VAULT -> removeCurrency(amount);
 			case EXPERIENCE -> removeExperience((int) amount);
 		}
@@ -297,16 +301,62 @@ public class TransactionParty{
 	}
 	
 	/**
+	 * Adds all the items from the provided removal result to the given inventory
+	 *
+	 * @param result the items to add
+	 * @return a map of all items that could not fit specified by {@link Inventory#addItem(ItemStack...)}
+	 */
+	public Map<Integer, ItemStack> addItems(ItemRemovalResult result) {
+		return addItems(inventory, result);
+	}
+	
+	/**
+	 * Adds all the items from the provided removal result to the given inventory
+	 *
+	 * @param inventory the inventory to add them to
+	 * @param result the items to add
+	 * @return a map of all items that could not fit specified by {@link Inventory#addItem(ItemStack...)}
+	 */
+	public static Map<Integer, ItemStack> addItems(Inventory inventory, ItemRemovalResult result) {
+		Map<Integer, ItemStack> leftovers = new HashMap<>();
+		
+		for(RemovedItem removed : result.removedItems()){
+			ItemStack stack = removed.stack().clone();
+			stack.setAmount(removed.amount());
+			
+			Map<Integer, ItemStack> overflow = inventory.addItem(stack);
+			
+			for(var entry : overflow.entrySet()){
+				leftovers.put(leftovers.size(), entry.getValue());
+			}
+		}
+		
+		return leftovers;
+	}
+	
+	/**
 	 * Removes items from the party
 	 *
 	 * @param itemStack the item to remove
 	 * @param amount how much of the item to remove
 	 * @return the amount of items that could not be removed
 	 */
-	public int removeItem(ItemStack itemStack, int amount) {
+	public ItemRemovalResult removeItem(ItemStack itemStack, int amount, BiPredicate<ItemStack, ItemStack> predicate) {
+		return removeItem(inventory, itemStack, amount, predicate);
+	}
+	
+	/**
+	 * Removes items from the given inventory
+	 *
+	 * @param inventory the inventory to remove the items from
+	 * @param itemStack the item to remove
+	 * @param amount how much of the item to remove
+	 * @return the amount of items that could not be removed
+	 */
+	public static ItemRemovalResult removeItem(Inventory inventory, ItemStack itemStack, int amount, BiPredicate<ItemStack, ItemStack> predicate) {
 		ItemStack clone = itemStack.clone();
 		clone.setAmount(amount);
-		return removeItemSmallestStacksFirst(inventory, clone, amount);
+		return removeItemSmallestStacksFirst(inventory, clone, amount, predicate);
 	}
 	
 	/**
@@ -317,9 +367,12 @@ public class TransactionParty{
 	 * @param amount the amount to remove
 	 * @return the amount of items that could not be removed
 	 */
-	public static int removeItemSmallestStacksFirst(@NotNull Inventory inventory, @NotNull ItemStack item, int amount) {
+	private static ItemRemovalResult removeItemSmallestStacksFirst(@NotNull Inventory inventory,
+																   @NotNull ItemStack item,
+																   int amount,
+																   @NotNull BiPredicate<ItemStack, ItemStack> predicate) {
 		if(amount <= 0){
-			return 0;
+			return new ItemRemovalResult(0, Collections.emptyList());
 		}
 		
 		List<Integer> matchingSlots = new ArrayList<>();
@@ -331,7 +384,7 @@ public class TransactionParty{
 				continue;
 			}
 			
-			if(stack.isSimilar(item)){
+			if(predicate.test(stack, item)){
 				matchingSlots.add(slot);
 			}
 		}
@@ -339,6 +392,7 @@ public class TransactionParty{
 		// Smallest stacks first.
 		matchingSlots.sort(Comparator.comparingInt(slot -> inventory.getItem(slot).getAmount()));
 		
+		List<RemovedItem> removedItems = new ArrayList<>();
 		int remaining = amount;
 		
 		for(int slot : matchingSlots){
@@ -349,6 +403,21 @@ public class TransactionParty{
 			ItemStack stack = inventory.getItem(slot);
 			
 			int removeAmount = Math.min(stack.getAmount(), remaining);
+			
+			// Create a single representative item.
+			ItemStack removed = stack.clone();
+			removed.setAmount(1);
+			
+			// Aggregate matching removed items.
+			RemovedItem existing = removedItems.stream().filter(r -> r.stack().isSimilar(removed)).findFirst().orElse(null);
+			
+			if(existing != null){
+				removedItems.remove(existing);
+				removedItems.add(new RemovedItem(existing.stack(), existing.amount() + removeAmount));
+			} else {
+				removedItems.add(new RemovedItem(removed, removeAmount));
+			}
+			
 			int newAmount = stack.getAmount() - removeAmount;
 			
 			if(newAmount <= 0){
@@ -360,7 +429,7 @@ public class TransactionParty{
 			remaining -= removeAmount;
 		}
 		
-		return remaining;
+		return new ItemRemovalResult(remaining, removedItems);
 	}
 	
 	public Inventory createVirtualInventory() {

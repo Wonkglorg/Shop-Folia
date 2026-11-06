@@ -1,11 +1,15 @@
 package com.wonkglorg.minecraft.shop.shop.transaction;
 
+import static com.wonkglorg.minecraft.shop.ShopPlugin.getPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.function.BiPredicate;
 
 @Slf4j
 public abstract class Transaction{
@@ -33,6 +37,11 @@ public abstract class Transaction{
 	 * The stack being traded
 	 */
 	protected final ItemStack tradedStack;
+	
+	/**
+	 * The matcher to use when comparing items equality
+	 */
+	protected final BiPredicate<ItemStack, ItemStack> itemMatcher;
 	
 	/**
 	 * The last evaluated result from {@link #canFulfill()}
@@ -69,6 +78,19 @@ public abstract class Transaction{
 		this.tradedStack = tradedStack;
 		this.buyerIsAdminShop = buyer instanceof ShopTransactionParty shopParty && shopParty.getShop().isAdmin();
 		this.sellerIsAdminShop = seller instanceof ShopTransactionParty shopParty && shopParty.getShop().isAdmin();
+		itemMatcher = getMatcherForItem(tradedStack.getType());
+	}
+	
+	/**
+	 * Gets the matcher associated with the provided material based on the definitions in {@link com.wonkglorg.minecraft.shop.config.ItemConfig}
+	 */
+	public static BiPredicate<ItemStack, ItemStack> getMatcherForItem(Material material) {
+		var components = getPlugin().getItemConfig().getExcludedDataComponentsForMaterial(material);
+		if(components.isEmpty()){
+			return ItemStack::isSimilar;
+		}
+		
+		return (base, comparing) -> base.matchesWithoutData(comparing, components, true);
 	}
 	
 	/**

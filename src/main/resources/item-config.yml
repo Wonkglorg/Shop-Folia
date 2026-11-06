@@ -28,6 +28,25 @@ currency-items:
         count: 1
         schema_version: 1
 
+# Components of an Itemstack that should be ignored when matching for equality in shop transactions based on the provided material
+# Full component list: https://minecraft.wiki/w/Data_component_format
+ignored-components:
+  tadpole_bucket:
+    - bucket_entity_data
+  cod_bucket:
+    - bucket_entity_data
+  salmon_bucket:
+    - bucket_entity_data
+  tropical_fish_bucket:
+    - bucket_entity_data
+    - tropical_fish/base_color
+    - tropical_fish/pattern
+    - tropical_fish/pattern_color
+  pufferfish_bucket:
+    - bucket_entity_data
+  sulfur_cube_bucket:
+    - bucket_entity_data
+    - sulfur_cube_content
 # Define any custom items here that should be usable by shop initialization commands alongside vanilla items, changes to these need a complete server restart to apply!
 # ==== SUPPORTS ====
 # Supports full item definitions via itemstack definition  as seen below in the examples or via a plugins namespace

@@ -750,14 +750,14 @@ public class ShopListener implements Listener{
 		PlayerTransactionParty party = new PlayerTransactionParty(player);
 		if(cost > 0){
 			// Check for funds
-			if(party.getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem()) < cost){
+			if(party.getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem(), ItemStack::isSimilar) < cost){
 				lang.request("interaction.issues.destroy.insufficient-funds").sendToAudience(player);
 				shopClientManager().updateShop(SignUpdateHandler.class, shop);
 				event.setCancelled(true);
 				return;
 			}
 			// Remove funds
-			party.remove(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem(), cost);
+			party.remove(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem(), cost, ItemStack::isSimilar);
 		}
 		
 		shopManager.getDatabase().logAction(player, shop, ShopActionType.DESTROY);
