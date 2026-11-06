@@ -16,7 +16,6 @@ import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import static com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty.createVirtualInventory;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -29,14 +28,6 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GambleShop extends AbstractShop{
-	/**
-	 * Used when the gamble shop has no insides
-	 */
-	public static final int DUMMY_AMOUNT = 999999;
-	/**
-	 * Used when no valid item is defined in the shop
-	 */
-	private static final ItemStack DEFAULT_EMPTY_ITEM = new ItemStack(Material.STONE);
 	
 	private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 	/**
