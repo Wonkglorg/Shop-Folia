@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowItem;
 import static net.kyori.adventure.text.event.HoverEvent.showItem;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemRarity;
@@ -88,8 +89,7 @@ public class ItemNameUtil{
 		if(item == null){
 			return null;
 		}
-		var dataComponents = ItemNBTUtils.getNMSItemStackDataComponents(item);
-		return showItem(item.getType().getKey(), 1, dataComponents);
+		return Bukkit.getItemFactory().asHoverEvent(item, hover -> hover);
 	}
 	
 	public static Component getEnchantmentTranslatable(Enchantment enchantment) {

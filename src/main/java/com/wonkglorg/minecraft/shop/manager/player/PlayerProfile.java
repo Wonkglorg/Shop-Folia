@@ -118,6 +118,13 @@ public abstract class PlayerProfile{
 	}
 	
 	/**
+	 * If the player is allowed to create admin shops
+	 */
+	public static boolean isAllowedToCreateAdminShop(Permissible player){
+		return isOperator(player);
+	}
+	
+	/**
 	 * If the user is allowed to create a shop of this type, this does NOT enforce shop build limit
 	 */
 	public static boolean isAllowedToCreateShop(Permissible player, ShopType type) {
@@ -167,6 +174,13 @@ public abstract class PlayerProfile{
 	}
 	
 	/**
+	 * If the user is allowed to open someone else's shop
+	 */
+	public static boolean isAllowedToOpenShopOther(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.open.other");
+	}
+	
+	/**
 	 * If the user is allowed to cycle shop displays of their own shops
 	 */
 	public static boolean isAllowedToCycleDisplay(Permissible player) {return isOperator(player) || player.hasPermission("shop.setdisplay");}
@@ -178,16 +192,48 @@ public abstract class PlayerProfile{
 		return isOperator(player) || player.hasPermission("shop.setdisplay.other");
 	}
 	
-	/**
-	 * If the user is allowed to cycle shop displays of their own shops
-	 */
-	public static boolean isAllowedToOpenShopSettings(Permissible player) {return isOperator(player) || player.hasPermission("shop.settings");}
 	
 	/**
-	 * If the user is allowed to cycle shop displays of other players shops
+	 * If the user is allowed to view their own shop transaction history
 	 */
-	public static boolean isAllowedToOpenShopSettingsOther(Permissible player) {
+	public static boolean isAllowedToViewShopTransactions(Permissible player) {return isOperator(player) || player.hasPermission("shop.transactions");}
+	
+	/**
+	 * If the user is allowed to view another players shop transaction history
+	 */
+	public static boolean isAllowedToViewShopTransactionsOther(Permissible player) {return isOperator(player) || player.hasPermission("shop.transactions.other");}
+	
+	/**
+	 * If the user is allowed to change the settings of their own shop
+	 */
+	public static boolean isAllowedToChangeSettings(Permissible player) {return isOperator(player) || player.hasPermission("shop.settings");}
+	
+	/**
+	 * If the user is allowed to change the settings of another players shop
+	 */
+	public static boolean isAllowedToChangeSettingsOther(Permissible player) {
 		return isOperator(player) || player.hasPermission("shop.settings.other");
+	}
+	
+	/**
+	 * If the user is allowed to change the list of banned players for their own shop
+	 */
+	public static boolean isAllowedToChangeShopBans(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.ban");
+	
+	}
+	/**
+	 * If the user is allowed to change the list of banned players for another player's shop
+	 */
+	public static boolean isAllowedToChangeShopBansOther(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.ban.other");
+	}
+	
+	/**
+	 * If the user is can bypass being banned from a shop
+	 */
+	public static boolean canBypassBan(Permissible player) {
+		return isOperator(player) || player.hasPermission("shop.ban.bypass");
 	}
 	
 	private static boolean hasActionPermission(String permissionBase, Permissible player) {
@@ -259,7 +305,7 @@ public abstract class PlayerProfile{
 			}
 			
 			// If it's a base build limit permission, parse the number
-			int value = 0;
+			int value;
 			try{
 				value = Integer.parseInt(perm.substring(perm.lastIndexOf(".") + 1));
 			} catch(NumberFormatException _){

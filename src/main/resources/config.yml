@@ -47,7 +47,7 @@ destroy-shop-requires-sneak: true
 show-offline-transactions-on-join: true
 
 # The amount of milliseconds to wait before another out of stock notification should be sent to the shop owner when option is toggled
-owner-out-of-stock-cooldown-time: 1000
+owner-out-of-stock-cooldown-time: 10000
 
 # The amount of time that needs to pass (in milliseconds)  before sending a grouped transaction notification to the owner of a shop if owner wants notifications (0 to disable)
 owner-transaction-grouping-time: 1000

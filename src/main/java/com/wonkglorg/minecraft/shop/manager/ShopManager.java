@@ -592,8 +592,8 @@ public class ShopManager{
 	/**
 	 * Count of all transactions that happened since this point
 	 */
-	public CompletableFuture<Map<UUID, Long>> getOfflineTransactions(UUID ownerId, long lastLogin) {
-		return database.getTransactionStatsSince(ownerId, lastLogin);
+	public CompletableFuture<Map<UUID, Long>> getOfflineTransactions(UUID ownerId) {
+		return database.getTransactionStatsSinceLastJoin(ownerId);
 	}
 	
 	public record BlockKey(UUID worldId, int x, int y, int z){

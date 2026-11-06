@@ -67,19 +67,40 @@ public class PlayerNameCache{
 	}
 	
 	/**
+	 * Gets the uuid from a specified name
+	 */
+	public static UUID getUUID(String name) {
+		if(name != null && name.isEmpty()){
+			return null;
+		}
+		for(var entry : cache.entrySet()){
+			if(entry.getValue().equalsIgnoreCase(name)){
+				return entry.getKey();
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * Caches a player name and switches off initial build mode
 	 *
 	 * @param uuid Player UUID
 	 * @param name Player name
 	 */
 	public static void cacheName(UUID uuid, String name) {
-		if(cache.containsKey(uuid)){
+		if(uuid == null || name == null || name.trim().isEmpty()){
 			return;
 		}
-		if(uuid != null && name != null && !name.trim().isEmpty()){
-			cache.put(uuid, name);
-			shopDatabase().addPlayer(uuid, name);
+		String cachedName = cache.get(uuid);
+		if(cachedName != null){
+			//name is still the same an exists
+			if(cachedName.equalsIgnoreCase(name)){
+				return;
+			}
 		}
+		
+		cache.put(uuid, name);
+		shopDatabase().addPlayer(uuid, name);
 	}
 	
 	/**

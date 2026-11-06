@@ -44,8 +44,23 @@ permissions:
   shop.destroy:
     description: Allows player to destroy their own shops.
     default: op
+  shop.destroy.sell:
+    description: Allows player to destroy their own sell shops.
+    default: op
+  shop.destroy.buy:
+    description: Allows player to destroy their own buy shops.
+    default: op
+  shop.destroy.barter:
+    description: Allows player to destroy their own barter shops.
+    default: op
+  shop.destroy.gamble:
+    description: Allows player to destroy their own gamble shops.
+    default: op
   shop.destroy.other:
     description: Allows player to destroy other player's shops.
+    default: op
+  shop.open.other:
+    description: Allows player to open another player's shop.
     default: op
   shop.buildlimit.#:
     description: Restricts the number of shops a player can create. For example shop.buildlimit.10 would limit players to creating 10 shops maximum. If multiple buildlimit permissions exist, ONLY the highest will be used.
@@ -60,14 +75,31 @@ permissions:
     description: Allows player to set the display type on other shops (allows shop display cycling, see actionMappings in config.yml).
     default: op
   shop.settings:
-    description: Allows player to change settings of their shop (allows shop display cycling, see actionMappings in config.yml).
+    description: Allows player to change settings of their shop.
     default: op
   shop.settings.other:
-    description: Allows player to change settings on other shops (allows shop display cycling, see actionMappings in config.yml).
+    description: Allows player to change settings on other shops
     default: op
-  shop.user:
-    description: Allows users to access the /shop command with basic access to informational commands
+  shop.transactions:
+    description: Allows player to see their shops transaction history
     default: op
+  shop.transactions.other:
+    description: Allows player to see another players shops transaction history
+    default: op
+  shop.ban:
+    description: Allows player to modify their shops ban list to prevent players from using their shop
+    default: op
+  shop.ban.other:
+    description: Allows player to modify other player's shop ban list
+    default: op
+  shop.ban.bypass:
+    description: Allows player to bypass being banned from the shop
+    default: op
+  shop.command:
+    description: Allows access the /shop command with basic access to informational commands
+    default: op
+  shop.lookup:
+    description: Allows access to /shop lookup command to
   shop.operator:
     description: Allows access to operator actions like setting currency, setting the gamble item, reloading configs, creating gamble/admin shops, etc.
     default: op

@@ -10,6 +10,13 @@ import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getShopBuildLimit;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.DIMENSION_BLACKLIST;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.INSUFFICIENT_FUNDS;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.LACKS_ADMIN_CREATION_PERMISSION;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.LACKS_CREATION_PERMISSION;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.NO_DATA;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.SHOP_LIMIT_REACHED;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.SUCCESS;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +26,7 @@ import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
@@ -68,6 +76,7 @@ public abstract class ShopCreationProcess{
 	/**
 	 * The shop is an admin shop
 	 */
+	@Getter
 	protected boolean adminShop = false;
 	/**
 	 * If the shop was created via a method that required no sign
@@ -85,7 +94,12 @@ public abstract class ShopCreationProcess{
 	@Getter
 	protected boolean isCancelled;
 	
-	protected ShopCreationProcess(Player player, Sign sign, Block container, BlockFace signDirection) {
+	/**
+	 * If the data has been read in by the inheriting child class
+	 */
+	protected boolean hasData = false;
+	
+	protected ShopCreationProcess(@NotNull Player player, @NotNull Sign sign, @NotNull Block container, @NotNull BlockFace signDirection) {
 		this.player = player;
 		this.playerUUID = player.getUniqueId();
 		this.shopId = UUID.randomUUID();
@@ -117,45 +131,49 @@ public abstract class ShopCreationProcess{
 	}
 	
 	/**
-	 * Verifies to see if a player has all things needed to create a potential shop <br>!!NOTE!!<br> this does not replace the other checks needed to preverify if a shop is even valid to be placed there or if a shop is already being created by the user. refer to {@link com.wonkglorg.minecraft.shop.listener.ShopListener#onShopCreation(SignChangeEvent)}
+	 * Verifies if the shop creation process can be completed based on the provided data, this does not verify the data up to the creation of this object previously relevant data needs to be verified before this object was created example in {@link com.wonkglorg.minecraft.shop.listener.ShopListener#onShopCreation(SignChangeEvent)}
 	 */
-	public boolean canPlayerFulfillsCreationRequirements() {
+	public CreationValidationResult validateProcess() {
+		if(!hasData){
+			logger().debug("Player can't fulfill creation requirements");
+			return NO_DATA;
+		}
 		if(playerIsOperator){
 			logger().debug("Player is op, skipping creation check");
-			return true;
+			return SUCCESS;
 		}
+		
+		if(adminShop && !PlayerProfile.isAllowedToCreateAdminShop(player)){
+			logger().debug("Player tried building an admin shop but lacks permission to do so");
+			return LACKS_ADMIN_CREATION_PERMISSION;
+		}
+		
 		if(!isAllowedInDimension()){
 			logger().debug("Dimension check failed");
-			lang.request("interaction.issues.create.world-blacklist").sendToAudience(player);
-			return false;
+			return DIMENSION_BLACKLIST;
 		}
 		
 		//no create permissions for any shop
-		if(!PlayerProfile.isAllowedToCreateShop(player)){
-			logger().debug("Player lacks permission to create shop of this type");
-			lang.request("permission.error.create").sendToAudience(player);
-			return false;
+		if(!PlayerProfile.isAllowedToCreateShop(player, type)){
+			logger().debug("Player lacks permission to create shop of type " + type);
+			return LACKS_CREATION_PERMISSION;
 		}
 		
 		int numberOfShops = shopManager.getNumberOfShops(player.getUniqueId());
 		int buildPermissionNumber = getShopBuildLimit(player);
 		if(numberOfShops >= buildPermissionNumber){
-			logger().debug("Player exceeds shop build limit");
-			lang.request("permission.error.buildLimit")
-				.replace("%user-amount%", numberOfShops)
-				.replace("%build-limit%", buildPermissionNumber)
-				.sendToAudience(player);
-			return false;
+			logger().debug("Player exceeds shop build limit has %s out of allowed %s".formatted(numberOfShops, buildPermissionNumber));
+			return SHOP_LIMIT_REACHED;
 		}
 		
 		//if players must pay to create shops, check that they have enough money first
 		double cost = ShopPlugin.getPlugin().getSettingsConfig().getCreationCost();
 		if(cost > 0 && new PlayerTransactionParty(player).getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem()) < cost){
 			logger().debug("Player lacks funds to cover create shop costs");
-			lang.request("interaction.issues.create.insufficient-funds").sendToAudience(player);
-			return false;
+			return INSUFFICIENT_FUNDS;
 		}
-		return true;
+		
+		return SUCCESS;
 	}
 	
 	/**
@@ -198,13 +216,5 @@ public abstract class ShopCreationProcess{
 		shop.updateSign();
 		finishedInitialisation = true;
 		return shop;
-	}
-	
-	protected boolean isAllowedToCreateShop() {
-		if(!PlayerProfile.isAllowedToCreateShop(player, type)){
-			lang.request("permission.error.create-type").replace("%shop-type%", type.toString()).sendToAudience(player);
-			return false;
-		}
-		return true;
 	}
 }

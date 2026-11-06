@@ -16,12 +16,14 @@ import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShop;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToOpenShopOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.ShopState;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
+import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResult.SUCCESS;
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
@@ -135,16 +137,26 @@ public class ShopListener implements Listener{
 		}
 		
 		final SignCreationProcess process = new SignCreationProcess(player, sign, chest, signDirection);
-		
-		//do some checks with the provided data to verify the player has all required things to create a shop here
-		if(!process.canPlayerFulfillsCreationRequirements()){
-			logger.debug("Player can't fulfill creation requirements");
+		if(!process.readSignLines(event.lines())){
+			logger.debug("Error reading sign lines");
 			logger.debug("====SHOP CREATION CANCEL====");
 			return;
 		}
 		
-		if(!process.readSignLines(event.lines())){
-			logger.debug("Error reading sign lines");
+		var result = process.validateProcess();
+		
+		if(result != SUCCESS){
+			switch(result) {
+				case NO_DATA -> {
+				
+				}
+				case DIMENSION_BLACKLIST -> lang.request("interaction.issues.create.world-blacklist").sendToAudience(player);
+				case LACKS_CREATION_PERMISSION -> lang.request("permission.error.create-type")
+													  .replace("%shop-type%", process.getType().toString())
+													  .sendToAudience(player);
+				case SHOP_LIMIT_REACHED -> lang.request("permission.error.buildLimit").sendToAudience(player);
+				case INSUFFICIENT_FUNDS -> lang.request("interaction.issues.create.insufficient-funds").sendToAudience(player);
+			}
 			logger.debug("====SHOP CREATION CANCEL====");
 			return;
 		}
@@ -376,7 +388,7 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
-		if(isOperator(player)){
+		if(isAllowedToOpenShopOther(player)){
 			if(!shop.isAdmin()){
 				lang.request("interaction.success." + shop.getType() + ".open-other").replace("%owner%", shop.getOwner().getName()).sendToAudience(
 						player);
@@ -449,7 +461,7 @@ public class ShopListener implements Listener{
 	}
 	
 	private void sendOfflineTransaction(Player player) {
-		shopManager.getOfflineTransactions(player.getUniqueId(), player.getLastLogin()).thenAccept(transactions -> {
+		shopManager.getOfflineTransactions(player.getUniqueId()).thenAccept(transactions -> {
 			
 			if(transactions.isEmpty()){
 				return;
@@ -514,6 +526,7 @@ public class ShopListener implements Listener{
 		Player player = event.getPlayer();
 		PlayerManager.removeProfile(player);
 		shopManager.getShopClientManager().handlePlayerQuit(player);
+		shopManager.getDatabase().setPlayerLastSeen(player.getUniqueId(), System.currentTimeMillis());
 	}
 	
 	@EventHandler

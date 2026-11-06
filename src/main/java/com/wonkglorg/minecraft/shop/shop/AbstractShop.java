@@ -22,10 +22,10 @@ import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler.getComponents;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToChangeSettings;
+import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToChangeSettingsOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplay;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplayOther;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToOpenShopSettings;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToOpenShopSettingsOther;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.display.AbstractDisplay;
 import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
@@ -79,10 +79,13 @@ import static java.lang.Boolean.TRUE;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import static java.util.Objects.requireNonNull;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -207,6 +210,12 @@ public abstract class AbstractShop{
 	 * Custom settings this shop has defined.
 	 */
 	private final Map<Setting<?>, Object> settings = new ConcurrentHashMap<>();
+	
+	/**
+	 * The UUID of every user that is banned from using this shop
+	 */
+	@Getter
+	private final Set<UUID> bannedPlayers = new HashSet<>();
 	/**
 	 * If the sign used for creation was spawned by the plugin or not, used to determine if the sign drops when the shop is destroyed
 	 */
@@ -599,7 +608,10 @@ public abstract class AbstractShop{
 	 *
 	 * @param profile the profile of te player
 	 */
-	public ShopStateClient getClientShopState(PlayerProfile profile) {
+	public ShopStateClient getClientShopState(OnlinePlayerProfile profile) {
+		if(bannedPlayers.contains(profile.getUuid()) && !profile.canBypassShopBan()){
+			return ShopStateClient.BANNED;
+		}
 		if(remainingTradesBeforeLimitReached(profile) <= 0){
 			return ShopStateClient.LIMIT_REACHED;
 		}
@@ -637,14 +649,63 @@ public abstract class AbstractShop{
 	}
 	
 	/**
+	 * Disallows the player from transacting with this shop
+	 */
+	public void addPlayerBan(UUID player) {
+		if(bannedPlayers.add(player)){
+			needsSave = true;
+			Player onlinePlayer = Bukkit.getPlayer(player);
+			if(onlinePlayer != null){
+				//force a shop state update for the client if online
+				shopClientManager().updateShop(onlinePlayer, this);
+			}
+		}
+	}
+	
+	/**
+	 * Removes the ban from the player from transacting with this shop
+	 */
+	public void removePlayerBan(UUID player) {
+		if(bannedPlayers.remove(player)){
+			needsSave = true;
+			Player onlinePlayer = Bukkit.getPlayer(player);
+			if(onlinePlayer != null){
+				//force a shop state update for the client if online
+				shopClientManager().updateShop(onlinePlayer, this);
+			}
+		}
+	}
+	
+	/**
+	 * !!INTERNAL USE ONLY!! To change the list use {@link #addPlayerBan(UUID)} or {@link #removePlayerBan(UUID)}
+	 *
+	 * @param players the player bans to set for this shop (overrides the existing list)
+	 */
+	@Internal
+	public void initializePlayerBans(Collection<UUID> players) {
+		this.bannedPlayers.clear();
+		if(!players.isEmpty()){
+			this.bannedPlayers.addAll(players);
+		}
+	}
+	
+	/**
 	 * Prints Shop info about the shop to the player in chat
 	 */
 	public void printSalesInfo(Player player) {
-		if((player.getUniqueId().equals(owner) || PlayerProfile.isOperator(player)) && getPlugin().getSettingsConfig().isPrintHistoryWithShopInfo()){
+		LangRequest request = langManager().request("description." + this.getType() + ".info");
+		shopPlaceholders(request, this, true, player);
+		request.sendToAudience(player);
+		if(getPlugin().getSettingsConfig().isPrintHistoryWithShopInfo()){
+			if(!player.getUniqueId().equals(getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactionsOther(player)){
+				return;
+			}
+			
+			if(player.getUniqueId().equals(getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactions(player)){
+				return;
+			}
+			
 			shopDatabase().getTransactionStats(this).thenAccept(s -> {
-				LangRequest request = langManager().request("description." + this.getType() + ".info");
-				shopPlaceholders(request, this, true, player);
-				request.sendToAudience(player);
 				LangRequest statRequest = langManager().request("description." + this.getType() + ".stats");
 				shopPlaceholders(statRequest, this, true, player);
 				statRequest.replace("%1-day%", s.day1());
@@ -653,10 +714,6 @@ public abstract class AbstractShop{
 				statRequest.replace("%total%", s.allTime());
 				statRequest.sendToAudience(player);
 			});
-		} else {
-			LangRequest request = langManager().request("description." + this.getType() + ".info");
-			shopPlaceholders(request, this, true, player);
-			request.sendToAudience(player);
 		}
 	}
 	
@@ -864,7 +921,7 @@ public abstract class AbstractShop{
 	 * @return the result of the transaction and how often the trade happened if successful
 	 */
 	@Internal
-	private @NotNull Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
+	protected @NotNull Pair<TransactionResult, Integer> executeTransaction(TransactionParty party, boolean requestFullstack) {
 		if(isPerformingTransaction){
 			return of(TransactionResult.SHOP_IS_PERFORMING_TRANSACTION, 0);
 		}
@@ -873,9 +930,13 @@ public abstract class AbstractShop{
 		logger.debug("====STARTING SHOP TRANSACTION====");
 		
 		OfflinePlayer player = party.getPlayer();
-		PlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
+		OnlinePlayerProfile profile = PlayerManager.getOnlineProfileIfCached(player.getUniqueId());
 		int maxTradesPossible = 9999;
 		if(profile != null){
+			if(bannedPlayers.contains(player.getUniqueId()) && !profile.canBypassShopBan()){
+				return of(TransactionResult.BANNED, 0);
+			}
+			
 			maxTradesPossible = remainingTradesBeforeLimitReached(profile);
 			if(maxTradesPossible <= 0){
 				logger.debug("Party reached trading limit with shop");
@@ -1093,12 +1154,12 @@ public abstract class AbstractShop{
 				//player clicked another player's shop sign
 				if(!this.getOwnerUUID().equals(player.getUniqueId())){
 					//player has permission to change another player's shop display
-					if((isAllowedToOpenShopSettingsOther(player))){
+					if((isAllowedToChangeSettingsOther(player))){
 						logger().debug("Open settings Dialog for player " + player.getName());
 						openDialog(player, this);
 					}
 				} else {
-					if(isAllowedToOpenShopSettings(player)){
+					if(isAllowedToChangeSettings(player)){
 						logger().debug("Open settings Dialog for player " + player.getName());
 						openDialog(player, this);
 					}
@@ -1224,7 +1285,7 @@ public abstract class AbstractShop{
 	 * @param player the player viewing the shop
 	 * @return constructed component list with a lnegth of 4 entries
 	 */
-	public List<Component> getSignLines(PlayerProfile player) {
+	public List<Component> getSignLines(OnlinePlayerProfile player) {
 		String langKey = "sign.text." + type.toString().toLowerCase() + ".";
 		langKey += switch(getClientShopState(player)) {
 			case ShopStateClient.OK -> "in-stock";
@@ -1232,6 +1293,7 @@ public abstract class AbstractShop{
 			case ShopStateClient.ON_COOLDOWN -> "transaction-cooldown";
 			case ShopStateClient.LIMIT_REACHED -> "transaction-limit";
 			case ShopStateClient.EMPTY -> "out-of-stock";
+			case BANNED -> "banned";
 		};
 		
 		DisplayType displayType = display.getType();

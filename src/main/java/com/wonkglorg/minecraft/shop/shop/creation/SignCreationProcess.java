@@ -24,7 +24,6 @@ import java.util.List;
 public class SignCreationProcess extends ShopCreationProcess{
 	public SignCreationProcess(Player player, Sign sign, Block container, BlockFace signDirection) {
 		super(player, sign, container, signDirection);
-		isFakeSign = false;
 	}
 	
 	/**
@@ -73,11 +72,7 @@ public class SignCreationProcess extends ShopCreationProcess{
 		}
 		
 		adminShop = match.admin();
-		if(!isAllowedToCreateShop()){
-			logger().debug("Player is not allowed to create a shop of this type!");
-			return false;
-		}
-		
+		hasData = true;
 		return true;
 	}
 	

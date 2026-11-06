@@ -4,7 +4,7 @@ import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
-import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
+import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopStateClient;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
@@ -80,7 +80,7 @@ public class SignUpdateHandler implements ShopClientListener{
 		}
 		
 		UUID playerId = player.getUniqueId();
-		PlayerProfile profile = PlayerManager.getOnlineProfileIfCached(playerId);
+		OnlinePlayerProfile profile = PlayerManager.getOnlineProfileIfCached(playerId);
 		
 		if(profile == null){
 			return;

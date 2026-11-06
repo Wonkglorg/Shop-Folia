@@ -4,8 +4,10 @@ import com.tcoded.folialib.impl.PlatformScheduler;
 import com.wonkglorg.database.DatabaseType;
 import com.wonkglorg.database.databases.SqliteDatabase;
 import com.wonkglorg.database.datasources.FileDataSource;
+import com.wonkglorg.minecraft.command.paged.PageResult;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand.ShopHistoryAction;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB.ShopHistoryEntry;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
@@ -16,6 +18,8 @@ import com.wonkglorg.minecraft.shop.shop.settings.Setting;
 import static com.wonkglorg.minecraft.shop.shop.settings.Settings.ALL_SETTINGS;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
+import com.wonkglorg.minecraft.util.date.DateType;
+import com.wonkglorg.minecraft.util.date.DurationBuilder;
 import static net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -23,6 +27,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -30,13 +35,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +62,12 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			  FROM shops
 			 WHERE destroy_time = 0 OR 1 = ?
 			 ORDER BY creation_time DESC
+			""";
+	
+	private static final String SHOP_BANNED_PLAYERS_SQL = """
+			SELECT player_uuid
+			  FROM shop_bans
+			 WHERE shop_uuid = ?
 			""";
 	
 	private static final String SHOP_CACHE_STOCK_SQL = """
@@ -126,6 +139,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		initDB();
 		addPlayer(AdminOfflinePlayer.getAdminUUID(), "admin");
 		dropColumnIfExists(this.getConnection(), "transactions", "cache_offline");
+		addColumnIfMissing(this.getConnection(), "players", "last_online", "INTEGER");
 	}
 	
 	public void initDB() throws SQLException, IOException {
@@ -188,10 +202,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 						facing = BlockFace.EAST;
 					}
 					ps.setString(9, facing.toString().toUpperCase());
-					ps.setString(10,
-							(shop.getDisplay() != null && shop.getDisplay().getType() != null)
-							? shop.getDisplay().getType().toString()
-							: DisplayType.NONE.toString());
+					ps.setString(10, shop.getDisplay().getType() != null ? shop.getDisplay().getType().toString() : DisplayType.NONE.toString());
 					ps.setInt(11, shop.isFakeSign() ? 1 : 0);
 					ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
 					ps.setLong(13, shop.getCreationDate());
@@ -238,6 +249,27 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		if(exists){
 			try(var statement = connection.createStatement()){
 				statement.executeUpdate("ALTER TABLE " + table + " DROP COLUMN " + column);
+			}
+		}
+	}
+	
+	private void addColumnIfMissing(Connection connection, String table, String column, String definition) throws SQLException {
+		
+		boolean exists = false;
+		
+		try(var statement = connection.createStatement(); var result = statement.executeQuery("PRAGMA table_info(" + table + ")")){
+			
+			while(result.next()){
+				if(column.equals(result.getString("name"))){
+					exists = true;
+					break;
+				}
+			}
+		}
+		
+		if(!exists){
+			try(var statement = connection.createStatement()){
+				statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
 			}
 		}
 	}
@@ -298,6 +330,80 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		}
 	}
 	
+	private Set<UUID> getBannedPlayersForShop(UUID shopId) {
+		try(var statement = getConnection().prepareStatement(SHOP_BANNED_PLAYERS_SQL)){
+			Set<UUID> bannedPlayers = new HashSet<>();
+			statement.setString(1, String.valueOf(shopId));
+			ResultSet resultSet = statement.executeQuery();
+			while(resultSet.next()){
+				bannedPlayers.add(UUID.fromString(resultSet.getString(1)));
+			}
+			return bannedPlayers;
+		} catch(Exception e){
+			logger.severe("Unable to load player shop bans " + e.getMessage());
+			return Set.of();
+		}
+	}
+	
+	/**
+	 * Saves the provided set to the database (deletes any entries no longer present from the db)
+	 */
+	private void saveBannedPlayersForShop(UUID shopId, Set<UUID> bannedPlayers) {
+		Set<UUID> existing = getBannedPlayersForShop(shopId);
+		
+		Set<UUID> toRemove = new HashSet<>(existing);
+		toRemove.removeAll(bannedPlayers);
+		
+		Set<UUID> toAdd = new HashSet<>(bannedPlayers);
+		toAdd.removeAll(existing);
+		
+		String deleteSql = """
+				DELETE FROM shop_bans
+				WHERE shop_uuid = ? AND player_uuid = ?
+				""";
+		
+		String insertSql = """
+				INSERT OR IGNORE INTO shop_bans (shop_uuid, player_uuid)
+				VALUES (?, ?)
+				""";
+		
+		try(var connection = getConnection()){
+			connection.setAutoCommit(false);
+			
+			try{
+				// Remove obsolete bans
+				try(var statement = connection.prepareStatement(deleteSql)){
+					for(UUID playerId : toRemove){
+						statement.setString(1, shopId.toString());
+						statement.setString(2, playerId.toString());
+						statement.addBatch();
+					}
+					statement.executeBatch();
+				}
+				
+				// Add missing bans
+				try(var statement = connection.prepareStatement(insertSql)){
+					for(UUID playerId : toAdd){
+						statement.setString(1, shopId.toString());
+						statement.setString(2, playerId.toString());
+						statement.addBatch();
+					}
+					statement.executeBatch();
+				}
+				
+				connection.commit();
+			} catch(Exception e){
+				connection.rollback();
+				throw e;
+			} finally{
+				connection.setAutoCommit(true);
+			}
+			
+		} catch(Exception e){
+			logger.severe("Unable to save player shop bans " + e.getMessage());
+		}
+	}
+	
 	private AbstractShop buildShop(ResultSet set) throws SQLException {
 		UUID id = UUID.fromString(set.getString("shop_uuid"));
 		UUID ownerId = UUID.fromString(set.getString("owner_uuid"));
@@ -347,13 +453,16 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				shop.initializeSetting(setting, setting.parse(resultSet.getString("value")));
 			}
 		}
-		
+		shop.initializePlayerBans(getBannedPlayersForShop(id));
 		return shop;
 	}
 	
 	private void insertShopValues(AbstractShop shop, PreparedStatement ps) throws SQLException {
-		ItemStack mainStack = shop.getItemStack().clone();
-		mainStack.setAmount(1);
+		ItemStack mainStack = shop.getItemStack();
+		if(mainStack != null){
+			mainStack.setAmount(1);
+		}
+		
 		ItemStack barterStack = shop.getSecondaryItemStack();
 		if(barterStack != null){
 			barterStack = barterStack.clone();
@@ -377,7 +486,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setInt(11, shop.isFakeSign() ? 1 : 0);
 		ps.setString(12, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
 		ps.setLong(13, shop.getCreationDate());
-		ps.setString(14, mainStack.getType().toString().toUpperCase());
+		ps.setString(14, mainStack != null ? mainStack.getType().toString().toUpperCase() : null);
 		ps.setString(15, barterStack != null ? barterStack.getType().toString().toUpperCase() : null);
 		ps.setString(16, signLocation.getWorld().getName());
 		ps.setInt(17, signLocation.getBlockX());
@@ -511,7 +620,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		scheduler.runAsync(_ -> {
 			try(var preparedStatement = getConnection().prepareStatement("""
 					INSERT INTO transactions(shop_uuid, timestamp, purchaser_uuid,gamble_reward, transaction_count) VALUES (?,?,?,?,?)
-					""");){//SQLITE auto increments primary keys, message here is false!
+					""")){//SQLITE auto increments primary keys, message here is false!
 				preparedStatement.setString(1, shopId.toString());
 				preparedStatement.setLong(2, timestamp);
 				preparedStatement.setString(3, purchaserId.toString());
@@ -658,8 +767,8 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		scheduler.runAsync(_ -> {
 			// Connect to datasource & create statement in "try" to handle automatically closing the connection!
 			try(Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(
-					"INSERT INTO shop_actions(timestamp, player_uuid, shop_uuid, player_action) VALUES(?,  ?, ?, ?);");){
-				stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+					"INSERT INTO shop_actions(timestamp, player_uuid, shop_uuid, player_action) VALUES(?,  ?, ?, ?);")){
+				stmt.setLong(1, System.currentTimeMillis());
 				stmt.setString(2, player.getUniqueId().toString());
 				stmt.setString(3, shopUuid.toString());
 				stmt.setString(4, actionType.toString());
@@ -763,11 +872,16 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		} catch(SQLException e){
 			logger().error("Error while batch updating shops", e);
 		}
+		for(var shop : shops){
+			saveBannedPlayersForShop(shop.getId(), shop.getBannedPlayers());
+		}
 	}
 	
 	private void updateShopValues(AbstractShop shop, PreparedStatement ps) throws SQLException {
-		ItemStack mainStack = shop.getItemStack().clone();
-		mainStack.setAmount(1);
+		ItemStack mainStack = shop.getItemStack();
+		if(mainStack != null){
+			mainStack.setAmount(1);
+		}
 		
 		ItemStack barterStack = shop.getSecondaryItemStack();
 		if(barterStack != null){
@@ -787,7 +901,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		ps.setString(8, shop.getDisplay().getType() != null ? shop.getDisplay().getType().toString().toUpperCase() : DisplayType.NONE.toString());
 		ps.setInt(9, shop.isFakeSign() ? 1 : 0);
 		ps.setString(10, barterStack != null ? ItemStackJsonCodec.serialize(barterStack, true) : null);
-		ps.setString(11, mainStack.getType().toString().toUpperCase());
+		ps.setString(11, mainStack != null ? mainStack.getType().toString().toUpperCase() : null);
 		ps.setString(12, barterStack != null ? barterStack.getType().toString().toUpperCase() : null);
 		ps.setString(13, signLocation.getWorld().getName());
 		ps.setInt(14, signLocation.getBlockX());
@@ -875,20 +989,36 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	 * Returns aggregated transaction statistics per unique shop ID
 	 * for all transactions newer than the given timestamp.
 	 *
-	 * @param since timestamp in milliseconds
 	 * @return statistics grouped by shop UUID
 	 */
-	public CompletableFuture<Map<UUID, Long>> getTransactionStatsSince(UUID ownerId, long since) {
+	public CompletableFuture<Map<UUID, Long>> getTransactionStatsSinceLastJoin(UUID ownerId) {
 		
 		CompletableFuture<Map<UUID, Long>> future = new CompletableFuture<>();
 		
 		scheduler.runAsync(_ -> {
 			Map<UUID, Long> stats = new HashMap<>();
+			long lastSeen = 0;
+			
+			try(var ps = getConnection().prepareStatement("""
+					SELECT last_online
+					FROM players t
+					WHERE t.uuid = ?
+					""")){
+				ps.setString(1, ownerId.toString());
+				ResultSet rs = ps.executeQuery();
+				lastSeen = rs.getLong("last_online");
+			} catch(Exception e){
+				lastSeen = 0;
+			}
+			
+			if(lastSeen == 0){
+				return;
+			}
 			
 			try(var ps = getConnection().prepareStatement(TRANSACTION_STATS_SINCE_SQL)){
 				
 				ps.setString(1, ownerId.toString());
-				ps.setLong(2, since);
+				ps.setLong(2, lastSeen);
 				
 				try(var rs = ps.executeQuery()){
 					while(rs.next()){
@@ -910,5 +1040,271 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		return future;
 	}
 	
+	/**
+	 * Requests a history lookup with the given parameters
+	 */
+	public CompletableFuture<PageResult<ShopHistoryData>> getHistory(UUID userId,
+																	 UUID transactorId,
+																	 UUID ownerId,
+																	 Location location,
+																	 Integer radius,
+																	 ShopHistoryAction action,
+																	 Long after,
+																	 Long before,
+																	 long requestTime,
+																	 int pageSize,
+																	 int page) {
+		var future = new CompletableFuture<PageResult<ShopHistoryData>>();
+		//todo find out why create destroy and init aren't showing up properly, make clicking on the entry teleport you there directly
+		scheduler.runAsync(task -> {
+			List<ShopHistoryData> results = new ArrayList<>();
+			
+			if(page < 0){
+				future.completeExceptionally(new IllegalArgumentException("Page cannot be negative"));
+				return;
+			}
+			
+			int offset;
+			
+			try{
+				offset = Math.multiplyExact(page, pageSize);
+			} catch(ArithmeticException e){
+				future.completeExceptionally(e);
+				return;
+			}
+			
+			boolean useRadius = radius != null && location != null && location.getWorld() != null;
+			
+			String world = useRadius ? location.getWorld().getName() : null;
+			
+			double x = useRadius ? location.getX() : 0;
+			double z = useRadius ? location.getZ() : 0;
+			
+			String userUuid = userId != null ? userId.toString() : null;
+			
+			String ownerUuid = ownerId != null ? ownerId.toString() : null;
+			
+			String transactorUuid = transactorId != null ? transactorId.toString() : null;
+			
+			String actionName = action != null ? action.name() : null;
+			
+			StringBuilder where = new StringBuilder();
+			List<Object> parameters = new ArrayList<>();
+			where.append("timestamp <= ?");
+			parameters.add(requestTime);
+			
+			if(after != null){
+				where.append(" AND timestamp >= ?");
+				parameters.add(after);
+			}
+			
+			if(before != null){
+				where.append(" AND timestamp <= ?");
+				parameters.add(before);
+			}
+			
+			/*
+			 * Matches:
+			 * - transaction purchaser
+			 * - action performer
+			 * - shop owner
+			 */
+			if(userUuid != null){
+				where.append("""
+						AND (
+						    player_uuid = ?
+						    OR owner_uuid = ?
+						)
+						""");
+				
+				parameters.add(userUuid);
+				parameters.add(userUuid);
+			}
+			
+			if(ownerUuid != null){
+				where.append(" AND owner_uuid = ?");
+				parameters.add(ownerUuid);
+			}
+			
+			if(transactorUuid != null){
+				where.append(" AND transactor_uuid = ?");
+				parameters.add(transactorUuid);
+			}
+			
+			if(useRadius){
+				where.append("""
+						AND world_name = ?
+						AND (
+						    (x - ?) * (x - ?)
+						    + (z - ?) * (z - ?)
+						) <= (? * ?)
+						""");
+				
+				parameters.add(world);
+				parameters.add(x);
+				parameters.add(x);
+				parameters.add(z);
+				parameters.add(z);
+				parameters.add(radius);
+				parameters.add(radius);
+			}
+			
+			if(actionName != null){
+				where.append(" AND action = ?");
+				parameters.add(actionName);
+			}
+			
+			String sql = """
+								 SELECT
+								     source_type,
+								     timestamp,
+								     action,
+								     player_uuid,
+								     player_name,
+								     shop_uuid,
+								     owner_uuid,
+								     owner_name,
+								     item,
+								     secondary_item,
+								     price,
+								     amount,
+								     transaction_count,
+								     gamble_reward,
+								     world_name,
+								     x,
+								     y,
+								     z
+								 FROM shop_history
+								 WHERE
+								 """ + where + """
+								 ORDER BY timestamp DESC, source_type ASC
+								 LIMIT ? OFFSET ?
+								 """;
+			
+			try(Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(sql)){
+				int i = 1;
+				
+				for(Object parameter : parameters){
+					ps.setObject(i++, parameter);
+				}
+				
+				ps.setInt(i++, pageSize + 1);
+				ps.setInt(i, offset);
+				try(ResultSet rs = ps.executeQuery()){
+					while(rs.next()){
+						
+						String playerUuidString = rs.getString("player_uuid");
+						
+						String shopUuidString = rs.getString("shop_uuid");
+						
+						String ownerUuidString = rs.getString("owner_uuid");
+						
+						UUID playerUuid = UUID.fromString(playerUuidString);
+						
+						UUID shopUuid = UUID.fromString(shopUuidString);
+						
+						UUID resultOwnerUuid = ownerUuidString != null ? UUID.fromString(ownerUuidString) : null;
+						
+						ShopHistoryAction historyAction = parseAction(rs.getString("action"));
+						
+						results.add(new ShopHistoryData(historyAction, rs.getLong("timestamp"),
+								
+								playerUuid, rs.getString("player_name"),
+								
+								shopUuid,
+								
+								resultOwnerUuid, rs.getString("owner_name"),
+								
+								ItemStackJsonCodec.deserialize(rs.getString("item")),
+								
+								rs.getString("secondary_item") != null ? ItemStackJsonCodec.deserialize(rs.getString("secondary_item")) : null,
+								
+								rs.getDouble("price"), rs.getInt("amount"), rs.getInt("transaction_count"),
+								
+								rs.getString("gamble_reward") != null ? ItemStackJsonCodec.deserialize(rs.getString("gamble_reward")) : null,
+								
+								rs.getString("world_name"), rs.getInt("x"), rs.getInt("y"), rs.getInt("z")));
+					}
+				}
+				
+			} catch(SQLException e){
+				logger().error("Error while fetching shop history", e);
+				
+				future.completeExceptionally(e);
+				return;
+			}
+			
+			boolean hasNext = results.size() > pageSize;
+			
+			if(hasNext){
+				results.removeLast();
+			}
+			
+			future.complete(new PageResult<>(results, hasNext));
+		});
+		
+		return future;
+	}
+	
+	private ShopHistoryAction parseAction(String value) {
+		if(value == null){
+			return null;
+		}
+		
+		try{
+			return ShopHistoryAction.valueOf(value.toUpperCase());
+		} catch(IllegalArgumentException _){
+			return null;
+		}
+	}
+	
+	public void setPlayerLastSeen(@NotNull UUID playerId, long lastSeen) {
+		scheduler.runAsync(_ -> {
+			try(var ps = getConnection().prepareStatement("""
+					INSERT INTO players (uuid, last_online)
+					VALUES (?, ?)
+					ON CONFLICT(uuid) DO UPDATE SET last_online = excluded.last_online;
+					""")){
+				
+				ps.setString(1, playerId.toString());
+				ps.setLong(2, lastSeen);
+				ps.execute();
+			} catch(SQLException e){
+				logger().error("Error while fetching transaction statistics", e);
+			}
+		});
+	}
+	
 	public record TransactionStats(long day1, long day7, long day30, long allTime){}
+	
+	public record ShopHistoryData(ShopHistoryAction action,
+								  
+								  long timestamp,
+								  
+								  UUID playerUuid, String playerName,
+								  
+								  UUID shopUuid,
+								  
+								  UUID ownerUuid, String ownerName,
+								  
+								  ItemStack item, ItemStack barterItem,
+								  
+								  double price, int amount, int transactionCount,
+								  
+								  ItemStack gambleReward,
+								  
+								  String worldName, int x, int y, int z){
+		
+		public String formattedTime(long requestTime) {
+			long difference = requestTime - timestamp;
+			
+			return DurationBuilder.create(Duration.ofMillis(difference)).noDecimals().typesToShow(DateType.YEAR,
+					DateType.MONTH,
+					DateType.WEEK,
+					DateType.DAY,
+					DateType.HOUR,
+					DateType.MINUTE,
+					DateType.SECOND).toTimeString();
+		}
+	}
 }
