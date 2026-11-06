@@ -4,7 +4,7 @@ import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.config.ItemConfig.CurrencyDenomination;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 
-import static com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty.removeItemSmallestStacksFirst;
+import static com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty.removeItem;
 
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -37,7 +37,8 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 								   ItemStack tradedStack,
 								   ItemStack currency,
 								   List<CurrencyDenomination> condensedCurrencies) {
-		super(buyer, seller, amount, price, tradedStack, currency);
+		//matcher is ALWAYS non fuzzy for item currencies, no deviation from the defined variant in the config
+		super(buyer, seller, amount, price, tradedStack, currency, ItemStack::isSimilar);
 		
 		this.condensedCurrencies = condensedCurrencies == null ? List.of() : List.copyOf(condensedCurrencies);
 	}
@@ -76,7 +77,8 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 			return false;
 		}
 		
-		if(removeItemSmallestStacksFirst(virtualInventory, currency, plan.basePayment()) != 0){
+		//do not use the currencyMatcher here, physical currency is ALWAYS as defined in the config
+		if(!removeItem(virtualInventory, currency, plan.basePayment(), currencyMatcher).success()){
 			return false;
 		}
 		
@@ -101,12 +103,13 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 		}
 		PaymentPlan plan = paymentPlan;
 		
+		//todo do I need a fallback to restore the failed transaction? Should never be able to happen anyways
 		if(!buyerIsAdminShop){
 			for(ItemStack denomination : plan.denominationsToConvert()){
 				int count = denomination.getAmount();
 				int convertedValue = Math.multiplyExact(getValueFromCondensedCurrency(denomination), count);
 				
-				int remaining = buyer.removeItem(denomination, count);
+				int remaining = buyer.removeItem(denomination, count, currencyMatcher).remaining();
 				if(remaining != 0){
 					throw new IllegalStateException("Validated condensed currency could not be removed");
 				}
@@ -116,7 +119,7 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 			
 			int basePayment = Math.toIntExact(plan.basePayment());
 			if(basePayment > 0){
-				int remaining = buyer.removeItem(currency, basePayment);
+				int remaining = buyer.removeItem(currency, basePayment, currencyMatcher).remaining();
 				if(remaining != 0){
 					throw new IllegalStateException("Validated base currency could not be removed");
 				}
@@ -124,12 +127,12 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 		}
 		
 		if(amount > 0){
-			int remaining = seller.removeItem(tradedStack, amount);
+			var result = seller.removeItem(tradedStack, amount, itemMatcher);
 			
-			if(remaining != 0){
+			if(result.remaining() != 0){
 				throw new IllegalStateException("Validated traded items could not be removed");
 			}
-			buyer.addItem(tradedStack, amount);
+			buyer.addItems(result);
 		}
 		
 		if(!sellerIsAdminShop && plan.basePayment() > 0){
@@ -149,7 +152,7 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 	/**
 	 * Creates a conversion plan using the available base currency first,
 	 * followed by condensed denominations in the configured order.
-	 *
+	 *<br>
 	 * The planner converts only enough condensed items to cover the
 	 * shortfall. Any excess converted value remains as base currency.
 	 */
@@ -208,7 +211,7 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 		for(ItemStack denomination : conversions){
 			int count = denomination.getAmount();
 			
-			if(removeItemSmallestStacksFirst(inventory, denomination, count) != 0){
+			if(!removeItem(inventory, denomination, count, ItemStack::isSimilar).success()){
 				return false;
 			}
 			

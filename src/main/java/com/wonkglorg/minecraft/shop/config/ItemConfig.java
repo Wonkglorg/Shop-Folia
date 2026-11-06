@@ -9,15 +9,20 @@ import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import de.skyslycer.hmcwraps.HMCWraps;
 import de.skyslycer.hmcwraps.serialization.wrap.PhysicalWrap;
+import io.papermc.paper.datacomponent.DataComponentType;
 import lombok.Getter;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -51,20 +56,22 @@ public final class ItemConfig extends Config{
 	
 	/**
 	 * Custom item definitions.
-	 *
+	 * <br>
 	 * The map key is the configured custom item ID.
-	 * -- GETTER --
-	 * Returns all custom item definitions.
 	 */
 	@Getter
 	private final Map<String, ItemStack> customItems = new ConcurrentHashMap<>();
+	
+	/**
+	 * All components that should be excluded for a specific material when matching for equality in shops
+	 */
+	private final Map<Material, Set<DataComponentType>> fromMatcherExcludedComponents = new ConcurrentHashMap<>();
 	
 	private HMCWraps wraps;
 	private boolean nexoEnabled;
 	
 	public ItemConfig() {
 		super(ShopPlugin.getPlugin(), Path.of("item-config.yml"));
-		reload();
 		loadIntegrations();
 		loadCustomItems();
 	}
@@ -72,6 +79,7 @@ public final class ItemConfig extends Config{
 	public void reload() {
 		silentLoad();
 		currencyDenominations.clear();
+		fromMatcherExcludedComponents.clear();
 		
 		gambleDisplayItem = getItemStack("gamble-display-item", new ItemStack(Material.DIAMOND));
 		
@@ -113,6 +121,34 @@ public final class ItemConfig extends Config{
 		validateDenominations();
 		currencyDenominations.sort(Comparator.comparingInt(CurrencyDenomination::value).reversed());
 		smallestCurrencyDenominationMultiplier = currencyDenominations.getLast().value;
+		
+		ConfigurationSection attributesSection = getConfigurationSection("ignored-components");
+		if(attributesSection != null){
+			Registry<DataComponentType> componentRegistry = Registry.DATA_COMPONENT_TYPE;
+			Set<String> materials = attributesSection.getKeys(false);
+			for(var materialKey : materials){
+				try{
+					var material = Material.valueOf(materialKey.toUpperCase());
+					HashSet<DataComponentType> components = new HashSet<>();
+					for(var componentKey : attributesSection.getStringList(materialKey)){
+						try{
+							//noinspection PatternValidation
+							components.add(componentRegistry.get(Key.key(componentKey)));
+						} catch(Exception e){
+							logger().severe("Unknown Attribute '%s' for material '%s' provided in ignore-attributes".formatted(componentKey,
+									materialKey));
+						}
+					}
+					fromMatcherExcludedComponents.put(material, components);
+				} catch(Exception e){
+					logger().severe("Unknown Material '%s' provided in ignore-attributes".formatted(materialKey));
+				}
+			}
+		}
+	}
+	
+	public Set<DataComponentType> getExcludedDataComponentsForMaterial(Material material) {
+		return fromMatcherExcludedComponents.getOrDefault(material, Collections.emptySet());
 	}
 	
 	/**

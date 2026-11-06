@@ -1,8 +1,11 @@
 package com.wonkglorg.minecraft.shop.shop.transaction;
 
+import com.wonkglorg.minecraft.shop.shop.transaction.party.ItemRemovalResult;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
-import static com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty.removeItemSmallestStacksFirst;
+import static com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty.removeItem;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.function.BiPredicate;
 
 /**
  * Transaction using an item as the currency
@@ -12,15 +15,32 @@ public class ItemTransaction extends Transaction{
 	 * The currency being used for this item transaction
 	 */
 	protected final ItemStack currency;
+	/**
+	 * The matcher to use when comparing items equality
+	 */
+	protected final BiPredicate<ItemStack, ItemStack> currencyMatcher;
 	
 	public ItemTransaction(TransactionParty buyer, TransactionParty seller, int amount, double price, ItemStack tradedStack, ItemStack currency) {
 		super(buyer, seller, amount, price, tradedStack);
 		this.currency = currency;
+		currencyMatcher = getMatcherForItem(currency.getType());
+	}
+	
+	public ItemTransaction(TransactionParty buyer,
+						   TransactionParty seller,
+						   int amount,
+						   double price,
+						   ItemStack tradedStack,
+						   ItemStack currency,
+						   BiPredicate<ItemStack, ItemStack> currencyMatcher) {
+		super(buyer, seller, amount, price, tradedStack);
+		this.currency = currency;
+		this.currencyMatcher = currencyMatcher;
 	}
 	
 	@Override
 	public double getBuyerAvailableFunds() {
-		return buyer.getAvailableItemFunds(currency);
+		return buyer.getAvailableItemFunds(currency, currencyMatcher);
 	}
 	
 	@Override
@@ -34,7 +54,7 @@ public class ItemTransaction extends Transaction{
 		var inventory = buyer.createVirtualInventory();
 		//only check if the price fits in the buyers inv if there is a price
 		if(price != 0){
-			if(removeItemSmallestStacksFirst(inventory, currency, (int) price) != 0){
+			if(!removeItem(inventory, currency, (int) price, currencyMatcher).success()){
 				return false;
 			}
 		}
@@ -46,7 +66,7 @@ public class ItemTransaction extends Transaction{
 	
 	@Override
 	public double getSellerAvailableItems() {
-		return seller.getAvailableItemFunds(tradedStack);
+		return seller.getAvailableItemFunds(tradedStack, itemMatcher);
 	}
 	
 	@Override
@@ -60,7 +80,7 @@ public class ItemTransaction extends Transaction{
 		}
 		var inventory = seller.createVirtualInventory();
 		if(amount != 0){
-			if(removeItemSmallestStacksFirst(inventory, tradedStack, amount) != 0){
+			if(!removeItem(inventory, tradedStack, amount, itemMatcher).success()){
 				return false;
 			}
 		}
@@ -73,11 +93,11 @@ public class ItemTransaction extends Transaction{
 	
 	@Override
 	public void execute() {
-		buyer.removeItem(currency, (int) price);
-		seller.removeItem(tradedStack, amount);
+		ItemRemovalResult currencyRemoveResult = buyer.removeItem(currency, (int) price, currencyMatcher);
+		ItemRemovalResult itemRemovalResult = seller.removeItem(tradedStack, amount, itemMatcher);
 		
-		buyer.addItem(tradedStack, amount);
-		seller.addItem(currency, (int) price);
+		buyer.addItems(itemRemovalResult);
+		seller.addItems(currencyRemoveResult);
 	}
 	
 	@Override

@@ -168,7 +168,8 @@ public abstract class ShopCreationProcess{
 		
 		//if players must pay to create shops, check that they have enough money first
 		double cost = ShopPlugin.getPlugin().getSettingsConfig().getCreationCost();
-		if(cost > 0 && new PlayerTransactionParty(player).getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem()) < cost){
+		if(cost > 0 && new PlayerTransactionParty(player).getAvailableFunds(ShopPlugin.getPlugin().getItemConfig().getCurrencyItem(),
+				ItemStack::isSimilar) < cost){
 			logger().debug("Player lacks funds to cover create shop costs");
 			return INSUFFICIENT_FUNDS;
 		}
