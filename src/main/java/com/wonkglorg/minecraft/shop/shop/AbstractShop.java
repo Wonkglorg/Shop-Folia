@@ -270,7 +270,12 @@ public abstract class AbstractShop{
 		this.secondaryItem = null;
 		this.facing = facing;
 		this.creationDate = creationDate;
-		this.display = AbstractDisplay.createDisplay(displayType, this);
+		//only for mockbukkit otherwise it fails at trying to initialise nms from the displays
+		if(displayType == null){
+			this.display = null;
+		}else{
+			this.display = AbstractDisplay.createDisplay(displayType, this);
+		}
 		
 		//infer the container location where it should be
 		this.containerLocation = new Location(signLoc.getWorld(),

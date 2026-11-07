@@ -3,6 +3,7 @@ package com.wonkglorg.minecraft.shop.shop.transaction.party;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.config.ItemConfig.CurrencyDenomination;
+import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import static com.wonkglorg.minecraft.shop.util.ExperienceUtils.getTotalExperience;
@@ -228,10 +229,10 @@ public class TransactionParty{
 		PlayerProfile profile;
 		if(player.getPlayer() != null){
 			logger().debug("Party is online, granting experience directly");
-			profile = PlayerProfile.online(player.getPlayer());
+			profile = PlayerManager.getOnlineProfile(player.getPlayer());
 		} else {
 			logger().debug("Party is offline, writing experience to cache");
-			profile = PlayerProfile.offline(player);
+			profile = PlayerManager.getOfflineProfile(player);
 		}
 		logger().debug("Adding " + amount + " experience points to " + this);
 		profile.addExperienceAmount(amount);
@@ -246,10 +247,10 @@ public class TransactionParty{
 		PlayerProfile profile;
 		if(player.getPlayer() != null){
 			logger().debug("Party is online, removing experience directly");
-			profile = PlayerProfile.online(player.getPlayer());
+			profile = PlayerManager.getOnlineProfile(player.getPlayer());
 		} else {
 			logger().debug("Party is offline, removing experience from cache");
-			profile = PlayerProfile.offline(player);
+			profile = PlayerManager.getOfflineProfile(player);
 		}
 		logger().debug("Removing " + amount + " experience points from " + this);
 		profile.removeExperienceAmount(amount);

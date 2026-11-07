@@ -5,6 +5,7 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.shop.command.ShopCommand;
 import com.wonkglorg.minecraft.shop.command.ShopInitializeCommand;
 import com.wonkglorg.minecraft.shop.config.ItemConfig;
+import com.wonkglorg.minecraft.shop.config.ItemConfigProvider;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.listener.DisplayListener;
@@ -49,7 +50,7 @@ public class ShopPlugin extends JavaPlugin{
 	@Getter
 	private SettingsConfig settingsConfig;
 	@Getter
-	private ItemConfig itemConfig;
+	private ItemConfigProvider itemConfig;
 	private static LangManager langManager;
 	@Getter
 	private ShopServiceProvider shopServiceProvider;

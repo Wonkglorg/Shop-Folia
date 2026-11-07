@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ItemConfig extends Config{
+public class ItemConfig extends Config implements ItemConfigProvider{
 	
 	/**
 	 * Base currency item

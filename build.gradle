@@ -88,6 +88,12 @@ repositories {
     }
 }
 
+paperweight {
+    addServerDependencyTo = configurations.named("compileOnly").map {
+        Collections.singleton(it)
+    }
+}
+
 dependencies {
     if (usePaperweight) {
         paperweight.paperDevBundle("${minecraft_version}.build.+")
@@ -142,6 +148,8 @@ dependencies {
 
     testImplementation "net.milkbowl.vault:VaultAPI:1.7"
     testImplementation "org.mockito:mockito-core:${mockito_version}"
+    testImplementation "org.mockbukkit.mockbukkit:mockbukkit-v26.3:${mockbukkit_version}"
+    testImplementation "io.papermc.paper:paper-api:${minecraft_version}.build.+"
 }
 
 tasks {
