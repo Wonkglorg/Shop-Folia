@@ -4,6 +4,9 @@ import com.wonkglorg.minecraft.shop.config.ItemConfig.CurrencyDenomination;
 import com.wonkglorg.minecraft.shop.config.ItemConfigProvider;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig.ShopSettings;
+import com.wonkglorg.minecraft.shop.db.ShopDatabase;
+import com.wonkglorg.minecraft.shop.manager.ShopManager;
+import com.wonkglorg.minecraft.shop.mocks.EconomyMock;
 import com.wonkglorg.minecraft.shop.mocks.MockHelper;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
@@ -11,6 +14,7 @@ import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionPart
 import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -26,6 +30,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -39,6 +44,9 @@ public class TestBase{
 	protected static ShopPlugin pluginMock;
 	protected static MockedStatic<ShopPlugin> pluginStaticMock;
 	protected static Location shopSignLocation;
+	protected static Economy economy;
+	protected static ShopManager shopManager;
+	protected static ShopDatabase shopDatabase;
 	
 	private static ShopLogger logger;
 	
@@ -49,16 +57,24 @@ public class TestBase{
 		server.addPlayer();
 		logger = mockLogger();
 		pluginMock = mock(ShopPlugin.class);
+		economy = new EconomyMock();
 		
 		itemConfigMock = mockItemConfig();
 		settingsConfig = mockSettingsConfig();
 		when(pluginMock.getItemConfig()).thenReturn(itemConfigMock);
 		
 		when(pluginMock.getSettingsConfig()).thenReturn(settingsConfig);
+		when(pluginMock.getEconomy()).thenReturn(economy);
+		when(pluginMock.getDataPath()).thenReturn(Path.of("test"));
 		
 		pluginStaticMock = Mockito.mockStatic(ShopPlugin.class);
 		
 		pluginStaticMock.when(ShopPlugin::getPlugin).thenReturn(pluginMock);
+		shopDatabase = mock(ShopDatabase.class);
+		shopManager = mock(ShopManager.class);
+		when(shopManager.getDatabase()).thenReturn(shopDatabase);
+		pluginStaticMock.when(ShopPlugin::shopManager).thenReturn(shopManager);
+		pluginStaticMock.when(ShopPlugin::shopDatabase).thenReturn(shopDatabase);
 		
 		pluginStaticMock.when(ShopPlugin::logger).thenReturn(logger);
 		shopSignLocation = new Location(server.getRespawnWorld(), 0, 0, 0);
