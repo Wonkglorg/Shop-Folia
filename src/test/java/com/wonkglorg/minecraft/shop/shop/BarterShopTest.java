@@ -2,7 +2,6 @@ package com.wonkglorg.minecraft.shop.shop;
 
 import com.wonkglorg.minecraft.shop.TestBase;
 import com.wonkglorg.minecraft.shop.shop.transaction.ExpirienceTransaction;
-import com.wonkglorg.minecraft.shop.shop.transaction.ItemCurrencyTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.ItemTransaction;
 import com.wonkglorg.minecraft.shop.shop.transaction.VaultTransaction;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
