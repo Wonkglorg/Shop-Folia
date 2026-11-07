@@ -47,6 +47,9 @@ ignored-components:
   sulfur_cube_bucket:
     - bucket_entity_data
     - sulfur_cube_content
+  axolotl_bucket:
+    - bucket_entity_data
+    - axolotl/variant
 # Define any custom items here that should be usable by shop initialization commands alongside vanilla items, changes to these need a complete server restart to apply!
 # ==== SUPPORTS ====
 # Supports full item definitions via itemstack definition  as seen below in the examples or via a plugins namespace
