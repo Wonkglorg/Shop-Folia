@@ -198,4 +198,8 @@ public class TestBase{
 		when(itemConfigMock.getSmallestCurrencyDenominationMultiplier()).thenReturn(smallestCurrencyDenominationMultiplier);
 		when(itemConfigMock.getCurrencyDenominations()).thenReturn(denominations);
 	}
+	
+	protected void setAllowCondenseCurrencyTrades(boolean value) {
+		when(settingsConfig.isAllowUseCondensedCurrencyForShop()).thenReturn(value);
+	}
 }

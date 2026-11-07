@@ -22,8 +22,6 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 	
 	private final List<CurrencyDenomination> condensedCurrencies;
 	
-	private final boolean allowCondensedCurrency = ShopPlugin.getPlugin().getSettingsConfig().isAllowUseCondensedCurrencyForShop();
-	
 	/**
 	 * The validated conversion and payment plan.
 	 * This will be set after {@link #canBuyerAcceptItems()} finishes evaluation
@@ -146,13 +144,13 @@ public class ItemCurrencyTransaction extends ItemTransaction{
 	 * Whether this transaction should use the condensed-currency path.
 	 */
 	private boolean usesCondensedCurrency() {
-		return allowCondensedCurrency && !condensedCurrencies.isEmpty();
+		return ShopPlugin.getPlugin().getSettingsConfig().isAllowUseCondensedCurrencyForShop() && !condensedCurrencies.isEmpty();
 	}
 	
 	/**
 	 * Creates a conversion plan using the available base currency first,
 	 * followed by condensed denominations in the configured order.
-	 *<br>
+	 * <br>
 	 * The planner converts only enough condensed items to cover the
 	 * shortfall. Any excess converted value remains as base currency.
 	 */
