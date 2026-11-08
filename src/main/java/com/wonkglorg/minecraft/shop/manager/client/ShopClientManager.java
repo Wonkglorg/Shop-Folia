@@ -368,6 +368,9 @@ public class ShopClientManager{
 		
 		for(int i = 0; i < bucketSize && !playerProcessingQueue.isEmpty(); i++){
 			UUID playerId = playerProcessingQueue.pollFirst();
+			if(playerId == null){
+				continue;
+			}
 			
 			Player player = Bukkit.getPlayer(playerId);
 			
