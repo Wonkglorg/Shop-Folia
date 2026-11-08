@@ -1,0 +1,92 @@
+==most bought items==
+SELECT
+    s.item,
+    SUM(t.transaction_count * s.amount) AS items_sold,
+    SUM(t.transaction_count) AS trade_executions,
+    COUNT(DISTINCT t.purchaser_uuid) AS unique_buyers,
+    ROUND(
+        SUM(t.transaction_count * s.price),
+        2
+    ) AS total_revenue
+FROM transactions t
+JOIN shops s ON s.shop_uuid = t.shop_uuid
+WHERE s.item IS NOT NULL
+GROUP BY s.item
+ORDER BY items_sold DESC
+LIMIT 20;
+
+==Average price per item==
+SELECT
+    s.item,
+    ROUND(
+        SUM(t.transaction_count * s.price)
+        / SUM(t.transaction_count * s.amount),
+        4
+    ) AS avg_unit_price,
+    ROUND(
+        SUM(t.transaction_count * s.price)
+        / SUM(t.transaction_count),
+        2
+    ) AS avg_trade_price,
+    SUM(t.transaction_count * s.amount) AS items_sold,
+    SUM(t.transaction_count) AS trades
+FROM transactions t
+JOIN shops s ON s.shop_uuid = t.shop_uuid
+WHERE s.item IS NOT NULL
+GROUP BY s.item
+ORDER BY items_sold DESC
+LIMIT 20;
+
+==Fastest Selling Items==
+WITH shop_sales AS (
+    SELECT
+        s.shop_uuid,
+        s.item,
+        s.creation_time,
+        MAX(t.timestamp) AS last_sale_time,
+        SUM(t.transaction_count * s.amount) AS items_sold
+    FROM shops s
+    JOIN transactions t ON t.shop_uuid = s.shop_uuid
+    WHERE s.item IS NOT NULL
+    GROUP BY s.shop_uuid
+)
+SELECT
+    item,
+    ROUND(
+        SUM(items_sold) /
+        MAX(SUM(last_sale_time - creation_time) / 86400.0, 1.0),
+        2
+    ) AS items_per_day,
+    SUM(items_sold) AS total_items_sold,
+    COUNT(*) AS shops
+FROM shop_sales
+GROUP BY item
+ORDER BY items_per_day DESC
+LIMIT 20;
+==Most Profitable Shops==
+SELECT
+    s.shop_uuid,
+    s.owner_uuid,
+    p.name AS owner_name,
+    s.item,
+    s.price,
+    SUM(t.transaction_count) AS total_trades,
+    ROUND(SUM(s.price * t.transaction_count), 2) AS estimated_revenue
+FROM transactions t
+JOIN shops s ON s.shop_uuid = t.shop_uuid
+LEFT JOIN players p ON p.uuid = s.owner_uuid
+GROUP BY s.shop_uuid
+ORDER BY estimated_revenue DESC
+LIMIT 20;
+==Most bought items per player
+SELECT
+    p.name,
+    s.item,
+    SUM(t.transaction_count) AS total_trades,
+    COUNT(DISTINCT s.shop_uuid) AS shops_used
+FROM transactions t
+JOIN shops s ON s.shop_uuid = t.shop_uuid
+LEFT JOIN players p ON p.uuid = t.purchaser_uuid
+GROUP BY t.purchaser_uuid, s.item
+ORDER BY total_trades DESC
+LIMIT 50;
