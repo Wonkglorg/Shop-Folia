@@ -769,67 +769,67 @@ sign:
       initialise:
         1: "<red><bold>[barter shop]"
         2: "%item%<red>: %amount%"
-        3: "%barter-item%<red>: %barter-item-amount%"
+        3: "%barter-item%<red>: %price%"
         4: "<red>%owner%"
       # when the shop is in stock and has a display rendered
       in-stock:
         1: "%in-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop is in stock and has no display rendered
       in-stock-no-display:
         1: "%in-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop is not in stock and has a display rendered
       out-of-stock:
         1: "%out-of-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop is not in stock and has no display rendered
       out-of-stock-no-display:
         1: "%out-of-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop is in stock and has a display rendered
       overfilled:
         1: "%overfilled-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop is in stock and has no display rendered
       overfilled-no-display:
         1: "%overfilled-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop is currently on transaction cooldown for the player viewing it and has a display rendered
       transaction-cooldown:
         1: "%out-of-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop is currently on transaction cooldown for the player viewing it and has no display rendered
       transaction-cooldown-no-display:
         1: "%out-of-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop reached its transaction limit for the player viewing it and has a display rendered
       transaction-limit:
         1: "%out-of-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop reached its transaction limit for the player viewing it and has no display rendered
       transaction-limit-no-display:
         1: "%out-of-stock-color%<bold>[barter shop]"
         2: "%item%<white>: %amount%"
-        3: "%barter-item%<white>: %barter-item-amount%"
+        3: "%barter-item%<white>: %price%"
         4: "<white>%owner%"
       # when the shop reached its transaction limit for the player viewing it and has a display rendered
       banned:
