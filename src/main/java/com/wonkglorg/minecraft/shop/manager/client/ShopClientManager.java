@@ -369,12 +369,14 @@ public class ShopClientManager{
 		for(int i = 0; i < bucketSize && !playerProcessingQueue.isEmpty(); i++){
 			UUID playerId = playerProcessingQueue.pollFirst();
 			if(playerId == null){
+				logger().debug("Removed null player uuid from processing queue");
 				continue;
 			}
 			
 			Player player = Bukkit.getPlayer(playerId);
 			
 			if(player == null || !player.isOnline()){
+				logger().debug("Removed player with uuid '%s' from processing queue".formatted(playerId));
 				continue;
 			}
 			

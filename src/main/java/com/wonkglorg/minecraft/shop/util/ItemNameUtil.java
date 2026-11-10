@@ -6,7 +6,6 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowItem;
-import static net.kyori.adventure.text.event.HoverEvent.showItem;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -45,6 +44,11 @@ public class ItemNameUtil{
 		return Component.text(sb.toString().trim());
 	}
 	
+	/**
+	 * Gets an readable item name component from the Itemstack
+	 * @param item the stack to get the name from
+	 * @return
+	 */
 	public static Component getName(ItemStack item) {
 		if(item == null){
 			return Component.text("");
