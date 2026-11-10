@@ -8,7 +8,6 @@ import com.wonkglorg.minecraft.shop.config.ItemConfig;
 import com.wonkglorg.minecraft.shop.config.ItemConfigProvider;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
-import com.wonkglorg.minecraft.shop.listener.DisplayListener;
 import com.wonkglorg.minecraft.shop.listener.ShopListener;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
@@ -38,9 +37,6 @@ public class ShopPlugin extends JavaPlugin{
 	// Getter for FoliaLib
 	@Getter
 	private FoliaLib foliaLib;
-	
-	@Getter
-	private DisplayListener displayListener;
 	
 	private static ShopManager shopmanager;
 	@Getter
@@ -82,10 +78,10 @@ public class ShopPlugin extends JavaPlugin{
 		CurrencyType currencyType = settingsConfig.getCurrencyType();
 		if(currencyType == CurrencyType.VAULT){
 			if(setupEconomy()){
-				this.logger().info("Shops will use the Vault economy as currency on the server.");
+				logger().info("Shops will use the Vault economy as currency on the server.");
 			} else {
-				this.logger().severe("Unable to connect to Vault Economy! Are both Vault AND an Economy plugin installed?");
-				this.logger().severe(
+				logger().severe("Unable to connect to Vault Economy! Are both Vault AND an Economy plugin installed?");
+				logger().severe(
 						"Plugin Disabled: Invalid configuration value `economy.type` config.yml. If you do not wish to use Vault with Shop, make sure to set `economy.type` in the config file to `ITEM`.");
 				getServer().getPluginManager().disablePlugin(plugin);
 				return;
@@ -105,7 +101,6 @@ public class ShopPlugin extends JavaPlugin{
 		
 		reload();
 		
-		getServer().getPluginManager().registerEvents(new DisplayListener(this), this);
 		getServer().getPluginManager().registerEvents(new ShopListener(this), this);
 		
 		logger().info("Enabled Shop " + this.getPluginMeta().getVersion());

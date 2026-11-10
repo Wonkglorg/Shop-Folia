@@ -27,6 +27,7 @@ import static com.wonkglorg.minecraft.shop.shop.creation.CreationValidationResul
 import com.wonkglorg.minecraft.shop.shop.creation.ShopCreationProcess;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationProcess;
+import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.PlayerTransactionParty;
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
@@ -51,6 +52,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -66,11 +69,14 @@ import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ShopListener implements Listener{
@@ -253,6 +259,269 @@ public class ShopListener implements Listener{
 		}
 	}
 	
+	/**
+	 * Prevents the item display from flowing away or otherwise being affected by fluids flowing (if there ever will be a way to disable {@link DisplayType#ITEM} and {@link DisplayType#GLASS_CASE}'s spawned itemstack from being immune to pushing this can be removed)
+	 */
+	@EventHandler
+	public void onWaterFlow(BlockFromToEvent event) {
+		AbstractShop shop = shopManager().getShopByContainer(event.getToBlock().getRelative(BlockFace.DOWN));
+		if(shop != null){
+			event.setCancelled(true);
+		}
+	}
+	
+	/**
+	 * Prevents any piston movement from interfering with shop signs or shop containers
+	 */
+	@EventHandler
+	public void onPistonExtend(BlockPistonExtendEvent event) {
+		if(isPushedBlockPartOfShop(event.getBlock(), event.getDirection())){
+			event.setCancelled(true);
+			return;
+		}
+		
+		for(Block pushedBlock : event.getBlocks()){
+			if(isPushedBlockPartOfShop(pushedBlock, event.getDirection())){
+				event.setCancelled(true);
+				return;
+			}
+		}
+	}
+	
+	@EventHandler(priority = EventPriority.HIGH)
+	public void onBlockPlace(BlockPlaceEvent event) {
+		AbstractShop shop = shopManager().getShopByContainer(event.getBlock().getRelative(BlockFace.DOWN));
+		if(shop != null && shop.getDisplay().getType() != DisplayType.NONE){
+			event.setCancelled(true);
+		}
+	}
+	
+	private static final Set<Material> SIGNS = Arrays.stream(Material.values())
+													 .filter(Tag.WALL_SIGNS::isTagged)
+													 .collect(Collectors.toUnmodifiableSet());
+	
+	@EventHandler
+	public void onExplosion(EntityExplodeEvent event) {
+		//save all potential shop blocks
+		Iterator<Block> blockIterator = event.blockList().iterator();
+		AbstractShop shop = null;
+		while(blockIterator.hasNext()){
+			Block block = blockIterator.next();
+			if(SIGNS.contains(block.getType())){
+				shop = shopManager.getShopBySign(block.getLocation());
+			} else if(shopManager.isAllowedContainer(block)){
+				shop = shopManager.getShopByContainer(block);
+			}
+			
+			if(shop != null){
+				blockIterator.remove();
+			}
+		}
+	}
+	
+	@EventHandler
+	public void onHopperPlacementShop(BlockPlaceEvent event) {
+		Block b = event.getBlockPlaced();
+		Player player = event.getPlayer();
+		
+		if(b.getType() == Material.HOPPER){
+			//if below or above is a shop cancel event if not owner.
+			AbstractShop shop = shopManager.getShopByContainer(b.getRelative(BlockFace.UP));
+			if(shop != null){
+				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
+					event.setCancelled(true);
+				}
+			}
+			shop = shopManager.getShopByContainer(b.getRelative(BlockFace.DOWN));
+			if(shop != null){
+				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
+					event.setCancelled(true);
+				}
+			}
+		}
+	}
+	
+	@EventHandler
+	public void onLogout(PlayerQuitEvent event) {
+		Player player = event.getPlayer();
+		PlayerManager.removeProfile(player);
+		shopManager.getShopClientManager().handlePlayerQuit(player);
+		shopManager.getDatabase().setPlayerLastSeen(player.getUniqueId(), System.currentTimeMillis());
+	}
+	
+	@EventHandler
+	public void onChunkLoad(ChunkLoadEvent event) {
+		shopManager.processUnloadedShopsInChunk(event.getChunk());
+	}
+	
+	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+	public void onShopDestroy(BlockBreakEvent event) {
+		Block b = event.getBlock();
+		Player player = event.getPlayer();
+		
+		if(b.getBlockData() instanceof WallSign){
+			AbstractShop shop = shopManager.getShopBySign(b.getLocation());
+			if(shop == null){
+				var process = shopManager.getShopCreationProcessForSign(b.getLocation());
+				if(process == null){
+					logger.debug("Broken sign is not a shop in creation process");
+					return;
+				}
+				if(!process.getPlayerUUID().equals(event.getPlayer().getUniqueId())){
+					logger.debug("Broken sign was in shop creation process by another player, cancelling");
+					event.setCancelled(true);
+					return;
+				}
+				//this only happens if the shop sign in initialisation is either clicked with a blacklisted item or an empty hand, the event onShopInitialisation takes priority to this and resolves the sign with the clicked item in process
+				shopManager.cancelShopCreationProcess(player);
+				return;
+			}
+			breakShopSign(event, shop);
+			return;
+		}
+		
+		if(shopManager.isAllowedContainer(b)){
+			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
+			// protect shops that are in the middle of a shop creation process from being destroyed
+			if(shopManager.isContainerInShopCreationProcess(b.getLocation())){
+				lang.request("interaction.issues.destroy.uninitialized-chest").sendToAudience(player);
+				event.setCancelled(true); // don't break chest
+				return;
+			}
+			
+			AbstractShop shop = shopManager.getShopByContainer(b);
+			if(shop == null){
+				return;
+			}
+			breakShopContainer(event, shop);
+		}
+	}
+	
+	@EventHandler
+	public void onShopContainerExpansion(BlockPlaceEvent event) {
+		Block b = event.getBlockPlaced();
+		Player player = event.getPlayer();
+		
+		//not whitelisted by the config
+		if(!shopManager.isAllowedContainer(b)){
+			return;
+		}
+		
+		//only chests can be expanded
+		if(!(b.getBlockData() instanceof Chest placedChest)){
+			return;
+		}
+		
+		logger.debug("Player " + player.getName() + "placing chest");
+		
+		//its a single chest after placement, no need to further check
+		if(placedChest.getType() == Type.SINGLE){
+			logger.debug("Chest is single chest no expansion check");
+			return;
+		}
+		
+		//calculate the other half of the chest if its a double chest
+		BlockFace otherChestDirection = getOtherChestDirection(placedChest.getType(), placedChest.getFacing());
+		logger.debug("Other chest direction");
+		
+		if(otherChestDirection == null){
+			return;
+		}
+		
+		Block otherChest = b.getRelative(otherChestDirection);
+		
+		AbstractShop shop = shopManager.getShopByContainer(otherChest);
+		
+		//check if a shop is there and if its the same chest type (should not be the case but just in case)
+		if(shop == null || (b.getType() != shop.getContainerLocation().getBlock().getType())){
+			logger.debug("Other chest half is not a container");
+			return;
+		}
+		
+		// if placer is not owner and not op they are not allowed to place it
+		if(!shop.getOwnerUUID().equals(player.getUniqueId()) && !isOperator(player)){
+			logger.debug("Shop owner is not same as placing player, cancel");
+			event.setCancelled(true);
+			return;
+		}
+		
+		logger.debug("Call resize event");
+		Location location = b.getLocation();
+		PlayerResizeShopEvent resizeEvent = new PlayerResizeShopEvent(player, shop, location, true);
+		Bukkit.getPluginManager().callEvent(resizeEvent);
+		
+		if(resizeEvent.isCancelled()){
+			logger.debug("Resize was cancelled by external plugin");
+			event.setCancelled(true);
+		}
+		shop.addSecondaryContainerLocation(location);
+	}
+	
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onBucketEmpty(PlayerBucketEmptyEvent event) {
+		if(event.isCancelled()){
+			return;
+		}
+		
+		Block b = event.getBlockClicked();
+		
+		if(b.getBlockData() instanceof WallSign){
+			AbstractShop shop = shopManager.getShopBySign(b.getLocation());
+			if(shop != null){
+				event.setCancelled(true);
+			}
+		}
+		Block blockToFill = event.getBlockClicked().getRelative(event.getBlockFace());
+		AbstractShop shop = shopManager.getShopByContainer(blockToFill.getRelative(BlockFace.DOWN));
+		if(shop != null){
+			event.setCancelled(true);
+		}
+	}
+	
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onShopInventoryClose(InventoryCloseEvent event) {
+		InventoryHolder holder = event.getInventory().getHolder();
+		if(holder instanceof Container container){
+			AbstractShop shop = shopManager.getShopByContainer(container.getBlock());
+			
+			if(shop != null){
+				shop.updateStock();
+			}
+			return;
+		}
+		
+		//double chest is its own thing and not a Container
+		if(holder instanceof DoubleChest chest){
+			InventoryHolder leftSide = chest.getLeftSide();
+			if(leftSide == null){
+				return;
+			}
+			Block block = leftSide.getInventory().getLocation().getBlock();
+			AbstractShop shop = shopManager.getShopByContainer(block);
+			
+			if(shop != null){
+				shop.updateStock();
+			}
+		}
+		
+	}
+	
+	@EventHandler
+	public void onLogin(PlayerJoinEvent event) {
+		final Player player = event.getPlayer();
+		PlayerManager.loadProfile(player);
+		PlayerNameCache.cacheName(player.getUniqueId(), player.getName());
+		
+		shopManager.getShopClientManager().handlePlayerJoin(player);
+		if(!player.hasPlayedBefore()){
+			return;
+		}
+		
+		if(settingsConfig.isSendOfflineTransactionsOnJoin()){
+			sendOfflineTransaction(player);
+		}
+	}
+	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void onShopSignClick(PlayerInteractEvent event) {
 		//only do main hand, otherwise it fires twice
@@ -402,62 +671,25 @@ public class ShopListener implements Listener{
 		}
 	}
 	
-	@EventHandler
-	public void onExplosion(EntityExplodeEvent event) {
-		//save all potential shop blocks
-		Iterator<Block> blockIterator = event.blockList().iterator();
-		AbstractShop shop = null;
-		while(blockIterator.hasNext()){
-			
-			Block block = blockIterator.next();
-			if(Tag.WALL_SIGNS.isTagged(block.getType())){
-				shop = shopManager.getShopBySign(block.getLocation());
-			} else if(shopManager.isAllowedContainer(block)){
-				shop = shopManager.getShopByContainer(block);
-			}
-			
-			if(shop != null){
-				blockIterator.remove();
-			}
-		}
-	}
+	//for optimisations extract the tagged materials into a set rather than checking for tags on each request
+	private static final Set<Material> PISTON_AFFECTED_CONTAINER_MATERIALS = Arrays.stream(Material.values())
+																				   .filter(Material::isItem)
+																				   .filter(Tag.SHULKER_BOXES::isTagged)
+																				   .collect(Collectors.toUnmodifiableSet());
 	
-	@EventHandler
-	public void onHopperPlacementShop(BlockPlaceEvent event) {
-		Block b = event.getBlockPlaced();
-		Player player = event.getPlayer();
-		
-		if(b.getType() == Material.HOPPER){
-			//if below or above is a shop cancel event if not owner.
-			AbstractShop shop = shopManager.getShopByContainer(b.getRelative(BlockFace.UP));
+	private static boolean isPushedBlockPartOfShop(Block block, BlockFace direction) {
+		AbstractShop shop = shopManager().getShopByContainer(block.getRelative(direction).getRelative(BlockFace.DOWN));
+		if(shop != null && shop.getDisplay().getType() != DisplayType.NONE){
+			return true;  //prevent piston movement if the display is active and a piston tries to push the block above it
+		}
+		if(PISTON_AFFECTED_CONTAINER_MATERIALS.contains(block.getType())){
+			shop = shopManager().getShopByContainer(block);
 			if(shop != null){
-				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
-					event.setCancelled(true);
-				}
-			}
-			shop = shopManager.getShopByContainer(b.getRelative(BlockFace.DOWN));
-			if(shop != null){
-				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
-					event.setCancelled(true);
-				}
+				return true; //in case the container is a container that is affected by piston pushing prevent it.
 			}
 		}
-	}
-	
-	@EventHandler
-	public void onLogin(PlayerJoinEvent event) {
-		final Player player = event.getPlayer();
-		PlayerManager.loadProfile(player);
-		PlayerNameCache.cacheName(player.getUniqueId(), player.getName());
 		
-		shopManager.getShopClientManager().handlePlayerJoin(player);
-		if(!player.hasPlayedBefore()){
-			return;
-		}
-		
-		if(settingsConfig.isSendOfflineTransactionsOnJoin()){
-			sendOfflineTransaction(player);
-		}
+		return false;
 	}
 	
 	private void sendOfflineTransaction(Player player) {
@@ -519,181 +751,6 @@ public class ShopListener implements Listener{
 				.replace("%total-spending%", totalSpending)
 				.sendToAudience(player);
 		});
-	}
-	
-	@EventHandler
-	public void onLogout(PlayerQuitEvent event) {
-		Player player = event.getPlayer();
-		PlayerManager.removeProfile(player);
-		shopManager.getShopClientManager().handlePlayerQuit(player);
-		shopManager.getDatabase().setPlayerLastSeen(player.getUniqueId(), System.currentTimeMillis());
-	}
-	
-	@EventHandler
-	public void onChunkLoad(ChunkLoadEvent event) {
-		shopManager.processUnloadedShopsInChunk(event.getChunk());
-	}
-	
-	//player destroys shop, call PlayerDestroyShopEvent or PlayerResizeShopEvent
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-	public void onShopDestroy(BlockBreakEvent event) {
-		Block b = event.getBlock();
-		Player player = event.getPlayer();
-		
-		if(b.getBlockData() instanceof WallSign){
-			AbstractShop shop = shopManager.getShopBySign(b.getLocation());
-			if(shop == null){
-				logger.debug("Broken sign is not a shop");
-				var process = shopManager.getShopCreationProcessForSign(b.getLocation());
-				if(process == null){
-					logger.debug("Broken sign is not a shop in creation process");
-					return;
-				}
-				if(!process.getPlayerUUID().equals(event.getPlayer().getUniqueId())){
-					logger.debug("Broken sign was in shop creation process by another player, cancelling");
-					event.setCancelled(true);
-				}
-				shopManager.cancelShopCreationProcess(player);
-				return;
-			}
-			breakShopSign(event, shop);
-			return;
-		}
-		
-		if(shopManager.isAllowedContainer(b)){
-			// Shop will not exist in ShopHandler if it is in the middle of a shop creation process
-			// protect shops that are in the middle of a shop creation process from being destroyed
-			if(shopManager.isContainerInShopCreationProcess(b.getLocation())){
-				lang.request("interaction.issues.destroy.uninitialized-chest").sendToAudience(player);
-				event.setCancelled(true); // don't break chest
-				return;
-			}
-			
-			AbstractShop shop = shopManager.getShopByContainer(b);
-			if(shop == null){
-				return;
-			}
-			breakShopContainer(event, shop);
-		}
-	}
-	
-	@EventHandler
-	public void onShopContainerExpansion(BlockPlaceEvent event) {
-		Block b = event.getBlockPlaced();
-		Player player = event.getPlayer();
-		
-		//not whitelisted by the config
-		if(!shopManager.isAllowedContainer(b)){
-			return;
-		}
-		
-		//only chests can be expanded
-		if(!(b.getBlockData() instanceof Chest placedChest)){
-			return;
-		}
-		
-		logger.debug("Player " + player.getName() + "placing chest");
-		
-		//its a single chest after placement, no need to further check
-		if(placedChest.getType() == Type.SINGLE){
-			logger.debug("Chest is single chest no expansion check");
-			return;
-		}
-		
-		//calculate the other half of the chest if its a double chest
-		BlockFace otherChestDirection = getOtherChestDirection(placedChest.getType(), placedChest.getFacing());
-		logger.debug("Other chest direction");
-		
-		if(otherChestDirection == null){
-			return;
-		}
-		
-		Block otherChest = b.getRelative(otherChestDirection);
-		
-		AbstractShop shop = shopManager.getShopByContainer(otherChest);
-		
-		//check if a shop is there and if its the same chest type (should not be the case but just in case)
-		if(shop == null || (b.getType() != shop.getContainerLocation().getBlock().getType())){
-			logger.debug("Other chest half is not a container");
-			return;
-		}
-		
-		// if placer is not owner and not op they are not allowed to place it
-		if(!shop.getOwnerUUID().equals(player.getUniqueId()) && !isOperator(player)){
-			logger.debug("Shop owner is not same as placing player, cancel");
-			event.setCancelled(true);
-			return;
-		}
-		
-		logger.debug("Call resize event");
-		Location location = b.getLocation();
-		PlayerResizeShopEvent resizeEvent = new PlayerResizeShopEvent(player, shop, location, true);
-		Bukkit.getPluginManager().callEvent(resizeEvent);
-		
-		if(resizeEvent.isCancelled()){
-			logger.debug("Resize was cancelled by external plugin");
-			event.setCancelled(true);
-		}
-		shop.addSecondaryContainerLocation(location);
-	}
-	
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onBucketEmpty(PlayerBucketEmptyEvent event) {
-		if(event.isCancelled()){
-			return;
-		}
-		
-		Block b = event.getBlockClicked();
-		
-		if(b.getBlockData() instanceof WallSign){
-			AbstractShop shop = shopManager.getShopBySign(b.getLocation());
-			if(shop != null){
-				event.setCancelled(true);
-			}
-		}
-		Block blockToFill = event.getBlockClicked().getRelative(event.getBlockFace());
-		AbstractShop shop = shopManager.getShopByContainer(blockToFill.getRelative(BlockFace.DOWN));
-		if(shop != null){
-			event.setCancelled(true);
-		}
-	}
-	
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onShopInventoryClose(InventoryCloseEvent event) {
-		InventoryHolder holder = event.getInventory().getHolder();
-		if(holder instanceof Container container){
-			AbstractShop shop = shopManager.getShopIfPrimaryContainer(container.getBlock());
-			
-			if(shop != null){
-				shop.updateStock();
-			}
-			shop = shopManager.getShopIfSecondaryContainer(container.getBlock());
-			
-			if(shop != null){
-				shop.updateStock();
-			}
-			return;
-		}
-		
-		//double chest is its own thing and not a Container
-		if(holder instanceof DoubleChest chest){
-			InventoryHolder leftSide = chest.getLeftSide();
-			if(leftSide == null){
-				return;
-			}
-			Block block = leftSide.getInventory().getLocation().getBlock();
-			AbstractShop shop = shopManager.getShopIfPrimaryContainer(block);
-			
-			if(shop != null){
-				shop.updateStock();
-			}
-			shop = shopManager.getShopIfSecondaryContainer(block);
-			
-			if(shop != null){
-				shop.updateStock();
-			}
-		}
-		
 	}
 	
 	/**
