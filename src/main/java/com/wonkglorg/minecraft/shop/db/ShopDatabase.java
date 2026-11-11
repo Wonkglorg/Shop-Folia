@@ -70,6 +70,12 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			 WHERE shop_uuid = ?
 			""";
 	
+	private static final String SHOP_TRUSTED_PLAYERS_SQL = """
+			SELECT player_uuid
+			  FROM shop_trusts
+			 WHERE shop_uuid = ?
+			""";
+	
 	private static final String SHOP_CACHE_STOCK_SQL = """
 			UPDATE shops SET last_known_stock_count = ?, last_known_stock_status = ? WHERE shop_uuid = ?
 			""";
@@ -345,6 +351,21 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		}
 	}
 	
+	private Set<UUID> getTrustedPlayersForShop(UUID shopId) {
+		try(var statement = getConnection().prepareStatement(SHOP_TRUSTED_PLAYERS_SQL)){
+			Set<UUID> bannedPlayers = new HashSet<>();
+			statement.setString(1, String.valueOf(shopId));
+			ResultSet resultSet = statement.executeQuery();
+			while(resultSet.next()){
+				bannedPlayers.add(UUID.fromString(resultSet.getString(1)));
+			}
+			return bannedPlayers;
+		} catch(Exception e){
+			logger.severe("Unable to load player shop bans " + e.getMessage());
+			return Set.of();
+		}
+	}
+	
 	/**
 	 * Saves the provided set to the database (deletes any entries no longer present from the db)
 	 */
@@ -364,6 +385,62 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		
 		String insertSql = """
 				INSERT OR IGNORE INTO shop_bans (shop_uuid, player_uuid)
+				VALUES (?, ?)
+				""";
+		
+		try(var connection = getConnection()){
+			connection.setAutoCommit(false);
+			
+			try{
+				// Remove obsolete bans
+				try(var statement = connection.prepareStatement(deleteSql)){
+					for(UUID playerId : toRemove){
+						statement.setString(1, shopId.toString());
+						statement.setString(2, playerId.toString());
+						statement.addBatch();
+					}
+					statement.executeBatch();
+				}
+				
+				// Add missing bans
+				try(var statement = connection.prepareStatement(insertSql)){
+					for(UUID playerId : toAdd){
+						statement.setString(1, shopId.toString());
+						statement.setString(2, playerId.toString());
+						statement.addBatch();
+					}
+					statement.executeBatch();
+				}
+				
+				connection.commit();
+			} catch(Exception e){
+				connection.rollback();
+				throw e;
+			} finally{
+				connection.setAutoCommit(true);
+			}
+			
+		} catch(Exception e){
+			logger.severe("Unable to save player shop bans " + e.getMessage());
+		}
+	}
+	
+	private void saveTrustedPlayersForShop(UUID shopId, Set<UUID> bannedPlayers) {
+		Set<UUID> existing = getTrustedPlayersForShop(shopId);
+		
+		Set<UUID> toRemove = new HashSet<>(existing);
+		toRemove.removeAll(bannedPlayers);
+		
+		Set<UUID> toAdd = new HashSet<>(bannedPlayers);
+		toAdd.removeAll(existing);
+		
+		String deleteSql = """
+				DELETE FROM shop_trusts
+				WHERE shop_uuid = ? AND player_uuid = ?
+				""";
+		
+		String insertSql = """
+				INSERT OR IGNORE INTO shop_trusts (shop_uuid, player_uuid)
 				VALUES (?, ?)
 				""";
 		
@@ -874,6 +951,9 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		}
 		for(var shop : shops){
 			saveBannedPlayersForShop(shop.getId(), shop.getBannedPlayers());
+		}
+		for(var shop : shops){
+			saveTrustedPlayersForShop(shop.getId(), shop.getTrustedPlayers());
 		}
 	}
 	

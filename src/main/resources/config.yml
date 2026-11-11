@@ -52,6 +52,16 @@ owner-out-of-stock-cooldown-time: 10000
 # The amount of time that needs to pass (in milliseconds)  before sending a grouped transaction notification to the owner of a shop if owner wants notifications (0 to disable)
 owner-transaction-grouping-time: 1000
 
+
+# what trusted players are able to do
+trust:
+  # player can open the shop
+  open-shop: true
+  # player can view the shop history
+  shop-history: true
+  # player can change the settings of the shop
+  change-shop-settings: false
+
 cost:
   # cost of destroying a shop
   destroy: 0

@@ -216,6 +216,12 @@ public abstract class AbstractShop{
 	 */
 	@Getter
 	private final Set<UUID> bannedPlayers = new HashSet<>();
+	
+	/**
+	 * What players are trusted at this shop
+	 */
+	@Getter
+	private final Set<UUID> trustedPlayers = new HashSet<>();
 	/**
 	 * If the sign used for creation was spawned by the plugin or not, used to determine if the sign drops when the shop is destroyed
 	 */

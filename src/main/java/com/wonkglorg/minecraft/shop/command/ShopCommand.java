@@ -89,6 +89,15 @@ public class ShopCommand extends AbstractCommand{
 																				  .executes((this::removeBannedPlayer))))
 						.then(literal("list").executes(this::showBanList))
 						.executes(this::usageBan))
+				.then(literal("trust")
+						.then(literal("add")
+								.then(suggestedArgument("player",StringArgumentType.greedyString(),Bukkit.getOnlinePlayers(),Player::getName)
+										.executes(this::addTrustedPlayer)))
+						.then(literal("remove")
+								.then(argument("player",StringArgumentType.word()).suggests(suggestTrustedPlayer())
+																				  .executes((this::removeTrustedPlayer))))
+						.then(literal("list").executes(this::showTrustList))
+						.executes(this::usageTrust))
 				.then(literal("transactions").executes(this::showTransactions))
 				.then(literal("reload").requires(permissions(SHOP_PERMISSION_OPERATOR))
 						.then(literal("lang").executes(this::reloadLang))
@@ -135,6 +144,32 @@ public class ShopCommand extends AbstractCommand{
 			}
 			
 			for(var banned : shop.getBannedPlayers()){
+				builder.suggest(PlayerNameCache.getName(banned));
+			}
+			
+			return builder.buildFuture();
+		};
+	}
+	
+	private @NotNull SuggestionProvider<CommandSourceStack> suggestTrustedPlayer() {
+		return (ctx, builder) -> {
+			if(!(ctx.getSource().getSender() instanceof Player player)){
+				return builder.buildFuture();
+			}
+			AbstractShop shop = getTargetingShop(player);
+			if(shop == null){
+				return builder.buildFuture();
+			}
+			
+			if(player.getUniqueId().equals(shop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeTrustShops(player)){
+				return builder.buildFuture();
+			}
+			
+			if(!player.getUniqueId().equals(shop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeTrustShopsOther(player)){
+				return builder.buildFuture();
+			}
+			
+			for(var banned : shop.getTrustedPlayers()){
 				builder.suggest(PlayerNameCache.getName(banned));
 			}
 			

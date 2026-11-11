@@ -228,6 +228,18 @@ public abstract class PlayerProfile{
 	public static boolean isAllowedToChangeShopBansOther(Permissible player) {
 		return isOperator(player) || player.hasPermission("shop.ban.other");
 	}
+	/**
+	 * If the user is allowed to change the list of trusted players for their own shop
+	 */
+	public static boolean isAllowedToChangeTrustShops(Permissible player){
+		return isOperator(player) || player.hasPermission("shop.trust");
+	}
+	/**
+	 * If the user is allowed to change the list of trusted players for their another player's shop
+	 */
+	public static boolean isAllowedToChangeTrustShopsOther(Permissible player){
+		return isOperator(player) || player.hasPermission("shop.trust.other");
+	}
 	
 	/**
 	 * If the user is can bypass being banned from a shop

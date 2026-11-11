@@ -67,6 +67,26 @@ CREATE TABLE IF NOT EXISTS shop_bans
         ON DELETE CASCADE
 );
 
+-- users that are trusted in another shop
+CREATE TABLE IF NOT EXISTS shop_trusts
+(
+    -- The shop the ban applies for
+    shop_uuid TEXT NOT NULL,
+
+    -- The user banned
+    player_uuid TEXT NOT NULL,
+
+    PRIMARY KEY (shop_uuid, player_uuid),
+
+    FOREIGN KEY (shop_uuid)
+        REFERENCES shops (shop_uuid)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (player_uuid)
+        REFERENCES players (uuid)
+        ON DELETE CASCADE
+);
+
 --this table stores every transaction a player has done with a shop
 CREATE TABLE IF NOT EXISTS transactions
 (
