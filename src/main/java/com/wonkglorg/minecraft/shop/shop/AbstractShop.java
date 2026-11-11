@@ -279,7 +279,7 @@ public abstract class AbstractShop{
 		//only for mockbukkit otherwise it fails at trying to initialise nms from the displays
 		if(displayType == null){
 			this.display = null;
-		}else{
+		} else {
 			this.display = AbstractDisplay.createDisplay(displayType, this);
 		}
 		
@@ -612,6 +612,20 @@ public abstract class AbstractShop{
 		}
 		this.secondaryItem = is.clone();
 		this.secondaryItem.setAmount(1);
+	}
+	
+	/**
+	 * @return If the player has trust at this shop or is the owner of the shop
+	 */
+	public boolean isTrusted(UUID player) {
+		if(owner.equals(player)){
+			return true;
+		}
+		return trustedPlayers.contains(player);
+	}
+	
+	public boolean isOwner(UUID player) {
+		return owner.equals(player);
 	}
 	
 	/**

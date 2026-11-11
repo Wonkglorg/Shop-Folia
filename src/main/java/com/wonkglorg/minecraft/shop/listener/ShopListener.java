@@ -767,7 +767,7 @@ public class ShopListener implements Listener{
 			return;
 		}
 		
-		boolean isOwner = shop.getOwnerUUID().equals(player.getUniqueId());
+		boolean isOwner = shop.isOwner(player.getUniqueId());
 		
 		if(isOwner && !isAllowedToDestroyShop(player, shop.getType())){
 			logger.debug("Owner %s without permission trying to break shop container".formatted(player.getName()));
