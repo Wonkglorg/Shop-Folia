@@ -11,8 +11,8 @@ import com.wonkglorg.minecraft.command.completion.ArgumentBuilder;
 import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_COMMAND;
-import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_COMMAND;
+import static com.wonkglorg.minecraft.shop.Constants.SHOP_PERMISSION_OPERATOR;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
@@ -312,6 +312,132 @@ public class ShopCommand extends AbstractCommand{
 		return 1;
 	}
 	
+	private int addTrustedPlayer(CommandContext<CommandSourceStack> ctx) {
+		if(!(ctx.getSource().getSender() instanceof Player player)){
+			return -1;
+		}
+		
+		AbstractShop targetShop = getTargetingShop(player);
+		if(targetShop == null){
+			lang.request("command.shop.trust.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		if(player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBans(player)){
+			lang.request("command.shop.trust.no-permission").sendToAudience(player);
+			return -1;
+		}
+		
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBansOther(player)){
+			lang.request("command.shop.trust.not-shop-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		String playerName = getArgument(ctx, "player", String.class, "");
+		
+		UUID uuid = PlayerNameCache.getUUID(playerName);
+		if(uuid == null){
+			lang.request("command.shop.trust.add.not-valid-player").sendToAudience(player);
+			return 1;
+		}
+		
+		if(targetShop.getOwnerUUID().equals(uuid)){
+			lang.request("command.shop.trust.add.owner-invalid").sendToAudience(player);
+			return 1;
+		}
+		
+		Set<UUID> bannedPlayers = targetShop.getTrustedPlayers();
+		
+		if(bannedPlayers.contains(uuid)){
+			lang.request("command.shop.trust.add.already-trust").replace("%player-name%", playerName).sendToAudience(player);
+			return 1;
+		}
+		lang.request("command.shop.trust.add.success").replace("%player-name%", playerName).sendToAudience(player);
+		targetShop.addPlayerTrust(uuid);
+		return 1;
+	}
+	
+	private int removeTrustedPlayer(CommandContext<CommandSourceStack> ctx) {
+		if(!(ctx.getSource().getSender() instanceof Player player)){
+			return -1;
+		}
+		
+		AbstractShop targetShop = getTargetingShop(player);
+		if(targetShop == null){
+			lang.request("command.shop.trust.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		if(player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBans(player)){
+			lang.request("command.shop.trust.no-permission").sendToAudience(player);
+			return -1;
+		}
+		
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBansOther(player)){
+			lang.request("command.shop.trust.not-shop-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		String playerName = getArgument(ctx, "player", String.class, "");
+		
+		UUID uuid = PlayerNameCache.getUUID(playerName);
+		if(uuid == null){
+			lang.request("command.shop.trust.remove.not-valid-player").sendToAudience(player);
+			return 1;
+		}
+		
+		Set<UUID> bannedPlayers = targetShop.getBannedPlayers();
+		
+		if(!bannedPlayers.contains(uuid)){
+			lang.request("command.shop.trust.remove.not-trusted").replace("%player-name%", playerName).sendToAudience(player);
+			return 1;
+		}
+		lang.request("command.shop.trust.remove.success").replace("%player-name%", playerName).sendToAudience(player);
+		targetShop.removePlayerBan(uuid);
+		return 1;
+	}
+	
+	private int showTrustList(CommandContext<CommandSourceStack> ctx) {
+		if(!(ctx.getSource().getSender() instanceof Player player)){
+			return -1;
+		}
+		
+		AbstractShop targetShop = getTargetingShop(player);
+		if(targetShop == null){
+			lang.request("command.shop.trust.no-valid-shop").sendToAudience(player);
+			return -1;
+		}
+		
+		if(player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBans(player)){
+			lang.request("command.shop.trust.no-permission").sendToAudience(player);
+			return -1;
+		}
+		
+		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToChangeShopBansOther(player)){
+			lang.request("command.shop.trust.not-shop-owner").sendToAudience(player);
+			return -1;
+		}
+		
+		Set<UUID> bannedPlayers = targetShop.getBannedPlayers();
+		if(bannedPlayers.isEmpty()){
+			lang.request("command.shop.trust.list.no-entries").sendToAudience(player);
+			return 1;
+		}
+		lang.request("command.shop.trust.list.header").sendToAudience(player);
+		
+		for(var entry : bannedPlayers){
+			lang.request("command.shop.trust.list.entry").replace("%player-name%", PlayerNameCache.getName(entry)).replace("%player-uuid%",
+					entry.toString()).sendToAudience(player);
+		}
+		
+		return 1;
+	}
+	
+	private int usageTrust(CommandContext<CommandSourceStack> ctx) {
+		lang.request("command.shop.trust.usage").sendToAudience(ctx.getSource().getSender());
+		return 1;
+	}
+	
 	private int showTransactions(CommandContext<CommandSourceStack> ctx) {
 		if(!(ctx.getSource().getSender() instanceof Player player)){
 			return -1;
@@ -323,12 +449,7 @@ public class ShopCommand extends AbstractCommand{
 			return -1;
 		}
 		
-		if(!player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactionsOther(player)){
-			lang.request("command.shop.transactions.not-shop-owner").sendToAudience(player);
-			return -1;
-		}
-		
-		if(player.getUniqueId().equals(targetShop.getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactions(player)){
+		if(!targetShop.isAllowedToViewShopTransactions(player)){
 			lang.request("command.shop.transactions.no-permission").sendToAudience(player);
 			return -1;
 		}
@@ -386,7 +507,7 @@ public class ShopCommand extends AbstractCommand{
 		}
 		
 		AbstractShop shop = getTargetingShop(player);
-		if(shop == null) {
+		if(shop == null){
 			lang.request("command.shop.debug.shop.not-at-cursor").sendToAudience(player);
 			return -1;
 		}

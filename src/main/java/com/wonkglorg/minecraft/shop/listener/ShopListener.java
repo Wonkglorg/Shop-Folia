@@ -650,25 +650,24 @@ public class ShopListener implements Listener{
 			}
 			
 		}
-		//owner is trying to open shop
-		boolean isOwner = shop.getOwnerUUID().equals(player.getUniqueId());
 		
-		if(isOwner){
+		if(shop.isAllowedToOpenShopChest(player)){
+			//extra log message if the shop is opened via the .other permission
+			if(isAllowedToOpenShopOther(player)){
+				if(!shop.isAdmin()){
+					lang.request("interaction.success." + shop.getType() + ".open-other")
+						.replace("%owner%", shop.getOwner().getName())
+						.sendToAudience(player);
+				}
+			}
 			return;
 		}
 		
-		if(isAllowedToOpenShopOther(player)){
-			if(!shop.isAdmin()){
-				lang.request("interaction.success." + shop.getType() + ".open-other").replace("%owner%", shop.getOwner().getName()).sendToAudience(
-						player);
-			}
-		} else {
-			boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
-			if(!actionPerformed){
-				lang.request("permission.error.openOther").sendToAudience(player);
-			}
-			event.setCancelled(true);
+		boolean actionPerformed = shop.executeClickAction(player, ShopClickType.RIGHT_CLICK_CHEST);
+		if(!actionPerformed){
+			lang.request("permission.error.openOther").sendToAudience(player);
 		}
+		event.setCancelled(true);
 	}
 	
 	//for optimisations extract the tagged materials into a set rather than checking for tags on each request

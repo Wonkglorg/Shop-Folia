@@ -489,6 +489,28 @@ command:
         no-entries: "<green>No players are banned from using this shop."
         header: "<green>==Players banned from this shop=="
         entry: "<gray>- <gold>%player-name%"
+    trust:
+      usage:
+        - "<green>Look at a shop sign when executing this command"
+        - "<blue>/shop trust add <player> <gray>- Allows a player to open this shop chest"
+        - "<blue>/shop trust remove <player> <gray>- Removes a player from the trusted list"
+        - "<blue>/shop trust list <gray>- Shows a list of all currently trusted players from the shop"
+      no-valid-shop: "<red>Look at your shop sign when executing the command!"
+      not-shop-owner: "<red>This shop does not belong to you!"
+      no-permission: "<red>>You do not have permission to ban players from your shop!"
+      add:
+        not-valid-player: "<red>Player does not exist!"
+        already-trusted: "<red>Player is already trusted!"
+        owner-invalid: "<red>You cannot trust the shop owner at their own shop!"
+        success: "<green>Player %player-name% is trusted at this shop"
+      remove:
+        not-valid-player: "<red>Player does not exist!"
+        not-trusted: "<red>Player is not trusted from this shop!"
+        success: "<green> Player %player-name% is no longer trusted at this shop"
+      list:
+        no-entries: "<green>No players are trusted at this shop."
+        header: "<green>==Players trusted at this shop=="
+        entry: "<gray>- <gold>%player-name%"
     lookup:
       data-no-results: "<red>No Shop History Found!"
       header: "<gold>Shop History:"

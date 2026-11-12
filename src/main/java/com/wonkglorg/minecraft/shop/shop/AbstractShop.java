@@ -23,7 +23,6 @@ import static com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler.getC
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToChangeSettings;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToChangeSettingsOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplay;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplayOther;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
@@ -615,17 +614,56 @@ public abstract class AbstractShop{
 	}
 	
 	/**
-	 * @return If the player has trust at this shop or is the owner of the shop
+	 * @return If the player has trust at this shop
 	 */
 	public boolean isTrusted(UUID player) {
-		if(owner.equals(player)){
-			return true;
-		}
 		return trustedPlayers.contains(player);
 	}
 	
 	public boolean isOwner(UUID player) {
 		return owner.equals(player);
+	}
+	
+	/**
+	 * If the given player is allowed to open the shop chest
+	 */
+	public boolean isAllowedToOpenShopChest(Player player) {
+		if(isOwner(player.getUniqueId())){
+			return true;
+		}
+		if(isTrusted(player.getUniqueId()) && getPlugin().getSettingsConfig().isAllowTrustedPlayerOpenShop()){
+			return true;
+		}
+		return PlayerProfile.isAllowedToOpenShopOther(player);
+	}
+	
+	/**
+	 * If the given player is allowed to view this shops transaction history
+	 */
+	public boolean isAllowedToViewShopTransactions(Player player) {
+		if(isOwner(player.getUniqueId()) && isAllowedToViewShopTransactions(player)){
+			return true;
+		}
+		if(isTrusted(player.getUniqueId()) && getPlugin().getSettingsConfig().isAllowTrustedPlayerViewHistory() && isAllowedToViewShopTransactions(
+				player)){
+			return true;
+		}
+		return PlayerProfile.isAllowedToViewShopTransactionsOther(player);
+	}
+	
+	/**
+	 * If the given player is allowed to change the shop's settings
+	 */
+	public boolean isAllowedToChangeShopSettings(Player player) {
+		if(isOwner(player.getUniqueId()) && isAllowedToChangeSettings(player)){
+			return true;
+		}
+		if(isTrusted(player.getUniqueId()) &&
+		   getPlugin().getSettingsConfig().isAllowTrustedPlayerChangeSettings() &&
+		   isAllowedToChangeSettings(player)){
+			return true;
+		}
+		return PlayerProfile.isAllowedToChangeSettingsOther(player);
 	}
 	
 	/**
@@ -698,6 +736,24 @@ public abstract class AbstractShop{
 				//force a shop state update for the client if online
 				shopClientManager().updateShop(onlinePlayer, this);
 			}
+		}
+	}
+	
+	/**
+	 * Trusts the given player in this shop
+	 */
+	public void addPlayerTrust(UUID player) {
+		if(trustedPlayers.add(player)){
+			needsSave = true;
+		}
+	}
+	
+	/**
+	 * Removes the trust from the given player in this shop
+	 */
+	public void removePlayerTrust(UUID player) {
+		if(trustedPlayers.remove(player)){
+			needsSave = true;
 		}
 	}
 	
@@ -1136,7 +1192,7 @@ public abstract class AbstractShop{
 		switch(action) {
 			case TRANSACT, TRANSACT_FULL_STACK:
 				//early return if transactor is owner
-				if(player.getUniqueId().equals(owner) && !getPlugin().getSettingsConfig().isAllowUseOwnShop()){
+				if(isOwner(player.getUniqueId()) && !getPlugin().getSettingsConfig().isAllowUseOwnShop()){
 					sendTransactionMessage(TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP, 0, player);
 					sendEffects(false, player);
 					return true;
@@ -1176,18 +1232,9 @@ public abstract class AbstractShop{
 				this.cycleDisplay();
 				break;
 			case OPEN_SETTINGS:
-				//player clicked another player's shop sign
-				if(!this.getOwnerUUID().equals(player.getUniqueId())){
-					//player has permission to change another player's shop display
-					if((isAllowedToChangeSettingsOther(player))){
-						logger().debug("Open settings Dialog for player " + player.getName());
-						openDialog(player, this);
-					}
-				} else {
-					if(isAllowedToChangeSettings(player)){
-						logger().debug("Open settings Dialog for player " + player.getName());
-						openDialog(player, this);
-					}
+				if(this.isAllowedToChangeShopSettings(player)){
+					logger().debug("Open settings Dialog for player " + player.getName());
+					openDialog(player, this);
 				}
 				return true;
 			default:
