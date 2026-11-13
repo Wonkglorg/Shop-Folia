@@ -22,8 +22,6 @@ import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler.getComponents;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToChangeSettings;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToChangeSettingsOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplay;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplayOther;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
@@ -216,6 +214,12 @@ public abstract class AbstractShop{
 	 */
 	@Getter
 	private final Set<UUID> bannedPlayers = new HashSet<>();
+	
+	/**
+	 * What players are trusted at this shop
+	 */
+	@Getter
+	private final Set<UUID> trustedPlayers = new HashSet<>();
 	/**
 	 * If the sign used for creation was spawned by the plugin or not, used to determine if the sign drops when the shop is destroyed
 	 */
@@ -273,7 +277,7 @@ public abstract class AbstractShop{
 		//only for mockbukkit otherwise it fails at trying to initialise nms from the displays
 		if(displayType == null){
 			this.display = null;
-		}else{
+		} else {
 			this.display = AbstractDisplay.createDisplay(displayType, this);
 		}
 		
@@ -609,6 +613,60 @@ public abstract class AbstractShop{
 	}
 	
 	/**
+	 * @return If the player has trust at this shop
+	 */
+	public boolean isTrusted(UUID player) {
+		return trustedPlayers.contains(player);
+	}
+	
+	public boolean isOwner(UUID player) {
+		return owner.equals(player);
+	}
+	
+	/**
+	 * If the given player is allowed to open the shop chest
+	 */
+	public boolean isAllowedToOpenShopChest(Player player) {
+		if(isOwner(player.getUniqueId())){
+			return true;
+		}
+		if(isTrusted(player.getUniqueId()) && getPlugin().getSettingsConfig().isAllowTrustedPlayerOpenShop()){
+			return true;
+		}
+		return PlayerProfile.isAllowedToOpenShopOther(player);
+	}
+	
+	/**
+	 * If the given player is allowed to view this shops transaction history
+	 */
+	public boolean isAllowedToViewShopTransactions(Player player) {
+		if(isOwner(player.getUniqueId()) && PlayerProfile.isAllowedToViewShopTransactions(player)){
+			return true;
+		}
+		if(isTrusted(player.getUniqueId()) &&
+		   getPlugin().getSettingsConfig().isAllowTrustedPlayerViewHistory() &&
+		   PlayerProfile.isAllowedToViewShopTransactions(player)){
+			return true;
+		}
+		return PlayerProfile.isAllowedToViewShopTransactionsOther(player);
+	}
+	
+	/**
+	 * If the given player is allowed to change the shop's settings
+	 */
+	public boolean isAllowedToChangeShopSettings(Player player) {
+		if(isOwner(player.getUniqueId()) && PlayerProfile.isAllowedToChangeSettings(player)){
+			return true;
+		}
+		if(isTrusted(player.getUniqueId()) &&
+		   getPlugin().getSettingsConfig().isAllowTrustedPlayerChangeSettings() &&
+		   PlayerProfile.isAllowedToChangeSettings(player)){
+			return true;
+		}
+		return PlayerProfile.isAllowedToChangeSettingsOther(player);
+	}
+	
+	/**
 	 * Evaluates the shop state this player should see this shop as (this differs from {@link #shopState} when either a purchase limit or a purchase cooldown is defined
 	 *
 	 * @param profile the profile of te player
@@ -658,7 +716,7 @@ public abstract class AbstractShop{
 	 */
 	public void addPlayerBan(UUID player) {
 		if(bannedPlayers.add(player)){
-			needsSave = true;
+			shopDatabase().addPlayerBan(this.id, player);
 			Player onlinePlayer = Bukkit.getPlayer(player);
 			if(onlinePlayer != null){
 				//force a shop state update for the client if online
@@ -672,12 +730,30 @@ public abstract class AbstractShop{
 	 */
 	public void removePlayerBan(UUID player) {
 		if(bannedPlayers.remove(player)){
-			needsSave = true;
+			shopDatabase().removePlayerBan(this.id, player);
 			Player onlinePlayer = Bukkit.getPlayer(player);
 			if(onlinePlayer != null){
 				//force a shop state update for the client if online
 				shopClientManager().updateShop(onlinePlayer, this);
 			}
+		}
+	}
+	
+	/**
+	 * Trusts the given player in this shop
+	 */
+	public void addPlayerTrust(UUID player) {
+		if(trustedPlayers.add(player)){
+			shopDatabase().addPlayerTrust(this.id, player);
+		}
+	}
+	
+	/**
+	 * Removes the trust from the given player in this shop
+	 */
+	public void removePlayerTrust(UUID player) {
+		if(trustedPlayers.remove(player)){
+			shopDatabase().removePlayerTrust(this.id, player);
 		}
 	}
 	
@@ -695,6 +771,19 @@ public abstract class AbstractShop{
 	}
 	
 	/**
+	 * !!INTERNAL USE ONLY!! To change the list use {@link #addPlayerBan(UUID)} or {@link #removePlayerBan(UUID)}
+	 *
+	 * @param players the player bans to set for this shop (overrides the existing list)
+	 */
+	@Internal
+	public void initializePlayerTrusts(Collection<UUID> players) {
+		this.trustedPlayers.clear();
+		if(!players.isEmpty()){
+			this.trustedPlayers.addAll(players);
+		}
+	}
+	
+	/**
 	 * Prints Shop info about the shop to the player in chat
 	 */
 	public void printSalesInfo(Player player) {
@@ -702,11 +791,11 @@ public abstract class AbstractShop{
 		shopPlaceholders(request, this, true, player);
 		request.sendToAudience(player);
 		if(getPlugin().getSettingsConfig().isPrintHistoryWithShopInfo()){
-			if(!player.getUniqueId().equals(getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactionsOther(player)){
+			if(!isOwner(player.getUniqueId()) && !PlayerProfile.isAllowedToViewShopTransactionsOther(player)){
 				return;
 			}
 			
-			if(player.getUniqueId().equals(getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactions(player)){
+			if(isOwner(player.getUniqueId()) && !PlayerProfile.isAllowedToViewShopTransactions(player)){
 				return;
 			}
 			
@@ -1116,7 +1205,7 @@ public abstract class AbstractShop{
 		switch(action) {
 			case TRANSACT, TRANSACT_FULL_STACK:
 				//early return if transactor is owner
-				if(player.getUniqueId().equals(owner) && !getPlugin().getSettingsConfig().isAllowUseOwnShop()){
+				if(isOwner(player.getUniqueId()) && !getPlugin().getSettingsConfig().isAllowUseOwnShop()){
 					sendTransactionMessage(TransactionResult.OWNER_CANT_TRANSACT_OWN_SHOP, 0, player);
 					sendEffects(false, player);
 					return true;
@@ -1141,7 +1230,7 @@ public abstract class AbstractShop{
 				break;
 			case CYCLE_DISPLAY:
 				//player clicked another player's shop sign
-				if(!this.getOwnerUUID().equals(player.getUniqueId())){
+				if(!isOwner(player.getUniqueId())){
 					//player has permission to change another player's shop display
 					if((isAllowedToCycleDisplayOther(player))){
 						this.cycleDisplay();
@@ -1156,18 +1245,9 @@ public abstract class AbstractShop{
 				this.cycleDisplay();
 				break;
 			case OPEN_SETTINGS:
-				//player clicked another player's shop sign
-				if(!this.getOwnerUUID().equals(player.getUniqueId())){
-					//player has permission to change another player's shop display
-					if((isAllowedToChangeSettingsOther(player))){
-						logger().debug("Open settings Dialog for player " + player.getName());
-						openDialog(player, this);
-					}
-				} else {
-					if(isAllowedToChangeSettings(player)){
-						logger().debug("Open settings Dialog for player " + player.getName());
-						openDialog(player, this);
-					}
+				if(this.isAllowedToChangeShopSettings(player)){
+					logger().debug("Open settings Dialog for player " + player.getName());
+					openDialog(player, this);
 				}
 				return true;
 			default:

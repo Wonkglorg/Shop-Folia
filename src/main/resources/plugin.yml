@@ -98,6 +98,12 @@ permissions:
   shop.command:
     description: Allows access the /shop command with basic access to informational commands
     default: op
+  shop.trust:
+    description: Allows access to trusting other players in your own shop, trust permissions is defined by the configs definition of trust
+    default: op
+  shop.trust.other:
+    description:  Allows access to trusting other players in other shops, trust permissions is defined by the configs definition of trust
+    default: op
   shop.lookup:
     description: Allows access to /shop lookup command to
   shop.operator:

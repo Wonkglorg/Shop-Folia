@@ -191,8 +191,6 @@ public class PlayerShopsConfig extends Config{
 		return shops;
 	}
 	
-	public int saveShops(final UUID uuid) {return saveShops(uuid, false);}
-	
 	public int saveShops(final UUID uuid, boolean force) {
 		// Check if any of the players shops want to be saved
 		ShopPlugin plugin = ShopPlugin.getPlugin();
@@ -242,7 +240,7 @@ public class PlayerShopsConfig extends Config{
 			}
 			
 			//this is to remove a bug that caused one shop to be saved to multiple files at one point
-			if(!shop.getOwnerUUID().equals(uuid)){
+			if(!shop.isOwner(uuid)){
 				continue;
 			}
 			if(!shop.isInitialized()){

@@ -87,6 +87,26 @@ public class SettingsConfig extends Config{
 	private long ownerTransactionGroupingTime;
 	
 	/**
+	 * If a trusted player can open the shop chest
+	 */
+	@Getter
+	private boolean allowTrustedPlayerOpenShop;
+	
+	/**
+	 * If a trusted player can view the shops history
+	 */
+	@Getter
+	private boolean allowTrustedPlayerViewHistory;
+	
+	/**
+	 * If a trusted player can change the shops settings
+	 */
+	@Getter
+	private boolean allowTrustedPlayerChangeSettings;
+	
+	
+	
+	/**
 	 * The currency cost when creating a shop
 	 */
 	@Getter
@@ -251,6 +271,10 @@ public class SettingsConfig extends Config{
 		creationCost = getDouble("cost.create");
 		destructionCost = getDouble("cost.destroy");
 		returnCreationCost = getBoolean("cost.return-creation-cost");
+		
+		allowTrustedPlayerOpenShop = getBoolean("trust.open-shop");
+		allowTrustedPlayerViewHistory = getBoolean("trust.shop-history");
+		allowTrustedPlayerChangeSettings = getBoolean("trust.change-shop-settings");
 		
 		displayTypeDefault = DisplayType.fromValue(getString("display.type"));
 		
