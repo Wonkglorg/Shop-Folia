@@ -64,18 +64,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			 ORDER BY creation_time DESC
 			""";
 	
-	private static final String SHOP_BANNED_PLAYERS_SQL = """
-			SELECT player_uuid
-			  FROM shop_bans
-			 WHERE shop_uuid = ?
-			""";
-	
-	private static final String SHOP_TRUSTED_PLAYERS_SQL = """
-			SELECT player_uuid
-			  FROM shop_trusts
-			 WHERE shop_uuid = ?
-			""";
-	
 	private static final String SHOP_CACHE_STOCK_SQL = """
 			UPDATE shops SET last_known_stock_count = ?, last_known_stock_status = ? WHERE shop_uuid = ?
 			""";
@@ -337,7 +325,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	}
 	
 	private Set<UUID> getBannedPlayersForShop(UUID shopId) {
-		try(var statement = getConnection().prepareStatement(SHOP_BANNED_PLAYERS_SQL)){
+		try(var statement = getConnection().prepareStatement("SELECT player_uuid FROM shop_bans WHERE shop_uuid = ?")){
 			Set<UUID> bannedPlayers = new HashSet<>();
 			statement.setString(1, String.valueOf(shopId));
 			ResultSet resultSet = statement.executeQuery();
@@ -352,132 +340,17 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 	}
 	
 	private Set<UUID> getTrustedPlayersForShop(UUID shopId) {
-		try(var statement = getConnection().prepareStatement(SHOP_TRUSTED_PLAYERS_SQL)){
-			Set<UUID> bannedPlayers = new HashSet<>();
+		try(var statement = getConnection().prepareStatement("SELECT player_uuid FROM shop_trusts WHERE shop_uuid = ?")){
+			Set<UUID> trustedPlayers = new HashSet<>();
 			statement.setString(1, String.valueOf(shopId));
 			ResultSet resultSet = statement.executeQuery();
 			while(resultSet.next()){
-				bannedPlayers.add(UUID.fromString(resultSet.getString(1)));
+				trustedPlayers.add(UUID.fromString(resultSet.getString(1)));
 			}
-			return bannedPlayers;
+			return trustedPlayers;
 		} catch(Exception e){
 			logger.severe("Unable to load player shop bans " + e.getMessage());
 			return Set.of();
-		}
-	}
-	
-	/**
-	 * Saves the provided set to the database (deletes any entries no longer present from the db)
-	 */
-	private void saveBannedPlayersForShop(UUID shopId, Set<UUID> bannedPlayers) {
-		Set<UUID> existing = getBannedPlayersForShop(shopId);
-		
-		Set<UUID> toRemove = new HashSet<>(existing);
-		toRemove.removeAll(bannedPlayers);
-		
-		Set<UUID> toAdd = new HashSet<>(bannedPlayers);
-		toAdd.removeAll(existing);
-		
-		String deleteSql = """
-				DELETE FROM shop_bans
-				WHERE shop_uuid = ? AND player_uuid = ?
-				""";
-		
-		String insertSql = """
-				INSERT OR IGNORE INTO shop_bans (shop_uuid, player_uuid)
-				VALUES (?, ?)
-				""";
-		
-		try(var connection = getConnection()){
-			connection.setAutoCommit(false);
-			
-			try{
-				// Remove obsolete bans
-				try(var statement = connection.prepareStatement(deleteSql)){
-					for(UUID playerId : toRemove){
-						statement.setString(1, shopId.toString());
-						statement.setString(2, playerId.toString());
-						statement.addBatch();
-					}
-					statement.executeBatch();
-				}
-				
-				// Add missing bans
-				try(var statement = connection.prepareStatement(insertSql)){
-					for(UUID playerId : toAdd){
-						statement.setString(1, shopId.toString());
-						statement.setString(2, playerId.toString());
-						statement.addBatch();
-					}
-					statement.executeBatch();
-				}
-				
-				connection.commit();
-			} catch(Exception e){
-				connection.rollback();
-				throw e;
-			} finally{
-				connection.setAutoCommit(true);
-			}
-			
-		} catch(Exception e){
-			logger.severe("Unable to save player shop bans " + e.getMessage());
-		}
-	}
-	
-	private void saveTrustedPlayersForShop(UUID shopId, Set<UUID> bannedPlayers) {
-		Set<UUID> existing = getTrustedPlayersForShop(shopId);
-		
-		Set<UUID> toRemove = new HashSet<>(existing);
-		toRemove.removeAll(bannedPlayers);
-		
-		Set<UUID> toAdd = new HashSet<>(bannedPlayers);
-		toAdd.removeAll(existing);
-		
-		String deleteSql = """
-				DELETE FROM shop_trusts
-				WHERE shop_uuid = ? AND player_uuid = ?
-				""";
-		
-		String insertSql = """
-				INSERT OR IGNORE INTO shop_trusts (shop_uuid, player_uuid)
-				VALUES (?, ?)
-				""";
-		
-		try(var connection = getConnection()){
-			connection.setAutoCommit(false);
-			
-			try{
-				// Remove obsolete bans
-				try(var statement = connection.prepareStatement(deleteSql)){
-					for(UUID playerId : toRemove){
-						statement.setString(1, shopId.toString());
-						statement.setString(2, playerId.toString());
-						statement.addBatch();
-					}
-					statement.executeBatch();
-				}
-				
-				// Add missing bans
-				try(var statement = connection.prepareStatement(insertSql)){
-					for(UUID playerId : toAdd){
-						statement.setString(1, shopId.toString());
-						statement.setString(2, playerId.toString());
-						statement.addBatch();
-					}
-					statement.executeBatch();
-				}
-				
-				connection.commit();
-			} catch(Exception e){
-				connection.rollback();
-				throw e;
-			} finally{
-				connection.setAutoCommit(true);
-			}
-			
-		} catch(Exception e){
-			logger.severe("Unable to save player shop bans " + e.getMessage());
 		}
 	}
 	
@@ -531,6 +404,7 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 			}
 		}
 		shop.initializePlayerBans(getBannedPlayersForShop(id));
+		shop.initializePlayerTrusts(getTrustedPlayersForShop(id));
 		return shop;
 	}
 	
@@ -949,12 +823,6 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 		} catch(SQLException e){
 			logger().error("Error while batch updating shops", e);
 		}
-		for(var shop : shops){
-			saveBannedPlayersForShop(shop.getId(), shop.getBannedPlayers());
-		}
-		for(var shop : shops){
-			saveTrustedPlayersForShop(shop.getId(), shop.getTrustedPlayers());
-		}
 	}
 	
 	private void updateShopValues(AbstractShop shop, PreparedStatement ps) throws SQLException {
@@ -1351,6 +1219,55 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 				ps.execute();
 			} catch(SQLException e){
 				logger().error("Error while fetching transaction statistics", e);
+			}
+		});
+	}
+	
+	public void addPlayerBan(UUID shop, UUID player) {
+		scheduler.runAsync(t -> {
+			try(var statement = getConnection().prepareStatement("INSERT OR IGNORE INTO shop_bans (shop_uuid, player_uuid) VALUES (?, ?)")){
+				statement.setString(1, shop.toString());
+				statement.setString(2, player.toString());
+				statement.execute();
+			} catch(Exception e){
+				logger().error("Error while saving player ban %s for shop %s".formatted(player, shop), e);
+			}
+		});
+	}
+	
+	public void removePlayerBan(UUID shop, UUID player) {
+		scheduler.runAsync(t -> {
+			try(var statement = getConnection().prepareStatement("DELETE FROM shop_bans WHERE shop_uuid = ? AND player_uuid = ?")){
+				statement.setString(1, shop.toString());
+				statement.setString(2, player.toString());
+				statement.execute();
+			} catch(Exception e){
+				logger().error("Error while saving player remove ban %s for shop %s".formatted(player, shop), e);
+			}
+		});
+	}
+	
+	public void addPlayerTrust(UUID shop, UUID player) {
+		scheduler.runAsync(t -> {
+			try(var statement = getConnection().prepareStatement("INSERT OR IGNORE INTO shop_trusts (shop_uuid, player_uuid) VALUES (?, ?)")){
+				statement.setString(1, shop.toString());
+				statement.setString(2, player.toString());
+				statement.execute();
+			} catch(Exception e){
+				logger().error("Error while saving player add trust %s for shop %s".formatted(player, shop), e);
+			}
+		});
+	}
+	
+	public void removePlayerTrust(UUID shop, UUID player) {
+		scheduler.runAsync(t -> {
+			
+			try(var statement = getConnection().prepareStatement("DELETE FROM shop_trusts WHERE shop_uuid = ? AND player_uuid = ?")){
+				statement.setString(1, shop.toString());
+				statement.setString(2, player.toString());
+				statement.execute();
+			} catch(Exception e){
+				logger().error("Error while saving player remove trust %s for shop %s".formatted(player, shop), e);
 			}
 		});
 	}

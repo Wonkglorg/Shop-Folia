@@ -22,7 +22,6 @@ import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler.getComponents;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.manager.player.PlayerProfile;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToChangeSettings;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplay;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToCycleDisplayOther;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
@@ -641,11 +640,12 @@ public abstract class AbstractShop{
 	 * If the given player is allowed to view this shops transaction history
 	 */
 	public boolean isAllowedToViewShopTransactions(Player player) {
-		if(isOwner(player.getUniqueId()) && isAllowedToViewShopTransactions(player)){
+		if(isOwner(player.getUniqueId()) && PlayerProfile.isAllowedToViewShopTransactions(player)){
 			return true;
 		}
-		if(isTrusted(player.getUniqueId()) && getPlugin().getSettingsConfig().isAllowTrustedPlayerViewHistory() && isAllowedToViewShopTransactions(
-				player)){
+		if(isTrusted(player.getUniqueId()) &&
+		   getPlugin().getSettingsConfig().isAllowTrustedPlayerViewHistory() &&
+		   PlayerProfile.isAllowedToViewShopTransactions(player)){
 			return true;
 		}
 		return PlayerProfile.isAllowedToViewShopTransactionsOther(player);
@@ -655,12 +655,12 @@ public abstract class AbstractShop{
 	 * If the given player is allowed to change the shop's settings
 	 */
 	public boolean isAllowedToChangeShopSettings(Player player) {
-		if(isOwner(player.getUniqueId()) && isAllowedToChangeSettings(player)){
+		if(isOwner(player.getUniqueId()) && PlayerProfile.isAllowedToChangeSettings(player)){
 			return true;
 		}
 		if(isTrusted(player.getUniqueId()) &&
 		   getPlugin().getSettingsConfig().isAllowTrustedPlayerChangeSettings() &&
-		   isAllowedToChangeSettings(player)){
+		   PlayerProfile.isAllowedToChangeSettings(player)){
 			return true;
 		}
 		return PlayerProfile.isAllowedToChangeSettingsOther(player);
@@ -716,7 +716,7 @@ public abstract class AbstractShop{
 	 */
 	public void addPlayerBan(UUID player) {
 		if(bannedPlayers.add(player)){
-			needsSave = true;
+			shopDatabase().addPlayerBan(this.id, player);
 			Player onlinePlayer = Bukkit.getPlayer(player);
 			if(onlinePlayer != null){
 				//force a shop state update for the client if online
@@ -730,7 +730,7 @@ public abstract class AbstractShop{
 	 */
 	public void removePlayerBan(UUID player) {
 		if(bannedPlayers.remove(player)){
-			needsSave = true;
+			shopDatabase().removePlayerBan(this.id, player);
 			Player onlinePlayer = Bukkit.getPlayer(player);
 			if(onlinePlayer != null){
 				//force a shop state update for the client if online
@@ -744,7 +744,7 @@ public abstract class AbstractShop{
 	 */
 	public void addPlayerTrust(UUID player) {
 		if(trustedPlayers.add(player)){
-			needsSave = true;
+			shopDatabase().addPlayerTrust(this.id, player);
 		}
 	}
 	
@@ -753,7 +753,7 @@ public abstract class AbstractShop{
 	 */
 	public void removePlayerTrust(UUID player) {
 		if(trustedPlayers.remove(player)){
-			needsSave = true;
+			shopDatabase().removePlayerTrust(this.id, player);
 		}
 	}
 	
@@ -771,6 +771,19 @@ public abstract class AbstractShop{
 	}
 	
 	/**
+	 * !!INTERNAL USE ONLY!! To change the list use {@link #addPlayerBan(UUID)} or {@link #removePlayerBan(UUID)}
+	 *
+	 * @param players the player bans to set for this shop (overrides the existing list)
+	 */
+	@Internal
+	public void initializePlayerTrusts(Collection<UUID> players) {
+		this.trustedPlayers.clear();
+		if(!players.isEmpty()){
+			this.trustedPlayers.addAll(players);
+		}
+	}
+	
+	/**
 	 * Prints Shop info about the shop to the player in chat
 	 */
 	public void printSalesInfo(Player player) {
@@ -778,11 +791,11 @@ public abstract class AbstractShop{
 		shopPlaceholders(request, this, true, player);
 		request.sendToAudience(player);
 		if(getPlugin().getSettingsConfig().isPrintHistoryWithShopInfo()){
-			if(!player.getUniqueId().equals(getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactionsOther(player)){
+			if(!isOwner(player.getUniqueId()) && !PlayerProfile.isAllowedToViewShopTransactionsOther(player)){
 				return;
 			}
 			
-			if(player.getUniqueId().equals(getOwnerUUID()) && !PlayerProfile.isAllowedToViewShopTransactions(player)){
+			if(isOwner(player.getUniqueId()) && !PlayerProfile.isAllowedToViewShopTransactions(player)){
 				return;
 			}
 			
@@ -1217,7 +1230,7 @@ public abstract class AbstractShop{
 				break;
 			case CYCLE_DISPLAY:
 				//player clicked another player's shop sign
-				if(!this.getOwnerUUID().equals(player.getUniqueId())){
+				if(!isOwner(player.getUniqueId())){
 					//player has permission to change another player's shop display
 					if((isAllowedToCycleDisplayOther(player))){
 						this.cycleDisplay();

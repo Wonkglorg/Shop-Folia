@@ -475,7 +475,7 @@ command:
         - "<blue>/shop ban list <gray>- Shows a list of all currently banned players from the shop"
       no-valid-shop: "<red>Look at your shop sign when executing the command!"
       not-shop-owner: "<red>This shop does not belong to you!"
-      no-permission: "<red>>You do not have permission to ban players from your shop!"
+      no-permission: "<red>You do not have permission to ban players from your shop!"
       add:
         not-valid-player: "<red>Player does not exist!"
         already-banned: "<red>Player is already banned!"
@@ -497,7 +497,7 @@ command:
         - "<blue>/shop trust list <gray>- Shows a list of all currently trusted players from the shop"
       no-valid-shop: "<red>Look at your shop sign when executing the command!"
       not-shop-owner: "<red>This shop does not belong to you!"
-      no-permission: "<red>>You do not have permission to ban players from your shop!"
+      no-permission: "<red>You do not have permission to ban players from your shop!"
       add:
         not-valid-player: "<red>Player does not exist!"
         already-trusted: "<red>Player is already trusted!"
@@ -611,6 +611,7 @@ command:
           - "<gray>Chunk Loaded: <white>%chunk-loaded%"
           - "<gray>Needs Save: <white>%needs-save%"
           - "<gray>Banned Players: <white>%banned-players%"
+          - "<gray>Trusted Players: <white>%trusted-players%"
           - "<gray>Fake Sign: <white>%fake-sign%"
           - "<gray>Performing Transaction: <white>%performing-transaction%"
           - "<gray>Creation Date: <white>%creation-date%"

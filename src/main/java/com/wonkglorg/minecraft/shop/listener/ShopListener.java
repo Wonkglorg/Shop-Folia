@@ -16,7 +16,6 @@ import com.wonkglorg.minecraft.shop.manager.ShopManager;
 import com.wonkglorg.minecraft.shop.manager.client.SignUpdateHandler;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShop;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToDestroyShopOther;
-import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowedToOpenShopOther;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
@@ -328,13 +327,13 @@ public class ShopListener implements Listener{
 			//if below or above is a shop cancel event if not owner.
 			AbstractShop shop = shopManager.getShopByContainer(b.getRelative(BlockFace.UP));
 			if(shop != null){
-				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
+				if(!player.isOp() && !shop.isOwner(player.getUniqueId())){
 					event.setCancelled(true);
 				}
 			}
 			shop = shopManager.getShopByContainer(b.getRelative(BlockFace.DOWN));
 			if(shop != null){
-				if(!player.isOp() && !shop.getOwnerUUID().equals(player.getUniqueId())){
+				if(!player.isOp() && !shop.isOwner(player.getUniqueId())){
 					event.setCancelled(true);
 				}
 			}
@@ -439,7 +438,7 @@ public class ShopListener implements Listener{
 		}
 		
 		// if placer is not owner and not op they are not allowed to place it
-		if(!shop.getOwnerUUID().equals(player.getUniqueId()) && !isOperator(player)){
+		if(!shop.isOwner(player.getUniqueId()) && !isOperator(player)){
 			logger.debug("Shop owner is not same as placing player, cancel");
 			event.setCancelled(true);
 			return;
@@ -636,7 +635,7 @@ public class ShopListener implements Listener{
 			}
 			
 			if(player.getInventory().getItemInMainHand().getType() == Material.HOPPER){
-				if((isOperator(player) || player.getUniqueId().equals(shop.getOwnerUUID()))){
+				if((isOperator(player) || shop.isOwner(player.getUniqueId()))){
 					logger.debug("Player trying to place hopper on shop chest");
 					return;
 				}
@@ -653,7 +652,7 @@ public class ShopListener implements Listener{
 		
 		if(shop.isAllowedToOpenShopChest(player)){
 			//extra log message if the shop is opened via the .other permission
-			if(isAllowedToOpenShopOther(player)){
+			if(!shop.isOwner(player.getUniqueId())){
 				if(!shop.isAdmin()){
 					lang.request("interaction.success." + shop.getType() + ".open-other")
 						.replace("%owner%", shop.getOwner().getName())
@@ -713,7 +712,7 @@ public class ShopListener implements Listener{
 					continue;
 				}
 				
-				grouped.computeIfAbsent(shop.getShopState(), type -> new ArrayList<>()).add(shop);
+				grouped.computeIfAbsent(shop.getShopState(), _ -> new ArrayList<>()).add(shop);
 				
 				long total = (long) shop.getPrice() * transactionCount;
 				
@@ -851,7 +850,7 @@ public class ShopListener implements Listener{
 		//this is the primary container of the shop, do not allow destruction, the sign needs to be broken not the chest.
 		Location blockLocation = event.getBlock().getLocation();
 		
-		boolean isOwner = shop.getOwnerUUID().equals(player.getUniqueId());
+		boolean isOwner = shop.isOwner(player.getUniqueId());
 		
 		if(isOwner && !isAllowedToDestroyShop(player, shop.getType())){
 			logger.debug("Owner %s without permission trying to break shop container".formatted(player.getName()));
