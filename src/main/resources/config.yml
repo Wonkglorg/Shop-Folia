@@ -296,6 +296,24 @@ material-blacklist:
 material-whitelist:
   materials:
 
+
+# =================================================================== #
+#                           ITEM FORMATTING                           #
+# =================================================================== #
+format:
+  item-name:
+    # the order to check an item for components to evaluate the name from (material-name) is always present on an item and is influenced by the material name format defined in the lang file.
+    order:
+      - display_name
+      - custom_name
+      - material_name
+    # which of these should be stripped of their custom formatting. when stripped the lang defined item.name-format colors can be used instead of the default evaluated ones
+    strip:
+      display_name: false
+      custom_name: false
+      material_name: false
+  # This section mirrors the above item-name, any values present in this that differ from the above will be used when writing text to a sign
+  item-name-sign-override:
 # =================================================================== #
 #                   SHOP PERFORMANCE OPTIMIZATIONS                    #
 # =================================================================== #

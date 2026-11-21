@@ -8,9 +8,11 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase.ShopHistoryData;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat.FormatUse;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.getItemHover;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.itemName;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
-import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.date.DurationBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import lombok.Getter;
@@ -230,11 +232,11 @@ public class ShopLookupSubCommand{
 					.replace("%z%", data.z());
 			
 			if(data.item() != null){
-				request.replace("%item%",()-> ItemNameUtil.getName(data.item()).hoverEvent(ItemNameUtil.getItemHover(data.item())));
+				request.replace("%item%",()-> itemName(data.item(),FormatUse.TEXT).hoverEvent(getItemHover(data.item())));
 			}
 			
 			if(data.barterItem() != null){
-				request.replace("%barter-item%", ()->ItemNameUtil.getName(data.barterItem()).hoverEvent(ItemNameUtil.getItemHover(data.barterItem())));
+				request.replace("%barter-item%", ()->itemName(data.barterItem(),FormatUse.TEXT).hoverEvent(getItemHover(data.barterItem())));
 			}
 			
 			switch(data.action()) {
@@ -254,7 +256,7 @@ public class ShopLookupSubCommand{
 							.replace("%price%", AbstractShop.formatPrice(data.price()))
 							.replace("%amount%", data.amount());
 					if(data.gambleReward() != null){
-						request.replace("%reward%", ()->ItemNameUtil.getName(data.gambleReward()).hoverEvent(ItemNameUtil.getItemHover(data.gambleReward())));
+						request.replace("%reward%", ()->itemName(data.gambleReward(),FormatUse.TEXT).hoverEvent(getItemHover(data.gambleReward())));
 					}
 				}
 				

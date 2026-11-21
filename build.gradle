@@ -149,7 +149,7 @@ dependencies {
     testImplementation "net.milkbowl.vault:VaultAPI:1.7"
     testImplementation "org.mockito:mockito-core:${mockito_version}"
     testImplementation "org.mockbukkit.mockbukkit:mockbukkit-v26.3:${mockbukkit_version}"
-    testImplementation "io.papermc.paper:paper-api:${minecraft_version}.build.+"
+    testImplementation "io.papermc.paper:paper-api:${minecraft_version}.build.252-stable" //explicitly set to stable due to https://github.com/MockBukkit/MockBukkit/issues/1684
 }
 
 tasks {

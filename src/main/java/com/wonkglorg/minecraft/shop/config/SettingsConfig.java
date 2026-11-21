@@ -3,6 +3,13 @@ package com.wonkglorg.minecraft.shop.config;
 import com.wonkglorg.minecraft.config.types.Config;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.CUSTOM_NAME;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.DISPLAY_NAME;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat.FormatUse;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.MATERIAL_NAME;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.valueOf;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.values;
 import com.wonkglorg.minecraft.shop.shop.ShopAction;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
@@ -12,14 +19,18 @@ import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -103,8 +114,6 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private boolean allowTrustedPlayerChangeSettings;
-	
-	
 	
 	/**
 	 * The currency cost when creating a shop
@@ -201,6 +210,12 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private List<Material> whitelistMaterials = new ArrayList<>();
+	
+	/**
+	 * The item name formatting options
+	 */
+	@Getter
+	private ItemNameFormatSettings itemNameFormatSettings = new ItemNameFormatSettings();
 	
 	// =================================================================== //
 	//                   SHOP PERFORMANCE OPTIMIZATIONS                    //
@@ -349,6 +364,8 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
+		itemNameFormatSettings.reload(getConfigurationSection("format"));
+		
 		SignCreationLayoutParser.reload(getConfigurationSection("creation-layout"));
 		
 		// Load shop display optimization settings
@@ -434,4 +451,129 @@ public class SettingsConfig extends Config{
 			condenseCurrencyDefault = section.getBoolean("condense-currency-in-shop.default-value");
 		}
 	}
+	
+	public static class ItemNameFormatSettings{
+		
+		@Getter
+		private List<ItemNameFormat> signOrder = new ArrayList<>();
+		@Getter
+		private Set<ItemNameFormat> stripSignFormatting = new HashSet<>();
+		@Getter
+		private List<ItemNameFormat> textOrder = new ArrayList<>();
+		@Getter
+		private Set<ItemNameFormat> stripTextFormatting = new HashSet<>();
+		
+		/**
+		 * returns the matching formatter to use for the given item
+		 *
+		 * @return the formatter or the default {@link ItemNameFormat#MATERIAL_NAME} formatter
+		 */
+		public ItemNameFormat getMatchingFormatter(ItemStack itemStack, FormatUse formatUse) {
+			ItemMeta meta = itemStack.getItemMeta();
+			if(meta == null){
+				return MATERIAL_NAME;
+			}
+			List<ItemNameFormat> order = getFormattingOrder(formatUse);
+			if(order.isEmpty()){
+				return MATERIAL_NAME;
+			}
+			for(var format : order){
+				if(format.canBeUsedOn(meta)){
+					return format;
+				}
+			}
+			return MATERIAL_NAME;
+		}
+		
+		/**
+		 * Gets the formatting order used for the given format use
+		 */
+		public List<ItemNameFormat> getFormattingOrder(FormatUse formatUse) {
+			switch(formatUse) {
+				case SIGN:
+					if(!signOrder.isEmpty()){
+						return signOrder;
+					}
+				
+				case TEXT:
+					return textOrder;
+				
+				default:
+					return Collections.emptyList();
+			}
+		}
+		
+		/**
+		 * If the given format should be stripped based on the provided format use
+		 */
+		public boolean shouldBeStripped(FormatUse formatUse, ItemNameFormat format) {
+			switch(formatUse) {
+				case SIGN:
+					if(!stripSignFormatting.isEmpty()){
+						return stripSignFormatting.contains(format);
+					}
+				case TEXT:
+					return stripTextFormatting.contains(format);
+				default:
+					return false;
+			}
+		}
+		
+		public void reload(@Nullable ConfigurationSection section) {
+			if(section == null){
+				logger().severe("Unable to find section 'format' in config.yml");
+				return;
+			}
+			
+			ConfigurationSection textSection = section.getConfigurationSection("item-name");
+			if(textSection == null){
+				throw new IllegalStateException("No section 'format.item-name' found in congfig.yml");
+			}
+			signOrder.clear();
+			stripSignFormatting.clear();
+			textOrder.clear();
+			stripTextFormatting.clear();
+			
+			ConfigurationSection signSection = section.getConfigurationSection("item-name-sign-override");
+			if(signSection != null){
+				populateSettings(signSection, signOrder, stripSignFormatting);
+			}
+			
+			populateSettings(textSection, textOrder, stripTextFormatting);
+		}
+		
+		private void populateSettings(ConfigurationSection text, List<ItemNameFormat> textOrder, Set<ItemNameFormat> stripTextFormatting) {
+			for(var order : text.getStringList("order")){
+				ItemNameFormat format = fromString(order);
+				if(format != null){
+					textOrder.add(format);
+				}
+			}
+			if(text.getBoolean("strip.display_name")){
+				stripTextFormatting.add(DISPLAY_NAME);
+			}
+			if(text.getBoolean("strip.custom_name")){
+				stripTextFormatting.add(CUSTOM_NAME);
+			}
+			if(text.getBoolean("strip.material_name")){
+				stripTextFormatting.add(MATERIAL_NAME);
+			}
+		}
+		
+		private ItemNameFormat fromString(String format) {
+			if(format == null){
+				return null;
+			}
+			format = format.toUpperCase();
+			try{
+				return valueOf(format.toUpperCase(Locale.ROOT));
+			} catch(IllegalArgumentException e){
+				logger().severe("Invalid order key '%s' expected one of:'%s'".formatted(format,
+						String.join(", ", Arrays.stream(values()).map(ItemNameFormat::name).toList())));
+				return null;
+			}
+		}
+		
+	}
 }
+

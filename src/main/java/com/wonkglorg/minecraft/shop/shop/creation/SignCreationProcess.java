@@ -4,11 +4,12 @@ import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat.FormatUse;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.itemName;
 import static com.wonkglorg.minecraft.shop.shop.AbstractShop.formatPrice;
 import static com.wonkglorg.minecraft.shop.shop.ShopState.OK;
 import com.wonkglorg.minecraft.shop.shop.ShopType;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser.CreationMatch;
-import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.Components;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
@@ -86,13 +87,13 @@ public class SignCreationProcess extends ShopCreationProcess{
 			LangRequest request = langManager().request("sign.text." + context.getType() + ".initialise." + i);
 			
 			if(context.getItemStack() != null){
-				request.replace("%item%",() -> ItemNameUtil.getName(context.getItemStack()));
+				request.replace("%item%",() -> itemName(context.getItemStack(),FormatUse.SIGN));
 			}else{
 				request.replace("%item%","");
 			}
 			
 			if(context.getSecondaryStack() != null){
-				request.replace("%barter-item%",()->ItemNameUtil.getName(context.getSecondaryStack()));
+				request.replace("%barter-item%",()->itemName(context.getSecondaryStack(),FormatUse.SIGN));
 			}else{
 				request.replace("%barter-item%","");
 			}

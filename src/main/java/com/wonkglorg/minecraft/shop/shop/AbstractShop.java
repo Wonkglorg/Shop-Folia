@@ -14,6 +14,9 @@ import com.wonkglorg.minecraft.shop.config.ItemConfig.CurrencyDenomination;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import static com.wonkglorg.minecraft.shop.dialogs.ShopSettingsDialog.openDialog;
 import com.wonkglorg.minecraft.shop.event.ShopTransactionEvent;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat.FormatUse;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.getItemHover;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.itemName;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import com.wonkglorg.minecraft.shop.manager.ShopManager;
@@ -38,7 +41,6 @@ import com.wonkglorg.minecraft.shop.shop.transaction.party.ShopTransactionParty;
 import com.wonkglorg.minecraft.shop.shop.transaction.party.TransactionParty;
 import static com.wonkglorg.minecraft.shop.util.ChestUtil.getOtherChestDirection;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.shop.util.ShopLogger;
 import com.wonkglorg.minecraft.shop.util.UtilMethods;
 import com.wonkglorg.minecraft.util.date.DateType;
@@ -848,27 +850,24 @@ public abstract class AbstractShop{
 		
 		
 		if(item != null){
-			request.replace("%item-enchants%",()->UtilMethods.getEnchantmentsComponent(item))
-				   .replace("%item-type%", item.getType().toString());
+			request.replace("%item-type%", item.getType().toString());
 			if(includeHover){
-				request.replace("%item%", ()->ItemNameUtil.getName(item).hoverEvent(ItemNameUtil.getItemHover(item)));
+				request.replace("%item%", ()->itemName(item,FormatUse.TEXT).hoverEvent(getItemHover(item)));
 			}else{
-				request.replace("%item%", ()->ItemNameUtil.getName(item));
+				request.replace("%item%", ()->itemName(item,FormatUse.TEXT));
 			}
 		}
 		
 		ItemStack barterItem = shop.secondaryItem;
 		if(barterItem != null){
 			request.replace("%barter-item-type%", barterItem.getType().toString())
-			       .replace("%barter-durability%",UtilMethods.getDurabilityPercent(barterItem))
-			       .replace("%barter-item-amount%", formatPrice(shop.getPrice()))
-				   .replace("%barter-item-enchants%",()->UtilMethods.getEnchantmentsComponent(barterItem));
+			       .replace("%barter-item-amount%", formatPrice(shop.getPrice()));
 			
 
 			if(includeHover){
-				request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem).hoverEvent(ItemNameUtil.getItemHover(barterItem)));
+				request.replace("%barter-item%", ()->itemName(barterItem,FormatUse.TEXT).hoverEvent(getItemHover(barterItem)));
 			}else{
-				request.replace("%barter-item%", ()->ItemNameUtil.getName(barterItem));
+				request.replace("%barter-item%", ()->itemName(barterItem,FormatUse.TEXT));
 			}
 		}
 		//@formatter:on
