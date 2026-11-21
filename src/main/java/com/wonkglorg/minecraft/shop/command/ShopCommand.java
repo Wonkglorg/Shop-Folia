@@ -18,6 +18,8 @@ import static com.wonkglorg.minecraft.shop.ShopPlugin.shopDatabase;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.shopManager;
 import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand;
 import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand.ShopHistoryAction;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat.FormatUse;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.itemName;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.PlayerNameCache;
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.getShopBuildLimit;
@@ -28,7 +30,6 @@ import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isAllowe
 import static com.wonkglorg.minecraft.shop.manager.player.PlayerProfile.isOperator;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
@@ -635,7 +636,7 @@ public class ShopCommand extends AbstractCommand{
 		heldItem.setAmount(1);
 		plugin.getItemConfig().setGambleDisplayItem(player.getInventory().getItemInMainHand());
 		lang.request("command.shop.set-gamble.success")
-			.replace("%held-item%", ItemNameUtil.getName(plugin.getItemConfig().getGambleDisplayItem()))
+			.replace("%held-item%", itemName(plugin.getItemConfig().getGambleDisplayItem(), FormatUse.TEXT))
 			.sendToAudience(sender);
 		return 0;
 	}
@@ -661,7 +662,7 @@ public class ShopCommand extends AbstractCommand{
 		heldItem.setAmount(1);
 		plugin.getItemConfig().setCurrencyItem(heldItem);
 		lang.request("command.shop.set-currency.success")
-			.replace("%held-item%", () -> ItemNameUtil.getName(plugin.getItemConfig().getCurrencyItem()))
+			.replace("%held-item%", () -> itemName(plugin.getItemConfig().getCurrencyItem(),FormatUse.TEXT))
 			.sendToAudience(sender);
 		return 0;
 	}

@@ -3,11 +3,12 @@ package com.wonkglorg.minecraft.shop.manager.client;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat.FormatUse;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.itemName;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
 import com.wonkglorg.minecraft.shop.manager.player.OnlinePlayerProfile;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopStateClient;
-import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.block.Sign;
@@ -135,7 +136,7 @@ public class SignUpdateHandler implements ShopClientListener{
 			//@formatter:off
 			LangRequest request = langManager().request(langKey + "." + i);
 			
-			request.replace("%item%",() -> ItemNameUtil.getName(shop.getItemStack()))
+			request.replace("%item%",() -> itemName(shop.getItemStack(),FormatUse.SIGN))
 				   .replace("%stock-state%",shop.getShopState())
 				   .replace("%amount%",shop.getAmount())
 				   .replace("%price%",shop.getPriceFormatted())
@@ -144,7 +145,7 @@ public class SignUpdateHandler implements ShopClientListener{
 			
 			ItemStack barterStack = shop.getSecondaryItemStack();
 			if(barterStack!=null){
-				request.replace("%barter-item%",() -> ItemNameUtil.getName(shop.getSecondaryItemStack()));
+				request.replace("%barter-item%",() -> itemName(shop.getSecondaryItemStack(),FormatUse.SIGN));
 			}
 			lines.add(request.toSingleComponent());
 			//@formatter:on

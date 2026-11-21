@@ -10,16 +10,17 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.event.HoverEvent.ShowItem;
 import org.apache.commons.lang3.function.TriFunction;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemRarity;
 import static org.bukkit.inventory.ItemRarity.COMMON;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -30,6 +31,7 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
@@ -40,11 +42,9 @@ import java.util.function.Predicate;
  * Formatting definition for custom items, this should be the only way used to evaluate an items name
  */
 public enum ItemNameFormat{
-	DISPLAY_NAME(ItemMeta::hasDisplayName, (format, locale, i) -> i.getItemMeta().displayName()),
-	CUSTOM_NAME(ItemMeta::hasCustomName, (format, locale, i) -> i.getItemMeta().customName()),
+	DISPLAY_NAME(ItemMeta::hasDisplayName, (_, _, i) -> i.getItemMeta().displayName()),
+	CUSTOM_NAME(ItemMeta::hasCustomName, (_, _, i) -> i.getItemMeta().customName()),
 	MATERIAL_NAME(i -> true, ItemNameFormat::fromItemData);
-	
-	private static final Registry<MusicInstrument> musicInstrumentRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT);
 	
 	private final Predicate<ItemMeta> isValid;
 	private final TriFunction<FormatUse, Locale, ItemStack, Component> toName;
@@ -78,8 +78,28 @@ public enum ItemNameFormat{
 	 * @param itemStack the stack to extract the name from
 	 * @return the returned name
 	 */
-	public @NotNull Component itemName(@NotNull FormatUse formatUse, @NotNull Locale locale, @NotNull ItemStack itemStack) {
+	public @NotNull Component itemName(@NotNull FormatUse formatUse, @NotNull Locale locale, @Nullable ItemStack itemStack) {
 		return toName.apply(formatUse, locale, itemStack);
+	}
+	
+	/**
+	 * returns the matching formatter to use for the given item as defined in {@link SettingsConfig#getItemNameFormatSettings()}
+	 *
+	 * @return the formatter or the default {@link ItemNameFormat#MATERIAL_NAME} formatter
+	 */
+	public static ItemNameFormat getFormatter(ItemStack itemStack, FormatUse use) {
+		return ShopPlugin.getPlugin().getSettingsConfig().getItemNameFormatSettings().getMatchingFormatter(itemStack, use);
+	}
+	
+	/**
+	 * returns the matching formatter to use for the given item as defined in {@link SettingsConfig#getItemNameFormatSettings()}
+	 *
+	 * @return the formatter or the default {@link ItemNameFormat#MATERIAL_NAME} formatter
+	 */
+	public static Component itemName(ItemStack itemStack, FormatUse use) {
+		return ShopPlugin.getPlugin().getSettingsConfig().getItemNameFormatSettings().getMatchingFormatter(itemStack, use).itemName(use,
+				Locale.ENGLISH,
+				itemStack);
 	}
 	
 	/**
@@ -111,7 +131,7 @@ public enum ItemNameFormat{
 		switch(formatUse) {
 			//fall through sign case if content is available in the override use it otherwise fall back on the text one
 			case SIGN:
-				String path = "item.name-format-sign-override." + materialString;
+				String path = "item.name-format-sign-override.material." + materialString;
 				if(config.contains(path)){
 					request = lang.request(path);
 					break;
@@ -122,7 +142,7 @@ public enum ItemNameFormat{
 					break;
 				}
 			case TEXT:
-				path = "item.name-format." + materialString;
+				path = "item.name-format.material." + materialString;
 				if(config.contains(path)){
 					request = lang.request(path);
 					break;
@@ -139,16 +159,20 @@ public enum ItemNameFormat{
 			return formatMaterialName(item.getType()).color(rarity.color());
 		}
 		
-		ItemMeta meta = item.getItemMeta();
-		applyMetaPlaceholders(meta, rarity, request);
+		applyMetaPlaceholders(item, rarity, request);
 		return request.toSingleComponent();
 	}
 	
 	/**
 	 * Applies placeholders based on the itemMeta used to the given lang request
 	 */
-	public static void applyMetaPlaceholders(ItemMeta baseMeta, ItemRarity rarity, LangRequest request) {
+	public static void applyMetaPlaceholders(ItemStack itemStack, ItemRarity rarity, LangRequest request) {
 		request.replace("%item-rarity%", rarity);
+		if(itemStack == null){
+			return;
+		}
+		request.replace("%material-name%", formatMaterialName(itemStack.getType()).color(rarity.color()));
+		ItemMeta baseMeta = itemStack.getItemMeta();
 		if(baseMeta == null){
 			return;
 		}
@@ -190,7 +214,7 @@ public enum ItemNameFormat{
 					request.replace("%instrument%", "unknown");
 					return;
 				}
-				NamespacedKey key = musicInstrumentRegistry.getKey(instrument);
+				NamespacedKey key = RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT).getKey(instrument);
 				if(key == null){
 					request.replace("%instrument%", "unknown");
 					return;
@@ -230,6 +254,13 @@ public enum ItemNameFormat{
 		return Component.text(capitalizeAndReplaceUnderscores(material.name().toLowerCase()));
 	}
 	
+	public static HoverEvent<ShowItem> getItemHover(ItemStack item) {
+		if(item == null){
+			return null;
+		}
+		return Bukkit.getItemFactory().asHoverEvent(item, hover -> hover);
+	}
+	
 	public static String capitalizeAndReplaceUnderscores(String input) {
 		String[] parts = input.split("_");
 		StringBuilder sb = new StringBuilder();
@@ -244,6 +275,13 @@ public enum ItemNameFormat{
 			sb.append(" ");
 		}
 		return sb.toString().trim();
+	}
+	
+	public static String toPlainTextMaterial(ItemStack stack) {
+		if(stack == null){
+			return Material.AIR.toString();
+		}
+		return stack.getType().toString();
 	}
 	
 	public enum FormatUse{

@@ -4,6 +4,12 @@ import com.wonkglorg.minecraft.config.types.Config;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
 import com.wonkglorg.minecraft.shop.item.ItemNameFormat;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.CUSTOM_NAME;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.DISPLAY_NAME;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat.FormatUse;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.MATERIAL_NAME;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.valueOf;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.values;
 import com.wonkglorg.minecraft.shop.shop.ShopAction;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
@@ -13,6 +19,7 @@ import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -204,6 +211,9 @@ public class SettingsConfig extends Config{
 	@Getter
 	private List<Material> whitelistMaterials = new ArrayList<>();
 	
+	/**
+	 * The item name formatting options
+	 */
 	@Getter
 	private ItemNameFormatSettings itemNameFormatSettings = new ItemNameFormatSettings();
 	
@@ -454,9 +464,31 @@ public class SettingsConfig extends Config{
 		private Set<ItemNameFormat> stripTextFormatting = new HashSet<>();
 		
 		/**
+		 * returns the matching formatter to use for the given item
+		 *
+		 * @return the formatter or the default {@link ItemNameFormat#MATERIAL_NAME} formatter
+		 */
+		public ItemNameFormat getMatchingFormatter(ItemStack itemStack, FormatUse formatUse) {
+			ItemMeta meta = itemStack.getItemMeta();
+			if(meta == null){
+				return MATERIAL_NAME;
+			}
+			List<ItemNameFormat> order = getFormattingOrder(formatUse);
+			if(order.isEmpty()){
+				return MATERIAL_NAME;
+			}
+			for(var format : order){
+				if(format.canBeUsedOn(meta)){
+					return format;
+				}
+			}
+			return MATERIAL_NAME;
+		}
+		
+		/**
 		 * Gets the formatting order used for the given format use
 		 */
-		public List<ItemNameFormat> getFormattingOrder(ItemNameFormat.FormatUse formatUse) {
+		public List<ItemNameFormat> getFormattingOrder(FormatUse formatUse) {
 			switch(formatUse) {
 				case SIGN:
 					if(!signOrder.isEmpty()){
@@ -474,7 +506,7 @@ public class SettingsConfig extends Config{
 		/**
 		 * If the given format should be stripped based on the provided format use
 		 */
-		public boolean shouldBeStripped(ItemNameFormat.FormatUse formatUse, ItemNameFormat format) {
+		public boolean shouldBeStripped(FormatUse formatUse, ItemNameFormat format) {
 			switch(formatUse) {
 				case SIGN:
 					if(!stripSignFormatting.isEmpty()){
@@ -518,13 +550,13 @@ public class SettingsConfig extends Config{
 				}
 			}
 			if(text.getBoolean("strip.display_name")){
-				stripTextFormatting.add(ItemNameFormat.DISPLAY_NAME);
+				stripTextFormatting.add(DISPLAY_NAME);
 			}
 			if(text.getBoolean("strip.custom_name")){
-				stripTextFormatting.add(ItemNameFormat.CUSTOM_NAME);
+				stripTextFormatting.add(CUSTOM_NAME);
 			}
 			if(text.getBoolean("strip.material_name")){
-				stripTextFormatting.add(ItemNameFormat.MATERIAL_NAME);
+				stripTextFormatting.add(MATERIAL_NAME);
 			}
 		}
 		
@@ -534,10 +566,10 @@ public class SettingsConfig extends Config{
 			}
 			format = format.toUpperCase();
 			try{
-				return ItemNameFormat.valueOf(format.toUpperCase(Locale.ROOT));
+				return valueOf(format.toUpperCase(Locale.ROOT));
 			} catch(IllegalArgumentException e){
 				logger().severe("Invalid order key '%s' expected one of:'%s'".formatted(format,
-						String.join(", ", Arrays.stream(ItemNameFormat.values()).map(ItemNameFormat::name).toList())));
+						String.join(", ", Arrays.stream(values()).map(ItemNameFormat::name).toList())));
 				return null;
 			}
 		}

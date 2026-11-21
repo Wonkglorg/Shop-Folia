@@ -36,7 +36,7 @@ placeholders:
 templates:
   shop-price-display: "[if:%price%==0]<aqua>FREE[else]<aqua>%price% %currency-name%[/if]"
   stock-state-color: "[if:%stock-state%==OK]%in-stock-color%[else-if:%stock-state%==OVERFILLED]%overfilled-stock-color%[else]%out-of-stock-color%[/if]"
-  item-rarity-color: "[if:%%item-rarity%==EPIC]%item-rarity-color-epic%[else-if:%%item-rarity%==RARE]%item-rarity-color-rare%[else-if:%%item-rarity%==UNCOMMON]%item-rarity-color-uncommon%[else]%item-rarity-color-common%[/if]"
+  item-rarity-color: "[if:%item-rarity%==EPIC]%item-rarity-color-epic%[else-if:%item-rarity%==RARE]%item-rarity-color-rare%[else-if:%item-rarity%==UNCOMMON]%item-rarity-color-uncommon%[else]%item-rarity-color-common%[/if]"
 
 ##Shop transaction related messages
 transaction:
@@ -56,22 +56,22 @@ transaction:
   success:
     sell:
       # the message the player receives on a successful trade
-      user: '<gray>You bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from %owner% for %shop-price-display%<gray>.'
+      user: '<gray>You bought <white>%item-amount% %item%(s) <gray>from %owner% for %shop-price-display%<gray>.'
       # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
-      owner: '<gray>%user% bought <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>from you for %shop-price-display%<gray> at <white>%location%<gray>.'
+      owner: '<gray>%user% bought <white>%item-amount% %item%(s) <gray>from you for %shop-price-display%<gray> at <white>%location%<gray>.'
     buy:
       # the message the player receives on a successful trade
-      user: '<gray>You sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to %owner% for %shop-price-display%<gray>.'
+      user: '<gray>You sold <white>%item-amount% %item%(s) <gray>to %owner% for %shop-price-display%<gray>.'
       # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
-      owner: '<gray>%user% sold <white>%item-amount% %item%(s)<aqua>%item-enchants% <gray>to you for %shop-price-display%<gray> at <white>%location%<gray>.'
+      owner: '<gray>%user% sold <white>%item-amount% %item%(s) <gray>to you for %shop-price-display%<gray> at <white>%location%<gray>.'
     barter:
       # the message the player receives on a successful trade
-      user: '<gray>You bartered <white>%barter-item-amount% <gray>of your <white>%barter-item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of %owner%s <white>%item%(s)<aqua>%item-enchants%<gray>.'
+      user: '<gray>You bartered <white>%barter-item-amount% <gray>of your <white>%barter-item%(s) <gray>for <white>%item-amount% <gray>of %owner%s <white>%item%(s)<gray>.'
       # the message the owner of the shop receives on a successful trade if they opted into receiving transaction messages
-      owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter-item%(s)<aqua>%barter-item-enchants% <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<aqua>%item-enchants%<gray> at <white>%location%<gray>.'
+      owner: '<gray>%user% bartered <white>%barter-item-amount% <gray>of their <white>%barter-item%(s) <gray>for <white>%item-amount% <gray>of your <white>%item%(s)<gray> at <white>%location%<gray>.'
     gamble:
       # the message the player receives on a successful trade
-      user: '<gray>You gambled %shop-price-display% <gray>and received <white>%item%<gray>(x%item-amount%)<aqua>%item-enchants%.'
+      user: '<gray>You gambled %shop-price-display% <gray>and received <white>%item%<gray>(x%item-amount%).'
 
   issue:
     sell:
@@ -182,7 +182,7 @@ interaction:
         - "<gold>Hit the sign with the item you want to sell to other players or use"
         - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when a sell shop has been successfully initialized after the player provides the item they want to sell.
-      create: "<yellow>You have created a shop that sells <gold>%item%(s)<aqua>%item-enchants%<yellow>."
+      create: "<yellow>You have created a shop that sells <gold>%item%(s)<yellow>."
       # Sent when the owner successfully destroys their own sell shop.
       destroy: "<gray>You have destroyed your selling shop."
       # Sent when a player successfully destroys a sell shop owned by another player.
@@ -195,7 +195,7 @@ interaction:
         - "<gold>Hit the sign with the item you want to buy from other players or use"
         - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when a buy shop has been successfully initialized after the player provides the item they want to buy.
-      create: "<yellow>You have created a shop that buys <gold>%item%(s)<aqua>%item-enchants%<yellow>."
+      create: "<yellow>You have created a shop that buys <gold>%item%(s)<yellow>."
       # Sent when the owner successfully destroys their own buy shop.
       destroy: "<gray>You have destroyed your buying shop."
       # Sent when a player successfully destroys a buy shop owned by another player.
@@ -213,7 +213,7 @@ interaction:
         - "<gold>Now hit the sign again with the item you want to receive for it"
         - "<yellow>/shop-initialize<gold> <item-name> <gray>(uses the item in your hand if no name is given)!"
       # Sent when a barter shop has been successfully initialized after both the offered and requested items have been provided.
-      create: "<yellow>You have created a shop that barters <gold>%item%(s)<aqua>%item-enchants% <yellow>for <gold>%barter-item%(s)<aqua>%barter-item-enchants%<yellow>."
+      create: "<yellow>You have created a shop that barters <gold>%item%(s) <yellow>for <gold>%barter-item%(s)<yellow>."
       # Sent when the owner successfully destroys their own barter shop.
       destroy: "<gray>You have destroyed your bartering shop."
       # Sent when a player successfully destroys a barter shop owned by another player.
@@ -395,7 +395,6 @@ permission:
 hover:
   location:
     - '%item% <gray>(x%item-amount%)'
-    - '<aqua>%item-enchants%'
     - '<gray>Type: <aqua>%shop-type%'
     - '<gray>Price: <green>%price%'
     - '<gray>Stock: <green>%stock%'

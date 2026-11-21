@@ -8,6 +8,7 @@ import com.wonkglorg.minecraft.command.paged.PageResult;
 import com.wonkglorg.minecraft.shop.AdminOfflinePlayer;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import com.wonkglorg.minecraft.shop.command.subcommand.ShopLookupSubCommand.ShopHistoryAction;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.toPlainTextMaterial;
 import com.wonkglorg.minecraft.shop.migrate.MarketManagerDB.ShopHistoryEntry;
 import com.wonkglorg.minecraft.shop.shop.AbstractShop;
 import com.wonkglorg.minecraft.shop.shop.ShopActionType;
@@ -17,7 +18,6 @@ import com.wonkglorg.minecraft.shop.shop.display.DisplayType;
 import com.wonkglorg.minecraft.shop.shop.settings.Setting;
 import static com.wonkglorg.minecraft.shop.shop.settings.Settings.ALL_SETTINGS;
 import com.wonkglorg.minecraft.shop.util.CurrencyType;
-import com.wonkglorg.minecraft.shop.util.ItemNameUtil;
 import com.wonkglorg.minecraft.util.date.DateType;
 import com.wonkglorg.minecraft.util.date.DurationBuilder;
 import static net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger;
@@ -744,10 +744,8 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 						   " z: " +
 						   shop.getContainerLocation().getBlockZ() +
 						   ") item: " +
-						   ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
-						   (shop.getSecondaryItemStack() != null
-							? " barterItem: " + ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack())
-							: ""));
+						   toPlainTextMaterial(shop.getItemStack()) +
+						   (shop.getSecondaryItemStack() != null ? " barterItem: " + toPlainTextMaterial(shop.getSecondaryItemStack()) : ""));
 		}
 		if(actionType == ShopActionType.DESTROY){
 			logger().debug(player.getName() +
@@ -761,10 +759,8 @@ public class ShopDatabase extends SqliteDatabase<FileDataSource>{
 						   " z: " +
 						   shop.getContainerLocation().getBlockZ() +
 						   ") item: " +
-						   ItemNameUtil.getNameAsPlainText(shop.getItemStack()) +
-						   (shop.getSecondaryItemStack() != null
-							? " barterItem: " + ItemNameUtil.getNameAsPlainText(shop.getSecondaryItemStack())
-							: ""));
+						   toPlainTextMaterial(shop.getItemStack()) +
+						   (shop.getSecondaryItemStack() != null ? " barterItem: " + toPlainTextMaterial(shop.getSecondaryItemStack()) : ""));
 		}
 		logAction(player, shop.getId(), actionType);
 	}
