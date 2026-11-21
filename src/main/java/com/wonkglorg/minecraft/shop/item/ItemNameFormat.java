@@ -230,7 +230,7 @@ public enum ItemNameFormat{
 				if(meta.getBasePotionType() != PotionType.TURTLE_MASTER){
 					if(effect.getAmplifier() > 0){
 						//add 1 because amplifier 0 is potion effect level 1
-						request.replace("%amplifier%", toRoman(effect.getAmplifier()+1));
+						request.replace("%amplifier%", toRoman(effect.getAmplifier() + 1));
 						request.replace("%amplifier-number%", effect.getAmplifier());
 					}
 				}
@@ -238,8 +238,8 @@ public enum ItemNameFormat{
 			
 			case FireworkMeta meta -> {
 				if(meta.hasPower()){
-					request.replace("%duration%", meta.getPower());
-				}else{
+					request.replace("%duration%",meta.getPower());
+				} else {
 					request.replace("%duration%", "");
 				}
 				//todo add effects here?

@@ -637,13 +637,15 @@ item:
       splash_potion: "%item-rarity-color%%type%[if:%amplifier-number%!=0] %amplifier%[/if] Splash Potion[if:%duration-number%!=0] <gray>(%duration%)[/if]"
       lingering_potion: "%item-rarity-color%%type%[if:%amplifier-number%!=0] %amplifier%[/if] Lingering Potion[if:%duration-number%!=0] <gray>(%duration%)[/if]"
       player-head: "%player-name%'s Head"
-      firework_rocket: "%item-rarity-color% Firework Rocket <gray>(Duration %duration%)"
+      firework_rocket: "%item-rarity-color%Firework Rocket <gray>(Duration %duration%)"
       tipped_arrow: "%item-rarity-color%%type%[if:%amplifier-number%!=0] %amplifier%[/if] Tipped Arrow[if:%duration-number%!=0] <gray>(%duration%)[/if]"
       goat_horn: "%item-rarity-color% %instrument% Goat Horn"
       enchanted_book: "%item-rarity-color%%enchantment% %enchantment-level% Book"
 
   #mirrors the existing name-format section, any definition in here overwrites the normal name-format one when being displayed on a sign
   name-format-sign-override:
+    material:
+      firework_rocket: "<white>Rocket (Flight %duration%)"
 
 #sign texts to render on shops, these are player specific based on their current relation to the shop
 # each entry must be a list of 4 entries
