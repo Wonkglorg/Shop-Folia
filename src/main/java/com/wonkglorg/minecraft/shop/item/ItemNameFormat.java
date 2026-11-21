@@ -35,6 +35,7 @@ import org.bukkit.inventory.meta.OminousBottleMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionType;
 import static org.bukkit.potion.PotionType.LONG_TURTLE_MASTER;
 import static org.bukkit.potion.PotionType.STRONG_TURTLE_MASTER;
 import static org.bukkit.potion.PotionType.TURTLE_MASTER;
@@ -249,15 +250,15 @@ public enum ItemNameFormat{
 				request.replace("%duration-number%", 0);
 				request.replace("%amplifier%", "");
 				request.replace("%amplifier-number%", 0);
-				if(meta.getBasePotionType() != null){
+				PotionType basePotionType = meta.getBasePotionType();
+				if(basePotionType != null){
 					//replace strong and long so we are left with the base name.
 					request.replace("%type%",
-							capitalizeAndReplaceUnderscores(meta.getBasePotionType()
-																.getKey()
-																.getKey()
-																.toLowerCase()
-																.replace("strong_", "")
-																.replace("long_", "")));
+							capitalizeAndReplaceUnderscores(basePotionType.getKey()
+																		  .getKey()
+																		  .toLowerCase()
+																		  .replace("strong_", "")
+																		  .replace("long_", "")));
 				}
 				
 				if(allEffects.isEmpty()){
@@ -265,7 +266,7 @@ public enum ItemNameFormat{
 				}
 				
 				PotionEffect effect = allEffects.getFirst();
-				if(meta.getBasePotionType() == null){
+				if(basePotionType == null){
 					request.replace("%type%", capitalizeAndReplaceUnderscores(effect.getType().getKey().getKey()));
 				}
 				if(effect.getDuration() == -1){
@@ -276,15 +277,22 @@ public enum ItemNameFormat{
 					request.replace("%duration%", formatTickTime(effect.getDuration()));
 				}
 				
-				//this is pretty dirty find a better way...
-				if(meta.getBasePotionType() != TURTLE_MASTER &&
-				   meta.getBasePotionType() != STRONG_TURTLE_MASTER &&
-				   meta.getBasePotionType() != LONG_TURTLE_MASTER){
-					if(effect.getAmplifier() > 0){
-						//add 1 because amplifier 0 is potion effect level 1
-						request.replace("%amplifier%", toRoman(effect.getAmplifier() + 1));
-						request.replace("%amplifier-number%", effect.getAmplifier());
-					}
+				//show II as the strength for turtle master as it has 2 effects
+				if(basePotionType == STRONG_TURTLE_MASTER){
+					request.replace("%amplifier%", toRoman(2));
+					request.replace("%amplifier-number%", 2);
+					return;
+				}
+				
+				if(basePotionType == LONG_TURTLE_MASTER || basePotionType == TURTLE_MASTER){
+					//do not get amplifier for turtle master always use 0 unless it's a strong one then use 2
+					return;
+				}
+				
+				if(effect.getAmplifier() > 0){
+					//add 1 because amplifier 0 is potion effect level 1
+					request.replace("%amplifier%", toRoman(effect.getAmplifier() + 1));
+					request.replace("%amplifier-number%", effect.getAmplifier());
 				}
 			}
 			
