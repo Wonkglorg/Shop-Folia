@@ -7,6 +7,7 @@ import com.wonkglorg.minecraft.shop.item.ItemNameFormat;
 import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.CUSTOM_NAME;
 import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.DISPLAY_NAME;
 import com.wonkglorg.minecraft.shop.item.ItemNameFormat.FormatUse;
+import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.ITEM_NAME;
 import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.MATERIAL_NAME;
 import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.valueOf;
 import static com.wonkglorg.minecraft.shop.item.ItemNameFormat.values;
@@ -454,12 +455,34 @@ public class SettingsConfig extends Config{
 	
 	public static class ItemNameFormatSettings{
 		
+		/**
+		 * If custom names should be ignored if the item is player named when requested as {@link FormatUse#TEXT}
+		 */
+		@Getter
+		private boolean ignorePlayerRenamedItemText;
+		/**
+		 * If custom names should be ignored if the item is player named when requested as {@link FormatUse#SIGN} if non are specified falls back to {@link #ignorePlayerRenamedItemText}
+		 */
+		@Getter
+		private boolean ignorePlayerRenamedItemSign;
+		/**
+		 * In which order to check for a valid {@link ItemNameFormat} when using {@link FormatUse#TEXT} if non are specified falls back to {@link #textOrder}
+		 */
 		@Getter
 		private List<ItemNameFormat> signOrder = new ArrayList<>();
+		/**
+		 * Which ItemNameFormats should be stripped when using {@link FormatUse#SIGN} if non are specified falls back to {@link #stripTextFormatting}
+		 */
 		@Getter
 		private Set<ItemNameFormat> stripSignFormatting = new HashSet<>();
+		/**
+		 * In which order to check for a valid {@link ItemNameFormat} when using {@link FormatUse#TEXT}
+		 */
 		@Getter
 		private List<ItemNameFormat> textOrder = new ArrayList<>();
+		/**
+		 * Which ItemNameFormats should be stripped when using {@link FormatUse#TEXT}
+		 */
 		@Getter
 		private Set<ItemNameFormat> stripTextFormatting = new HashSet<>();
 		
@@ -478,7 +501,7 @@ public class SettingsConfig extends Config{
 				return MATERIAL_NAME;
 			}
 			for(var format : order){
-				if(format.canBeUsedOn(meta)){
+				if(format.canBeUsedOn(formatUse, meta)){
 					return format;
 				}
 			}
@@ -501,6 +524,16 @@ public class SettingsConfig extends Config{
 				default:
 					return Collections.emptyList();
 			}
+		}
+		
+		/**
+		 * If player named formatting is configured to be ignored on custom named items
+		 */
+		public boolean getIgnorePlayerNamedFormatting(FormatUse formatUse) {
+			return switch(formatUse) {
+				case SIGN -> ignorePlayerRenamedItemSign;
+				case TEXT -> ignorePlayerRenamedItemText;
+			};
 		}
 		
 		/**
@@ -529,14 +562,20 @@ public class SettingsConfig extends Config{
 			if(textSection == null){
 				throw new IllegalStateException("No section 'format.item-name' found in congfig.yml");
 			}
+			ignorePlayerRenamedItemText = textSection.getBoolean("ignore-player-renamed-items");
 			signOrder.clear();
 			stripSignFormatting.clear();
 			textOrder.clear();
 			stripTextFormatting.clear();
+			//set it to the same as the text one unless overridden below
+			ignorePlayerRenamedItemSign = ignorePlayerRenamedItemText;
 			
 			ConfigurationSection signSection = section.getConfigurationSection("item-name-sign-override");
 			if(signSection != null){
 				populateSettings(signSection, signOrder, stripSignFormatting);
+				if(signSection.contains("ignore-player-renamed-items")){
+					ignorePlayerRenamedItemSign = signSection.getBoolean("ignore-player-renamed-items");
+				}
 			}
 			
 			populateSettings(textSection, textOrder, stripTextFormatting);
@@ -548,6 +587,9 @@ public class SettingsConfig extends Config{
 				if(format != null){
 					textOrder.add(format);
 				}
+			}
+			if(text.getBoolean("strip.item_name")){
+				stripTextFormatting.add(ITEM_NAME);
 			}
 			if(text.getBoolean("strip.display_name")){
 				stripTextFormatting.add(DISPLAY_NAME);
