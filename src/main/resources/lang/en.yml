@@ -632,15 +632,15 @@ item:
     base: "%item-rarity-color%%material-name%"
     # specify a mapping for specific item materials to be overwritten instead of using the default
     material:
-      netherite_smithing_tenplate_upgrade: "Netherite Upgrade"
-      potion: ""
-      splash-potion: ""
-      lingering-potion: ""
+      netherite_upgrade_smithing_template: "%item-rarity-color%Netherite Upgrade"
+      potion: "%item-rarity-color%%type%[if:%amplifier-number%!=0] %amplifier%[/if] Potion[if:%duration-number%!=0] <gray>(%duration%)[/if]"
+      splash_potion: "%item-rarity-color%%type%[if:%amplifier-number%!=0] %amplifier%[/if] Splash Potion[if:%duration-number%!=0] <gray>(%duration%)[/if]"
+      lingering_potion: "%item-rarity-color%%type%[if:%amplifier-number%!=0] %amplifier%[/if] Lingering Potion[if:%duration-number%!=0] <gray>(%duration%)[/if]"
       player-head: "%player-name%'s Head"
-      tipped-arrow: ""
-      firework-rocket: ""
-      firework-star: ""
-      enchanted-book: ""
+      firework_rocket: "%item-rarity-color% Firework Rocket <gray>(Duration %duration%)"
+      tipped_arrow: "%item-rarity-color%%type%[if:%amplifier-number%!=0] %amplifier%[/if] Tipped Arrow[if:%duration-number%!=0] <gray>(%duration%)[/if]"
+      goat_horn: "%item-rarity-color% %instrument% Goat Horn"
+      enchanted_book: "%item-rarity-color%%enchantment% %enchantment-level% Book"
 
   #mirrors the existing name-format section, any definition in here overwrites the normal name-format one when being displayed on a sign
   name-format-sign-override:

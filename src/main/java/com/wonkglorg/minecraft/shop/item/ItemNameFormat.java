@@ -4,8 +4,9 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.config.types.LangConfig;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
-import com.wonkglorg.minecraft.util.roman.ConverterRoman;
+import static com.wonkglorg.minecraft.util.roman.ConverterRoman.toRoman;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -30,9 +31,11 @@ import org.bukkit.inventory.meta.OminousBottleMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +47,7 @@ import java.util.function.Predicate;
 public enum ItemNameFormat{
 	DISPLAY_NAME(ItemMeta::hasDisplayName, (_, _, i) -> i.getItemMeta().displayName()),
 	CUSTOM_NAME(ItemMeta::hasCustomName, (_, _, i) -> i.getItemMeta().customName()),
-	MATERIAL_NAME(i -> true, ItemNameFormat::fromItemData);
+	MATERIAL_NAME(_ -> true, ItemNameFormat::fromItemData);
 	
 	private final Predicate<ItemMeta> isValid;
 	private final TriFunction<FormatUse, Locale, ItemStack, Component> toName;
@@ -110,50 +113,17 @@ public enum ItemNameFormat{
 			return Component.text("");
 		}
 		
-		ItemRarity rarity = COMMON;
-		if(item.hasData(DataComponentTypes.RARITY)){
-			ItemRarity foundRarity = item.getData(DataComponentTypes.RARITY);
-			if(foundRarity != null){
-				rarity = foundRarity;
-			}
-		}
-		
-		LangManager lang = ShopPlugin.langManager();
+		ItemRarity rarity = getRarity(item);
+		LangManager lang = langManager();
 		Optional<LangConfig> configOptional = lang.getAnyValidLangConfig(locale);
 		if(configOptional.isEmpty()){
 			//no config present at all fallback to normal material name
 			return formatMaterialName(item.getType()).color(rarity.color());
 		}
 		var config = configOptional.get();
-		LangRequest request = null;
 		String materialString = item.getType().toString().toLowerCase();
 		
-		switch(formatUse) {
-			//fall through sign case if content is available in the override use it otherwise fall back on the text one
-			case SIGN:
-				String path = "item.name-format-sign-override.material." + materialString;
-				if(config.contains(path)){
-					request = lang.request(path);
-					break;
-				}
-				path = "item.name-format-sign-override.base";
-				if(config.contains(path)){
-					request = lang.request(path);
-					break;
-				}
-			case TEXT:
-				path = "item.name-format.material." + materialString;
-				if(config.contains(path)){
-					request = lang.request(path);
-					break;
-				}
-				path = "item.name-format.base";
-				if(config.contains(path)){
-					request = lang.request(path);
-					break;
-				}
-				break;
-		}
+		LangRequest request = getRequest(formatUse, materialString, config);
 		
 		if(request == null){
 			return formatMaterialName(item.getType()).color(rarity.color());
@@ -161,6 +131,47 @@ public enum ItemNameFormat{
 		
 		applyMetaPlaceholders(item, rarity, request);
 		return request.toSingleComponent();
+	}
+	
+	private static ItemRarity getRarity(ItemStack item) {
+		if(item.hasData(DataComponentTypes.RARITY)){
+			ItemRarity foundRarity = item.getData(DataComponentTypes.RARITY);
+			if(foundRarity != null){
+				return foundRarity;
+			}
+		}
+		return COMMON;
+	}
+	
+	/**
+	 * Finds the right request in the lang file for the given format and material
+	 *
+	 * @return the request or null
+	 */
+	private static LangRequest getRequest(FormatUse formatUse, String materialString, LangConfig config) {
+		switch(formatUse) {
+			//fall through sign case if content is available in the override use it otherwise fall back on the text one
+			case SIGN:
+				String path = "item.name-format-sign-override.material." + materialString;
+				if(config.contains(path)){
+					return langManager().request(path);
+				}
+				path = "item.name-format-sign-override.base";
+				if(config.contains(path)){
+					return langManager().request(path);
+				}
+			case TEXT:
+				path = "item.name-format.material." + materialString;
+				if(config.contains(path)){
+					return langManager().request(path);
+				}
+				path = "item.name-format.base";
+				if(config.contains(path)){
+					return langManager().request(path);
+				}
+				break;
+		}
+		return null;
 	}
 	
 	/**
@@ -183,24 +194,54 @@ public enum ItemNameFormat{
 				}
 			}
 			case PotionMeta meta -> {
-				request.replace("%type%", meta.getBasePotionType());
-				try{
-					//todo add the option to show all effects in the future? not needed for signs or normal preview text so only take the dominant one
-					PotionEffect effect = meta.getAllEffects().getFirst();
-					
+				List<PotionEffect> allEffects = meta.getAllEffects();
+				request.replace("%duration%", "");
+				request.replace("%duration-number%", 0);
+				request.replace("%amplifier%", "");
+				request.replace("%amplifier-number%", 0);
+				if(meta.getBasePotionType() != null){
+					//replace strong and long so we are left with the base name.
+					request.replace("%type%",
+							capitalizeAndReplaceUnderscores(meta.getBasePotionType()
+																.getKey()
+																.getKey()
+																.toLowerCase()
+																.replace("strong_", "")
+																.replace("long_", "")));
+				}
+				
+				if(allEffects.isEmpty()){
+					return;
+				}
+				
+				PotionEffect effect = allEffects.getFirst();
+				if(meta.getBasePotionType() == null){
 					request.replace("%type%", capitalizeAndReplaceUnderscores(effect.getType().getKey().getKey()));
-					request.replace("%duration%", effect.getDuration());
-					request.replace("%amplifier%", effect.getAmplifier());
-					//fallback if no effect is present
-				} catch(RuntimeException e){
-					request.replace("%type%", "NONE");
-					request.replace("%duration%", 0);
-					request.replace("%amplifier%", 0);
+				}
+				if(effect.getDuration() == -1){
+					request.replace("%duration%", "99:99");
+					request.replace("%duration-number%", 9999);
+				} else {
+					request.replace("%duration-number%", effect.getDuration());
+					request.replace("%duration%", formatTickTime(effect.getDuration()));
+				}
+				
+				//this is pretty dirty find a better way...
+				if(meta.getBasePotionType() != PotionType.TURTLE_MASTER){
+					if(effect.getAmplifier() > 0){
+						//add 1 because amplifier 0 is potion effect level 1
+						request.replace("%amplifier%", toRoman(effect.getAmplifier()+1));
+						request.replace("%amplifier-number%", effect.getAmplifier());
+					}
 				}
 			}
 			
 			case FireworkMeta meta -> {
-				request.replace("%duration%", meta.getPower());
+				if(meta.hasPower()){
+					request.replace("%duration%", meta.getPower());
+				}else{
+					request.replace("%duration%", "");
+				}
 				//todo add effects here?
 			}
 			
@@ -224,17 +265,11 @@ public enum ItemNameFormat{
 			}
 			
 			case EnchantmentStorageMeta meta -> {
-				StringBuilder builder = new StringBuilder();
-				int i = 0;
+				//only append the first enchantment otherwise too long for any text box / sign
 				for(Map.Entry<Enchantment, Integer> entry : meta.getStoredEnchants().entrySet()){
-					builder.append(capitalizeAndReplaceUnderscores(entry.getKey().getKey().getKey()));
-					builder.append(" ");
-					builder.append(ConverterRoman.toRoman(entry.getValue()));
-					i++;
-					if(i != meta.getStoredEnchants().size()){
-						builder.append(", ");
-					}
-					request.replace("%enchantments%", builder.toString());
+					request.replace("%enchantment%", capitalizeAndReplaceUnderscores(entry.getKey().getKey().getKey()));
+					request.replace("%enchantment-level%", toRoman(entry.getValue()));
+					return;
 				}
 			}
 			
@@ -259,6 +294,18 @@ public enum ItemNameFormat{
 			return null;
 		}
 		return Bukkit.getItemFactory().asHoverEvent(item, hover -> hover);
+	}
+	
+	private static String formatTickTime(int ticks) {
+		int totalSeconds = ticks / 20;
+		int hours = totalSeconds / 3600;
+		int minutes = (totalSeconds % 3600) / 60;
+		int seconds = totalSeconds % 60;
+		if(hours > 0){
+			return String.format("%d:%02d:%02d", hours, minutes, seconds);
+		} else {
+			return String.format("%02d:%02d", minutes, seconds);
+		}
 	}
 	
 	public static String capitalizeAndReplaceUnderscores(String input) {
