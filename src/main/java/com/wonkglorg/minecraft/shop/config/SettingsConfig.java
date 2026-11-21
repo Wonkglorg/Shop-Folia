@@ -3,6 +3,7 @@ package com.wonkglorg.minecraft.shop.config;
 import com.wonkglorg.minecraft.config.types.Config;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.logger;
+import com.wonkglorg.minecraft.shop.item.ItemNameFormat;
 import com.wonkglorg.minecraft.shop.shop.ShopAction;
 import com.wonkglorg.minecraft.shop.shop.ShopClickType;
 import com.wonkglorg.minecraft.shop.shop.creation.SignCreationLayoutParser;
@@ -17,9 +18,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -103,8 +107,6 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private boolean allowTrustedPlayerChangeSettings;
-	
-	
 	
 	/**
 	 * The currency cost when creating a shop
@@ -201,6 +203,9 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private List<Material> whitelistMaterials = new ArrayList<>();
+	
+	@Getter
+	private ItemNameFormatSettings itemNameFormatSettings = new ItemNameFormatSettings();
 	
 	// =================================================================== //
 	//                   SHOP PERFORMANCE OPTIMIZATIONS                    //
@@ -349,6 +354,8 @@ public class SettingsConfig extends Config{
 			}
 		}
 		
+		itemNameFormatSettings.reload(getConfigurationSection("format"));
+		
 		SignCreationLayoutParser.reload(getConfigurationSection("creation-layout"));
 		
 		// Load shop display optimization settings
@@ -434,4 +441,107 @@ public class SettingsConfig extends Config{
 			condenseCurrencyDefault = section.getBoolean("condense-currency-in-shop.default-value");
 		}
 	}
+	
+	public static class ItemNameFormatSettings{
+		
+		@Getter
+		private List<ItemNameFormat> signOrder = new ArrayList<>();
+		@Getter
+		private Set<ItemNameFormat> stripSignFormatting = new HashSet<>();
+		@Getter
+		private List<ItemNameFormat> textOrder = new ArrayList<>();
+		@Getter
+		private Set<ItemNameFormat> stripTextFormatting = new HashSet<>();
+		
+		/**
+		 * Gets the formatting order used for the given format use
+		 */
+		public List<ItemNameFormat> getFormattingOrder(ItemNameFormat.FormatUse formatUse) {
+			switch(formatUse) {
+				case SIGN:
+					if(!signOrder.isEmpty()){
+						return signOrder;
+					}
+				
+				case TEXT:
+					return textOrder;
+				
+				default:
+					return Collections.emptyList();
+			}
+		}
+		
+		/**
+		 * If the given format should be stripped based on the provided format use
+		 */
+		public boolean shouldBeStripped(ItemNameFormat.FormatUse formatUse, ItemNameFormat format) {
+			switch(formatUse) {
+				case SIGN:
+					if(!stripSignFormatting.isEmpty()){
+						return stripSignFormatting.contains(format);
+					}
+				case TEXT:
+					return stripTextFormatting.contains(format);
+				default:
+					return false;
+			}
+		}
+		
+		public void reload(@Nullable ConfigurationSection section) {
+			if(section == null){
+				logger().severe("Unable to find section 'format' in config.yml");
+				return;
+			}
+			
+			ConfigurationSection textSection = section.getConfigurationSection("item-name");
+			if(textSection == null){
+				throw new IllegalStateException("No section 'format.item-name' found in congfig.yml");
+			}
+			signOrder.clear();
+			stripSignFormatting.clear();
+			textOrder.clear();
+			stripTextFormatting.clear();
+			
+			ConfigurationSection signSection = section.getConfigurationSection("item-name-sign-override");
+			if(signSection != null){
+				populateSettings(signSection, signOrder, stripSignFormatting);
+			}
+			
+			populateSettings(textSection, textOrder, stripTextFormatting);
+		}
+		
+		private void populateSettings(ConfigurationSection text, List<ItemNameFormat> textOrder, Set<ItemNameFormat> stripTextFormatting) {
+			for(var order : text.getStringList("order")){
+				ItemNameFormat format = fromString(order);
+				if(format != null){
+					textOrder.add(format);
+				}
+			}
+			if(text.getBoolean("strip.display_name")){
+				stripTextFormatting.add(ItemNameFormat.DISPLAY_NAME);
+			}
+			if(text.getBoolean("strip.custom_name")){
+				stripTextFormatting.add(ItemNameFormat.CUSTOM_NAME);
+			}
+			if(text.getBoolean("strip.material_name")){
+				stripTextFormatting.add(ItemNameFormat.MATERIAL_NAME);
+			}
+		}
+		
+		private ItemNameFormat fromString(String format) {
+			if(format == null){
+				return null;
+			}
+			format = format.toUpperCase();
+			try{
+				return ItemNameFormat.valueOf(format.toUpperCase(Locale.ROOT));
+			} catch(IllegalArgumentException e){
+				logger().severe("Invalid order key '%s' expected one of:'%s'".formatted(format,
+						String.join(", ", Arrays.stream(ItemNameFormat.values()).map(ItemNameFormat::name).toList())));
+				return null;
+			}
+		}
+		
+	}
 }
+

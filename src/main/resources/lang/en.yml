@@ -28,10 +28,15 @@ placeholders:
   server-display-name: "<light_purple>Server"
   shop-owner-name-color: "<white>"
   closed-shop: "<red>CLOSED"
+  item-rarity-color-common: "<white>"
+  item-rarity-color-uncommon: "<yellow>"
+  item-rarity-color-rare: "<aqua>"
+  item-rarity-color-epic: "<light_purple>"
 # templates which act similar to placeholders but allow placeholders being part of templates to evaluate
 templates:
   shop-price-display: "[if:%price%==0]<aqua>FREE[else]<aqua>%price% %currency-name%[/if]"
   stock-state-color: "[if:%stock-state%==OK]%in-stock-color%[else-if:%stock-state%==OVERFILLED]%overfilled-stock-color%[else]%out-of-stock-color%[/if]"
+  item-rarity-color: "[if:%%item-rarity%==EPIC]%item-rarity-color-epic%[else-if:%%item-rarity%==RARE]%item-rarity-color-rare%[else-if:%%item-rarity%==UNCOMMON]%item-rarity-color-uncommon%[else]%item-rarity-color-common%[/if]"
 
 ##Shop transaction related messages
 transaction:
@@ -621,6 +626,25 @@ command:
     no-initialisation: "<red>Create a shop first to initialize it with the command!"
     not-valid-item: "<red>Not a valid item!"
 
+
+item:
+  name-format:
+    #the basic format for all materials to use when displaying their name when not specifically overwritten
+    base: "%item-rarity-color%%material-name%"
+    # specify a mapping for specific item materials to be overwritten instead of using the default
+    material:
+      netherite_smithing_tenplate_upgrade: "Netherite Upgrade"
+      potion: ""
+      splash-potion: ""
+      lingering-potion: ""
+      player-head: "%player-name%'s Head"
+      tipped-arrow: ""
+      firework-rocket: ""
+      firework-star: ""
+      enchanted-book: ""
+
+  #mirrors the existing name-format section, any definition in here overwrites the normal name-format one when being displayed on a sign
+  name-format-sign-override:
 
 #sign texts to render on shops, these are player specific based on their current relation to the shop
 # each entry must be a list of 4 entries
