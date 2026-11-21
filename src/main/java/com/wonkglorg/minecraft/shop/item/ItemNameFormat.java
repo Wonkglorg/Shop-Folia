@@ -35,7 +35,9 @@ import org.bukkit.inventory.meta.OminousBottleMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionType;
+import static org.bukkit.potion.PotionType.LONG_TURTLE_MASTER;
+import static org.bukkit.potion.PotionType.STRONG_TURTLE_MASTER;
+import static org.bukkit.potion.PotionType.TURTLE_MASTER;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -275,7 +277,9 @@ public enum ItemNameFormat{
 				}
 				
 				//this is pretty dirty find a better way...
-				if(meta.getBasePotionType() != PotionType.TURTLE_MASTER){
+				if(meta.getBasePotionType() != TURTLE_MASTER &&
+				   meta.getBasePotionType() != STRONG_TURTLE_MASTER &&
+				   meta.getBasePotionType() != LONG_TURTLE_MASTER){
 					if(effect.getAmplifier() > 0){
 						//add 1 because amplifier 0 is potion effect level 1
 						request.replace("%amplifier%", toRoman(effect.getAmplifier() + 1));
