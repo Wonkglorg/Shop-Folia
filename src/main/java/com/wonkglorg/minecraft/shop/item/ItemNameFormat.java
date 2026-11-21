@@ -4,6 +4,7 @@ import com.wonkglorg.minecraft.config.LangManager;
 import com.wonkglorg.minecraft.config.lang.LangRequest;
 import com.wonkglorg.minecraft.config.types.LangConfig;
 import com.wonkglorg.minecraft.shop.ShopPlugin;
+import static com.wonkglorg.minecraft.shop.ShopPlugin.getPlugin;
 import static com.wonkglorg.minecraft.shop.ShopPlugin.langManager;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
 import static com.wonkglorg.minecraft.util.roman.ConverterRoman.toRoman;
@@ -11,8 +12,11 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowItem;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.apache.commons.lang3.function.TriFunction;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -39,20 +43,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
 /**
  * Formatting definition for custom items, this should be the only way used to evaluate an items name
  */
 public enum ItemNameFormat{
-	DISPLAY_NAME(ItemMeta::hasDisplayName, (_, _, i) -> i.getItemMeta().displayName()),
-	CUSTOM_NAME(ItemMeta::hasCustomName, (_, _, i) -> i.getItemMeta().customName()),
-	MATERIAL_NAME(_ -> true, ItemNameFormat::fromItemData);
+	ITEM_NAME(ItemNameFormat::isValidItemName, (_, _, i) -> i.getItemMeta().itemName()),
+	DISPLAY_NAME(ItemNameFormat::isValidDisplayName, (_, _, i) -> i.getItemMeta().displayName()),
+	CUSTOM_NAME(ItemNameFormat::isValidCustomName, (_, _, i) -> i.getItemMeta().customName()),
+	MATERIAL_NAME((_, _) -> true, ItemNameFormat::fromItemData);
 	
-	private final Predicate<ItemMeta> isValid;
+	private final BiPredicate<FormatUse, ItemMeta> isValid;
 	private final TriFunction<FormatUse, Locale, ItemStack, Component> toName;
 	
-	ItemNameFormat(Predicate<ItemMeta> isValid, TriFunction<FormatUse, Locale, ItemStack, Component> toName) {
+	ItemNameFormat(BiPredicate<FormatUse, ItemMeta> isValid, TriFunction<FormatUse, Locale, ItemStack, Component> toName) {
 		this.isValid = isValid;
 		this.toName = toName;
 	}
@@ -60,38 +65,24 @@ public enum ItemNameFormat{
 	/**
 	 * Checks if the given formatting can be used on this itemMeta
 	 */
-	public boolean canBeUsedOn(@NotNull ItemMeta meta) {
-		return isValid.test(meta);
-	}
-	
-	public boolean canBeUsedOn(@NotNull ItemStack itemStack) {
-		ItemMeta meta = itemStack.getItemMeta();
-		//material name is true regardless
-		if(meta == null && this != MATERIAL_NAME){
-			return false;
-		}
-		return isValid.test(meta);
+	public boolean canBeUsedOn(FormatUse use, @NotNull ItemMeta meta) {
+		return isValid.test(use, meta);
 	}
 	
 	/**
 	 * Evaluates the name for the given itemstack, check if the item is valid to be evaluated using {@link #canBeUsedOn}
 	 *
-	 * @param formatUse what format this itemName should be used for
+	 * @param use what format this itemName should be used for
 	 * @param locale the locale of the person getting the information
 	 * @param itemStack the stack to extract the name from
 	 * @return the returned name
 	 */
-	public @NotNull Component itemName(@NotNull FormatUse formatUse, @NotNull Locale locale, @Nullable ItemStack itemStack) {
-		return toName.apply(formatUse, locale, itemStack);
-	}
-	
-	/**
-	 * returns the matching formatter to use for the given item as defined in {@link SettingsConfig#getItemNameFormatSettings()}
-	 *
-	 * @return the formatter or the default {@link ItemNameFormat#MATERIAL_NAME} formatter
-	 */
-	public static ItemNameFormat getFormatter(ItemStack itemStack, FormatUse use) {
-		return ShopPlugin.getPlugin().getSettingsConfig().getItemNameFormatSettings().getMatchingFormatter(itemStack, use);
+	public @NotNull Component itemName(@NotNull FormatUse use, @NotNull Locale locale, @Nullable ItemStack itemStack) {
+		Component component = toName.apply(use, locale, itemStack);
+		if(ShopPlugin.getPlugin().getSettingsConfig().getItemNameFormatSettings().shouldBeStripped(use, this)){
+			return Component.text(PlainTextComponentSerializer.plainText().serialize(component));
+		}
+		return component;
 	}
 	
 	/**
@@ -103,6 +94,63 @@ public enum ItemNameFormat{
 		return ShopPlugin.getPlugin().getSettingsConfig().getItemNameFormatSettings().getMatchingFormatter(itemStack, use).itemName(use,
 				Locale.ENGLISH,
 				itemStack);
+	}
+	
+	private static boolean isValidItemName(FormatUse use, ItemMeta meta) {
+		if(meta == null){
+			return false;
+		}
+		if(meta.hasItemName()){
+			if(getPlugin().getSettingsConfig().getItemNameFormatSettings().getIgnorePlayerNamedFormatting(use)){
+				Component component = meta.itemName();
+				//translatable is what every default item has
+				return !(component instanceof TranslatableComponent);
+			}
+			
+			return true;
+		}
+		return false;
+	}
+	
+	private static boolean isValidCustomName(FormatUse use, ItemMeta meta) {
+		if(meta == null){
+			return false;
+		}
+		if(!meta.hasCustomName()){
+			return false;
+		}
+		return isValidComponentName(use, meta.customName());
+	}
+	
+	private static boolean isValidDisplayName(FormatUse use, ItemMeta meta) {
+		if(meta == null){
+			return false;
+		}
+		if(!meta.hasDisplayName()){
+			return false;
+		}
+		return isValidComponentName(use, meta.displayName());
+	}
+	
+	private static boolean isValidComponentName(FormatUse use, Component component) {
+		if(getPlugin().getSettingsConfig().getItemNameFormatSettings().getIgnorePlayerNamedFormatting(use)){
+			return !isLikelyPlayerRenamed(component);
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * best guess if the given component is a player named one or not.
+	 */
+	private static boolean isLikelyPlayerRenamed(Component component) {
+		if(component == null){
+			return false;
+		}
+		if(component instanceof TextComponent textComponent){
+			return textComponent.children().isEmpty() && textComponent.color() == null;
+		}
+		return false;
 	}
 	
 	/**
@@ -238,9 +286,10 @@ public enum ItemNameFormat{
 			
 			case FireworkMeta meta -> {
 				if(meta.hasPower()){
-					request.replace("%duration%",meta.getPower());
+					request.replace("%duration%", meta.getPower());
 				} else {
-					request.replace("%duration%", "");
+					//if no power is present the actual fly time is 1
+					request.replace("%duration%", 1);
 				}
 				//todo add effects here?
 			}
@@ -274,7 +323,11 @@ public enum ItemNameFormat{
 			}
 			
 			case OminousBottleMeta meta -> {
-				request.replace("%amplifier%", meta.getAmplifier());
+				if(meta.hasAmplifier()){
+					request.replace("%amplifier%", toRoman(meta.getAmplifier()));
+				} else {
+					request.replace("%amplifier%", "I");
+				}
 			}
 			
 			default -> {

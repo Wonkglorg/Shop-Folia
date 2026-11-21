@@ -302,13 +302,18 @@ material-whitelist:
 # =================================================================== #
 format:
   item-name:
+    # If custom namings done by a player should be shown when displaying the items name.
+    # this check is accurate when using the new item-name components but has to be guessed when the item uses custom-name or display-name, this validation checks for plain text components without custom formatting applied.
+    ignore-player-renamed-items: true
     # the order to check an item for components to evaluate the name from (material-name) is always present on an item and is influenced by the material name format defined in the lang file.
     order:
+      - item_name
       - display_name
       - custom_name
       - material_name
     # which of these should be stripped of their custom formatting. when stripped the lang defined item.name-format colors can be used instead of the default evaluated ones
     strip:
+      item_name: false
       display_name: false
       custom_name: false
       material_name: false
