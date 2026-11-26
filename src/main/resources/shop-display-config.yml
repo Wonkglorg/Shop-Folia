@@ -1,0 +1,27 @@
+# shop display related settings
+display:
+  # default display for new shops
+  type: NONE
+  # This will change the order that display types are cycled in #
+  # To remove a display type as a cycle option, remove it from this list #
+  # The options are: NONE, ITEM, GLASS_CASE, LARGE_ITEM, ITEM_FRAME #
+  cycle:
+    - NONE
+    - ITEM
+    - GLASS_CASE
+    - LARGE_ITEM
+    - ITEM_FRAME
+  # This controls whether the item frames of shop displays are glowing #
+  glowing-item-frame: false
+
+  definition:
+    ITEM:
+      offset:
+        x: 0
+        y: 0
+        z: 0
+    GLASS_CASE:
+
+    LARGE_ITEM:
+
+    ITEM_FRAME:

@@ -198,7 +198,7 @@ public abstract class ShopCreationProcess{
 				type,
 				signDirection,
 				System.currentTimeMillis(),
-				ShopPlugin.getPlugin().getSettingsConfig().getDisplayTypeDefault());
+				ShopPlugin.getPlugin().getShopDisplayConfig().getDisplayTypeDefault());
 		shop.setFakeSign(isFakeSign);
 		
 		if(type != ShopType.GAMBLE){

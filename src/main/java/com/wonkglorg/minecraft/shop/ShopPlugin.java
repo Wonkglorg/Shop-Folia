@@ -7,6 +7,7 @@ import com.wonkglorg.minecraft.shop.command.ShopInitializeCommand;
 import com.wonkglorg.minecraft.shop.config.ItemConfig;
 import com.wonkglorg.minecraft.shop.config.ItemConfigProvider;
 import com.wonkglorg.minecraft.shop.config.SettingsConfig;
+import com.wonkglorg.minecraft.shop.config.ShopDisplayConfig;
 import com.wonkglorg.minecraft.shop.db.ShopDatabase;
 import com.wonkglorg.minecraft.shop.listener.ShopListener;
 import com.wonkglorg.minecraft.shop.manager.PlayerManager;
@@ -47,6 +48,9 @@ public class ShopPlugin extends JavaPlugin{
 	private SettingsConfig settingsConfig;
 	@Getter
 	private ItemConfigProvider itemConfig;
+	@Getter
+	private ShopDisplayConfig shopDisplayConfig;
+	
 	private static LangManager langManager;
 	@Getter
 	private ShopServiceProvider shopServiceProvider;
@@ -73,6 +77,7 @@ public class ShopPlugin extends JavaPlugin{
 		if(itemConfig.getGambleDisplayItem() == null){
 			itemConfig.setGambleDisplayItem(new ItemStack(Material.DIAMOND));
 		}
+		shopDisplayConfig = new ShopDisplayConfig();
 		
 		// Check if we should load VAULT economy
 		CurrencyType currencyType = settingsConfig.getCurrencyType();
@@ -146,7 +151,7 @@ public class ShopPlugin extends JavaPlugin{
 		logger.setLogLevel(settingsConfig.getLogLevel());
 		langManager.silentLoad();
 		shopmanager.reload();
-		shopDatabase().updateCurrencyIfChanged(settingsConfig.getCurrencyType(),itemConfig.getCurrencyItem());
+		shopDatabase().updateCurrencyIfChanged(settingsConfig.getCurrencyType(), itemConfig.getCurrencyItem());
 	}
 	
 	private boolean setupEconomy() {

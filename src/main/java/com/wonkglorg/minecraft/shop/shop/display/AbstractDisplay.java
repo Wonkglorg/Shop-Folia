@@ -120,6 +120,7 @@ public abstract class AbstractDisplay{
 			logger().severe("Unknown error sending packet to player for Display (Item/Hologram text), error message: " + e.getMessage(), e);
 		}
 	}
+	//todo add methods on returning the center of main and secondary stack, for both single container and multi container
 	
 	protected int spawnArmorStandPacket(Player player, ArmorStandData armorStandData) {
 		Location location = armorStandData.getLocation();

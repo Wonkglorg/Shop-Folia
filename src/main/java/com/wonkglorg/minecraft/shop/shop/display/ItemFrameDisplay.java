@@ -38,7 +38,7 @@ public class ItemFrameDisplay extends AbstractDisplay{
 				shop.getDisplayItem(),
 				validLocation,
 				shop.getFacing(),
-				ShopPlugin.getPlugin().getSettingsConfig().isDisplayGlowingItemFrame()));
+				ShopPlugin.getPlugin().getShopDisplayConfig().isDisplayGlowingItemFrame()));
 		
 		//only add secondary item for item frames if it is a double chest shop
 		if(shop.getSecondaryContainerLocation() == null){
@@ -61,7 +61,7 @@ public class ItemFrameDisplay extends AbstractDisplay{
 					secondaryStack,
 					secondaryValidLocation,
 					shop.getFacing(),
-					ShopPlugin.getPlugin().getSettingsConfig().isDisplayGlowingItemFrame()));
+					ShopPlugin.getPlugin().getShopDisplayConfig().isDisplayGlowingItemFrame()));
 		}
 		return entityIds;
 	}

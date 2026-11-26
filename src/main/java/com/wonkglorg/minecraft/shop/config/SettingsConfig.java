@@ -131,24 +131,6 @@ public class SettingsConfig extends Config{
 	 */
 	@Getter
 	private boolean returnCreationCost;
-	
-	/**
-	 * The default display new shops spawn with
-	 */
-	@Getter
-	private DisplayType displayTypeDefault;
-	
-	/**
-	 * The cycling order of displays
-	 */
-	@Getter
-	private DisplayType[] displayCycle;
-	
-	/**
-	 * If the itemframe should glow on shop displays
-	 */
-	@Getter
-	private boolean displayGlowingItemFrame;
 	/**
 	 * If the shop sign should be made glowing
 	 */
@@ -291,21 +273,6 @@ public class SettingsConfig extends Config{
 		allowTrustedPlayerOpenShop = getBoolean("trust.open-shop");
 		allowTrustedPlayerViewHistory = getBoolean("trust.shop-history");
 		allowTrustedPlayerChangeSettings = getBoolean("trust.change-shop-settings");
-		
-		displayTypeDefault = DisplayType.fromValue(getString("display.type"));
-		
-		List<String> cycle = getStringList("display.cycle");
-		if(cycle.isEmpty()){
-			for(DisplayType dt : DisplayType.values()){
-				cycle.add(dt.name());
-			}
-		}
-		
-		displayCycle = new DisplayType[cycle.size()];
-		for(int i = 0; i < cycle.size(); i++){
-			displayCycle[i] = DisplayType.fromValue(cycle.get(i));
-		}
-		displayGlowingItemFrame = getBoolean("display.glowing-item-frame");
 		signGlowingSignText = getBoolean("sign.glowing-sign-text");
 		signWaxed = getBoolean("sign.waxed-sign");
 		

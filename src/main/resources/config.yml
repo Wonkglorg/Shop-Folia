@@ -69,21 +69,6 @@ cost:
   create: 0
   # if creation cost should be returned when shop destroyed
   return-creation-cost: false
-# shop display related settings
-display:
-  # default display for new shops
-  type: NONE
-  # This will change the order that display types are cycled in #
-  # To remove a display type as a cycle option, remove it from this list #
-  # The options are: NONE, ITEM, GLASS_CASE, LARGE_ITEM, ITEM_FRAME #
-  cycle:
-    - NONE
-    - ITEM
-    - GLASS_CASE
-    - LARGE_ITEM
-    - ITEM_FRAME
-  # This controls whether the item frames of shop displays are glowing #
-  glowing-item-frame: false
 
 #settings for the shop sign
 sign:

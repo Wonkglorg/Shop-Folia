@@ -1301,7 +1301,7 @@ public abstract class AbstractShop{
 		}
 		ShopLogger logger = logger();
 		logger.debug("===STARTING DISPLAY CYCLE===");
-		DisplayType[] cycle = getPlugin().getSettingsConfig().getDisplayCycle();
+		DisplayType[] cycle = getPlugin().getShopDisplayConfig().getDisplayCycle();
 		
 		if(cycle.length == 0){
 			logger.debug("Cycle list is empty cannot cycle");

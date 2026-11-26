@@ -142,7 +142,7 @@ public class PlayerShopsConfig extends Config{
 				}
 				
 				DisplayType displayType = DisplayType.valueOf(section.getString("displayType",
-						ShopPlugin.getPlugin().getSettingsConfig().getDisplayTypeDefault().name()));
+						ShopPlugin.getPlugin().getShopDisplayConfig().getDisplayTypeDefault().name()));
 				
 				AbstractShop shop = AbstractShop.create(id == null ? UUID.randomUUID() : id,
 						signLoc,
