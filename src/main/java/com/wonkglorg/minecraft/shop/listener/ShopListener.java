@@ -159,6 +159,8 @@ public class ShopListener implements Listener{
 				case LACKS_CREATION_PERMISSION -> lang.request("permission.error.create-type")
 													  .replace("%shop-type%", process.getType().toString())
 													  .sendToAudience(player);
+				case LACKS_ADMIN_CREATION_PERMISSION -> { //just do nothing
+				}
 				case SHOP_LIMIT_REACHED -> lang.request("permission.error.buildLimit").sendToAudience(player);
 				case INSUFFICIENT_FUNDS -> lang.request("interaction.issues.create.insufficient-funds").sendToAudience(player);
 			}
@@ -248,6 +250,8 @@ public class ShopListener implements Listener{
 			logger.debug("====SHOP INITIALISATION CANCEL====");
 			return;
 		}
+		//clone item instead of referencing the original some auto swap mods can influence this afterwards
+		item = item.clone();
 		
 		logger.debug("Clicked using " + item);
 		event.setCancelled(true);
