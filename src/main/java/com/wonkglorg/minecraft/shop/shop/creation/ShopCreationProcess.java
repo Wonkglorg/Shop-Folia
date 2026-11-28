@@ -82,10 +82,8 @@ public abstract class ShopCreationProcess{
 	 * If the shop was created via a method that required no sign
 	 */
 	protected boolean isFakeSign = false;
-	@Setter
 	@Getter
 	protected ItemStack itemStack = null;
-	@Setter
 	@Getter
 	protected ItemStack secondaryStack = null;
 	
@@ -128,6 +126,14 @@ public abstract class ShopCreationProcess{
 				secondaryStack,
 				finishedInitialisation,
 				isCancelled);
+	}
+	
+	public void setItemStack(ItemStack itemStack) {
+		this.itemStack = itemStack.clone();
+	}
+	
+	public void setSecondaryStack(ItemStack secondaryStack) {
+		this.secondaryStack = secondaryStack.clone();
 	}
 	
 	/**
